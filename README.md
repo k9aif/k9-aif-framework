@@ -93,16 +93,27 @@ Security, governance, and observability apply across all layers to enforce polic
 
 ## Prototype Implementations
 
-Prototype systems based on K9-AIF demonstrate how the framework can support governed multi-agent architectures across different domains.
+Prototype systems based on K9-AIF demonstrate how the framework can support
+governed multi-agent architectures across multiple domains.
 
 Example demonstration systems include:
 
-- ACME Health Insurance Claims Assistant
-- WeatherAssist Decision Support System
-- Sports Car Experience Center
-- Department of War (DoW) Systems Engineering Pipeline
+- **ACME Health Insurance Claims Assistant**  
+  Multi-agent insurance workflow demo including eligibility checks,
+  provider lookup, and claims support.  
+  → [examples/acme-health-insurance](examples/acme-health-insurance)
 
-The DoW prototype demonstrates how K9-AIF architectural patterns can be applied to automate multi-stage systems engineering workflows aligned with the DoDAF 2.0 architecture framework. The implementation explores agent orchestration across multiple architectural stages using K9-AIF patterns together with the CrewAI orchestration framework.
+- **WeatherAssist Decision Support System**
+
+- **Sports Car Experience Center**
+
+- **Department of War (DoW) Systems Engineering Pipeline**  
+  Demonstrates how K9-AIF architectural patterns can automate multi-stage
+  systems engineering workflows aligned with the **DoDAF 2.0 architecture
+  framework**, exploring agent orchestration across multiple architectural
+  stages using K9-AIF patterns together with the CrewAI orchestration framework.
+
+---
   
 ---
 
