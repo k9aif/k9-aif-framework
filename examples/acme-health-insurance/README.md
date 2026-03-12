@@ -12,6 +12,17 @@ This example demonstrates how K9-AIF can orchestrate multiple agents, connectors
 
 ---
 
+## Demo Interface
+
+The ACME demo includes a lightweight web interface that allows users to interact
+with the multi-agent system. The interface exposes common workflows such as
+plan lookup, provider search, eligibility checks, and claims support while
+a live console streams orchestration events from the K9-AIF runtime.
+
+![ACME Health Insurance Demo](images/acme-health-insurance-ui-with-console.png)
+
+---
+
 ## Overview
 
 This demo models a health insurance platform where cooperating agents handle common business workflows such as:
