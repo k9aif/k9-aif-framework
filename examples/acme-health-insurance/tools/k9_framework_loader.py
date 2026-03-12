@@ -1,180 +1,234 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF  Direct Knowledge Loader (no ABB)
-# Parses PDF  creates embeddings (Ollama)  stores in ChromaDB
+"""
+Utility for loading framework documentation into a vector store.
 
-import os, hashlib, logging, requests, chromadb
+This script:
+1. Reads a PDF file
+2. Splits the extracted text into overlapping chunks
+3. Generates embeddings using an Ollama embedding model
+4. Stores the chunks and embeddings in ChromaDB
+
+Environment variables (optional):
+- PDF_PATH: path to the PDF file to ingest
+- CHROMA_DIR: directory for ChromaDB persistence
+- COLLECTION_NAME: target ChromaDB collection name
+- CHUNK_SIZE: text chunk size
+- OVERLAP: overlap between chunks
+- OLLAMA_HOST: Ollama server URL
+- OLLAMA_MODEL: embedding model name
+"""
+
+import hashlib
+import logging
+import os
 from pathlib import Path
 from typing import List
+
+import chromadb
+import requests
 from PyPDF2 import PdfReader
 
 # ------------------------------------------------------------------------------
 # CONFIGURATION
 # ------------------------------------------------------------------------------
-PDF_PATH = "./k9_projects/acme_health_insurance/data/knowledge/K9-AIF_Framework_Natarajan_v1.2.pdf"
-CHROMA_DIR = "./data/chroma"
-COLLECTION_NAME = "k9_aif_framework_v1_2"
-CHUNK_SIZE = 900
-OVERLAP = 120
-OLLAMA_HOST = "http://192.168.1.98:11434"  # Your Ollama server
-OLLAMA_MODEL = "nomic-embed-text"
+
+PDF_PATH = os.getenv("PDF_PATH", "./input/document.pdf")
+CHROMA_DIR = os.getenv("CHROMA_DIR", "./data/chroma")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "k9_aif_framework")
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "900"))
+OVERLAP = int(os.getenv("OVERLAP", "120"))
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "nomic-embed-text")
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 # ------------------------------------------------------------------------------
-# TEXT EXTRACTOR
+# PDF READER
 # ------------------------------------------------------------------------------
+
 def read_pdf(path: Path) -> str:
-    """Extract text from PDF file."""
+    """Extract text content from a PDF file."""
     try:
         reader = PdfReader(str(path))
-        text = "\n".join([p.extract_text() or "" for p in reader.pages])
-        logging.info(f" Extracted {len(text)} characters from {len(reader.pages)} pages")
+        text = "\n".join(page.extract_text() or "" for page in reader.pages)
+        logging.info(
+            "Extracted %s characters from %s pages",
+            len(text),
+            len(reader.pages),
+        )
         return text
-    except Exception as e:
-        logging.error(f" Failed to read PDF: {e}")
+    except Exception as exc:
+        logging.error("Failed to read PDF: %s", exc)
         raise
 
+
 # ------------------------------------------------------------------------------
-# CHUNKER
+# TEXT CHUNKING
 # ------------------------------------------------------------------------------
-def split_text(text: str, chunk_size=900, overlap=120) -> List[str]:
+
+def split_text(text: str, chunk_size: int = 900, overlap: int = 120) -> List[str]:
     """Split text into overlapping chunks."""
     text = text.strip()
     if not text:
-        logging.warning(" Empty text provided to chunker")
+        logging.warning("Empty text provided for chunking")
         return []
-    
-    chunks, start, n = [], 0, len(text)
-    while start < n:
-        end = min(start + chunk_size, n)
+
+    chunks: List[str] = []
+    start = 0
+    total_len = len(text)
+
+    while start < total_len:
+        end = min(start + chunk_size, total_len)
         chunk = text[start:end].strip()
-        if chunk:  # Only add non-empty chunks
+        if chunk:
             chunks.append(chunk)
-        if end == n:
+
+        if end == total_len:
             break
+
         start = max(0, end - overlap)
-    
-    logging.info(f" Created {len(chunks)} chunks (size={chunk_size}, overlap={overlap})")
+
+    logging.info(
+        "Created %s chunks (chunk_size=%s, overlap=%s)",
+        len(chunks),
+        chunk_size,
+        overlap,
+    )
     return chunks
 
+
 # ------------------------------------------------------------------------------
-# OLLAMA EMBEDDER (FIXED)
+# EMBEDDINGS
 # ------------------------------------------------------------------------------
+
 def embed_with_ollama(texts: List[str], model: str = OLLAMA_MODEL) -> List[List[float]]:
     """
-    Generate embeddings using Ollama API.
-    Processes one text at a time to avoid batch format issues.
+    Generate embeddings using the Ollama embeddings API.
+
+    Processes one text at a time to keep error handling simple and explicit.
     """
     url = f"{OLLAMA_HOST}/api/embeddings"
-    all_embeds = []
-    
-    logging.info(f" Generating embeddings for {len(texts)} chunks using {model}...")
-    
-    for i, text in enumerate(texts):
-        if i % 10 == 0:
-            logging.info(f"   Processing chunk {i+1}/{len(texts)}...")
-        
+    embeddings: List[List[float]] = []
+
+    logging.info("Generating embeddings for %s chunks using model '%s'...", len(texts), model)
+
+    for index, text in enumerate(texts):
+        if index % 10 == 0:
+            logging.info("Processing chunk %s/%s...", index + 1, len(texts))
+
         payload = {
             "model": model,
-            "prompt": text  # Ollama uses "prompt" not "input"
+            "prompt": text,
         }
-        
+
         try:
-            r = requests.post(url, json=payload, timeout=60)
-            r.raise_for_status()
-            data = r.json()
-            
-            # Ollama returns {"embedding": [...]}
-            if "embedding" in data:
-                embedding = data["embedding"]
-                if isinstance(embedding, list) and len(embedding) > 0:
-                    all_embeds.append(embedding)
-                else:
-                    logging.error(f" Empty embedding for chunk {i}")
+            response = requests.post(url, json=payload, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+
+            embedding = data.get("embedding")
+            if isinstance(embedding, list) and embedding:
+                embeddings.append(embedding)
             else:
-                logging.error(f" Unexpected response format for chunk {i}: {data}")
-                
-        except requests.exceptions.RequestException as e:
-            logging.error(f" Request failed for chunk {i}: {e}")
-        except Exception as e:
-            logging.error(f" Unexpected error for chunk {i}: {e}")
-    
-    logging.info(f" Generated {len(all_embeds)} embeddings")
-    return all_embeds
+                logging.error("Unexpected embedding response for chunk %s: %s", index, data)
+
+        except requests.exceptions.RequestException as exc:
+            logging.error("Embedding request failed for chunk %s: %s", index, exc)
+        except Exception as exc:
+            logging.error("Unexpected error for chunk %s: %s", index, exc)
+
+    logging.info("Generated %s embeddings", len(embeddings))
+    return embeddings
+
 
 # ------------------------------------------------------------------------------
-# VECTOR STORE LOADER
+# VECTOR STORE
 # ------------------------------------------------------------------------------
-def hash_id(source: str, i: int, chunk: str) -> str:
-    """Generate unique hash ID for each chunk."""
-    return hashlib.sha256(f"{source}-{i}-{chunk[:50]}".encode()).hexdigest()
 
-def load_to_chroma():
-    """Main pipeline: PDF  Chunks  Embeddings  ChromaDB"""
-    path = Path(PDF_PATH)
-    
-    if not path.exists():
-        logging.error(f" PDF not found: {path}")
+def hash_id(source: str, index: int, chunk: str) -> str:
+    """Generate a stable ID for each chunk."""
+    seed = f"{source}-{index}-{chunk[:80]}"
+    return hashlib.sha256(seed.encode("utf-8")).hexdigest()
+
+
+def load_to_chroma() -> None:
+    """Run the full ingestion pipeline: PDF -> chunks -> embeddings -> ChromaDB."""
+    pdf_path = Path(PDF_PATH)
+
+    if not pdf_path.exists():
+        logging.error("PDF file not found: %s", pdf_path)
         return
-    
-    logging.info(f" Reading PDF: {path}")
-    text = read_pdf(path)
-    
+
+    logging.info("Reading PDF: %s", pdf_path)
+    text = read_pdf(pdf_path)
+
     if not text.strip():
-        logging.error(" No text extracted from PDF")
+        logging.error("No text extracted from PDF")
         return
-    
+
     chunks = split_text(text, CHUNK_SIZE, OVERLAP)
-    
     if not chunks:
-        logging.error(" No chunks created")
+        logging.error("No chunks created")
         return
-    
+
     embeddings = embed_with_ollama(chunks)
-    
-    if len(embeddings) != len(chunks):
-        logging.warning(f" Mismatch: {len(chunks)} chunks but {len(embeddings)} embeddings")
-        # Only keep chunks that have embeddings
-        chunks = chunks[:len(embeddings)]
-    
     if not embeddings:
-        logging.error(" No embeddings generated")
+        logging.error("No embeddings generated")
         return
-    
-    logging.info(f" Storing {len(embeddings)} chunks in ChromaDB...")
-    
+
+    if len(embeddings) != len(chunks):
+        logging.warning(
+            "Chunk/embedding mismatch: %s chunks, %s embeddings",
+            len(chunks),
+            len(embeddings),
+        )
+        chunks = chunks[: len(embeddings)]
+
+    logging.info("Storing %s chunks in ChromaDB...", len(embeddings))
+
     try:
         client = chromadb.PersistentClient(path=CHROMA_DIR)
-        col = client.get_or_create_collection(
+        collection = client.get_or_create_collection(
             name=COLLECTION_NAME,
-            metadata={"description": "K9-AIF Framework Knowledge Base"}
+            metadata={"description": "Framework documentation knowledge base"},
         )
-        
-        ids = [hash_id(path.name, i, c) for i, c in enumerate(chunks)]
-        metadatas = [{"source": path.name, "chunk_id": i, "domain": "K9-AIF Technical"} 
-                     for i in range(len(chunks))]
-        
-        col.upsert(
+
+        ids = [hash_id(pdf_path.name, i, chunk) for i, chunk in enumerate(chunks)]
+        metadatas = [
+            {
+                "source": pdf_path.name,
+                "chunk_id": i,
+                "domain": "framework_documentation",
+            }
+            for i in range(len(chunks))
+        ]
+
+        collection.upsert(
             ids=ids,
             embeddings=embeddings,
             documents=chunks,
-            metadatas=metadatas
+            metadatas=metadatas,
         )
-        
-        logging.info(f" Successfully loaded {len(chunks)} chunks into collection '{COLLECTION_NAME}'")
-        logging.info(f" Collection now has {col.count()} total documents")
-        
-    except Exception as e:
-        logging.error(f" ChromaDB storage failed: {e}")
+
+        logging.info(
+            "Successfully loaded %s chunks into collection '%s'",
+            len(chunks),
+            COLLECTION_NAME,
+        )
+        logging.info("Collection now contains %s documents", collection.count())
+
+    except Exception as exc:
+        logging.error("ChromaDB storage failed: %s", exc)
         raise
+
 
 # ------------------------------------------------------------------------------
 # MAIN
 # ------------------------------------------------------------------------------
+
 if __name__ == "__main__":
     try:
         load_to_chroma()
-    except Exception as e:
-        logging.error(f" Pipeline failed: {e}")
+    except Exception as exc:
+        logging.error("Pipeline failed: %s", exc)
         import traceback
         traceback.print_exc()
