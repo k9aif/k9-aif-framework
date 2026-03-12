@@ -164,29 +164,29 @@ Examples:
 
 ---
 
-## Repository Structure
-
-This repository contains reference material and prototype implementations for the K9-AIF architecture.
-
-Typical contents include:
-
-- architecture documentation
-- reference diagrams
-- prototype agent orchestration examples
-- experimental workflow implementations
-
-
-## License
-
-This repository is released under the MIT License.
-
-The framework concepts may be used, adapted, and extended for research and development of agentic AI systems.
-
 ## Project Status
 
 K9-AIF is an actively evolving framework. The repository contains reference
 architecture material, prototype implementations, and example applications
 used to explore practical approaches to building governed agentic AI systems.
+
+---
+
+## License
+
+This repository is released under the MIT License.
+
+The framework concepts may be used, adapted, and extended for research and
+development of agentic AI systems.
+
+---
+
+## Contributions
+
+Contributions, discussions, and architectural ideas related to agentic AI
+systems and multi-agent orchestration are welcome.
+
+---
 
 ## Author
 
@@ -196,6 +196,7 @@ Agentic AI • Multi-Agent Systems • LLM Applications
 
 Email: ravinatarajan@k9aif.com  
 Website: https://k9aif.com
+
 
 
 ## Contributions
