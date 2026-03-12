@@ -23,3 +23,13 @@ of the framework in a specific domain.
 
 Refer to the main project documentation for details about the K9-AIF
 architecture and framework components.
+
+---
+
+Some examples may be **generated using the K9-AIF application generator**
+and then extended with domain-specific logic.
+
+Example:
+
+```bash
+k9aif generate example acme-health-insurance
