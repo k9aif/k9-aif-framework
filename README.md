@@ -87,7 +87,7 @@ Supports model invocation, retrieval-augmented generation (RAG), and context-awa
 Provides persistence, object storage, and messaging infrastructure used by the framework.
 
 ### Cross-Cutting Concerns
-Security, governance, and observability apply across all layers to ensure policy enforcement, auditability, monitoring, and operational control.
+Security, governance, and observability apply across all layers to enforce policy, auditability, monitoring, and operational control.
 
 ---
 
@@ -150,7 +150,7 @@ The generator creates a ready-to-run project structure including:
 
 Example usage:
 
-``` text
+``` bash
 
 === K9-AIF Generator v0.1.0 ===
 
