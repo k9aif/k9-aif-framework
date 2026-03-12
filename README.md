@@ -164,21 +164,6 @@ Examples:
 
 ---
 
-# Status
-
-K9-AIF is an evolving architecture framework and ongoing research effort exploring structured approaches to designing agentic AI systems.
-
----
-
-## Author
-
-**Ravi Natarajan**  
-AI Systems Architect  
-Agentic AI • Multi-Agent Systems • LLM Applications  
-
-Email: ravinatarajan@k9aif.com  
-Website: https://k9aif.com
-
 ## Repository Structure
 
 This repository contains reference material and prototype implementations for the K9-AIF architecture.
@@ -196,6 +181,21 @@ Typical contents include:
 This repository is released under the MIT License.
 
 The framework concepts may be used, adapted, and extended for research and development of agentic AI systems.
+
+## Project Status
+
+K9-AIF is an actively evolving framework. The repository contains reference
+architecture material, prototype implementations, and example applications
+used to explore practical approaches to building governed agentic AI systems.
+
+## Author
+
+**Ravi Natarajan**  
+AI Systems Architect  
+Agentic AI • Multi-Agent Systems • LLM Applications  
+
+Email: ravinatarajan@k9aif.com  
+Website: https://k9aif.com
 
 
 ## Contributions
