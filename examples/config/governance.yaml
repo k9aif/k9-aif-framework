@@ -1,0 +1,6 @@
+policies:
+  allow_llm_models:
+    - llama3.1:latest
+    - granite3-guardian:latest
+  prompt_filtering: true
+  response_audit: true

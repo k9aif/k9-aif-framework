@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# K9-AIF™ — Acme Health Insurance Experience Center
+# Flow definitions for governed, asynchronous orchestration
+
+flows:
+  - id: claim_demo
+    name: Claim Processing Demo Flow
+    description: >
+      Demonstration of an end-to-end claim submission and review process.
+      This flow checks member eligibility, processes the claim, performs
+      a compliance/guardian review, and sends a notification back to the user.
+    agents:
+      - EligibilityAgent
+      - ClaimProcessingAgent
+      - GuardianAgent
+      - NotificationAgent
+
+  - id: policy_advice_demo
+    name: Policy Advisor Inquiry Flow
+    description: >
+      Demonstrates the conversational Policy Advisor agent responding to
+      member questions about benefits or coverage using the Guardian for
+      content validation and audit logging.
+    agents:
+      - PolicyAdvisorAgent
+      - GuardianAgent
+      - NotificationAgent
+
+  - id: monitoring_audit_flow
+    name: Monitoring & Governance Audit Flow
+    description: >
+      Periodically checks event logs, audits system health, and ensures
+      all governance controls are intact.
+    agents:
+      - MonitorAgent
+      - GuardianAgent

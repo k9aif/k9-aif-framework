@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# ACME HealthCare™ — Orchestrator Registry (SBB-level)
+# Extends ABB orchestrators.yaml with domain-specific orchestration flows.
+
+version: "1.0"
+metadata:
+  domain: "ACME HealthCare"
+  owner: "K9-AIF Team"
+  last_updated: "2025-10-24"
+
+orchestrators:
+  # --------------------------------------------------
+  # 🩺 Health Plans
+  # --------------------------------------------------
+  - name: HealthPlanOrchestrator
+    intent: health_plan
+    module: k9_projects.acme_health_insurance.orchestrators.health_plan_orchestrator
+    description: >
+      Handles health plan selection, benefit comparisons, deductibles,
+      and coverage clarifications for ACME HealthCare members.
+      Works with RetrieverAgent to pull vectorized plan summaries.
+    collection: acme_health_knowledge
+    domain: "ACME HealthCare"
+    layer: "Application / Member Services"
+
+  # --------------------------------------------------
+  # Provider / Doctor Lookup
+  # --------------------------------------------------
+  - name: ProviderOrchestrator
+    intent: find_doctor
+    module: k9_projects.acme_health_insurance.orchestrators.provider_orchestrator
+    description: >
+      Handles provider and specialist lookups, validates in-network status,
+      and retrieves contact information from provider databases.
+    domain: "ACME HealthCare"
+    layer: "Integration / Network Services"
+
+  # --------------------------------------------------
+  # Claims Support
+  # --------------------------------------------------
+  - name: ClaimsOrchestrator
+    intent: claims_support
+    module: k9_projects.acme_health_insurance.orchestrators.claims_orchestrator
+    description: >
+      Coordinates claims submission, verification, and escalation workflows.
+      Integrates with backend systems or external APIs for claim tracking.
+    domain: "ACME HealthCare"
+    layer: "Application / Case Management"
+
+  # --------------------------------------------------
+  #  Human Escalation (Live Agent)
+  # --------------------------------------------------
+  - name: LiveAgentOrchestrator
+    intent: talk_to_agent
+    module: k9_aif_abb.k9_orchestrators.live_agent_orchestrator
+    description: >
+      Escalates sessions to human agents or CRM queues (Appian, Slack, etc.).
+      Uses shared ABB orchestration for escalation governance.
+    domain: "Human Support"
+    layer: "Integration / Escalation"
+
+  # --------------------------------------------------
+  # Fallback
+  # --------------------------------------------------
+  - name: FallbackOrchestrator
+    intent: fallback
+    module: k9_aif_abb.k9_orchestrators.fallback_orchestrator
+    description: >
+      Default fallback orchestrator for unrecognized intents.
+      Provides clarification and safe response guidance.
+    domain: "System Resilience"
+    layer: "Resilience / Recovery"
+
+  # --------------------------------------------------
+  # User Authentication
+  # --------------------------------------------------
+  - name: UserOrchestrator
+    intent: signin
+    module: k9_projects.acme_health_insurance.orchestrators.user_orchestrator
+    description: >
+      Handles ACME HealthCare sign-in and registration flows.
+      Invokes AuthAgent for credential validation.
+    domain: "Authentication"
+    layer: "Application / User Access"
+
+  - name: UserOrchestrator
+    intent: register
+    module: k9_projects.acme_health_insurance.orchestrators.user_orchestrator
+    description: >
+      Manages registration of new members, providers, or employers.
+      Uses AuthAgent for account creation and governance logging.
+    domain: "Authentication"
+    layer: "Application / User Access"
