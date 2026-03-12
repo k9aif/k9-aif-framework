@@ -1,1 +1,56 @@
+# ACME Health Insurance Demo
 
+The ACME Health Insurance Demo is a **domain-specific multi-agent application** built using the **K9-AIF (K9 Agentic Integration Framework)**.
+
+This example shows how K9-AIF can be used to orchestrate multiple agents, connectors, and configuration-driven workflows to simulate a realistic enterprise AI system in the health insurance domain.
+
+---
+
+## Demo Architecture
+
+![ACME Health Insurance Demo](../../docs/diagrams/detailed_context_diagram.png)
+
+---
+
+## Overview
+
+This demo models a health insurance platform where multiple cooperating agents handle common business workflows such as:
+
+- member registration
+- authentication and login
+- eligibility checks
+- claims processing
+- provider lookup
+- policy advisory
+- notifications
+- monitoring and governance
+
+The purpose of this example is to demonstrate how LLM-powered agents can operate inside a **structured, governed, multi-agent system** rather than only through a standalone chat interface.
+
+---
+
+## Key Capabilities
+
+The demo includes:
+
+- **Multi-agent orchestration** using domain-specific agents
+- **Configuration-driven behavior** through YAML-based configuration
+- **Knowledge retrieval** from health plan documents
+- **Persistence and auditing** through a data layer
+- **Orchestrators** for coordinating domain workflows
+- **Tooling and loaders** for ingesting and managing health plan knowledge
+- **Simple UI pages** for demonstrating interactive workflows
+
+---
+
+## Directory Structure
+
+```text
+acme-health-insurance/
+├── agents/             # Domain agents for auth, claims, retrieval, monitoring, notifications
+├── config/             # YAML configuration for flows, governance, orchestrators, MCP servers
+├── data/               # Schema, seed files, and health plan knowledge content
+├── orchestrators/      # Workflow orchestrators for claims, plans, providers, and users
+├── tools/              # Knowledge loaders and helper utilities
+├── run_demo.py         # Entry point for running the demo
+└── README.md
