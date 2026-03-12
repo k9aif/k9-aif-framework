@@ -162,6 +162,8 @@ Examples:
   ./k9_generator.sh recycle PetStore
 ```
 
+---
+
 # Status
 
 K9-AIF is an evolving architecture framework and ongoing research effort exploring structured approaches to designing agentic AI systems.
