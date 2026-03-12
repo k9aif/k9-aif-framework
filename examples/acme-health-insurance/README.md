@@ -6,6 +6,12 @@ This example shows how K9-AIF can be used to orchestrate multiple agents, connec
 
 ---
 
+## Flow
+<img width="503" height="585" alt="image" src="https://github.com/user-attachments/assets/837c9b69-6044-4b1c-a4fa-a4cc78f188e1" />
+
+
+--
+
 ## Overview
 
 This demo models a health insurance platform where multiple cooperating agents handle common business workflows such as:
