@@ -13,7 +13,9 @@ It creates a ready-to-run project structure including:
 - Test scaffolding
 
 The generator uses **Jinja2 templates** to produce consistent project layouts for K9-AIF based applications.
+
 ---
+
 Note: checkout the SampleRun.md 
 
 ---
