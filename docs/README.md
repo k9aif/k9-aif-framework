@@ -1,11 +1,13 @@
 # K9-AIF Documentation
 
-This directory contains supporting documentation and reference material for the K9-AIF framework.
+This directory contains supporting documentation and reference material for the K9-AIF architecture framework.
 
 ## Contents
 
-### diagrams
-Architecture diagrams and visual assets used in documentation and presentations.
+- **diagrams/**  
+  Architecture diagrams and visual assets used throughout the project.
 
-### paper
-Research papers and supporting material related to the K9-AIF architecture framework.
+- **paper/**  
+  Research papers and related material describing the K9-AIF framework.
+
+Additional documentation may be added over time as the framework evolves.
