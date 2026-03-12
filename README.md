@@ -197,8 +197,3 @@ Agentic AI • Multi-Agent Systems • LLM Applications
 Email: ravinatarajan@k9aif.com  
 Website: https://k9aif.com
 
-
-
-## Contributions
-
-Contributions, discussions, and architectural ideas related to agentic AI systems and multi-agent orchestration are welcome.
