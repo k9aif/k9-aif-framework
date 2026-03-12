@@ -17,7 +17,7 @@ The generator uses **Jinja2 templates** to produce consistent project layouts fo
 ---
 
 ## Directory Structure
-
+```
 k9_aif_generator/
 │
 ├── generator.py
@@ -29,7 +29,7 @@ k9_aif_generator/
 │   ├── flows_template.yaml.j2
 │   ├── contest_template.py.j2
 │   └── test_template.py.j2
-
+```
 
 ## Generate a New Project
 
