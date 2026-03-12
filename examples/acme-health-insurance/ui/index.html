@@ -1,0 +1,223 @@
+<!-- SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary -->
+<!-- K9-AIF™ — Acme Health Insurance Portal -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acme Health Insurance</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <!-- Console & Chat Styles -->
+    <link rel="stylesheet" href="assets/css/status.css" />
+
+    <!-- JS: Console + Chat -->
+    <script src="assets/js/console.js" defer></script>
+    <script src="assets/js/chat.js" defer></script>
+  </head>
+
+  <body class="bg-white text-gray-800 flex flex-col min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-md">
+      <div
+        class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-3"
+      >
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-heart-pulse text-pink-300 text-xl"></i>
+          <h1 class="text-xl md:text-2xl font-semibold tracking-wide">
+            Acme Health Insurance
+          </h1>
+        </div>
+
+        <!-- Right side: language + sign-in dropdown -->
+        <div class="flex items-center space-x-4 relative">
+          <!-- Español toggle -->
+          <button
+            class="text-white font-semibold hover:text-blue-100 focus:outline-none"
+            id="langToggle"
+          >
+            Español
+          </button>
+
+          <!-- Sign In Dropdown -->
+          <div class="relative inline-block text-left">
+            <button
+              id="signinButton"
+              class="inline-flex items-center bg-white text-blue-800 px-4 py-2 rounded-lg font-semibold hover:bg-blue-100 transition focus:outline-none"
+            >
+              <i class="fa-solid fa-user mr-2"></i>
+              Sign in
+              <i class="fa-solid fa-caret-down ml-2"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div
+              id="signinDropdown"
+              class="hidden absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50"
+            >
+              <ul class="py-2 text-sm text-gray-700">
+                <li>
+                  <button
+                    disabled
+                    class="w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed hover:bg-gray-50 rounded"
+                  >
+                    Members
+                  </button>
+                </li>
+                <li>
+                  <button
+                    disabled
+                    class="w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed hover:bg-gray-50 rounded"
+                  >
+                    Providers
+                  </button>
+                </li>
+                <li>
+                  <button
+                    disabled
+                    class="w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed hover:bg-gray-50 rounded"
+                  >
+                    Employers / Agents
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section
+      class="bg-gradient-to-b from-blue-50 to-white py-16 flex flex-col items-center text-center"
+    >
+      <div class="max-w-3xl">
+        <h2 class="text-4xl font-bold text-blue-800 mb-4">
+          Smarter Health Coverage
+        </h2>
+        <p class="text-gray-600 mb-8">
+          Powered by <strong>IBM Foundation Models</strong> and
+          <strong>K9-AIF™</strong> — bringing intelligent orchestration to
+          digital health.
+        </p>
+        <img
+          src="assets/img/hero.jpeg"
+          alt="Health family illustration"
+          class="rounded-xl shadow-md mx-auto mb-8 w-full max-w-md"
+        />
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+          <a
+            href="#"
+            class="bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-800 transition"
+          >
+            <i class="fa-solid fa-file-medical mr-2"></i>Submit a Claim
+          </a>
+          <a
+            href="#"
+            class="border border-blue-700 text-blue-700 px-6 py-3 rounded-lg hover:bg-blue-50 transition"
+          >
+            <i class="fa-solid fa-heart-pulse mr-2"></i>Check Eligibility
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-blue-900 text-white py-8 mt-auto text-sm">
+      <div class="text-center text-xs opacity-75">
+        © 2025 Acme Health Insurance — Powered by IBM Foundation Models & Built
+        on K9-AIF™ Framework
+      </div>
+    </footer>
+
+    <!-- 🩺 Right-Side Live Console -->
+    <div id="consolePanel">
+      <div id="consoleHeader"><span>🩺 Acme Live Console</span></div>
+
+      <!-- Simplified Header -->
+      <div class="bg-gray-900 text-gray-100 text-xs py-2 text-center border-b border-gray-700">
+        <span class="opacity-75">Live Event Stream • K9-AIF™</span>
+      </div>
+
+      <!-- Console Log -->
+      <div id="consoleLog">
+        <p class="log-info">[Console] Initialized — awaiting events...</p>
+      </div>
+
+      <div
+        id="consoleFooter"
+        class="bg-gray-900 text-gray-400 text-xs p-2 text-center"
+      >
+        Powered by K9-AIF™
+      </div>
+    </div>
+    <div id="consoleToggle">&lt;</div>
+
+    <!-- 💬 K9-WebChat Assistant -->
+    <button
+      id="chatToggle"
+      class="fixed bottom-6 left-6 bg-blue-700 text-white p-4 rounded-full shadow-lg hover:bg-blue-800 transition"
+    >
+      💬
+    </button>
+
+    <div
+      id="chatPanel"
+      class="fixed bottom-20 left-6 w-80 bg-white border border-blue-200 rounded-lg shadow-xl flex flex-col"
+    >
+      <div
+        class="bg-blue-700 text-white px-4 py-2 rounded-t-lg font-semibold flex justify-between items-center"
+      >
+        <span>K9-WebChat Assistant</span>
+        <button
+          id="chatClose"
+          class="text-white text-lg leading-none hover:text-gray-200"
+        >
+          &times;
+        </button>
+      </div>
+
+      <div
+        id="chatLog"
+        class="flex-1 p-3 overflow-y-auto text-sm text-gray-800 space-y-2"
+      ></div>
+
+      <div class="flex border-t border-gray-200">
+        <input
+          id="chatInput"
+          type="text"
+          placeholder="Type your question..."
+          class="flex-1 p-2 text-sm focus:outline-none rounded-bl-lg"
+        />
+        <button
+          id="chatSend"
+          class="bg-blue-700 text-white px-3 rounded-br-lg hover:bg-blue-800"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+
+    <!-- 🔽 Dropdown Script -->
+    <script>
+      const signinBtn = document.getElementById("signinButton");
+      const signinDropdown = document.getElementById("signinDropdown");
+      signinBtn.addEventListener("click", () => {
+        signinDropdown.classList.toggle("hidden");
+      });
+      window.addEventListener("click", (e) => {
+        if (!signinBtn.contains(e.target) && !signinDropdown.contains(e.target)) {
+          signinDropdown.classList.add("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>
