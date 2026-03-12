@@ -131,6 +131,21 @@ Potential applications include:
 
 ---
 
+# Project Generator
+
+K9-AIF includes a lightweight **project generator** that bootstraps new agentic applications following the framework architecture.
+
+The generator creates a ready-to-run project structure including:
+
+- agents
+- orchestrators
+- configuration files
+- workflow definitions
+- test scaffolding
+
+Example usage:
+python generator/k9_aif_generator/generator.py my_project
+
 # Status
 
 K9-AIF is an evolving architecture framework and ongoing research effort exploring structured approaches to designing agentic AI systems.
