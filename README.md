@@ -170,11 +170,14 @@ K9-AIF is an evolving architecture framework and ongoing research effort explori
 
 ---
 
-# Author
+## Author
 
-Ravi Natarajan  
+**Ravi Natarajan**  
 AI Systems Architect  
-Agentic AI • Multi-Agent Systems • LLM Applications
+Agentic AI • Multi-Agent Systems • LLM Applications  
+
+Email: ravinatarajan@k9aif.com  
+Website: https://k9aif.com
 
 ## Repository Structure
 
