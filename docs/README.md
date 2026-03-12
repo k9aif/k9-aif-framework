@@ -4,7 +4,7 @@ This directory contains supporting documentation and reference material for the 
 
 ## Contents
 
-### images
+### diagrams
 Architecture diagrams and visual assets used in documentation and presentations.
 
 ### paper
