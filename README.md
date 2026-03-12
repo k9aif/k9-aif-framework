@@ -144,7 +144,23 @@ The generator creates a ready-to-run project structure including:
 - test scaffolding
 
 Example usage:
-python generator/k9_aif_generator/generator.py my_project
+
+``` text
+
+=== K9-AIF Generator v0.1.0 ===
+
+K9-AIF Generator CLI
+
+Usage:
+  ./k9_generator.sh preview <AppName>
+  ./k9_generator.sh run <AppName>
+  ./k9_generator.sh recycle <AppName>
+
+Examples:
+  ./k9_generator.sh preview WeatherAssist
+  ./k9_generator.sh run ACMEInsurance
+  ./k9_generator.sh recycle PetStore
+```
 
 # Status
 
