@@ -38,3 +38,57 @@ Preview of files that will be generated for projectX
   /Users/ravinatarajan/K9-AIF/k9_projects/project_x/config/flows.yaml
 
  --- Done! ---
+
+---
+Run mode
+---
+
+(k9_aif_venv) ravi.natarajan-MacBook-Pro K9-AIF % ./k9_generator.sh run projectX
+
+=== K9-AIF Generator v0.1.0 ===
+
+[INFO] Working...
+[INFO] Creating folder: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/agents
+[INFO] Creating folder: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/orchestrators
+[INFO] Creating folder: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/config
+[INFO] Creating folder: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/tests
+[INFO] Generating agents...
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/agents/retrieval_agent.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/agents/enrichment_agent.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/agents/summarizer_agent.py
+[INFO] Generating orchestrator...
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/orchestrators/default_flow_orchestrator.py
+[INFO] Generating config.yaml and flows.yaml...
+[INFO] Generating main.py...
+[INFO] Generating tests/test_project_x.py...
+[INFO] Generating tests/conftest.py...
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/__init__.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/agents/__init__.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/orchestrators/__init__.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/config/__init__.py
+[INFO] Writing file: /Users/ravinatarajan/K9-AIF/k9_projects/project_x/tests/__init__.py
+
+[INFO] Generated file tree:
+project_x/
+  __init__.py
+  main.py
+  config/
+    config.yaml
+    __init__.py
+    flows.yaml
+  tests/
+    conftest.py
+    test_project_x.py
+    __init__.py
+  agents/
+    enrichment_agent.py
+    summarizer_agent.py
+    retrieval_agent.py
+    __init__.py
+  orchestrators/
+    default_flow_orchestrator.py
+    __init__.py
+
+[K9-AIF] Application projectX generated successfully!
+
+Ready to Rumble!
