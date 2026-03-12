@@ -30,7 +30,6 @@ k9_aif_generator/
 │   ├── contest_template.py.j2
 │   └── test_template.py.j2
 
----
 
 ## Generate a New Project
 
