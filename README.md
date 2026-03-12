@@ -100,7 +100,7 @@ Example demonstration systems include:
 - Sports Car Experience Center
 - Department of War (DoW) Systems Engineering Pipeline
 
-The DoW prototype demonstrates how K9-AIF architectural patterns can be applied to automate multi-stage systems engineering workflows. In this implementation, agent orchestration was explored using Python-based orchestration pipelines and the CrewAI framework.
+The DoW prototype demonstrates how K9-AIF architectural patterns can be applied to automate multi-stage systems engineering workflows aligned with the DoDAF 2.0 architecture framework. The implementation explores agent orchestration across multiple architectural stages using K9-AIF patterns together with the CrewAI orchestration framework.
   
 ---
 
@@ -122,15 +122,15 @@ The framework bridges traditional **enterprise architecture principles** with em
 
 ## Example Use Cases
 
-K9-AIF can support a wide range of enterprise AI applications that require governed orchestration of multiple AI capabilities.
+K9-AIF can be applied to enterprise AI systems that require governed orchestration of multiple AI capabilities.
 
-Example use cases include:
+Examples include:
 
 - Enterprise architecture and technology landscape analysis
 - Document intelligence and large-scale document processing
 - Insurance claims analysis and decision support
-- Automated systems engineering and architecture development workflows
-- Knowledge synthesis and research assistance systems
+- Automated systems engineering workflows
+- Knowledge synthesis and research assistance
 
 ---
 
