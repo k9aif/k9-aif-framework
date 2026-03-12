@@ -10,7 +10,8 @@ and test files.
 
 ## Generator CLI
 
-```text
+``` bash
+
 $ ./k9_generator.sh
 
 === K9-AIF Generator v0.1.0 ===
@@ -29,7 +30,8 @@ Examples:
 ```
 ---
 ## Preview Mode
-``` text
+
+``` bash
 $ ./k9_generator.sh preview projectX
 
 === K9-AIF Generator v0.1.0 ===
@@ -59,7 +61,7 @@ k9_projects/project_x/
 
 ## Run Mode
 
-``` text
+``` bash
 
 (k9_aif_venv) ravinatarajan@Ravis-MacBook-Pro K9-AIF % ./k9_generator.sh run projectX
 
