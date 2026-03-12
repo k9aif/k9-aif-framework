@@ -32,4 +32,5 @@ and then extended with domain-specific logic.
 Example:
 
 ```bash
-k9aif generate example acme-health-insurance
+./k9_generator.sh run acme-health-insurance
+
