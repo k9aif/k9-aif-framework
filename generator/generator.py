@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — Patent Pending
+# K9-AIF™ —
 
 """
 K9-AIF Generator CLI
