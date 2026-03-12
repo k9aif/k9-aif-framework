@@ -30,7 +30,7 @@ K9-AIF introduces two primary architectural abstractions.
 
 ## Architecture Building Blocks (ABB)
 
-Agent Building Blocks represent reusable AI capabilities implemented as autonomous or semi-autonomous agents.
+Architecture Building Blocks represent reusable AI capabilities implemented as autonomous or semi-autonomous agents.
 
 Examples include:
 
