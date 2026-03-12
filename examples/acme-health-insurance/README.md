@@ -6,12 +6,6 @@ This example shows how K9-AIF can be used to orchestrate multiple agents, connec
 
 ---
 
-## Demo Architecture
-
-![ACME Health Insurance Demo](../../docs/diagrams/detailed_context_diagram.png)
-
----
-
 ## Overview
 
 This demo models a health insurance platform where multiple cooperating agents handle common business workflows such as:
