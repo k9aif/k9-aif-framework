@@ -53,14 +53,14 @@ async def lifespan(app: FastAPI):
         await consumer.start()
         app.state.kafka_consumer = consumer
         app.state.kafka_task = asyncio.create_task(kafka_to_ws(app))
-        print(f"[LIFESPAN] ✅ Kafka consumer started on {KAFKA_BOOTSTRAP} topic={KAFKA_TOPIC}")
+        print(f"[LIFESPAN] Kafka consumer started on {KAFKA_BOOTSTRAP} topic={KAFKA_TOPIC}")
     except Exception as e:
-        print(f"[LIFESPAN] ⚠️ Kafka not started: {e}")
+        print(f"[LIFESPAN] Kafka not started: {e}")
 
     if STATIC_PATH.exists():
         app.mount("/assets", StaticFiles(directory=str(STATIC_PATH)), name="assets")
     else:
-        print(f"[Static] ⚠️ No assets folder at {STATIC_PATH} (skipping mount)")
+        print(f"[Static] No assets folder at {STATIC_PATH} (skipping mount)")
 
     yield
 
@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
             pass
     if app.state.kafka_consumer:
         await app.state.kafka_consumer.stop()
-        print("[LIFESPAN] ✅ Kafka consumer stopped")
+        print("[LIFESPAN] Kafka consumer stopped")
 
 
 app = FastAPI(title=APP_NAME, lifespan=lifespan)
