@@ -1,7 +1,6 @@
 ``` text
 
-
-(k9_aif_venv) ravi.nataraj-MacBook-Pro K9-AIF % ./k9_generator.sh projectX
+(k9_aif_venv) ravi.natarajan-MacBook-Pro K9-AIF % ./k9_generator.sh projectX
 
 === K9-AIF Generator v0.1.0 ===
 
@@ -17,7 +16,7 @@ Examples:
   ./k9_generator.sh run ACMEInsurance
   ./k9_generator.sh recycle PetStore
 
-(k9_aif_venv) ravinatarajan@Ravis-MacBook-Pro K9-AIF % ./k9_generator.sh preview projectX
+(k9_aif_venv) ravi.natarajan-MacBook-Pro K9-AIF % ./k9_generator.sh preview projectX
 
 === K9-AIF Generator v0.1.0 ===
 
