@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ClaimProcessingAgent (Acme Health Insurance)
+# K9-AIF  ClaimProcessingAgent (Acme Health Insurance)
 # Extends claim persistence with LLM-based reasoning and compliance checks.
 
 from datetime import datetime
@@ -19,13 +19,13 @@ class ClaimProcessingAgent(BaseAgent):
         self.persistence = PersistenceAgent(config=self.config)
         self.logger.info(f"[{self.layer}] Initialized ClaimProcessingAgent with Persistence bridge")
 
-        # 🧠 Load LLM instances
+        #  Load LLM instances
         try:
             self.llm_general = LLMFactory.get("general")
             self.llm_guardian = LLMFactory.get("guardian")
-            self.logger.info(f"[{self.layer}] ✅ LLMs initialized (general + guardian)")
+            self.logger.info(f"[{self.layer}]  LLMs initialized (general + guardian)")
         except Exception as e:
-            self.logger.error(f"[{self.layer}] ⚠️ LLM initialization failed: {e}")
+            self.logger.error(f"[{self.layer}]  LLM initialization failed: {e}")
             self.llm_general = None
             self.llm_guardian = None
 
@@ -54,7 +54,7 @@ class ClaimProcessingAgent(BaseAgent):
                 "notes": payload.get("notes", ""),
             }
 
-            # 🧠 Optional: Run reasoning step if LLM available
+            #  Optional: Run reasoning step if LLM available
             reasoning_summary = ""
             compliance_flag = "clear"
 
@@ -70,11 +70,11 @@ class ClaimProcessingAgent(BaseAgent):
                     )
                     result = await self.llm_general.ainvoke(prompt)
                     reasoning_summary = result if isinstance(result, str) else str(result)
-                    self.logger.info(f"[{self.layer}] 🧠 Claim reasoning complete.")
+                    self.logger.info(f"[{self.layer}]  Claim reasoning complete.")
                 except Exception as le:
-                    self.logger.warning(f"[{self.layer}] ⚠️ LLM reasoning skipped: {le}")
+                    self.logger.warning(f"[{self.layer}]  LLM reasoning skipped: {le}")
 
-            # 🛡️ Optional: Guardian compliance screening
+            #  Optional: Guardian compliance screening
             if self.llm_guardian:
                 try:
                     guard_prompt = (
@@ -84,11 +84,11 @@ class ClaimProcessingAgent(BaseAgent):
                     guard_resp = await self.llm_guardian.ainvoke(guard_prompt)
                     if "prohibited" in guard_resp.lower() or "violation" in guard_resp.lower():
                         compliance_flag = "flagged"
-                    self.logger.info(f"[{self.layer}] 🛡️ Compliance check result: {compliance_flag}")
+                    self.logger.info(f"[{self.layer}]  Compliance check result: {compliance_flag}")
                 except Exception as ge:
-                    self.logger.warning(f"[{self.layer}] ⚠️ Guardian check skipped: {ge}")
+                    self.logger.warning(f"[{self.layer}]  Guardian check skipped: {ge}")
 
-            # 💾 Persist claim
+            #  Persist claim
             result = self.persistence.execute({
                 "action": "insert",
                 "table": "claims",
@@ -108,5 +108,5 @@ class ClaimProcessingAgent(BaseAgent):
                 raise RuntimeError(result.get("error", "Insert failed"))
 
         except Exception as e:
-            self.log(f"[{self.layer}] ❌ Claim processing failed: {e}", "ERROR")
+            self.log(f"[{self.layer}]  Claim processing failed: {e}", "ERROR")
             return {"status": "error", "error": str(e)}

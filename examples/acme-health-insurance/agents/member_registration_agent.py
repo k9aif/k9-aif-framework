@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — MemberRegistrationAgent (Acme Health Insurance)
+# K9-AIF  MemberRegistrationAgent (Acme Health Insurance)
 # Handles registration of new members using governed persistence.
 
 from datetime import datetime

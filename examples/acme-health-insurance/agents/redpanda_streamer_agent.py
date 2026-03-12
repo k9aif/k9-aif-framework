@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — Acme Health Insurance — Redpanda Streamer Agent
+# K9-AIF  Acme Health Insurance  Redpanda Streamer Agent
 
 import asyncio
 import json
@@ -18,7 +18,7 @@ class RedpandaStreamerAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="RedpandaStreamerAgent")
 
-        # ✅ Load Acme project-specific config instead of ABB global CONFIG
+        #  Load Acme project-specific config instead of ABB global CONFIG
         cfg_path = Path("k9_projects/acme_health_insurance/config/config.yaml")
         config = load_config(cfg_path)
 
@@ -43,7 +43,7 @@ class RedpandaStreamerAgent(BaseAgent):
                     "status": "connected",
                     "agent": self.name,
                     "topic": self.topic,
-                    "message": "RedpandaStreamerAgent active — awaiting events",
+                    "message": "RedpandaStreamerAgent active  awaiting events",
                 }
             )
         )
@@ -54,7 +54,7 @@ class RedpandaStreamerAgent(BaseAgent):
         connected = True
 
         # --------------------------------------------------------------
-        # Callback to forward Redpanda messages → WebSocket
+        # Callback to forward Redpanda messages  WebSocket
         # --------------------------------------------------------------
         def on_message(data):
             if not connected or websocket.client_state != WebSocketState.CONNECTED:
@@ -67,7 +67,7 @@ class RedpandaStreamerAgent(BaseAgent):
                     if websocket.client_state == WebSocketState.CONNECTED:
                         await websocket.send_text(payload)
                 except Exception as e:
-                    print(f"[{self.name}] ⚠️ Send failed: {e}")
+                    print(f"[{self.name}]  Send failed: {e}")
 
             try:
                 loop.create_task(safe_send())
@@ -96,7 +96,7 @@ class RedpandaStreamerAgent(BaseAgent):
             print(f"[{self.name}] Stream cancelled.")
         except Exception as e:
             connected = False
-            print(f"[{self.name}] ⚠️ Stream error: {e}")
+            print(f"[{self.name}]  Stream error: {e}")
         finally:
             if websocket.client_state != WebSocketState.DISCONNECTED:
                 try:

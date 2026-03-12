@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — MemberLoginAgent (Acme Health Insurance)
+# K9-AIF  MemberLoginAgent (Acme Health Insurance)
 # Handles member login validation using email lookup.
 
 from typing import Dict, Any

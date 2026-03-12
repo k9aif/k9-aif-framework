@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — GuardianAgent (Acme Health Insurance)
+# K9-AIF  GuardianAgent (Acme Health Insurance)
 
 from datetime import datetime
 from typing import Dict, Any

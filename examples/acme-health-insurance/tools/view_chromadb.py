@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ChromaDB Collection Viewer (ACME HealthCare)
+# K9-AIF  ChromaDB Collection Viewer (ACME HealthCare)
 # Lists stored collections, their counts, and optional chunk previews.
 
 import chromadb
@@ -23,13 +23,13 @@ client = chromadb.PersistentClient(path=CHROMA_DIR)
 collections = client.list_collections()
 
 if not collections:
-    logging.warning("⚠️ No collections found in ChromaDB directory.")
+    logging.warning(" No collections found in ChromaDB directory.")
     exit(0)
 
 # ------------------------------------------------------------------------------
 # DISPLAY COLLECTIONS
 # ------------------------------------------------------------------------------
-logging.info("\n📊 Available Chroma Collections:\n")
+logging.info("\n Available Chroma Collections:\n")
 table = [[c.name, c.count(), c.metadata] for c in collections]
 print(tabulate(table, headers=["Collection", "Count", "Metadata"], tablefmt="github"))
 
@@ -40,7 +40,7 @@ if SHOW_PREVIEW:
     try:
         col = client.get_collection(name=COLLECTION_NAME)
         total = col.count()
-        logging.info(f"\n📘 Previewing first {PREVIEW_LIMIT} chunks from '{COLLECTION_NAME}' (total: {total})\n")
+        logging.info(f"\n Previewing first {PREVIEW_LIMIT} chunks from '{COLLECTION_NAME}' (total: {total})\n")
 
         results = col.get(limit=PREVIEW_LIMIT)
         for i, doc in enumerate(results["documents"]):
@@ -51,4 +51,4 @@ if SHOW_PREVIEW:
             logging.info(f"Text: {doc[:350]}{'...' if len(doc) > 350 else ''}\n")
 
     except Exception as e:
-        logging.error(f"❌ Failed to read collection '{COLLECTION_NAME}': {e}")
+        logging.error(f" Failed to read collection '{COLLECTION_NAME}': {e}")

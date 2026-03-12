@@ -21,10 +21,10 @@ class RouterAgentACME(RouterAgent):
 
     Responsibilities
     ----------------
-    • Loads the ACME-specific `orchestrators.yaml` registry.  
-    • Detects user intent from input payloads or queries.  
-    • Maps detected intents to registered orchestrator names.  
-    • Maintains full compliance with the K9-AIF ABB→SBB layering model.
+     Loads the ACME-specific `orchestrators.yaml` registry.  
+     Detects user intent from input payloads or queries.  
+     Maps detected intents to registered orchestrator names.  
+     Maintains full compliance with the K9-AIF ABBSBB layering model.
 
     Notes
     -----
@@ -36,7 +36,7 @@ class RouterAgentACME(RouterAgent):
     layer : str
         Logical label for the router layer ("Router SBB").
     registry : Dict[str, str]
-        In-memory mapping of intent keywords → orchestrator names.
+        In-memory mapping of intent keywords  orchestrator names.
     """
 
     layer = "Router SBB"
@@ -58,9 +58,9 @@ class RouterAgentACME(RouterAgent):
 
         try:
             self.registry = self._load_acme_registry()
-            print(f"[Router SBB] ✅ Router registry initialized with {len(self.registry)} intents")
+            print(f"[Router SBB]  Router registry initialized with {len(self.registry)} intents")
         except Exception as e:
-            print(f"[Router SBB] ❌ Failed to load ACME orchestrators: {e}")
+            print(f"[Router SBB]  Failed to load ACME orchestrators: {e}")
             self.registry = {}
 
     # ------------------------------------------------------------------
@@ -71,7 +71,7 @@ class RouterAgentACME(RouterAgent):
         Returns
         -------
         Dict[str, str]
-            Dictionary mapping intent keywords → orchestrator names.
+            Dictionary mapping intent keywords  orchestrator names.
 
         Notes
         -----
@@ -85,10 +85,10 @@ class RouterAgentACME(RouterAgent):
                 name: ProviderOrchestrator
         """
         acme_path = Path("k9_projects/acme_health_insurance/config/orchestrators.yaml")
-        print(f"[Router SBB] 📄 Loading orchestrator registry from {acme_path}")
+        print(f"[Router SBB]  Loading orchestrator registry from {acme_path}")
 
         if not acme_path.exists():
-            print(f"[Router SBB] ❌ File not found: {acme_path}")
+            print(f"[Router SBB]  File not found: {acme_path}")
             return {}
 
         with open(acme_path, "r", encoding="utf-8") as f:
@@ -101,7 +101,7 @@ class RouterAgentACME(RouterAgent):
             }
 
             for intent, name in mapping.items():
-                print(f"[Router SBB] 🧩 Mapped ACME intent='{intent}' → '{name}'")
+                print(f"[Router SBB]  Mapped ACME intent='{intent}'  '{name}'")
 
             return mapping
 
@@ -120,12 +120,12 @@ class RouterAgentACME(RouterAgent):
         Dict[str, Any]
             Dictionary with resolved intent and mapped orchestrator name.
         """
-        self.log("▶ ACME RouterAgent execution started")
+        self.log(" ACME RouterAgent execution started")
         query = payload.get("message", "").lower()
         top_k = payload.get("top_k", 5)
         collection_name = payload.get("collection", "default")
 
-        print(f"[Retriever SBB] 🔍 Searching collection={collection_name}, query={query}, top_k={top_k}")
+        print(f"[Retriever SBB]  Searching collection={collection_name}, query={query}, top_k={top_k}")
 
         # --- Intent detection heuristic ---
         if any(k in query for k in ["plan", "benefit", "coverage"]):
@@ -139,8 +139,8 @@ class RouterAgentACME(RouterAgent):
 
         orchestrator = self.registry.get(intent)
         if orchestrator:
-            self.log(f"🧭 Routed ACME intent={intent} → {orchestrator}")
+            self.log(f" Routed ACME intent={intent}  {orchestrator}")
         else:
-            self.log(f"⚠️ No orchestrator found for intent={intent}")
+            self.log(f" No orchestrator found for intent={intent}")
 
         return {"intent": intent, "orchestrator": orchestrator}

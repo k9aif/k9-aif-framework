@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ChatAgent (SBB)
+# K9-AIF  ChatAgent (SBB)
 # Uses LLMFactory to answer user questions with optional context.
 
 from typing import Dict, Any
@@ -43,10 +43,10 @@ class ChatAgent(BaseAgent):
         try:
             # LLMFactory should have been bootstrapped during app startup.
             self.llm = LLMFactory.get("general")
-            self.logger.info(f"[{self.layer}] ✅ LLM ready via LLMFactory (general)")
+            self.logger.info(f"[{self.layer}]  LLM ready via LLMFactory (general)")
         except Exception as e:
             self.llm = None
-            self.logger.error(f"[{self.layer}] ❌ Could not acquire LLM: {e}")
+            self.logger.error(f"[{self.layer}]  Could not acquire LLM: {e}")
 
     async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -62,9 +62,9 @@ class ChatAgent(BaseAgent):
         context  = (payload or {}).get("context", "")
 
         if not user_msg:
-            return {"reply": "⚠️ Please enter a message."}
+            return {"reply": " Please enter a message."}
 
-        self.log(f"[{self.layer}] ▶ ACME ChatAgent started: '{user_msg}'")
+        self.log(f"[{self.layer}]  ACME ChatAgent started: '{user_msg}'")
 
         # Build a clean, deterministic prompt
         prompt = (
@@ -107,10 +107,10 @@ class ChatAgent(BaseAgent):
             if not text:
                 text = "I couldn't generate a response."
 
-            self.log(f"[{self.layer}] ✅ LLM responded successfully.")
+            self.log(f"[{self.layer}]  LLM responded successfully.")
             return {"reply": text}
 
         except Exception as e:
-            self.log(f"[{self.layer}] ❌ LLM invocation failed: {e}", level="ERROR")
+            self.log(f"[{self.layer}]  LLM invocation failed: {e}", level="ERROR")
             traceback.print_exc()
-            return {"reply": "⚠️ An internal error occurred while generating a response."}
+            return {"reply": " An internal error occurred while generating a response."}

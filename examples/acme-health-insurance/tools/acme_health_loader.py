@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ACME HealthCare Knowledge Loader (Direct)
-# One-time ingestion: PDFs → Chunks → Embeddings → ChromaDB
+# K9-AIF  ACME HealthCare Knowledge Loader (Direct)
+# One-time ingestion: PDFs  Chunks  Embeddings  ChromaDB
 # Embeddings: Ollama (nomic-embed-text)
 
 import os, hashlib, logging, requests, chromadb
@@ -60,7 +60,7 @@ def sanitize_text(raw: str) -> str:
     lines = text.splitlines()
     cleaned = [
         l for l in lines
-        if not any(k in l.lower() for k in ["this document is provided by", "©", "copyright", "all rights reserved"])
+        if not any(k in l.lower() for k in ["this document is provided by", "", "copyright", "all rights reserved"])
     ]
     text = "\n".join(cleaned)
 
@@ -76,10 +76,10 @@ def read_pdf(path: Path) -> str:
         reader = PdfReader(str(path))
         text = "\n".join([p.extract_text() or "" for p in reader.pages])
         text = sanitize_text(text)
-        logging.info(f"📄 Extracted & sanitized {len(text)} characters from {path.name}")
+        logging.info(f" Extracted & sanitized {len(text)} characters from {path.name}")
         return text
     except Exception as e:
-        logging.error(f"❌ Failed to read PDF {path}: {e}")
+        logging.error(f" Failed to read PDF {path}: {e}")
         return ""
 
 # ------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ def embed_with_ollama(texts: List[str]) -> List[List[float]]:
     url = f"{OLLAMA_HOST}/api/embeddings"
     all_embeds = []
     for i, text in enumerate(texts):
-        logging.info(f"🧠 Chunk {i+1}/{len(texts)}")
+        logging.info(f" Chunk {i+1}/{len(texts)}")
         try:
             r = requests.post(url, json={"model": OLLAMA_MODEL, "prompt": text}, timeout=120)
             r.raise_for_status()
@@ -116,8 +116,8 @@ def embed_with_ollama(texts: List[str]) -> List[List[float]]:
             if emb and isinstance(emb, list):
                 all_embeds.append(emb)
         except Exception as e:
-            logging.warning(f"⚠️ Skipped chunk {i}: {e}")
-    logging.info(f"✅ Generated {len(all_embeds)} embeddings")
+            logging.warning(f" Skipped chunk {i}: {e}")
+    logging.info(f" Generated {len(all_embeds)} embeddings")
     return all_embeds
 
 # ------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ def load_to_chroma():
     for pdf, acme_name in PDF_MAP.items():
         path = Path(pdf)
         if not path.exists():
-            logging.warning(f"⚠️ Missing file: {pdf}")
+            logging.warning(f" Missing file: {pdf}")
             continue
 
         text = read_pdf(path)
@@ -155,10 +155,10 @@ def load_to_chroma():
 
         col.upsert(ids=ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
         total_chunks += len(chunks)
-        logging.info(f"💾 Loaded {len(chunks)} chunks → {acme_name}")
+        logging.info(f" Loaded {len(chunks)} chunks  {acme_name}")
 
-    logging.info(f"✅ ACME HealthCare ingestion complete — {total_chunks} total chunks")
-    logging.info(f"📊 Collection '{COLLECTION_NAME}' now has {col.count()} documents")
+    logging.info(f" ACME HealthCare ingestion complete  {total_chunks} total chunks")
+    logging.info(f" Collection '{COLLECTION_NAME}' now has {col.count()} documents")
 
 # ------------------------------------------------------------------------------
 # MAIN
@@ -167,6 +167,6 @@ if __name__ == "__main__":
     try:
         load_to_chroma()
     except Exception as e:
-        logging.error(f"❌ Pipeline failed: {e}")
+        logging.error(f" Pipeline failed: {e}")
         import traceback
         traceback.print_exc()

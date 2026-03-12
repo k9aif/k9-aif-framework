@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — Patent Pending
+# K9-AIF  Patent Pending
 # File: k9_projects/acme_health_insurance/data/create_database_schema.py
 
 import sqlite3
@@ -27,7 +27,7 @@ def create_database():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    print(f"🩺 Creating Acme Health Insurance schema from {schema_file.name}")
+    print(f" Creating Acme Health Insurance schema from {schema_file.name}")
     with open(schema_file, "r") as f:
         cursor.executescript(f.read())
 
@@ -39,7 +39,7 @@ def create_database():
     for seed_file in sorted(data_dir.glob("*.sql")):
         if seed_file.name == schema_file.name:
             continue
-        print(f"🩵 Seeding data from {seed_file.name}")
+        print(f" Seeding data from {seed_file.name}")
         with open(seed_file, "r") as f:
             cursor.executescript(f.read())
 
@@ -47,7 +47,7 @@ def create_database():
 
     conn.commit()
     conn.close()
-    print(f"✅ Database initialized successfully at: {db_path}")
+    print(f" Database initialized successfully at: {db_path}")
 
 
 if __name__ == "__main__":

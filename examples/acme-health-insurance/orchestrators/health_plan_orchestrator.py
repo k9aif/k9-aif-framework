@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ACME HealthPlanOrchestrator (SBB)
+# K9-AIF  ACME HealthPlanOrchestrator (SBB)
 # Handles plan selection, benefit lookup, and coverage explanations.
 
 import traceback
@@ -16,10 +16,10 @@ class HealthPlanOrchestrator(BaseOrchestrator):
 
     Responsibilities
     ----------------
-    • Routes user questions to the :class:`RetrieverAgent` for semantic search.  
-    • Retrieves relevant chunks from ChromaDB (`acme_health_knowledge`).  
-    • Formats results into a human-readable Markdown reply.  
-    • Publishes orchestration status updates for observability.
+     Routes user questions to the :class:`RetrieverAgent` for semantic search.  
+     Retrieves relevant chunks from ChromaDB (`acme_health_knowledge`).  
+     Formats results into a human-readable Markdown reply.  
+     Publishes orchestration status updates for observability.
 
     Attributes
     ----------
@@ -44,7 +44,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
         Dict[str, Any]
             A structured dictionary with a formatted `reply` string.
         """
-        self.logger.info(f"[{self.layer}] ▶ Execution started with payload={payload}")
+        self.logger.info(f"[{self.layer}]  Execution started with payload={payload}")
         self.publish_status("started", {"event": "plan_lookup_started"})
 
         try:
@@ -53,7 +53,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
                 return {"reply": "Please enter a valid question about your ACME plan."}
 
             # ------------------------------------------------------------------
-            # Step 1️⃣ — Retrieve relevant plan information
+            # Step 1  Retrieve relevant plan information
             # ------------------------------------------------------------------
             retriever = RetrieverAgent(config=self.config, monitor=self.monitor, message_bus=self.message_bus)
             retrieval = retriever.execute({
@@ -69,7 +69,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
                 return {"reply": "No information found in the ACME HealthCare knowledge base."}
 
             # ------------------------------------------------------------------
-            # Step 2️⃣ — Format structured Markdown response
+            # Step 2  Format structured Markdown response
             # ------------------------------------------------------------------
             reply_lines = [
                 "**ACME HealthCare Plan Information:**",
@@ -83,14 +83,14 @@ class HealthPlanOrchestrator(BaseOrchestrator):
             reply = "\n".join(reply_lines)
 
             # ------------------------------------------------------------------
-            # Step 3️⃣ — Publish completion event
+            # Step 3  Publish completion event
             # ------------------------------------------------------------------
             self.publish_status("completed", {"query": query, "results": len(results)})
-            self.logger.info(f"[{self.layer}] ✅ Execution complete")
+            self.logger.info(f"[{self.layer}]  Execution complete")
             return {"reply": reply}
 
         except Exception as e:
-            self.logger.error(f"[{self.layer}] ❌ Error: {e}")
+            self.logger.error(f"[{self.layer}]  Error: {e}")
             self.publish_status("error", {"error": str(e)})
             traceback.print_exc()
             return {"reply": "Error while processing your plan inquiry."}

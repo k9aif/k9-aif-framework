@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — FallbackOrchestrator (ABB)
+# K9-AIF  FallbackOrchestrator (ABB)
 # Provides safe default responses for unknown intents or routing failures.
 
 import traceback
@@ -15,10 +15,10 @@ class FallbackOrchestrator(BaseOrchestrator):
 
     Responsibilities
     ----------------
-    • Handles unknown or unmapped intents gracefully.  
-    • Provides standardized, governed fallback messages.  
-    • Publishes orchestration events to the monitoring and governance layer.  
-    • Ensures that the user experience never results in a dead end.
+     Handles unknown or unmapped intents gracefully.  
+     Provides standardized, governed fallback messages.  
+     Publishes orchestration events to the monitoring and governance layer.  
+     Ensures that the user experience never results in a dead end.
 
     Attributes
     ----------
@@ -43,7 +43,7 @@ class FallbackOrchestrator(BaseOrchestrator):
         Dict[str, Any]
             Standardized reply payload with fallback guidance.
         """
-        self.logger.info(f"[{self.layer}] ▶ Execution started with payload={payload}")
+        self.logger.info(f"[{self.layer}]  Execution started with payload={payload}")
         self.publish_status("started", {"event": "fallback_invoked"})
 
         try:
@@ -51,12 +51,12 @@ class FallbackOrchestrator(BaseOrchestrator):
             intent = payload.get("intent", "unknown")
 
             # ------------------------------------------------------------------
-            # Step 1️⃣ — Generate fallback message
+            # Step 1  Generate fallback message
             # ------------------------------------------------------------------
             reply = (
-                "**I’m not sure I understood that fully.**\n\n"
-                "Your question didn’t match any known topics or orchestrators.\n"
-                "Here’s what you can do:\n"
+                "**Im not sure I understood that fully.**\n\n"
+                "Your question didnt match any known topics or orchestrators.\n"
+                "Heres what you can do:\n"
                 "- Ask about your health plan or coverage\n"
                 "- Find a doctor or provider\n"
                 "- Get help with claims or billing\n"
@@ -65,7 +65,7 @@ class FallbackOrchestrator(BaseOrchestrator):
             )
 
             # ------------------------------------------------------------------
-            # Step 2️⃣ — Publish fallback event to governance channel
+            # Step 2  Publish fallback event to governance channel
             # ------------------------------------------------------------------
             self.publish_status("fallback_triggered", {
                 "intent": intent,
@@ -73,11 +73,11 @@ class FallbackOrchestrator(BaseOrchestrator):
                 "layer": self.layer
             })
 
-            self.logger.info(f"[{self.layer}] ⚙️ Fallback engaged for intent={intent}")
+            self.logger.info(f"[{self.layer}]  Fallback engaged for intent={intent}")
             return {"reply": reply}
 
         except Exception as e:
-            self.logger.error(f"[{self.layer}] ❌ Error during fallback: {e}")
+            self.logger.error(f"[{self.layer}]  Error during fallback: {e}")
             self.publish_status("error", {"error": str(e)})
             traceback.print_exc()
             return {"reply": "An internal fallback error occurred."}

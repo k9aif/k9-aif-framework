@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — Patent Pending
+# K9-AIF  Patent Pending
 # File: k9_projects/acme_health_insurance/agents/persistence_agent.py
 
 import sqlite3
@@ -10,7 +10,7 @@ from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
 
 class PersistenceAgent(BaseAgent):
     """
-    ABB–SBB Bridge Agent
+    ABBSBB Bridge Agent
     --------------------
     Provides CRUD operations using the static PersistenceFactory (singleton backend).
     Used by all Acme Health Insurance agents.
@@ -41,7 +41,7 @@ class PersistenceAgent(BaseAgent):
 
         # Log once per runtime
         if not PersistenceAgent._logged_once:
-            self.log(f"[{self.layer}] Using {backend.__class__.__name__} → {self.db_path}")
+            self.log(f"[{self.layer}] Using {backend.__class__.__name__}  {self.db_path}")
             PersistenceAgent._logged_once = True
 
     # -------------------------------------------------------------------

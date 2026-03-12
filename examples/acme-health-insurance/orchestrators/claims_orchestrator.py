@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# ACME HealthCare™ — ClaimsOrchestrator (SBB)
+# ACME HealthCare  ClaimsOrchestrator (SBB)
 # Coordinates claim filing, inquiry, and appeal flows with LLM reasoning.
 
 import traceback
@@ -13,14 +13,14 @@ class ClaimsOrchestrator(BaseOrchestrator):
     """
     ClaimsOrchestrator
     ==================
-    Specialized orchestrator for ACME HealthCare’s claims operations.
+    Specialized orchestrator for ACME HealthCares claims operations.
 
     Responsibilities
     ----------------
-    • Classifies claim-related user intents using the LLMFactory.  
-    • Coordinates claim creation, inquiry, and appeal flows.  
-    • Delegates atomic tasks to subordinate agents (e.g., ClaimProcessingAgent).  
-    • Publishes status updates through the monitoring and messaging layer.
+     Classifies claim-related user intents using the LLMFactory.  
+     Coordinates claim creation, inquiry, and appeal flows.  
+     Delegates atomic tasks to subordinate agents (e.g., ClaimProcessingAgent).  
+     Publishes status updates through the monitoring and messaging layer.
 
     Notes
     -----
@@ -61,10 +61,10 @@ class ClaimsOrchestrator(BaseOrchestrator):
         # Initialize LLM for reasoning or fallback gracefully
         try:
             self.llm = LLMFactory.get("general")
-            self.logger.info(f"[{self.layer}] ✅ LLM initialized for reasoning")
+            self.logger.info(f"[{self.layer}]  LLM initialized for reasoning")
         except Exception as e:
             self.llm = None
-            self.logger.warning(f"[{self.layer}] ⚠️ LLM unavailable: {e}")
+            self.logger.warning(f"[{self.layer}]  LLM unavailable: {e}")
 
     # ------------------------------------------------------------------
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -82,14 +82,14 @@ class ClaimsOrchestrator(BaseOrchestrator):
             Response dictionary containing user-facing reply text.
         """
         self.publish_status("started", {"event": "claims_flow_started"})
-        self.logger.info(f"[{self.layer}] ▶ Execution started")
+        self.logger.info(f"[{self.layer}]  Execution started")
 
         try:
             query = payload.get("message", "").strip()
             if not query:
-                return {"reply": "⚠️ Please describe your claim question or issue."}
+                return {"reply": " Please describe your claim question or issue."}
 
-            # Step 1️⃣ — Classify intent using LLM (if available)
+            # Step 1  Classify intent using LLM (if available)
             intent = "general_inquiry"
             if self.llm:
                 try:
@@ -101,11 +101,11 @@ class ClaimsOrchestrator(BaseOrchestrator):
                     )
                     intent = await self.llm.ainvoke(intent_prompt)
                     intent = intent.strip().lower()
-                    self.logger.info(f"[{self.layer}] 🧭 Detected claim intent: {intent}")
+                    self.logger.info(f"[{self.layer}]  Detected claim intent: {intent}")
                 except Exception as le:
-                    self.logger.warning(f"[{self.layer}] ⚠️ LLM classification failed: {le}")
+                    self.logger.warning(f"[{self.layer}]  LLM classification failed: {le}")
 
-            # Step 2️⃣ — Handle intent branches
+            # Step 2  Handle intent branches
             if "submit" in intent or "file" in query.lower():
                 result = await self.claim_agent.execute({
                     "provider": "CityCare Hospital",
@@ -123,31 +123,31 @@ class ClaimsOrchestrator(BaseOrchestrator):
             elif "status" in intent or "check" in query.lower():
                 reply = (
                     "**Claim Status Inquiry**\n"
-                    "This feature will soon connect to ACME’s backend Appian workflow.\n"
+                    "This feature will soon connect to ACMEs backend Appian workflow.\n"
                     "For now, please provide a claim ID to simulate status lookup."
                 )
 
             elif "appeal" in intent or "dispute" in query.lower():
                 reply = (
-                    "⚖️ **Claim Appeal Request**\n"
+                    " **Claim Appeal Request**\n"
                     "Thank you. Your appeal is being reviewed by ACME Health Appeals team.\n"
-                    "You’ll receive an update via email within 2 business days."
+                    "Youll receive an update via email within 2 business days."
                 )
 
             else:
                 reply = (
                     "**Claims Support System**\n"
                     f"Received your request: **{query}**\n"
-                    "ACME’s claims verification and escalation workflow is under setup.\n"
+                    "ACMEs claims verification and escalation workflow is under setup.\n"
                     "Please check back soon for integrated claim tracking."
                 )
 
             self.publish_status("completed", {"intent": intent, "reply": reply})
-            self.logger.info(f"[{self.layer}] ✅ Execution complete")
+            self.logger.info(f"[{self.layer}]  Execution complete")
             return {"reply": reply}
 
         except Exception as e:
             self.publish_status("error", {"error": str(e)})
-            self.logger.error(f"[{self.layer}] ❌ Error: {e}")
+            self.logger.error(f"[{self.layer}]  Error: {e}")
             traceback.print_exc()
             return {"reply": f"An internal error occurred in claims orchestration: {str(e)}"}

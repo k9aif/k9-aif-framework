@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — HealthMonitorAgent (SBB)
+# K9-AIF  HealthMonitorAgent (SBB)
 # Checks Ollama, MCP, and Messaging health, publishes live status.
 
 import requests
@@ -37,7 +37,7 @@ class HealthMonitorAgent(BaseAgent):
     # --------------------------------------------------------------
     async def execute(self, payload=None):
         """Perform live health checks and publish to console."""
-        self.log(f"[{self.layer}] 🔍 Running system health checks...")
+        self.log(f"[{self.layer}]  Running system health checks...")
 
         ollama_ok = self._ping(self.ollama_url, "/api/tags")
         mcp_ok = self._ping(self.mcp_url, "/health")
@@ -56,8 +56,8 @@ class HealthMonitorAgent(BaseAgent):
                     "layer": self.layer,
                     "status": status,
                 })
-                self.log(f"[{self.layer}] 🛰️ Published system_health event.")
+                self.log(f"[{self.layer}]  Published system_health event.")
             except Exception as e:
-                self.log(f"[{self.layer}] ⚠️ Publish failed: {e}")
+                self.log(f"[{self.layer}]  Publish failed: {e}")
 
         return status

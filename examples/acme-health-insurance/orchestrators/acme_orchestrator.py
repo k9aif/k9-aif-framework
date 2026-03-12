@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — ACME HealthCare Orchestrator (SBB Root)
+# K9-AIF  ACME HealthCare Orchestrator (SBB Root)
 # Root orchestrator that dynamically delegates to sub-orchestrators.
 
 import importlib
@@ -16,11 +16,11 @@ class AcmeOrchestrator(BaseOrchestrator):
 
     Responsibilities
     ----------------
-    • Loads ACME's domain orchestrator registry from
+     Loads ACME's domain orchestrator registry from
       `k9_projects/acme_health_insurance/config/orchestrators.yaml`.
-    • Dynamically imports and delegates control to the appropriate
+     Dynamically imports and delegates control to the appropriate
       orchestrator class based on detected intent.
-    • Ensures isolation between orchestrators and centralizes monitoring.
+     Ensures isolation between orchestrators and centralizes monitoring.
 
     Attributes
     ----------
@@ -48,9 +48,9 @@ class AcmeOrchestrator(BaseOrchestrator):
         self.registry = []
         try:
             self.registry = self._load_registry()
-            self.logger.info(f"[{self.layer}] ✅ Loaded {len(self.registry)} ACME orchestrators")
+            self.logger.info(f"[{self.layer}]  Loaded {len(self.registry)} ACME orchestrators")
         except Exception as e:
-            self.logger.error(f"[{self.layer}] ❌ Failed to load orchestrators: {e}")
+            self.logger.error(f"[{self.layer}]  Failed to load orchestrators: {e}")
             self.registry = []
 
     # ------------------------------------------------------------------
@@ -81,18 +81,18 @@ class AcmeOrchestrator(BaseOrchestrator):
             Response from the delegated orchestrator.
         """
         intent = payload.get("intent", "")
-        self.logger.info(f"[{self.layer}] ▶ Handling intent={intent}")
+        self.logger.info(f"[{self.layer}]  Handling intent={intent}")
 
         entry = next((o for o in self.registry if o.get("intent") == intent), None)
         if not entry:
-            self.logger.warning(f"[{self.layer}] ⚠️ No orchestrator found for intent={intent}")
+            self.logger.warning(f"[{self.layer}]  No orchestrator found for intent={intent}")
             return {"reply": f"No ACME handler found for intent '{intent}'."}
 
         try:
             module = importlib.import_module(entry["module"])
             cls = getattr(module, entry["name"])
             orchestrator = cls(config=self.config, monitor=self.monitor)
-            self.logger.info(f"[{self.layer}] 🧭 Delegating to {entry['name']} ({entry['module']})")
+            self.logger.info(f"[{self.layer}]  Delegating to {entry['name']} ({entry['module']})")
 
             # Execute the sub-orchestrator (supports async)
             result = await orchestrator.execute_flow(payload)
@@ -100,6 +100,6 @@ class AcmeOrchestrator(BaseOrchestrator):
             return result
 
         except Exception as e:
-            self.logger.error(f"[{self.layer}] ❌ Delegation failed: {e}")
+            self.logger.error(f"[{self.layer}]  Delegation failed: {e}")
             self.publish_status("error", {"intent": intent, "error": str(e)})
             return {"reply": "ACME orchestration error."}
