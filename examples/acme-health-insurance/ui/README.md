@@ -5,7 +5,7 @@ with the multi-agent system built using the K9-AIF architecture framework.
 
 ## Interface Example
 
-![ACME Health Insurance Demo UI](../images/acme-health-insurance.png)
+![ACME Health Insurance Demo UI](../images/acme-health-insurance-ui.png)
 
 The interface demonstrates common health insurance workflows including:
 
