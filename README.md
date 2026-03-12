@@ -200,3 +200,13 @@ Agentic AI • Multi-Agent Systems • LLM Applications
 Email: ravinatarajan@k9aif.com  
 Website: https://k9aif.com
 
+---
+
+## Architectural Foundations
+
+K9-AIF draws inspiration from established software architecture and enterprise architecture practices, including:
+
+- Booch, G. *Object-Oriented Analysis and Design with Applications*
+- Gamma, E., Helm, R., Johnson, R., Vlissides, J. *Design Patterns: Elements of Reusable Object-Oriented Software*
+- The Open Group. *TOGAF Standard*
+
