@@ -65,24 +65,27 @@ Examples:
 
 ---
 
-# Architectural Layers
+## Architectural Layers
 
-A typical K9-AIF system includes several layers:
+A typical K9-AIF system is organized into a set of architectural layers that separate interface concerns, orchestration, external integration, inference, and persistence.
 
-1. **Intake Layer**  
-   Handles incoming documents, requests, or events.
+### Presentation Layer
+Handles incoming user or system interactions through web interfaces, conversational channels, or APIs.
 
-2. **Agent Orchestration Layer**  
-   Coordinates agent execution and routing between agents.
+### Application Layer
+Coordinates orchestration flows, routing, and workflow execution across agents and services.
 
-3. **Agent Capability Layer (ABB)**  
-   Individual agents performing reasoning, extraction, or analysis.
+### Integration Layer
+Provides governed access to external systems, APIs, tools, messaging platforms, and storage services.
 
-4. **Solution Composition Layer (SBB)**  
-   Defines multi-agent workflows solving specific problems.
+### Inference Layer
+Supports model invocation, retrieval-augmented generation (RAG), and context-aware reasoning.
 
-5. **Governance & Observability Layer**  
-   Provides logging, control policies, and evaluation.
+### Data Layer
+Provides persistence, object storage, and messaging infrastructure used by the framework.
+
+### Cross-Cutting Concerns
+Security, governance, and observability apply across all layers to ensure policy enforcement, auditability, monitoring, and operational control.
 
 ---
 
