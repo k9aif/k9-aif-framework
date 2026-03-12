@@ -28,7 +28,7 @@ The goal is to enable **composable, scalable, and governed agentic applications*
 
 K9-AIF introduces two primary architectural abstractions.
 
-## Agent Building Blocks (ABB)
+## Architecture Building Blocks (ABB)
 
 Agent Building Blocks represent reusable AI capabilities implemented as autonomous or semi-autonomous agents.
 
