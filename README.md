@@ -89,44 +89,48 @@ Security, governance, and observability apply across all layers to ensure policy
 
 ---
 
-# Prototype Implementations
+## Prototype Implementations
 
-Prototype systems based on K9-AIF include multi-agent orchestration pipelines implemented using **Python and CrewAI**.
+Prototype systems based on K9-AIF demonstrate how the framework can support governed multi-agent architectures across different domains.
 
-These prototypes demonstrate automated workflows for:
+Example demonstration systems include:
 
-- requirements extraction
-- architecture analysis
-- document synthesis
-- structured report generation
+- ACME Health Insurance Claims Assistant
+- WeatherAssist Decision Support System
+- Sports Car Experience Center
+- Department of War (DoW) Systems Engineering Pipeline
 
-One example prototype implements a **multi-stage systems engineering workflow**, where multiple agents collaborate to generate architectural artifacts from input documents.
+The DoW prototype demonstrates how K9-AIF architectural patterns can be applied to automate multi-stage systems engineering workflows. In this implementation, agent orchestration was explored using Python-based orchestration pipelines and the CrewAI framework.
+  
+---
+
+## Design Goals
+
+K9-AIF is designed to support the development of governed, composable agentic AI systems aligned with enterprise architecture practices.
+
+Key architectural goals include:
+
+- Modular architecture supporting independently deployable AI capabilities
+- Composable intelligence through reusable architectural building blocks
+- Governed AI workflows with policy and control integration
+- Clear orchestration boundaries between agents, tools, and services
+- Scalable integration with enterprise systems and external platforms
+
+The framework bridges traditional **enterprise architecture principles** with emerging **agentic AI system design**.
 
 ---
 
-# Design Goals
+## Example Use Cases
 
-K9-AIF focuses on several architectural goals:
+K9-AIF can support a wide range of enterprise AI applications that require governed orchestration of multiple AI capabilities.
 
-- modular multi-agent design
-- composable AI capabilities
-- governed AI workflows
-- clear orchestration boundaries
-- scalable system integration
+Example use cases include:
 
-The framework aims to bridge **enterprise architecture practices** with emerging **agentic AI systems**.
-
----
-
-# Example Use Cases
-
-Potential applications include:
-
-- enterprise architecture analysis
-- document intelligence platforms
-- insurance claims processing
-- automated systems engineering pipelines
-- knowledge synthesis workflows
+- Enterprise architecture and technology landscape analysis
+- Document intelligence and large-scale document processing
+- Insurance claims analysis and decision support
+- Automated systems engineering and architecture development workflows
+- Knowledge synthesis and research assistance systems
 
 ---
 
