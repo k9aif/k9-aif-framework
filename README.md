@@ -56,11 +56,12 @@ Solution Building Blocks provide concrete implementations of ABB contracts. SBBs
 This separation allows architectural stability while enabling domain-specific extensions without modifying the core framework.
 
 Examples:
-	- Document Analysis Agent
-	- Retrieval Agent
-	- CrewAI Agent
-	- LangChain Tool Adapter
-	- OpenAI LLM Connector
+
+- Document Analysis Agent
+- Retrieval Agent
+- CrewAI Agent
+- LangChain Tool Adapter
+- OpenAI LLM Connector
 
 ---
 
