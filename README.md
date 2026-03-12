@@ -30,36 +30,37 @@ K9-AIF introduces two primary architectural abstractions.
 
 ## Architecture Building Blocks (ABB)
 
-An abstract architectural capability or contract.
+Architecture Building Blocks define abstract architectural capabilities and contracts within the K9-AIF framework. ABBs specify responsibilities, interfaces, and interaction patterns without prescribing concrete implementations or technologies.
 
-It defines:
-	•	interfaces
-	•	responsibilities
-	•	interaction patterns
-	•	lifecycle expectations
+An ABB typically defines:
 
-Examples:
-	•	Agent contract
-	•	Orchestrator contract
-	•	Tool connector contract
-	•	Inference interface
-	•	Storage adapter
+- Interfaces and interaction contracts
+- Responsibilities and functional boundaries
+- Lifecycle expectations
+- Governance and observability hooks
+
+Examples include:
+
+- Agent interface contracts
+- Orchestrator contracts
+- Tool connector interfaces
+- Inference adapters
+- Storage or persistence adapters
 
 ---
 
 ## Solution Building Blocks (SBB)
 
-Solution Building Blocks (SBBs) provide concrete implementations of ABBs.
+Solution Building Blocks provide concrete implementations of ABB contracts. SBBs introduce domain-specific behavior, technology choices, and runtime integrations while conforming to the architectural constraints defined by the ABB layer.
 
-This separation allows architectural stability while enabling domain-specific 
-extensions without modifying the core framework.
+This separation allows architectural stability while enabling domain-specific extensions without modifying the core framework.
 
 Examples:
-	•	Document Analysis Agent
-	•	Retrieval Agent
-	•	CrewAI Agent
-	•	LangChain Tool Adapter
-	•	OpenAI LLM Connector
+	- Document Analysis Agent
+	- Retrieval Agent
+	- CrewAI Agent
+	- LangChain Tool Adapter
+	- OpenAI LLM Connector
 
 ---
 
