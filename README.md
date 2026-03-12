@@ -1,5 +1,7 @@
 # K9-AIF — K9 Agentic Integration Framework
 
+![K9-AIF Architecture](k9-aif-architecture.png)
+
 K9-AIF is a modular architecture framework for designing **governed multi-agent AI systems**.
 
 The framework provides architectural patterns for building agentic workflows where multiple AI agents collaborate to perform complex reasoning, analysis, and decision-making tasks while maintaining clear governance, orchestration, and integration boundaries.
