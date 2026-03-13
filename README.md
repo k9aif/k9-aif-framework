@@ -131,6 +131,27 @@ The framework bridges traditional **enterprise architecture principles** with em
 
 ---
 
+---
+
+## Architectural Patterns
+
+Many of the architectural ideas used within the K9-AIF framework are documented separately as reusable architecture patterns.
+
+These patterns describe the core design principles behind the framework while remaining independent of any specific runtime implementation.
+
+The pattern catalog includes topics such as:
+
+- Factory-based governed component instantiation
+- Inference layer abstraction for model providers
+- Connector-based integration with external systems
+- Configuration-driven runtime loading of agents and orchestration components
+
+The full set of patterns is available in the **K9-AIF Architecture Patterns repository**:
+
+➡️ https://github.com/k9aif/k9aif-patterns
+
+---
+
 ## Example Use Cases
 
 K9-AIF can be applied to enterprise AI systems that require governed orchestration of multiple AI capabilities.
