@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# Copyright (c) 2025 Ravi Natarajan. All rights reserved.
+# Licensed for internal IBM and DoD demonstration use only.
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k9_aif_abb"
+version = "0.1.0.dev1"
+description = "K9-AIF - Governed, Modular Framework for Agentic AI Applications"
+authors = [
+  { name = "Ravi Natarajan", email = "ravi.natarajan@ibm.com" }
+]
+license = { text = "LicenseRef-K9AIF-Proprietary" }
+requires-python = ">=3.10"
+
+dependencies = [
+  "pydantic>=2.0",
+  "requests",
+  "pyyaml>=6.0"
+]
+
+# Optional metadata fields (useful for internal cataloging)
+[project.urls]
+Homepage = "https://github.com/ravinata/k9_aif_abb"
+Documentation = "https://internal.ibm.com/k9aif/docs"
+Source = "https://github.com/ravinata/k9_aif_abb"
+
+[tool.setuptools]
+include-package-data = true
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests", "logs", "examples", "Publications"]
+
+[tool.setuptools.package-data]
+# Include YAML configs that the framework needs
+"*" = ["*.yaml"]
