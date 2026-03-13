@@ -147,9 +147,9 @@ Examples include:
 
 ---
 
-# Project Generator
+# Stub Generator
 
-K9-AIF includes a lightweight **project generator** that bootstraps new agentic applications following the framework architecture.
+K9-AIF includes a lightweight **project stub generator** that bootstraps new agentic applications following the framework architecture.
 
 The generator creates a ready-to-run project structure including:
 
