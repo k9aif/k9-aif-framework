@@ -89,30 +89,37 @@ Governance policy definitions
 
 The K9-AIF framework is built around several architectural principles:
 
-**Separation of ABB and SBB**
+## Architectural Principles
 
-Architecture Building Blocks define the capabilities and interfaces,
-while Solution Building Blocks implement concrete functionality.
+The K9-AIF framework is built around the following architectural principles:
 
-**Configuration-driven orchestration**
+1. **Separation of Architecture and Implementation (ABB vs SBB)**  
+   Architecture Building Blocks (ABB) define stable architectural capabilities and interfaces,  
+   while Solution Building Blocks (SBB) provide concrete implementations.
 
-System behavior can be defined through configuration files rather than
-hardcoded logic.
+2. **Configuration-Driven Architecture**  
+   Application flows, orchestrators, and governance policies can be defined through configuration
+   rather than hard-coded logic, enabling flexible system composition.
 
-**Composable multi-agent architecture**
+3. **Composable Multi-Agent Architecture**  
+   AI systems are constructed by composing specialized agents coordinated by orchestrators,
+   allowing modular and scalable agent workflows.
 
-Applications are built by composing specialized agents coordinated by
-orchestrators.
+4. **Governed AI Systems**  
+   Governance policies can be applied across agent workflows to support compliance,
+   safety, and responsible AI behavior.
 
-**Governed AI systems**
+5. **Extensible Integration Layer**  
+   External services, LLM providers, and tools are integrated through adapter-based
+   connectors, enabling provider-independent architectures.
 
-Governance policies can be applied across agent workflows to ensure
-compliance and responsible AI operation.
+6. **Observability and Monitoring**  
+   Built-in monitoring and telemetry components allow systems to track agent activity,
+   workflow execution, and operational metrics.
 
-**Extensible integration layer**
-
-External services, LLM providers, and tools can be integrated through
-adapter-based connectors.
+7. **Pluggable Infrastructure Components**  
+   Persistence, storage, messaging, and streaming systems can be replaced or extended
+   without modifying the core framework.
 
 ---
 
