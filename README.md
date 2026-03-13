@@ -114,8 +114,6 @@ Example demonstration systems include:
   stages using K9-AIF patterns together with the CrewAI orchestration framework.
 
 ---
-  
----
 
 ## Design Goals
 
