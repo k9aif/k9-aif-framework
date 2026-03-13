@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# K9-AIF - Patent Pending
+
+import datetime
+from typing import Any, Dict
+import httpx
+
+from k9_aif_abb.k9_core.integration.base_connector import BaseConnector
+
+
+class MCPHttpConnector(BaseConnector):
+    """
+    SBB: MCP client connector over HTTP(S).
+    Sends plain HTTP requests to an MCP server endpoint.
+    """
+
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.name = config.get("name", "mcp-http")
+        self.base_url = config.get("kwargs", {}).get("base_url", "http://localhost:8000")
+        self.api_key = config.get("kwargs", {}).get("api_key")  # optional
+
+    def log(self, msg: str, level: str = "INFO"):
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        super().log(f"{ts} | {self.__class__.__name__:<18} | {msg}", level=level)
+
+    async def connect(self):
+        # No persistent connection needed for HTTP
+        self.log(f"Using MCP HTTP server at {self.base_url}")
+
+    async def list_tools(self) -> Dict[str, Any]:
+        """Optional: fetch tool list if server supports it."""
+        url = f"{self.base_url}/tools"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=10.0)
+            resp.raise_for_status()
+            return resp.json()
+
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Call a tool via REST. Example: /get_weather?city=Boston"""
+        if tool_name == "get_weather":
+            url = f"{self.base_url}/get_weather"
+            headers = {}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(url, params=arguments, headers=headers, timeout=10.0)
+                resp.raise_for_status()
+                return resp.json()
+
+        raise RuntimeError(f"Unknown tool: {tool_name}")
+
+    async def close(self):
+        self.log("Closing MCP HTTP connector (no persistent session)")
