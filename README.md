@@ -182,7 +182,7 @@ Examples:
 
 ## K9-AIF Developer Journey
 
-![K9-AIF Developer Journey](images/developers_journey.png)
+![K9-AIF Developer Journey](docs/diagrams/developers_journey.png)
 
 The diagram illustrates how applications are built using K9-AIF:
 
