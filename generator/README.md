@@ -51,8 +51,11 @@ flows/
 tests/
 main.py
 
+```
+
 The generated project follows the **K9-AIF architecture layers**:
 
+``` text
 - Application Layer
 - Orchestration Layer
 - Agent Layer
