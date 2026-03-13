@@ -21,7 +21,7 @@ Note: checkout the SampleRun.md
 ---
 
 ## Directory Structure
-```
+``` bash
 k9_aif_generator/
 │
 ├── generator.py
@@ -40,6 +40,8 @@ k9_aif_generator/
 Example: ./k9_generator.sh run my_project
 
 This will generate a new directory:
+
+``` bash
 my_project/
 
 agents/
@@ -56,6 +58,8 @@ The generated project follows the **K9-AIF architecture layers**:
 - Agent Layer
 - Integration Layer
 - Security & Governance
+
+```
 
 ---
 
