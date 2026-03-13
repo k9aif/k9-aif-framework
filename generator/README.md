@@ -1,5 +1,5 @@
 
-# K9-AIF Project Generator
+# K9-AIF Project Stub Generator
 
 The **K9-AIF Generator** bootstraps new projects that follow the architecture and conventions of the **K9 Agentic Integration Framework (K9-AIF)**.
 
