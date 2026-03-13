@@ -212,6 +212,18 @@ allowing applications to evolve with minimal code changes.
 
 ---
 
+## Framework Implementation
+
+The core implementation of the K9-AIF architecture is provided in the
+`k9_aif_abb` package, where **ABB** refers to *Architecture Building Blocks*.
+
+This package contains the **Architecture Building Blocks (ABB)** and
+supporting framework components used to construct K9-AIF applications.
+
+Location: k9_aif_abb
+
+---
+
 ## Project Status
 
 K9-AIF is an actively evolving framework. The repository contains reference
