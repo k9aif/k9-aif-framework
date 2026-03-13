@@ -35,9 +35,9 @@ k9_aif_generator/
 │   └── test_template.py.j2
 ```
 
-## Generate a New Project
+## Generate stubs for new project
 
-Example: python generator/k9_aif_generator/generator.py my_project
+Example: ./k9_generator.sh run my_project
 
 This will generate a new directory:
 my_project/
