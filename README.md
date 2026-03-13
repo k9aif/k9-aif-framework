@@ -131,8 +131,6 @@ The framework bridges traditional **enterprise architecture principles** with em
 
 ---
 
----
-
 ## Architectural Patterns
 
 Many of the architectural ideas used within the K9-AIF framework are documented separately as reusable architecture patterns.
