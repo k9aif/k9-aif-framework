@@ -69,25 +69,33 @@ Examples:
 
 ## Architectural Layers
 
-A typical K9-AIF system is organized into a set of architectural layers that separate interface concerns, orchestration, external integration, inference, and persistence.
+A typical K9-AIF system is organized into a set of architectural layers
+that separate interface concerns, orchestration, external integration,
+inference, and persistence.
 
-### Presentation Layer
-Handles incoming user or system interactions through web interfaces, conversational channels, or APIs.
+1. **Presentation Layer**  
+   Handles incoming user or system interactions through web interfaces,
+   conversational channels, or APIs.
 
-### Application Layer
-Coordinates orchestration flows, routing, and workflow execution across agents and services.
+2. **Application Layer**  
+   Coordinates orchestration flows, routing, and workflow execution
+   across agents and services.
 
-### Integration Layer
-Provides governed access to external systems, APIs, tools, messaging platforms, and storage services.
+3. **Integration Layer**  
+   Provides governed access to external systems, APIs, tools,
+   messaging platforms, and storage services.
 
-### Inference Layer
-Supports model invocation, retrieval-augmented generation (RAG), and context-aware reasoning.
+4. **Inference Layer**  
+   Supports model invocation, retrieval-augmented generation (RAG),
+   and context-aware reasoning.
 
-### Data Layer
-Provides persistence, object storage, and messaging infrastructure used by the framework.
+5. **Data Layer**  
+   Provides persistence, object storage, and messaging infrastructure
+   used by the framework.
 
-### Cross-Cutting Concerns
-Security, governance, and observability apply across all layers to enforce policy, auditability, monitoring, and operational control.
+6. **Cross-Cutting Concerns**  
+   Security, governance, and observability apply across all layers to
+   enforce policy, auditability, monitoring, and operational control.
 
 ---
 
