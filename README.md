@@ -180,6 +180,21 @@ Examples:
 
 ---
 
+## K9-AIF Developer Journey
+
+![K9-AIF Developer Journey](images/developers_journey.png)
+
+The diagram illustrates how applications are built using K9-AIF:
+
+• **Architects** define reusable Architectural Building Blocks (ABB).  
+• **Application developers** extend these ABBs into Solution Building Blocks (SBB).  
+• **Business analysts** configure workflows and governance policies using YAML configuration without modifying code.
+
+This layered approach separates architecture, implementation, and configuration,
+allowing applications to evolve with minimal code changes.
+
+---
+
 ## Project Status
 
 K9-AIF is an actively evolving framework. The repository contains reference
