@@ -106,5 +106,17 @@ K9ModelRouter (SBB)
 
 ```
 
+## Architecture Diagram
+
+---
+
+## Architecture Diagram
+
+<p align="center">
+  <img src="k9_model_routing_architecture.png" width="550"/>
+</p>
+
+```
+
 
 
