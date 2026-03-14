@@ -227,4 +227,4 @@ K9-AIF offers one vision of what that architecture could look like.
 
 ➡️ GitHub: https://github.com/k9aif/k9-aif-framework  
 ➡️ Patterns: https://github.com/k9aif/k9aif-patterns  
-➡️ Website: https://k9aif.c
+➡️ Website: https://k9aif.com
