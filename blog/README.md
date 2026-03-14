@@ -7,7 +7,7 @@ K9-AIF Agentic Integration Framework.
 
 - 2026-03-14 — [K9-AIF Architectural Evaluation (Claude)](2026-03-14-k9-aif-architectural-evaluation-claude.md)
 - 2026-03-14 — [K9-AIF Architectural Evaluation (Grok)](2026-03-14-k9-aif-architectural-evaluation-grok.md)
-- 2026-03-14 — [K9-AIF Architectural Evaluation (Gemini)](2026-03-14-k9-aif-architectural-evaluation-gemini.md)
+- 2026-03-14 — [K9-AIF Architectural Evaluation (Gemini)](2026-03-15-k9-aif-architectural-evaluation-gemini.md)
 
 ## Architecture Posts
 
