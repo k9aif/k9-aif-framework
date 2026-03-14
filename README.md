@@ -73,32 +73,57 @@ A typical K9-AIF system is organized into a set of architectural layers
 that separate interface concerns, orchestration, external integration,
 inference, and persistence.
 
-1. **Presentation Layer**  
-   Handles incoming user or system interactions through web interfaces,
+1. **Presentation Layer**Handles incoming user or system interactions through web interfaces,
    conversational channels, or APIs.
-
-2. **Application Layer**  
-   Coordinates orchestration flows, routing, and workflow execution
+2. **Application Layer**Coordinates orchestration flows, routing, and workflow execution
    across agents and services.
-
-3. **Integration Layer**  
-   Provides governed access to external systems, APIs, tools,
+3. **Integration Layer**Provides governed access to external systems, APIs, tools,
    messaging platforms, and storage services.
-
-4. **Inference Layer**  
-   Supports model invocation, retrieval-augmented generation (RAG),
+4. **Inference Layer**Supports model invocation, retrieval-augmented generation (RAG),
    and context-aware reasoning.
-
-5. **Data Layer**  
-   Provides persistence, object storage, and messaging infrastructure
+5. **Data Layer**Provides persistence, object storage, and messaging infrastructure
    used by the framework.
-
-6. **Cross-Cutting Concerns**  
-   Security, governance, and observability apply across all layers to
+6. **Cross-Cutting Concerns**Security, governance, and observability apply across all layers to
    enforce policy, auditability, monitoring, and operational control.
 
----
 
+---
+## Agent Squads
+
+K9-AIF introduces the concept of **Agent Squads**.
+
+A Squad represents a coordinated group of agents working together to perform a specific capability within an orchestration workflow.
+
+Rather than orchestrators invoking individual agents directly, K9-AIF introduces a structured collaboration layer between orchestrators and agents.
+
+Execution hierarchy:
+
+Router  
+↓  
+Orchestrator  
+↓  
+Squads  
+↓  
+Agents  
+
+Squads allow enterprise workflows to be modeled as **capability-based teams of agents**.
+
+Examples include:
+
+- Claims Processing Squad
+- Medical Review Squad
+- Architecture Analysis Squad
+- Threat Assessment Squad
+
+Squads are defined declaratively using configuration and loaded dynamically at runtime using the **SquadLoader** component.
+
+Core squad framework components include:
+
+- `BaseSquad`
+- `SquadLoader`
+- `SquadContext`
+- `DefaultSquadMonitor`
+---
 ## Prototype Implementations
 
 Prototype systems based on K9-AIF demonstrate how the framework can support
@@ -106,16 +131,11 @@ governed multi-agent architectures across multiple domains.
 
 Example demonstration systems include:
 
-- **ACME Health Insurance Claims Assistant**  
-  Multi-agent insurance workflow demo including eligibility checks,
-  provider lookup, and claims support.  
-  → [examples/acme-health-insurance](examples/acme-health-insurance)
-
+- **ACME Health Insurance Claims Assistant**Multi-agent insurance workflow demo including eligibility checks,
+  provider lookup, and claims support.→ [examples/acme-health-insurance](examples/acme-health-insurance)
 - **WeatherAssist Decision Support System**
-
 - **Sports Car Experience Center**
-
-- **Department of War (DoW) Systems Engineering Pipeline**  
+- **Department of War (DoW) Systems Engineering Pipeline**
   Demonstrates how K9-AIF architectural patterns can automate multi-stage
   systems engineering workflows aligned with the **DoDAF 2.0 architecture
   framework**, exploring agent orchestration across multiple architectural
@@ -187,7 +207,7 @@ The generator creates a ready-to-run project structure including:
 
 Example usage:
 
-``` bash
+```bash
 
 === K9-AIF Generator v0.1.0 ===
 
@@ -212,8 +232,8 @@ Examples:
 
 The diagram illustrates how applications are built using K9-AIF:
 
-• **Architects** define reusable Architectural Building Blocks (ABB).  
-• **Application developers** extend these ABBs into Solution Building Blocks (SBB).  
+• **Architects** define reusable Architectural Building Blocks (ABB).
+• **Application developers** extend these ABBs into Solution Building Blocks (SBB).
 • **Business analysts** configure workflows and governance policies using YAML configuration without modifying code.
 
 This layered approach separates architecture, implementation, and configuration,
@@ -259,11 +279,11 @@ systems and multi-agent orchestration are welcome.
 
 ## Author
 
-**Ravi Natarajan**  
-AI Systems Architect  
-Agentic AI • Multi-Agent Systems • LLM Applications  
+**Ravi Natarajan**
+AI Systems Architect
+Agentic AI • Multi-Agent Systems • LLM Applications
 
-Email: ravinatarajan@k9aif.com  
+Email: ravinatarajan@k9aif.com
 Website: https://k9aif.com
 
 ---
@@ -275,4 +295,3 @@ K9-AIF draws inspiration from established software architecture and enterprise a
 - Booch, G. *Object-Oriented Analysis and Design with Applications*
 - Gamma, E., Helm, R., Johnson, R., Vlissides, J. *Design Patterns: Elements of Reusable Object-Oriented Software*
 - The Open Group. *TOGAF Standard*
-
