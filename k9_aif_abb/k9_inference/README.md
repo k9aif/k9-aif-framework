@@ -12,7 +12,7 @@ This allows AI systems to evolve independently of specific model vendors or depl
 
 ---
 
-# Purpose
+## Purpose
 
 Modern AI systems often rely on multiple models and providers.  
 Without an architectural abstraction layer, applications typically:
@@ -26,7 +26,7 @@ The **K9 Inference Layer** solves this by introducing a modular architecture for
 
 ---
 
-# Core Components
+## Core Components
 
 The inference layer consists of several architectural components:
 
@@ -51,7 +51,7 @@ These components provide a modular system for defining inference requests, selec
 
 ---
 
-# Architectural Overview
+## Architectural Overview
 
 The inference layer sits between agents/orchestrators and AI model providers.
 
@@ -76,7 +76,7 @@ This architecture ensures that application code remains independent from specifi
 
 ---
 
-# Inference Request
+## Inference Request
 
 `InferenceRequest` defines the structure of an inference call.
 
@@ -94,4 +94,17 @@ InferenceRequest(
 ```
 
 Requests may include metadata used by the router to select the appropriate model.
+
+---
+
+## Model Router
+
+``` code
+
+BaseModelRouter (ABB)
+K9ModelRouter (SBB)
+
+```
+
+
 
