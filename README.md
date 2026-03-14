@@ -134,6 +134,7 @@ Key architectural goals include:
 - Governed AI workflows with policy and control integration
 - Clear orchestration boundaries between agents, tools, and services
 - Scalable integration with enterprise systems and external platforms
+- Support architecture-driven routing of inference requests across multiple models and providers.
 
 The framework bridges traditional **enterprise architecture principles** with emerging **agentic AI system design**.
 
