@@ -26,7 +26,7 @@ class ChromaDBPersistence(BasePersistence):
         # ------------------------------------------------------------------
         base_path = (
             self.config.get("paths", {}).get("vector_store")
-            or "./k9_projects/acme_health_insurance/data/vector_store/.chroma"
+            or "./examples/acme_health_insurance/data/vector_store/.chroma"
         )
         os.makedirs(base_path, exist_ok=True)
         print(f"[ChromaDBPersistence]   Using base path: {base_path}")

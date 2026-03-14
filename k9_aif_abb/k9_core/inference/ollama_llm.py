@@ -31,7 +31,6 @@ class OllamaLLM(BaseLLM):
         self.host = host.rstrip("/")
         self.model = model
         self.timeout = aiohttp.ClientTimeout(total=timeout)
-        self.session = None
         self.kwargs = kwargs
 
     # ----------------------------------------------------------
@@ -42,19 +41,17 @@ class OllamaLLM(BaseLLM):
         payload = {"model": self.model, "prompt": prompt, "stream": False}
 
         try:
-            if self.session is None:
-                self.session = aiohttp.ClientSession(timeout=self.timeout)
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                async with session.post(url, json=payload) as resp:
+                    if resp.status != 200:
+                        msg = f"Ollama HTTP {resp.status}"
+                        await self.log(msg, "WARNING")
+                        return f"[WARN] {msg}"
 
-            async with self.session.post(url, json=payload) as resp:
-                if resp.status != 200:
-                    msg = f"Ollama HTTP {resp.status}"
-                    await self.log(msg, "WARNING")
-                    return f"[WARN] {msg}"
-
-                data = await resp.json()
-                text = data.get("response", "").strip()
-                await self.log(f"Ollama responded ({len(text)} chars)", "INFO")
-                return text or "[WARN] No response from model."
+                    data = await resp.json()
+                    text = data.get("response", "").strip()
+                    await self.log(f"Ollama responded ({len(text)} chars)", "INFO")
+                    return text or "[WARN] No response from model."
 
         except Exception as e:
             msg = f"Ollama request failed: {e}"

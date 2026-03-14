@@ -94,3 +94,36 @@ messaging:
   client_id: k9aif-console   # optional metadata only
   security_protocol: PLAINTEXT
   auto_create: true
+
+# ------------------------------------------------------------
+# K9 Inference Router
+# ------------------------------------------------------------
+
+inference:
+
+  router:
+    type: k9_model_router
+    default_model: general
+
+  llm_factory:
+    base_url: "http://192.168.1.98:11434"
+    models:
+      general: "llama3.2:1b"
+      fast_local: "llama3.2:1b"
+      enterprise: "llama3.2:1b"
+
+  models:
+    general:
+      provider: ollama
+      llm_ref: general
+      capabilities: [general, reasoning]
+
+    fast_local:
+      provider: ollama
+      llm_ref: fast_local
+      capabilities: [summarization, chat]
+
+    enterprise:
+      provider: ollama
+      llm_ref: enterprise
+      capabilities: [enterprise, confidential]

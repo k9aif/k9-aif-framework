@@ -3,6 +3,7 @@ PyYAML>=6.0
 requests>=2.30
 python-dotenv>=1.0
 rich>=13.0
+kafka-python>=2.0.2
 
 crewai>=0.170
 litellm>=1.0
