@@ -160,6 +160,27 @@ The framework bridges traditional **enterprise architecture principles** with em
 
 ---
 
+## Framework Comparison
+
+K9-AIF focuses on architectural structure and governed orchestration of multi-agent systems.  
+The table below highlights how the framework differs from several popular agentic AI frameworks.
+
+
+| Capability | K9-AIF | CrewAI | LangGraph | AgentStack |
+|------------|--------|--------|-----------|------------|
+| Architecture-first framework | ✅ Yes | ⚠️ Limited | ⚠️ Partial | ⚠️ Platform-centric |
+| ABB/SBB architectural separation | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| Explicit orchestration hierarchy | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews | ⚠️ Graph workflows | ⚠️ Agent services |
+| Team abstraction | ✅ Squads | ✅ Crews | ❌ None | ⚠️ Agent groups |
+| Declarative configuration | ✅ YAML-driven | ⚠️ Partial | ⚠️ Code-centric | ⚠️ Platform config |
+| Enterprise architecture alignment | ✅ Yes | ❌ No | ❌ No | ⚠️ Partial |
+| Governance & observability hooks | ✅ Built into ABBs | ⚠️ Limited | ⚠️ Limited | ⚠️ Platform dependent |
+
+K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
+
+
+---
+
 ## Architectural Patterns
 
 Many of the architectural ideas used within the K9-AIF framework are documented separately as reusable architecture patterns.
