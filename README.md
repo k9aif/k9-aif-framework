@@ -7,7 +7,9 @@ The framework separates Architecture Building Blocks (ABB) from
 Solution Building Blocks (SBB), enabling extensible and composable
 agentic applications.
 
-![K9-AIF Architecture](docs/diagrams/k9-aif-architecture.png)
+[![K9-AIF Architecture](docs/diagrams/k9-aif-architecture.png)](docs/diagrams/k9-aif-architecture.png)
+
+*K9-AIF layered architecture — click the image to view full resolution.*
 
 K9-AIF provides architectural patterns for constructing agentic
 workflows where multiple AI agents collaborate to perform reasoning,
