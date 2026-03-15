@@ -129,6 +129,8 @@ Example demonstration systems include:
 
 - **ACME Health Insurance Claims Assistant**Multi-agent insurance workflow demo including eligibility checks,
   provider lookup, and claims support.→ [examples/acme-health-insurance](examples/acme-health-insurance)
+- **K9Chat** – Minimal chat application demonstrating K9-AIF squads, agents, and model routing.
+  [examples/k9chat](examples/k9chat)
 - **WeatherAssist Decision Support System**
 - **Sports Car Experience Center**
 - **Department of War (DoW) Systems Engineering Pipeline**
