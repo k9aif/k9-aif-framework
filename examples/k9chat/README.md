@@ -1,4 +1,4 @@
-K9Chat Example
+# K9Chat Example
 
 This example demonstrates a minimal chat application built on the K9-AIF framework, showcasing:
 
