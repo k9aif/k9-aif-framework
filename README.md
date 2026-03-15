@@ -100,13 +100,7 @@ Rather than orchestrators invoking individual agents directly, K9-AIF introduces
 
 Execution hierarchy:
 
-Router  
-↓  
-Orchestrator  
-↓  
-Squads  
-↓  
-Agents  
+Router --> Orchestrator --> Squads --> Agents  
 
 Squads allow enterprise workflows to be modeled as **capability-based teams of agents**.
 
@@ -201,6 +195,27 @@ The full set of patterns is available in the **K9-AIF Architecture Patterns repo
 ➡️ https://github.com/k9aif/k9aif-patterns
 
 ---
+
+## Intelligent Model Routing
+
+K9-AIF includes an Intelligent Model Router that enables applications to dynamically select the most appropriate AI model at runtime.
+
+Rather than binding agents to specific model providers, the router evaluates inference requests based on task type, metadata, and routing policies to determine the best model and provider.
+
+This enables:
+
+- provider-agnostic application logic
+- centralized governance over inference usage
+- cost and latency optimization
+- future compatibility with new AI models
+
+For detailed implementation documentation see:
+
+See the full documentation for the inference layer in  
+[`k9_aif_abb/k9_inference`](k9_aif_abb/k9_inference)
+
+---
+
 
 ## Example Use Cases
 
