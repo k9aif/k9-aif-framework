@@ -15,16 +15,22 @@ class K9ModelRouter(BaseModelRouter):
 
     def route(self, request: InferenceRequest) -> RouteDecision:
 
-        # Capability-based routing
+        alias = None
+
+        # Capability routing
         if request.task_type:
             alias = self.catalog.find_by_capability(request.task_type)
 
         # Sensitivity routing
-        elif request.sensitivity == "confidential":
+        if not alias and request.sensitivity == "confidential":
             alias = self.catalog.find_by_capability("confidential")
 
-        else:
+        # Fallback
+        if not alias:
             alias = self.catalog.get_default_model()
+
+        if not alias:
+            raise RuntimeError("ModelRouter: no model alias resolved")
 
         model_info = self.catalog.get_model(alias)
 
