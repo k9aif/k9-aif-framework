@@ -318,3 +318,19 @@ K9-AIF draws inspiration from established software architecture and enterprise a
 - Booch, G. *Object-Oriented Analysis and Design with Applications*
 - Gamma, E., Helm, R., Johnson, R., Vlissides, J. *Design Patterns: Elements of Reusable Object-Oriented Software*
 - The Open Group. *TOGAF Standard*
+
+---
+
+## Architecture Notes & Blog
+
+The K9-AIF blog contains architecture discussions, design evaluations, and evolving ideas related to building governed agentic AI systems.
+
+Recent posts:
+
+• Agent Squads in K9-AIF  
+https://github.com/k9aif/k9-aif-framework/blob/main/blog/2026-03-14-agent-squads-in-k9-aif.md
+
+• Architectural Evaluation of K9-AIF  
+https://github.com/k9aif/k9-aif-framework/blob/main/blog/2026-03-14-k9-aif-architectural-evaluation-claude.md
+
+More posts can be found in the `/blog` directory.
