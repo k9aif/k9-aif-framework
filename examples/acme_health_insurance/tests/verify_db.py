@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF™ — Patent Pending
 # File: examples/acme_health_insurance/tests/verify_db.py
 
 import sqlite3

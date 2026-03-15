@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 from k9_aif_abb.k9_agents.messaging.queue_message_agent import QueueMessageAgent
 

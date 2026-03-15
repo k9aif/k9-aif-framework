@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 from typing import Dict, Any, Optional
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent

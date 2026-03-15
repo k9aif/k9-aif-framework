@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 from pathlib import Path
 from typing import Dict, Any

@@ -1,6 +1,5 @@
 """
 SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary  
-K9-AIF - Patent Pending  
 (c) 2025 Ravi Natarajan / IBM Consulting (Atlanta, GA)  
 All rights reserved.
 

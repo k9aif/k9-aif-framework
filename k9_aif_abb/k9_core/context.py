@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: MIT
-# K9-AIF - Patent Pending
 # (c) 2025 Ravi Natarajan. All rights reserved.
 
 # SPDX-License-Identifier: MIT
-# K9-AIF - Patent Pending
 # (c) 2025 Ravi Natarajan. All rights reserved.
 
 """

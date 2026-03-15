@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # k9_utils/logging_loader.py
 
 import os

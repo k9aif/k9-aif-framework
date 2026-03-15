@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 from k9_aif_abb.k9_squad.base_squad import BaseSquad
 from k9_aif_abb.k9_squad.squad_context import SquadContext

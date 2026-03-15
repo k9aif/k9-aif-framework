@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # ABB-level configuration: defines reusable inference backends
 # k9_aif_abb/config/config.yaml
 # ============================================================

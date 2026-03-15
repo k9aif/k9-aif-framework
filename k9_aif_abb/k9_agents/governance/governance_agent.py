@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # File: k9_aif_abb/k9_agents/governance/governance_agent.py
 
 import logging

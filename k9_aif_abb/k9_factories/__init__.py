@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # File: k9_aif_abb/k9_factories/__init__.py
 
 from k9_aif_abb.k9_factories.message_factory import MessageFactory

@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any

@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # File: k9_aif_abb/k9_core/persistence/base_persistence.py
 
 import threading

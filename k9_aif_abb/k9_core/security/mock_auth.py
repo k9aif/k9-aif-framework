@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 
 class MockAuth:
     def __init__(self, secret: str = "demo-secret", **kwargs):

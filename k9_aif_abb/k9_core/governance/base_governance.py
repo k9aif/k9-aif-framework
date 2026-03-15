@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # k9_core/governance/base_governance.py
 
 from abc import ABC, abstractmethod

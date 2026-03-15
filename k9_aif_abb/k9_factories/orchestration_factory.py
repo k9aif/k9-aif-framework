@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# K9-AIF - Patent Pending
 # Factory ABB for orchestration layer
 # File: k9_aif_abb/k9_factories/orchestration_factory.py
 
