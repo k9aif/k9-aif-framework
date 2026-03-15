@@ -1,0 +1,6 @@
+squads:
+  k9chat:
+    description: Minimal chat squad demonstrating K9-AIF architecture
+    orchestrator: framework
+    agents:
+      - chat_agent
