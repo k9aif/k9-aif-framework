@@ -7,7 +7,7 @@ This review highlighted something different: K9-AIF treats agentic AI as an ente
 
 That distinction changes how systems are designed.
 
-⸻
+---
 
 ## The Problem Most Agent Frameworks Ignore
 
