@@ -5,7 +5,7 @@ K9-AIF Agentic Integration Framework.
 
 ## Architectural Evaluations
 
-- 2026-03-16 - [K9-AIF Architectural Evaluation (Meta-AI](2026-03-16-k9-aif-architectural-evaluation-meta-ai.md)
+- 2026-03-16 - [K9-AIF Architectural Evaluation (Meta-AI)](2026-03-16-k9-aif-architectural-evaluation-meta-ai.md)
 - 2026-03-16 — [K9-AIF Architectural Evaluation (Microsoft Copilot)](2026-03-16-k9-aif-architectural-evaluation-microsoft-copilot.md)
 - 2026-03-15 — [K9-AIF Architectural Evaluation (Gemini)](2026-03-15-k9-aif-architectural-evaluation-gemini.md)
 - 2026-03-14 — [K9-AIF Architectural Evaluation (Claude)](2026-03-14-k9-aif-architectural-evaluation-claude.md)
