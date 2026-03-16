@@ -264,8 +264,8 @@ Examples:
   ./k9_generator.sh run ACMEInsurance
   ./k9_generator.sh recycle PetStore
 ```
+[K9-AIF Generator](generator/README.md)
 
-Refer to the ![K9-AIF Generator](generator/README.md)
 ---
 
 ## K9-AIF Developer Journey
