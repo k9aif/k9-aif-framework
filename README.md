@@ -239,10 +239,11 @@ K9-AIF includes a lightweight **project stub generator** that bootstraps new age
 
 The generator creates a ready-to-run project structure including:
 
+- squads
 - agents
 - orchestrators
-- configuration files
-- workflow definitions
+- configuration files (`agents.yaml`. `squads.yaml`)
+- application entry point (`main.py`)
 - test scaffolding
 
 Example usage:
@@ -264,6 +265,7 @@ Examples:
   ./k9_generator.sh recycle PetStore
 ```
 
+Refer to the ![K9-AIF Generator](generator/README.md)
 ---
 
 ## K9-AIF Developer Journey
