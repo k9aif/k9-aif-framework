@@ -2,10 +2,15 @@
 
 Recently, an independent review looked at K9-AIF (K9 Agentic Integration Framework) and its approach to building multi-agent AI systems.
 
-Most discussions around agent frameworks focus on task orchestration and LLM chaining.
+Most discussions around agent frameworks focus on task orchestration and LLM chaining.  
 This review highlighted something different: K9-AIF treats agentic AI as an enterprise architecture problem.
 
 That distinction changes how systems are designed.
+
+**Microsoft Copilot architectural review:**
+
+> “K9-AIF is one of the most architecturally disciplined approaches to multi-agent AI I’ve seen.  
+> It’s not trying to be another orchestration library—it’s trying to be the TOGAF of agentic AI.”
 
 ---
 
