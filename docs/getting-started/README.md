@@ -5,7 +5,7 @@
    - update `config.yaml` and other configuration files
    - configure the correct endpoint for your LLM server
 
-Refer to the [K9-AIF Generator Guide](../generator/README.md).
+Refer to the [K9-AIF Generator Guide](../../generator/README.md).
 
 Also review the `SampleRun.md` output in the same folder.
 
