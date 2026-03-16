@@ -1,91 +1,131 @@
-
 # K9-AIF Project Stub Generator
 
-The **K9-AIF Generator** bootstraps new projects that follow the architecture and conventions of the **K9 Agentic Integration Framework (K9-AIF)**.
+The K9-AIF Generator bootstraps new projects that follow the architecture and conventions of the K9 Agentic Integration Framework (K9-AIF).
 
-It creates a ready-to-run project structure including:
+It creates a ready-to-run project scaffold including:
 
-- Agents
-- Orchestrator
-- Flow definitions
-- Configuration files
-- Entry point (`main.py`)
-- Test scaffolding
+-	Agents
+-	Orchestrator
+-	Squad configuration
+-	Agent configuration
+-	Application configuration
+-	Entry point (main.py)
+-	Test scaffolding
 
-The generator uses **Jinja2 templates** to produce consistent project layouts for K9-AIF based applications.
-
----
-
-Note: checkout the SampleRun.md 
+The generator uses Jinja2 templates to produce consistent project layouts for K9-AIF based applications.
 
 ---
 
-## Directory Structure
+## Quick Start (Step by Step)
+
+From the root of the K9-AIF framework repository:
+
+``` code
+k9-aif-framework/
+
+```
+
+1. Preview what will be generated
+   
 ``` bash
-k9_aif_generator/
+./k9_generator.sh preview MyApp
+
+```
+This shows the directory structure without creating files.
+
+2. Generate the App
+
+``` bash
+./k9_generator.sh run MyApp
+
+```
+The generator will create:
+
+``` code
+k9_projects/MyApp
+
+```
+
+3. Change into the generated app folder
+
+``` bash
+cd k9_projects/MyApp
+
+```
+
+4. Run the Application
+
+``` bash
+python main.py
+```
+
+You should see output similar to:
+
+``` code
+Executing MyApp with request: {'query': 'hello'}
+
+Hello World from K9-AIF Application Stub
+```
+This confirms the generated K9-AIF application scaffold is working.
+
+5. Run tests
+
+The generator also creates a test scaffold.
+
+``` bash
+pytest
+```
+
+Expected output:
+
+``` code
+[K9-AIF] Testing generated code...
+
+[K9-AIF] All tests passed!
+```
+---
+
+## Generated App Structure
+
+``` code
+
+k9_projects/MyApp/
+
+MyApp/
 │
-├── generator.py
-├── templates/
-│   ├── agent_template.py.j2
-│   ├── orchestrator_template.py.j2
-│   ├── main_template.py.j2
-│   ├── config_template.yaml.j2
-│   ├── flows_template.yaml.j2
-│   ├── contest_template.py.j2
-│   └── test_template.py.j2
-```
-
-## Generate stubs for new project
-
-Example: ./k9_generator.sh run my_project
-
-This will generate a new directory:
-
-``` bash
-my_project/
-
-agents/
-orchestrator/
-config/
-flows/
-tests/
-main.py
-
-```
-
-The generated project follows the **K9-AIF architecture layers**:
-
-``` text
-- Application Layer
-- Orchestration Layer
-- Agent Layer
-- Integration Layer
-- Security & Governance
-
+├── agents/
+│   ├── retrieval_agent.py
+│   ├── enrichment_agent.py
+│   └── summarizer_agent.py
+│
+├── orchestrators/
+│   └── default_orchestrator.py
+│
+├── config/
+│   ├── config.yaml
+│   ├── squads.yaml
+│   └── agents.yaml
+│
+├── tests/
+│   ├── test_MyApp.py
+│   └── conftest.py
+│
+└── main.py
 ```
 
 ---
 
-## Templates
+## Developer Guide
 
-All project files are generated from templates located in: templates/
+For a deeper explanation of the K9-AIF architecture and how to extend generated projects, please refer to the developer guide:
 
-These templates use **Jinja2** and can be customized to extend the project structure.
+`docs/Developer-guide-readme.md`
 
----
+This document explains:
 
-## Purpose
+- K9-AIF architectural layers
+- Squad and Agent design
+- Orchestrator responsibilities
+- Configuration structure
+- How to extend generated projects with real domain logic
 
-The generator ensures that all new projects created with **K9-AIF** follow a consistent structure and architectural pattern, making it easier to build governed enterprise multi-agent systems.
-
----
-
-## Related
-
-K9-AIF Framework
-
-https://k9aif.com
-
-GitHub Repository
-
-https://github.com/k9aif/k9-aif-framework
