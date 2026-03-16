@@ -1,8 +1,8 @@
 # K9-AIF Project Stub Generator
 
-The K9-AIF Generator bootstraps new projects that follow the architecture and conventions of the K9 Agentic Integration Framework (K9-AIF).
+The K9-AIF Generator bootstraps new applications that follow the architecture and conventions of the K9 Agentic Integration Framework (K9-AIF).
 
-It creates a ready-to-run project scaffold including:
+It creates a ready-to-run application scaffold including:
 
 -	Agents
 -	Orchestrator
@@ -117,7 +117,7 @@ MyApp/
 
 ## Developer Guide
 
-For a deeper explanation of the K9-AIF architecture and how to extend generated projects, please refer to the developer guide:
+For a deeper explanation of the K9-AIF architecture and how to extend generated applications, please refer to the developer guide:
 
 `docs/Developer-guide-readme.md`
 
@@ -128,4 +128,10 @@ This document explains:
 - Orchestrator responsibilities
 - Configuration structure
 - How to extend generated projects with real domain logic
+
+## Need Help?
+
+If you encounter issues running the generator, please contact:
+
+ravinatarajan@k9aif.com
 
