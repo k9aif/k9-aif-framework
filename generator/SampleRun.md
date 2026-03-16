@@ -2,7 +2,7 @@
 
 1. Preview generated folder structure
 
-``` bash
+```bash
 
 (.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % ./k9_generator.sh preview MyApp
 
