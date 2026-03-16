@@ -1,6 +1,9 @@
 ## Preview the files to be generated
 
 ```bash
+
+   NOTE:  Application names are automatically converted to snake_case to follow Python package naming conventions.
+
   (.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % ./k9_generator.sh preview MyApp
 
    === K9-AIF Generator v0.1.0 ===
