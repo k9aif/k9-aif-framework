@@ -26,7 +26,7 @@ These capabilities are valuable, but they often leave unanswered questions that 
 
 Without architectural discipline, multi-agent systems can quickly become what some engineers call “agent spaghetti.”
 
-⸻
+---
 
 ## The Architectural Approach
 
@@ -44,7 +44,7 @@ This layered approach creates boundaries between responsibilities and helps prev
 
 The result is a system that is easier to evolve, govern, and scale across teams.
 
-⸻
+---
 
 Why This Matters for Enterprises
 
@@ -59,7 +59,7 @@ Frameworks designed purely for experimentation often struggle in these environme
 
 The review observed that K9-AIF is designed specifically for long-term system maintainability, modularity, and governance—qualities that become critical when AI capabilities move from prototype to production.
 
-⸻
+---
 
 Current State of the Framework
 
@@ -74,7 +74,7 @@ These examples show the framework is not purely conceptual, but an evolving arch
 
 The framework’s repository structure also reflects a disciplined architectural organization across orchestration, inference, monitoring, persistence, and utilities.  ￼
 
-⸻
+---
 
 Where K9-AIF Fits in the Ecosystem
 
@@ -84,7 +84,7 @@ Tools like CrewAI or LangGraph can still be used for execution, while K9-AIF pro
 
 In that sense, it fills a gap that most frameworks currently leave open.
 
-⸻
+---
 
 Final Thoughts from the Review
 
