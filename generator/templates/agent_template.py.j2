@@ -3,6 +3,7 @@
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
+
 class {{ class_name }}(BaseAgent):
     def __init__(self, config=None):
         # Use keyword args so order is never ambiguous
@@ -10,4 +11,9 @@ class {{ class_name }}(BaseAgent):
 
     def execute(self, request: dict) -> dict:
         self.log(f"Executing {{ class_name }} with request: {request}")
-        return {"status": "ok", "message": "Stubbed response from {{ class_name }}"}
+
+        return {
+            "status": "ok",
+            "agent": "{{ class_name }}",
+            "response": "Hello World from K9-AIF Application Stub"
+        }

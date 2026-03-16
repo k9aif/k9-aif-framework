@@ -5,6 +5,7 @@ import pytest
 from k9_projects.{{ app_folder }}.main import main
 from k9_projects.{{ app_folder }}.orchestrators.{{ flow_name }}_orchestrator import {{ orchestrator_class }}
 
+
 def test_main_runs():
     """Ensure the main entrypoint runs without errors."""
     try:
@@ -12,9 +13,12 @@ def test_main_runs():
     except Exception as e:
         pytest.fail(f"App {{ app_name }} failed to run: {e}")
 
+
 def test_orchestrator_handle():
-    """Ensure the orchestrator handle() method returns a proper result dict."""
+    """Ensure the orchestrator handle() method returns the expected stub result."""
     orch = {{ orchestrator_class }}({})
     result = orch.handle({"query": "test"})
+
     assert isinstance(result, dict)
     assert result.get("status") == "ok"
+    assert result.get("response") == "Hello World from K9-AIF Application Stub"

@@ -3,14 +3,19 @@
 
 from k9_aif_abb.k9_utils.k9_ascii import print_success, print_failure
 
+
 def pytest_sessionstart(session):
-    print("\n[K9-AIF] Testing generated code...\n")
+    print("\n[K9-AIF] Running tests for generated application scaffold...\n")
+
 
 def pytest_sessionfinish(session, exitstatus):
     if exitstatus == 0:
         print_success("\n[K9-AIF] All tests passed!")
-        print("[K9-AIF] Developers can now take this generated scaffold and")
-        print("         plug in domain-specific logic, expand orchestrators,")
-        print("         and enrich agents with real implementations.\n")
+        print("[K9-AIF] The generated application scaffold is working correctly.")
+        print("         You are now ready to customize your application by")
+        print("         adding agents, orchestrators, and domain components.")
+        print("         Refer to the User Guide in the docs folder.\n")
+        print("Ready to Rumble!\n")
     else:
-        print_failure("\n[K9-AIF] Unexpected test failure - investigate before extending\n")
+        print_failure("\n[K9-AIF] Test failure detected.")
+        print("         Please investigate before extending the scaffold.\n")

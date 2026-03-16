@@ -4,3 +4,6 @@ __pycache__/
 .DS_Store
 .env
 *.egg-info/
+
+k9_projects/
+k9_recycle_bin/
