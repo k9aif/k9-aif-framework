@@ -147,3 +147,23 @@ These define **how the system behaves and executes tasks**.
 - maintain architectural separation between framework and implementation
 
 All while operating within the **K9-AIF architecture**.
+
+## Architecture of the ACME Support Center
+
+![ACME Support Center Architecture](docs/diagrams/acme-support-center.png)
+
+The ACME Support Center demonstrates how **K9-AIF architecture (ABB)** can host multiple **agent behavior strategies (SBB)** through configuration.
+
+The system routes support requests through the K9-AIF layers:
+
+- **Router** – classifies incoming support requests  
+- **Orchestrator** – coordinates the appropriate squad  
+- **Squads** – groups of specialized agents  
+- **Agents** – execute tasks using different reasoning strategies  
+
+Agent behaviors such as **ReAct**, **Agentic RAG**, **Plan & Execute**, **Reflection**, and **Multi-Agent collaboration** are implemented as **SBB configurations** (for example via `agent.yaml` and `squad.yaml`), while the underlying architecture remains stable.
+
+This demonstrates the core K9-AIF principle:
+
+**Architecture Building Blocks (ABB)** define the system structure,  
+while **Solution Building Blocks (SBB)** define the implementation and behavior.
