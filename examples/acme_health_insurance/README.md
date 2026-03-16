@@ -65,3 +65,7 @@ acme-health-insurance/
 ├── tools/              # Knowledge loaders and helper utilities
 ├── run_demo.py         # Entry point for running the demo
 └── README.md
+
+```
+
+**Note:** This demo will be updated to use the latest version of the framework incorporating the **Squads** and **K9 Model Router** patterns.
