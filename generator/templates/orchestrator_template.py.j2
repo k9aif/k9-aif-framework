@@ -8,7 +8,7 @@ class {{ orchestrator_class }}(BaseOrchestrator):
     def __init__(self, config=None, flow_name="{{ flow_name }}"):
         super().__init__(config or {}, flow_name)
 
-    def handle(self, request: dict) -> dict:
+    def execute_flow(self, request: dict) -> dict:
         print(f"[INFO] Orchestrator {self.__class__.__name__} handling request: {request}")
 
         return {

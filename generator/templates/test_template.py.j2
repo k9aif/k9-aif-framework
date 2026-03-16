@@ -3,7 +3,7 @@
 
 import pytest
 from k9_projects.{{ app_folder }}.main import main
-from k9_projects.{{ app_folder }}.orchestrators.{{ flow_name }}_orchestrator import {{ orchestrator_class }}
+from k9_projects.{{ app_folder }}.orchestrators.default_orchestrator import {{ orchestrator_class }}
 
 
 def test_main_runs():
@@ -14,10 +14,10 @@ def test_main_runs():
         pytest.fail(f"App {{ app_name }} failed to run: {e}")
 
 
-def test_orchestrator_handle():
-    """Ensure the orchestrator handle() method returns the expected stub result."""
+def test_orchestrator_execute_flow():
+    """Ensure the orchestrator execute_flow() method returns the expected stub result."""
     orch = {{ orchestrator_class }}({})
-    result = orch.handle({"query": "test"})
+    result = orch.execute_flow({"query": "test"})
 
     assert isinstance(result, dict)
     assert result.get("status") == "ok"
