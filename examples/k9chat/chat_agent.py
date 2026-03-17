@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 import os
 import sys
 import yaml

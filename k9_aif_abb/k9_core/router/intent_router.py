@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # K9-AIF - Intent Router ABB
 # Routes detected intents to orchestrators by merging ABB + SBB orchestrator registries.
 # Publishes structured console events through the global message bus (Redpanda/WebSocket).

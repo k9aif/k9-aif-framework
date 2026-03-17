@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
  # SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
 # ACME HealthCare RouterAgent (SBB)
 # Domain-specific router that extends the ABB RouterAgent.

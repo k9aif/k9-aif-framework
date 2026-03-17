@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_inference.catalog.model_catalog import ModelCatalog
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest

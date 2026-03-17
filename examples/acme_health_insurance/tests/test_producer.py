@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """
 Test producer for Redpanda - publishes messages to acme-events topic
 """

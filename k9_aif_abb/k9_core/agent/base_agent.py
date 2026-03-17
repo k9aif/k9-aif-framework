@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # K9-AIF - Base Agent
 # Core abstract base for all K9-AIF domain and orchestration agents.
 

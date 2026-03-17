@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from k9_aif_abb.k9_factories.retriever_factory import RetrieverFactory
 from k9_aif_abb.k9_data.retrieval.k9_retriever import K9Retriever
 

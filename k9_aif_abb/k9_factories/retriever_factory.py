@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from __future__ import annotations
 
 import logging

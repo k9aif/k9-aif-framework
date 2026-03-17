@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from .base_component import BaseComponent
 from .agent.base_agent import BaseAgent
 from .orchestration.base_orchestrator import BaseOrchestrator

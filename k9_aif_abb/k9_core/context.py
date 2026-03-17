@@ -1,7 +1,8 @@
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # (c) 2025 Ravi Natarajan. All rights reserved.
 
-# SPDX-License-Identifier: MIT
 # (c) 2025 Ravi Natarajan. All rights reserved.
 
 """

@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # K9-AIF  RetrieverAgent (Hybrid)
 # Performs governed multi-source retrieval (vector, keyword, or router-based LLM reasoning).
 

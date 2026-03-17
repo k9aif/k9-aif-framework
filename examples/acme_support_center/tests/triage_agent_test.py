@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from examples.acme_support_center.agents.triage_agent import TriageAgent
 
 class MockTicketTool:

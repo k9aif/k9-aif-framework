@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from ..models.inference_request import InferenceRequest
 from ..models.inference_response import InferenceResponse
 from ..models.route_decision import RouteDecision

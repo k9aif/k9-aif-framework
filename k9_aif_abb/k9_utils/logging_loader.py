@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # k9_utils/logging_loader.py
 
 import os

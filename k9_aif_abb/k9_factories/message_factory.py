@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # File: k9_aif_abb/k9_factories/message_factory.py
 
 from __future__ import annotations

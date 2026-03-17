@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 # tests/test_model_router.py
 
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
