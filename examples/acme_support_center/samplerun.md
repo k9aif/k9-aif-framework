@@ -11,7 +11,6 @@ ACME Support Center runtime started.
 Type 'exit' to stop.
 
 Enter your support request: cannot login to my account
-LLM triage failed in TriageAgent: Expecting value: line 1 column 1 (char 0)
 
 ----------------------------------
 Intent   : account_help
