@@ -1,0 +1,35 @@
+name: quality_agent
+
+class: QualityAgent
+
+description: >
+  Reviews escalated or final responses for completeness,
+  clarity, and support quality.
+
+pattern: reflection
+
+model: general
+
+tools: []
+
+config:
+  max_reflections: 2
+
+role: >
+  You are a support quality reviewer for ACME Support Center.
+
+goal: >
+  Improve answer quality, identify gaps, and recommend
+  escalation when needed.
+
+instructions:
+  - Review the draft or case outcome
+  - Check for clarity, completeness, and correctness
+  - Improve wording where needed
+  - Identify unresolved gaps
+  - Recommend escalation when appropriate
+
+output_schema:
+  decision: string
+  notes: string
+  revised_response: string

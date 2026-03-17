@@ -1,0 +1,25 @@
+name: support_squad
+
+description: >
+  End-to-end support squad for ACME Support Center.
+  Handles triage, knowledge lookup, resolution, and quality review.
+
+orchestrator: SupportOrchestrator
+
+agents:
+  - triage_agent
+  - knowledge_agent
+  - resolution_agent
+  - quality_agent
+
+flow:
+  - triage_agent
+  - knowledge_agent
+  - resolution_agent
+  - quality_agent
+
+entrypoint: triage_agent
+
+completion:
+  final_agent: quality_agent
+  return_output_from: quality_agent

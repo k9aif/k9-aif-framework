@@ -1,0 +1,170 @@
+app:
+  name: acme_support_center
+  display_name: ACME Support Center
+  version: 0.1.0
+  description: K9-AIF demo showcasing support workflows with multiple SBB agent patterns.
+
+runtime:
+  environment: dev
+  log_level: INFO
+  debug: true
+  job_id_prefix: acme
+  workspace_dir: ./runtime
+  temp_dir: ./runtime/tmp
+
+router:
+  enabled: true
+  default_squad: support_squad
+  routes:
+    - intent: faq
+      squad: support_squad
+    - intent: knowledge_lookup
+      squad: support_squad
+    - intent: troubleshooting
+      squad: support_squad
+    - intent: account_help
+      squad: support_squad
+    - intent: escalation
+      squad: support_squad
+    - intent: general_support
+      squad: support_squad
+
+orchestrator:
+  enabled: true
+  default: support_orchestrator
+  timeout_seconds: 180
+  allow_parallel: false
+  collect_agent_outputs: true
+  return_intermediate_steps: true
+
+inference:
+  llm_factory:
+    enabled: true
+    default_alias: general
+    routing_enabled: true
+    fallback_alias: general
+    base_url: http://192.168.1.98:11434
+
+    models:
+      general:
+        provider: ollama
+        model: llama3.2:1b
+        temperature: 0.2
+        max_tokens: 2048
+
+      reasoning:
+        provider: ollama
+        model: qwen2.5:7b
+        temperature: 0.1
+        max_tokens: 3072
+
+      fast:
+        provider: ollama
+        model: granite3.3:2b
+        temperature: 0.2
+        max_tokens: 1024
+
+      review:
+        provider: ollama
+        model: llama3.2:1b
+        temperature: 0.0
+        max_tokens: 2048
+
+  model_router:
+    enabled: true
+    default_route: general
+    routes:
+      triage_agent: fast
+      knowledge_agent: general
+      resolution_agent: reasoning
+      quality_agent: review
+
+tools:
+  ticket_tool:
+    enabled: true
+    type: mock
+    class: TicketTool
+    description: Simulates support ticket lookup and update operations.
+    config:
+      source: memory
+      allow_create: true
+      allow_update: true
+      allow_close: false
+
+  knowledge_retriever:
+    enabled: true
+    type: mock
+    class: KnowledgeRetriever
+    description: Simulates retrieval from support knowledge base.
+    config:
+      source: local_docs
+      top_k: 3
+      rerank: false
+
+  customer_profile_tool:
+    enabled: true
+    type: mock
+    class: CustomerProfileTool
+    description: Simulates customer account and profile lookup.
+    config:
+      source: memory
+
+memory:
+  enabled: true
+  type: in_memory
+  max_items: 50
+  persist: false
+
+knowledge_base:
+  enabled: true
+  type: local
+  path: ./data/knowledge
+  file_types:
+    - md
+    - txt
+    - pdf
+
+observability:
+  tracing: true
+  metrics: true
+  console_events: true
+  structured_logs: false
+
+logging:
+  audit_logger: true
+  agent_logger: true
+  orchestrator_logger: true
+  router_logger: true
+  level: INFO
+  log_dir: ./runtime/logs
+
+governance:
+  enabled: true
+  audit: true
+  human_in_loop: false
+  mask_sensitive_data: true
+  policy_checks: false
+
+security:
+  enabled: false
+  auth_required: false
+  allowed_origins:
+    - "*"
+
+ui:
+  enabled: true
+  type: cli
+  title: ACME Support Center
+  welcome_message: Welcome to ACME Support Center.
+  show_agent_steps: true
+  show_squad_name: true
+
+data:
+  tickets_path: ./data/tickets
+  customers_path: ./data/customers
+  kb_path: ./data/knowledge
+
+demo:
+  mode: true
+  use_mock_tools: true
+  seed_sample_data: true

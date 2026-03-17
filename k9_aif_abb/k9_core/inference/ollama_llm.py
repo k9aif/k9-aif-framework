@@ -35,7 +35,6 @@ class OllamaLLM(BaseLLM):
 
     # ----------------------------------------------------------
     async def generate(self, prompt: str) -> str:
-        """Send prompt asynchronously to Ollama server and return response."""
         await self.log(f"Sending inference request to Ollama ({self.model})", "DEBUG")
         url = f"{self.host}/api/generate"
         payload = {"model": self.model, "prompt": prompt, "stream": False}
@@ -43,8 +42,10 @@ class OllamaLLM(BaseLLM):
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
                 async with session.post(url, json=payload) as resp:
+                    body = await resp.text()
+
                     if resp.status != 200:
-                        msg = f"Ollama HTTP {resp.status}"
+                        msg = f"Ollama HTTP {resp.status} | model={self.model} | body={body}"
                         await self.log(msg, "WARNING")
                         return f"[WARN] {msg}"
 

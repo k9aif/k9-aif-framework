@@ -1,0 +1,40 @@
+agents:
+
+  triage_agent:
+    class: TriageAgent
+    description: Initial triage and classification of support requests
+    pattern: react
+    model: general
+    tools:
+      - ticket_tool
+    config:
+      max_iterations: 5
+
+  knowledge_agent:
+    class: KnowledgeAgent
+    description: Answers questions using enterprise knowledge base
+    pattern: agentic_rag
+    model: general
+    tools:
+      - knowledge_retriever
+    config:
+      top_k: 3
+
+  resolution_agent:
+    class: ResolutionAgent
+    description: Handles multi-step issue resolution workflows
+    pattern: plan_execute
+    model: general
+    tools:
+      - ticket_tool
+    config:
+      max_steps: 5
+
+  quality_agent:
+    class: QualityAgent
+    description: Reviews and improves final response quality
+    pattern: reflection
+    model: general
+    tools: []
+    config:
+      max_reflections: 2

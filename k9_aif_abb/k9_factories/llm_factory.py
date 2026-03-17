@@ -29,7 +29,7 @@ class LLMFactory:
     _instances: Dict[str, Any] = {}
 
     # Legacy compatibility (for AdvisorAgent, etc.)
-    _models: Dict[str, str] = {}
+    _models: Dict[str, Any] = {}
     _is_bootstrapped: bool = False  # internal flag for callable property
 
     # ------------------------------------------------------------------
@@ -47,6 +47,8 @@ class LLMFactory:
     def bootstrap(cls, config):
         """Initialize the LLM factory (supports ABB + SBB flattened configs)."""
         try:
+            config = config or {}
+
             # Normalize structure for flattened SBB configs
             if "inference" not in config and "llm_factory" in config:
                 print("[LLMFactory] [INFO] Normalizing flattened config -> nesting under inference.llm_factory")
@@ -56,14 +58,13 @@ class LLMFactory:
             if not llm_cfg:
                 raise ValueError("[LLMFactory] [ERROR] Missing inference.llm_factory section in config")
 
-            # [OK] FIX: Store the entire config in cls._cfg
             cls._cfg = config
             cls._bootstrapped = True
             cls._is_bootstrapped = True
-            
-            # [OK] FIX: Populate cls._models for legacy compatibility
+
+            # Keep raw models config for backward compatibility
             cls._models = llm_cfg.get("models", {})
-            
+
             # Store configuration attributes
             cls.backend = llm_cfg.get("backend", "ollama")
             cls.provider = llm_cfg.get("provider", "ollama")
@@ -78,7 +79,7 @@ class LLMFactory:
             print(f"[LLMFactory] [ERROR] Bootstrap failed: {e}")
             traceback.print_exc()
             raise
-             
+
     # ------------------------------------------------------------------
     # Get
     # ------------------------------------------------------------------
@@ -86,9 +87,21 @@ class LLMFactory:
     def get(cls, alias: Optional[str] = "general") -> OllamaLLM:
         """
         Return a cached or newly constructed OllamaLLM instance for the alias.
-        Defensive default ensures alias='general' if None is passed.
+
+        Supports both:
+          1) legacy string model config:
+             models:
+               general: llama3
+
+          2) structured dict model config:
+             models:
+               general:
+                 provider: ollama
+                 model: llama3.2:1b
+                 temperature: 0.2
+                 max_tokens: 2048
         """
-        alias = alias or "general"  # safeguard for agents passing None
+        alias = alias or "general"
 
         if alias in cls._instances:
             return cls._instances[alias]
@@ -101,17 +114,43 @@ class LLMFactory:
         inf = (cls._cfg or {}).get("inference", {})
         fcfg = inf.get("llm_factory") or {}
         base_url = fcfg.get("base_url", "http://localhost:11434")
-        model_id = (fcfg.get("models") or {}).get(alias)
+        model_cfg = (fcfg.get("models") or {}).get(alias)
 
-        if not model_id:
+        if not model_cfg:
             raise KeyError(
                 f"LLM model alias '{alias}' is not configured under inference.llm_factory.models"
             )
 
-        # Quiet initialization (no announce)
-        inst = OllamaLLM(host=base_url, model=model_id)
+        # Backward-compatible handling
+        if isinstance(model_cfg, str):
+            model_name = model_cfg
+            extra_kwargs = {}
+
+        elif isinstance(model_cfg, dict):
+            model_name = model_cfg.get("model")
+            if not model_name:
+                raise KeyError(
+                    f"LLM model alias '{alias}' is missing required key 'model'"
+                )
+
+            extra_kwargs = {
+                "temperature": model_cfg.get("temperature"),
+                "max_tokens": model_cfg.get("max_tokens"),
+            }
+            extra_kwargs = {k: v for k, v in extra_kwargs.items() if v is not None}
+
+        else:
+            raise TypeError(
+                f"LLM model alias '{alias}' must be a string or dict, got {type(model_cfg).__name__}"
+            )
+
+        inst = OllamaLLM(
+            host=base_url,
+            model=model_name,
+            **extra_kwargs,
+        )
         cls._instances[alias] = inst
-        log.info(f"LLM instance ready [{alias} -> {model_id}] (cached).")
+        log.info(f"LLM instance ready [{alias} -> {model_name}] (cached).")
 
         return inst
 
@@ -125,7 +164,11 @@ class LLMFactory:
             logging.getLogger("LLMFactory").warning(
                 "get_model() called before bootstrap"
             )
-        return cls._models.get(name)
+
+        model_cfg = cls._models.get(name)
+        if isinstance(model_cfg, dict):
+            return model_cfg.get("model")
+        return model_cfg
 
     # ------------------------------------------------------------------
     # Reset (for tests or reloads)

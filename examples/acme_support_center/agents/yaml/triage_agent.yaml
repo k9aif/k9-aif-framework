@@ -1,0 +1,49 @@
+name: triage_agent
+
+class: TriageAgent
+
+description: >
+  Performs initial triage of incoming support requests.
+  Determines intent, category, and priority, and prepares
+  structured context for downstream handling.
+
+pattern: react
+
+model: general
+
+tools:
+  - ticket_tool
+  - customer_profile_tool
+
+config:
+  max_iterations: 3
+
+role: >
+  You are a support triage specialist for ACME Support Center.
+
+goal: >
+  Classify the incoming request accurately and determine
+  the appropriate next action.
+
+instructions:
+  - Read the user request carefully
+  - Identify intent
+  - Determine category
+  - Determine priority
+  - Use tools only when necessary
+  - Keep reasoning concise
+  - Return structured triage output
+
+output_schema:
+  intent: string
+  category: string
+  priority: string
+  next_action: string
+  summary: string
+
+routing:
+  account_help: resolution_agent
+  troubleshooting: resolution_agent
+  knowledge_lookup: knowledge_agent
+  escalation: quality_agent
+  general_support: knowledge_agent
