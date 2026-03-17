@@ -28,6 +28,19 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 ---
 
+## Understanding K9-AIF
+
+Start here for a structured explanation of K9-AIF:
+
+- [The Path of K9-AIF](docs/understanding-k9-aif/01-the-path-of-k9-aif.md)
+- [What K9-AIF Is](docs/understanding-k9-aif/02-what-k9-aif-is.md)
+- [K9-AIF for Stakeholders](docs/understanding-k9-aif/03-k9-aif-for-stakeholders.md)
+- [K9-AIF vs Agent Frameworks](docs/understanding-k9-aif/04-k9-aif-vs-agent-frameworks.md)
+- [Where Agent Systems Fail](docs/understanding-k9-aif/05-where-agent-systems-fail.md)
+- [FAQ](docs/understanding-k9-aif/06-faq.md)
+
+---
+
 # Core Architectural Concepts
 
 K9-AIF introduces two primary architectural abstractions.
