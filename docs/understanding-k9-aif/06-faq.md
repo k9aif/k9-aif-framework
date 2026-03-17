@@ -36,6 +36,37 @@ K9-AIF is inspired by architectural principles, but it is designed to be **pract
 
 ---
 
+## Can K9-AIF be used for simple applications?
+
+Yes.
+
+K9-AIF is designed to scale, but it does not require a heavy starting point.
+
+You can begin with minimal structure and evolve as needed.
+
+For example:
+
+- **k9chat**  
+  A simple chat application demonstrating how K9-AIF can sit between a user interface and underlying models, using routing and inference layers without complex orchestration.
+
+- **acme_support_center**  
+  A practical multi-agent application that introduces orchestration and structured workflows, while still remaining approachable and extensible.
+
+These examples show that K9-AIF can start:
+- lightweight  
+- focused  
+- easy to understand  
+
+and then grow into a more structured architecture as system complexity increases.
+
+---
+
+K9-AIF is not about starting heavy.
+
+It is about **having a clear path to scale when the system needs it**.
+
+---
+
 ## Can I use K9-AIF with frameworks like CrewAI?
 
 Yes.
