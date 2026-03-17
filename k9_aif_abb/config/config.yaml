@@ -66,6 +66,21 @@ vectordb:
   path: "./data/chroma"
   db: k9-aif-chroma.db
 
+retrieval:
+  default_retriever: k9
+
+  sources:
+    default_docs:
+      type: vectordb
+      provider: chromadb
+      path: "./data/chroma"
+      collection: "k9_default_docs"
+      top_k: 5
+
+  routing:
+    general_lookup:
+      sources: [default_docs]
+
 storage:
   backend: "file"
   file:
