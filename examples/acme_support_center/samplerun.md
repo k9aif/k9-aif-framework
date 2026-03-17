@@ -1,12 +1,7 @@
 ```bash
 
 (.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % python -m examples.acme_support_center.main       
-[ConfigLoader] [WARN] Could not load SBB orchestrators: [Errno 21] Is a directory: '.'
-[ConfigLoader] [OK] Loaded merged config (ABB + SBB) from config.yaml + config.yaml
-[LLMFactory] [INFO] Loaded models -> {'general': {'provider': 'ollama', 'model': 'llama3.2:1b', 'temperature': 0.2, 'max_tokens': 2048}, 'reasoning': {'provider': 'ollama', 'model': 'qwen2.5:7b', 'temperature': 0.1, 'max_tokens': 3072}, 'fast': {'provider': 'ollama', 'model': 'granite3.3:2b', 'temperature': 0.2, 'max_tokens': 1024}, 'review': {'provider': 'ollama', 'model': 'llama3.2:1b', 'temperature': 0.0, 'max_tokens': 2048}}
-[LLMFactory] [INFO] Base URL -> http://192.168.1.98:11434
-[LLMFactory] [OK] Provider -> ollama
-[LLMFactory] [OK] Bootstrap complete
+
 ACME Support Center runtime started.
 Type 'exit' to stop.
 
