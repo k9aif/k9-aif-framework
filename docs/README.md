@@ -4,6 +4,9 @@ This directory contains supporting documentation and reference material for the 
 
 ## Contents
 
+- **blogs/**  
+  Blogs
+  
 - **diagrams/**  
   Architecture diagrams and visual assets used throughout the project.
 
