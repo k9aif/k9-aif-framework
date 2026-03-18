@@ -6,7 +6,7 @@ It emerged from a deeper architectural concern:
 
 **How do we build agentic AI systems that can survive enterprise reality?**
 
-The industry has no shortage of prototypes, demos, and lightweight orchestration libraries. But as organizations move from experimentation to production, the same problems appear again and again:
+The industry has no shortage of capable agent frameworks, prototypes, and orchestration libraries. These tools are highly effective for building agent workflows. But as organizations move from experimentation to production, a different class of challenges begins to surface:
 
 - uncontrolled agent sprawl  
 - weak governance  
