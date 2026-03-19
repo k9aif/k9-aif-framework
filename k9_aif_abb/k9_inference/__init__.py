@@ -41,7 +41,6 @@ Instead:
 
 Note: usually config.yaml exists in its own folder.  below is just an example. 
 
-```python
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 
 config = {
@@ -64,6 +63,6 @@ response = router.route({
 })
 
 print(response)
-```
+
 
 """

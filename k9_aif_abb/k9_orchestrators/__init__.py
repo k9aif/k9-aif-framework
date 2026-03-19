@@ -48,7 +48,6 @@ into a coherent execution model.
 
 ## Example: Extending an Orchestrator ABB
 
-```python
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 class ExampleOrchestrator(BaseOrchestrator):
@@ -62,8 +61,8 @@ class ExampleOrchestrator(BaseOrchestrator):
             result = squad.run(result)
         return result
 
-```
-Relationship to Other K9-AIF Packages
+        
+## Relationship to Other K9-AIF Packages
 	•	Receives routing decisions from router components
 	•	Coordinates squads defined in k9_squad
 	•	Uses k9_factories to construct dependencies

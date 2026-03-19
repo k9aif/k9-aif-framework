@@ -38,7 +38,6 @@ This package may include:
 
 ## Example: Extending BasePersistence
 
-```python
 from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence
 
 class CustomPersistence(BasePersistence):
@@ -47,8 +46,8 @@ class CustomPersistence(BasePersistence):
 
     def load(self, key):
         pass
+       
         
-```
 This example shows how persistence implementations are derived from the
 core BasePersistence abstraction.
 

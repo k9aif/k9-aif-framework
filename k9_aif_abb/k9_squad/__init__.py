@@ -57,7 +57,6 @@ are grouped, managed, and executed as a unit.
 
 ## Example: Conceptual Squad Structure
 
-```python
 class ExampleSquad:
     def __init__(self, agents):
         self.agents = agents

@@ -36,7 +36,6 @@ This package may include:
 
 ## Example: Using an MCP Client Connection
 
-```python
 from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
 
 factory = MCPClientConnectionFactory.from_config(config)

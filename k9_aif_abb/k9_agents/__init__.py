@@ -65,7 +65,6 @@ The `k9_agents` package works in conjunction with other ABB packages:
 
 ## Example: Extending an Agent ABB
 
-```python
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
 class MyAgent(BaseAgent):

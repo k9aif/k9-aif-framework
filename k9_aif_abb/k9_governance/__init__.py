@@ -51,7 +51,7 @@ intended to demonstrate how governance ABB contracts can be realized in practice
 
 ## Example: Governance Implementation Pattern
 
-```python
+
 from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
 
 class ProfanityGovernance(BaseGovernance):

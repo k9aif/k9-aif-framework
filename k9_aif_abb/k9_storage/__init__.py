@@ -35,7 +35,6 @@ This package may include:
 
 ## Example: Extending BaseStorage
 
-```python
 from k9_aif_abb.k9_core.storage.base_storage import BaseStorage
 
 class MyCustomStorage(BaseStorage):
@@ -45,5 +44,4 @@ class MyCustomStorage(BaseStorage):
     def load(self, key):
         pass
         
-```
 """

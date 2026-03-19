@@ -55,7 +55,6 @@ configuration-driven system behavior.
 
 ## Usage Example
 
-```python
 from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.router_factory import RouterFactory
@@ -86,6 +85,5 @@ router = RouterFactory.create(config)
 # Use components
 response = llm.generate("Explain K9-AIF in one line")
 route = router.route({"input": "sample payload"})
-```
 
 """
