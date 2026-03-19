@@ -56,12 +56,10 @@ to be specialized into SBBs in application-specific or integration layers.
 - `k9_utils` — Shared utilities supporting framework operation
 
 
----
-
 ## K9-AIF ABB Package Structure
 
 | Package | Architectural Role | Description |
-|---------|------------------|-------------|
+|---------|--------------------|-------------|
 | `k9_core` | ABB Foundation | Defines core abstract classes and interfaces (Agent, Router, Orchestrator, Persistence, Governance, Security). |
 | `k9_agents` | Agent Abstractions | Provides agent-related base classes, patterns, and supporting framework components. |
 | `k9_factories` | Factory Layer | Defines factory abstractions for creating orchestrators, persistence layers, monitoring adapters, and connectors. |
@@ -72,8 +70,6 @@ to be specialized into SBBs in application-specific or integration layers.
 | `policies` | Governance Configuration | Contains configuration-driven policies for governance, compliance, and security. |
 | `tests` | Verification Layer | Validates ABB contracts, interfaces, and framework behavior. |
 
-
----
 
 ## Architectural Positioning
 
@@ -88,23 +84,21 @@ implementation layers.
 
 This separation ensures:
 
-- Long-term maintainability  
-- Architectural clarity  
-- Implementation flexibility  
-- Enterprise-grade governance  
+- Long-term maintainability
+- Architectural clarity
+- Implementation flexibility
+- Enterprise-grade governance
 
-
----
 
 ## Example: Defining a Custom Agent from ABB
 
-```python
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+    from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
-class MyAgent(BaseAgent):
-    def execute(self, payload):
-        return {
-            "status": "success",
-            "input": payload
-        }
+    class MyAgent(BaseAgent):
+        def execute(self, payload):
+            return {
+                "status": "success",
+                "input": payload
+            }
+
 """
