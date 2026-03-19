@@ -2,6 +2,7 @@
 # K9-AIF Framework
 
 # File: k9_aif_abb/k9_core/orchestration/base_handler.py
+from __future__ import annotations
 
 from typing import Dict, Any, Optional
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
@@ -18,7 +19,7 @@ class Handler:
 
     layer = "Orchestration ABB"
 
-    def __init__(self, agent: BaseAgent, successor: Optional["Handler"] = None):
+    def __init__(self, agent: BaseAgent, successor: Handler | None = None):
         self.agent = agent
         self.successor = successor
 

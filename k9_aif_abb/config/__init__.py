@@ -39,6 +39,6 @@ components are selected, connected, and executed.
 
 ## Architectural Note
 
-# config defines how the system is wired and executed,
-# while ABB/SBB packages define what the system does.
+> Config defines how the system is wired and executed, while ABB/SBB packages define what the system does.
+
 """
