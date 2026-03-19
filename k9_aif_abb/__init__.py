@@ -2,10 +2,6 @@
 # K9-AIF Framework
 
 """
-# SPDX-License-Identifier: Apache-2.0
-# K9-AIF Framework
-All rights reserved.
-
 K9-AIF - Agent-based Integration Framework
 -------------------------------------------
 K9-AIF is a governed, modular, and extensible enterprise framework for
