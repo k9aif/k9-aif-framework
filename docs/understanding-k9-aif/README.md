@@ -34,8 +34,6 @@ multi-agent AI systems aligned with enterprise architecture principles.
    → Common questions and clarifications  
    `06-faq.md`
 
----
-Start here for a structured explanation of K9-AIF:
 
 - [The Path of K9-AIF](01-the-path-of-k9-aif.md)
 - [What K9-AIF Is](02-what-k9-aif-is.md)
