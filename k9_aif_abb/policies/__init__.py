@@ -34,6 +34,6 @@ components define *how those rules are enforced*.
 
 ## Architectural Note
 
-# policies define the rules,
-# while k9_governance enforces those rules.
+> policies define the rules, while k9_governance enforces those rules.
+
 """

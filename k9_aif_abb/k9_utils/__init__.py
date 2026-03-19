@@ -31,6 +31,6 @@ keeping the core architecture clean and focused.
 
 ## Architectural Note
 
-# k9_utils provides supporting helper functions,
-# while core framework packages define architectural behavior.
+> k9_utils provides supporting helper functions, while core framework packages define architectural behavior.
+
 """
