@@ -75,14 +75,14 @@ The package exposes foundational framework classes including:
 
 ## Example: Extending a Core ABB
 
-```python
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
-class MyAgent(BaseAgent):
-    def execute(self, payload):
-        return {
-            "status": "success",
-            "payload": payload
-        }
+    from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+
+    class MyAgent(BaseAgent):
+        def execute(self, payload):
+            return {
+                "status": "success",
+                "payload": payload
+            }
 
 """

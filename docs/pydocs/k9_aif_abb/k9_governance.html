@@ -32,6 +32,7 @@
   <li><a href="#design-intent">Design Intent</a></li>
   <li><a href="#default-governance-components">Default Governance Components</a></li>
   <li><a href="#example-governance-implementation-pattern">Example: Governance Implementation Pattern</a></li>
+  <li><a href="#architectural-note">Architectural Note</a></li>
 </ul>
 
 
@@ -85,11 +86,11 @@ reusable way.</p>
 <p>The intent of this package is to ensure that governance in K9-AIF is:</p>
 
 <ul>
-<li><strong>Reusable</strong> — common governance logic can be shared across solutions</li>
-<li><strong>Extensible</strong> — default implementations can be subclassed or replaced</li>
-<li><strong>Policy-aware</strong> — governance behavior is aligned with framework rules and controls</li>
-<li><strong>Operational</strong> — enforcement occurs during execution, not only at design time</li>
-<li><strong>Observable</strong> — governance outcomes can be monitored and audited</li>
+<li>Reusable — common governance logic can be shared across solutions</li>
+<li>Extensible — default implementations can be subclassed or replaced</li>
+<li>Policy-aware — governance behavior is aligned with framework rules and controls</li>
+<li>Operational — enforcement occurs during execution, not only at design time</li>
+<li>Observable — governance outcomes can be monitored and audited</li>
 </ul>
 
 <h2 id="default-governance-components">Default Governance Components</h2>
@@ -105,14 +106,20 @@ intended to demonstrate how governance ABB contracts can be realized in practice
 
 <h2 id="example-governance-implementation-pattern">Example: Governance Implementation Pattern</h2>
 
-<p>from <a href="k9_core/governance/base_governance.html">k9_aif_abb.k9_core.governance.base_governance</a> import BaseGovernance</p>
+<pre><code>from <a href="k9_core/governance/base_governance.html">k9_aif_abb.k9_core.governance.base_governance</a> import BaseGovernance
 
-<p>class ProfanityGovernance(BaseGovernance):
+class ProfanityGovernance(BaseGovernance):
     def validate(self, text):
         return {
             "allowed": True,
             "text": text
-        }</p>
+        }
+</code></pre>
+
+<h2 id="architectural-note">Architectural Note</h2>
+
+<p>k9_governance provides reusable governance implementations built on ABB
+contracts, while <code>policies</code> defines the declarative rules those components enforce.</p>
 </div>
 
                         <input id="mod-k9_governance-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -153,11 +160,11 @@ intended to demonstrate how governance ABB contracts can be realized in practice
 </span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
 </span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">The intent of this package is to ensure that governance in K9-AIF is:</span>
 </span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- **Reusable** — common governance logic can be shared across solutions</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- **Extensible** — default implementations can be subclassed or replaced</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- **Policy-aware** — governance behavior is aligned with framework rules and controls</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- **Operational** — enforcement occurs during execution, not only at design time</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- **Observable** — governance outcomes can be monitored and audited</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- Reusable — common governance logic can be shared across solutions</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- Extensible — default implementations can be subclassed or replaced</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- Policy-aware — governance behavior is aligned with framework rules and controls</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- Operational — enforcement occurs during execution, not only at design time</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- Observable — governance outcomes can be monitored and audited</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">## Default Governance Components</span>
@@ -172,17 +179,21 @@ intended to demonstrate how governance ABB contracts can be realized in practice
 </span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>
 </span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">## Example: Governance Implementation Pattern</span>
 </span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">class ProfanityGovernance(BaseGovernance):</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">    def validate(self, text):</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">        return {</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">            &quot;allowed&quot;: True,</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">            &quot;text&quot;: text</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">        }</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">    from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">    class ProfanityGovernance(BaseGovernance):</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">        def validate(self, text):</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">            return {</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">                &quot;allowed&quot;: True,</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">                &quot;text&quot;: text</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">            }</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>
 </span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">## Architectural Note</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">k9_governance provides reusable governance implementations built on ABB</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">contracts, while `policies` defines the declarative rules those components enforce.</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

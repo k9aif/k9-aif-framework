@@ -9,7 +9,7 @@ constructing and provisioning runtime implementations of K9-AIF framework
 services.
 
 Factories enable configuration-driven instantiation of components such as
-persistence backends, LLM providers, routers, orchestrators, governance modules,
+persistence backends, routers, orchestrators, governance modules,
 connectors, and monitoring adapters.
 
 They serve as the bridge between architectural abstractions (ABB layer) and
@@ -55,35 +55,32 @@ configuration-driven system behavior.
 
 ## Usage Example
 
-from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
-from k9_aif_abb.k9_factories.llm_factory import LLMFactory
-from k9_aif_abb.k9_factories.router_factory import RouterFactory
+    from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
+    from k9_aif_abb.k9_factories.router_factory import RouterFactory
 
-# Example configuration
-config = {
-    "vectordb": {
-        "backend": "sqlite"
-    },
-    "llm": {
-        "provider": "ollama",
-        "model": "llama3.2:1b"
-    },
-    "router": {
-        "type": "default"
+    # Example configuration
+    config = {
+        "persistence": {
+            "backend": "sqlite"
+        },
+        "router": {
+            "type": "default"
+        }
     }
-}
 
-# Create persistence backend
-store = PersistenceFactory.create(config)
+    # Create persistence backend
+    store = PersistenceFactory.create(config)
 
-# Create LLM provider
-llm = LLMFactory.create(config)
+    # Create router
+    router = RouterFactory.create(config)
 
-# Create router
-router = RouterFactory.create(config)
+    # Use components
+    route = router.route({"input": "sample payload"})
 
-# Use components
-response = llm.generate("Explain K9-AIF in one line")
-route = router.route({"input": "sample payload"})
 
+## Architectural Note
+
+Factories are primarily consumed by SBB components (agents, orchestrators,
+retrievers) rather than directly by end users. They enable runtime flexibility
+while preserving strict separation between ABB contracts and SBB implementations.
 """

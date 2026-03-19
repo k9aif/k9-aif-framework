@@ -36,13 +36,12 @@ This package may include:
 
 ## Example: Using an MCP Client Connection
 
-from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
+    from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
 
-factory = MCPClientConnectionFactory.from_config(config)
-client = factory.get_connection("weather")
+    factory = MCPClientConnectionFactory.from_config(config)
+    client = factory.get_connection("weather")
 
-await client.connect()
-result = await client.call_tool("get_weather", {"city": "Boston"})
-
+    await client.connect()
+    result = await client.call_tool("get_weather", {"city": "Boston"})
 
 """

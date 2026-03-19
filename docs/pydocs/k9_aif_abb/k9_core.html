@@ -148,15 +148,15 @@ framework components are built on a common architectural foundation.</p>
 
 <h2 id="example-extending-a-core-abb">Example: Extending a Core ABB</h2>
 
-<p>```python
-from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent</p>
+<pre><code>from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent
 
-<p>class MyAgent(BaseAgent):
+class MyAgent(BaseAgent):
     def execute(self, payload):
         return {
             "status": "success",
             "payload": payload
-        }</p>
+        }
+</code></pre>
 </div>
 
                         <input id="mod-k9_core-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -240,15 +240,15 @@ from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent
 </span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
 </span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd">## Example: Extending a Core ABB</span>
 </span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">```python</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd">    from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
 </span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">class MyAgent(BaseAgent):</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd">    def execute(self, payload):</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">        return {</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">            &quot;status&quot;: &quot;success&quot;,</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">            &quot;payload&quot;: payload</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">        }</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">    class MyAgent(BaseAgent):</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd">        def execute(self, payload):</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">            return {</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">                &quot;status&quot;: &quot;success&quot;,</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">                &quot;payload&quot;: payload</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">            }</span>
 </span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>
 </span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>

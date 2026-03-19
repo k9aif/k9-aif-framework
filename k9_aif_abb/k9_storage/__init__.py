@@ -35,13 +35,13 @@ This package may include:
 
 ## Example: Extending BaseStorage
 
-from k9_aif_abb.k9_core.storage.base_storage import BaseStorage
+    from k9_aif_abb.k9_core.storage.base_storage import BaseStorage
 
-class MyCustomStorage(BaseStorage):
-    def save(self, key, value):
-        pass
+    class MyCustomStorage(BaseStorage):
+        def save(self, key, value):
+            pass
 
-    def load(self, key):
-        pass
-        
+        def load(self, key):
+            pass
+
 """

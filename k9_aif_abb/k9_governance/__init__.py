@@ -32,11 +32,11 @@ The `k9_governance` package supports the framework by providing:
 
 The intent of this package is to ensure that governance in K9-AIF is:
 
-- **Reusable** — common governance logic can be shared across solutions
-- **Extensible** — default implementations can be subclassed or replaced
-- **Policy-aware** — governance behavior is aligned with framework rules and controls
-- **Operational** — enforcement occurs during execution, not only at design time
-- **Observable** — governance outcomes can be monitored and audited
+- Reusable — common governance logic can be shared across solutions
+- Extensible — default implementations can be subclassed or replaced
+- Policy-aware — governance behavior is aligned with framework rules and controls
+- Operational — enforcement occurs during execution, not only at design time
+- Observable — governance outcomes can be monitored and audited
 
 
 ## Default Governance Components
@@ -51,14 +51,18 @@ intended to demonstrate how governance ABB contracts can be realized in practice
 
 ## Example: Governance Implementation Pattern
 
+    from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
 
-from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
+    class ProfanityGovernance(BaseGovernance):
+        def validate(self, text):
+            return {
+                "allowed": True,
+                "text": text
+            }
 
-class ProfanityGovernance(BaseGovernance):
-    def validate(self, text):
-        return {
-            "allowed": True,
-            "text": text
-        }
 
+## Architectural Note
+
+k9_governance provides reusable governance implementations built on ABB
+contracts, while `policies` defines the declarative rules those components enforce.
 """

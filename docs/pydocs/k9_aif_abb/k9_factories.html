@@ -32,13 +32,7 @@
   <li><a href="#available-factory-modules">Available Factory Modules</a></li>
   <li><a href="#architectural-positioning">Architectural Positioning</a></li>
   <li><a href="#usage-example">Usage Example</a></li>
-</ul></li>
-<li><a href="#example-configuration">Example configuration</a>
-<ul>
-  <li><a href="#create-persistence-backend">Create persistence backend</a></li>
-  <li><a href="#create-llm-provider">Create LLM provider</a></li>
-  <li><a href="#create-router">Create router</a></li>
-  <li><a href="#use-components">Use components</a></li>
+  <li><a href="#architectural-note">Architectural Note</a></li>
 </ul>
 
 
@@ -81,7 +75,7 @@ constructing and provisioning runtime implementations of K9-AIF framework
 services.</p>
 
 <p>Factories enable configuration-driven instantiation of components such as
-persistence backends, LLM providers, routers, orchestrators, governance modules,
+persistence backends, routers, orchestrators, governance modules,
 connectors, and monitoring adapters.</p>
 
 <p>They serve as the bridge between architectural abstractions (ABB layer) and
@@ -127,41 +121,34 @@ configuration-driven system behavior.</p>
 
 <h2 id="usage-example">Usage Example</h2>
 
-<p>from <a href="k9_factories/persistence_factory.html">k9_aif_abb.k9_factories.persistence_factory</a> import PersistenceFactory
-from <a href="k9_factories/llm_factory.html">k9_aif_abb.k9_factories.llm_factory</a> import LLMFactory
-from <a href="k9_factories/router_factory.html">k9_aif_abb.k9_factories.router_factory</a> import RouterFactory</p>
+<pre><code>from <a href="k9_factories/persistence_factory.html">k9_aif_abb.k9_factories.persistence_factory</a> import PersistenceFactory
+from <a href="k9_factories/router_factory.html">k9_aif_abb.k9_factories.router_factory</a> import RouterFactory
 
-<h1 id="example-configuration">Example configuration</h1>
-
-<p>config = {
-    "vectordb": {
+# Example configuration
+config = {
+    "persistence": {
         "backend": "sqlite"
-    },
-    "llm": {
-        "provider": "ollama",
-        "model": "llama3.2:1b"
     },
     "router": {
         "type": "default"
     }
-}</p>
+}
 
-<h1 id="create-persistence-backend">Create persistence backend</h1>
+# Create persistence backend
+store = PersistenceFactory.create(config)
 
-<p>store = PersistenceFactory.create(config)</p>
+# Create router
+router = RouterFactory.create(config)
 
-<h1 id="create-llm-provider">Create LLM provider</h1>
+# Use components
+route = router.route({"input": "sample payload"})
+</code></pre>
 
-<p>llm = LLMFactory.create(config)</p>
+<h2 id="architectural-note">Architectural Note</h2>
 
-<h1 id="create-router">Create router</h1>
-
-<p>router = RouterFactory.create(config)</p>
-
-<h1 id="use-components">Use components</h1>
-
-<p>response = llm.generate("Explain K9-AIF in one line")
-route = router.route({"input": "sample payload"})</p>
+<p>Factories are primarily consumed by SBB components (agents, orchestrators,
+retrievers) rather than directly by end users. They enable runtime flexibility
+while preserving strict separation between ABB contracts and SBB implementations.</p>
 </div>
 
                         <input id="mod-k9_factories-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -179,7 +166,7 @@ route = router.route({"input": "sample payload"})</p>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">services.</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">Factories enable configuration-driven instantiation of components such as</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">persistence backends, LLM providers, routers, orchestrators, governance modules,</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">persistence backends, routers, orchestrators, governance modules,</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">connectors, and monitoring adapters.</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">They serve as the bridge between architectural abstractions (ABB layer) and</span>
@@ -225,38 +212,35 @@ route = router.route({"input": "sample payload"})</p>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
 </span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">## Usage Example</span>
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">from k9_aif_abb.k9_factories.llm_factory import LLMFactory</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd"># Example configuration</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">config = {</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">    &quot;vectordb&quot;: {</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">        &quot;backend&quot;: &quot;sqlite&quot;</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">    },</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">    &quot;llm&quot;: {</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">        &quot;provider&quot;: &quot;ollama&quot;,</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        &quot;model&quot;: &quot;llama3.2:1b&quot;</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">    },</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    &quot;router&quot;: {</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        &quot;type&quot;: &quot;default&quot;</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">    }</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">}</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd"># Create persistence backend</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">store = PersistenceFactory.create(config)</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd"># Create LLM provider</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="sd">llm = LLMFactory.create(config)</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd"># Create router</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">router = RouterFactory.create(config)</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd"># Use components</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">response = llm.generate(&quot;Explain K9-AIF in one line&quot;)</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="sd">route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">    from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">    from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">    # Example configuration</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">    config = {</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">        &quot;persistence&quot;: {</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">            &quot;backend&quot;: &quot;sqlite&quot;</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">        },</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        &quot;router&quot;: {</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">            &quot;type&quot;: &quot;default&quot;</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">        }</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">    }</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    # Create persistence backend</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    store = PersistenceFactory.create(config)</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">    # Create router</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">    router = RouterFactory.create(config)</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">    # Use components</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">    route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">## Architectural Note</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">Factories are primarily consumed by SBB components (agents, orchestrators,</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">retrievers) rather than directly by end users. They enable runtime flexibility</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">while preserving strict separation between ABB contracts and SBB implementations.</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

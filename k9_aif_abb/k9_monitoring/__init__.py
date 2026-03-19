@@ -1,3 +1,4 @@
+
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
@@ -34,28 +35,29 @@ This package may include support for:
 
 ## Example: Extending a Monitoring ABB
 
-```python
-from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor
+    from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor
 
-class ConsoleMonitor(BaseMonitor):
-    def log(self, message):
-        print(f"[MONITOR] {message}")
+    class ConsoleMonitor(BaseMonitor):
+        def log(self, message):
+            print(f"[MONITOR] {message}")
 
-    def metric(self, name, value):
-        print(f"[METRIC] {name}={value}")
-```
+        def metric(self, name, value):
+            print(f"[METRIC] {name}={value}")
 
-Relationship to Other K9-AIF Packages
-	•	k9_core defines the BaseMonitor contract
-	•	k9_agents emit execution-level telemetry
-	•	k9_orchestrators provide workflow-level monitoring
-	•	k9_factories may construct monitoring implementations
-	•	k9_governance may audit monitored events
-	•	k9_persistence may store metrics, traces, and logs
 
-Architectural Positioning
+## Relationship to Other K9-AIF Packages
 
-The k9_monitoring package represents the observability layer of K9-AIF.
+- `k9_core` defines the BaseMonitor contract
+- `k9_agents` emit execution-level telemetry
+- `k9_orchestrators` provide workflow-level monitoring
+- `k9_factories` may construct monitoring implementations
+- `k9_governance` may audit monitored events
+- `k9_persistence` may store metrics, traces, and logs
+
+
+## Architectural Positioning
+
+The `k9_monitoring` package represents the observability layer of K9-AIF.
 
 It provides reusable monitoring components built on top of the core ABB
 contracts, enabling downstream implementations to extend or replace runtime

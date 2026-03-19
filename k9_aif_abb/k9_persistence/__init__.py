@@ -38,42 +38,45 @@ This package may include:
 
 ## Example: Extending BasePersistence
 
-from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence
+    from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence
 
-class CustomPersistence(BasePersistence):
-    def save(self, key, value):
-        pass
+    class CustomPersistence(BasePersistence):
+        def save(self, key, value):
+            pass
 
-    def load(self, key):
-        pass
-       
-        
+        def load(self, key):
+            pass
+
+
 This example shows how persistence implementations are derived from the
 core BasePersistence abstraction.
 
-Relationship to Other K9-AIF Packages
-	•	k9_core defines the BasePersistence contract
-	•	k9_factories provisions persistence implementations through PersistenceFactory
-	•	k9_agents may use persistence components for shared or durable storage
-	•	k9_retrieval may access vector-enabled persistence backends for search
-	•	k9_orchestrators may persist workflow state
-	•	k9_monitoring and k9_governance may rely on persistent records
 
-Architectural Positioning
+## Relationship to Other K9-AIF Packages
 
-The k9_persistence package represents the framework persistence layer of K9-AIF.
+- `k9_core` defines the BasePersistence contract
+- `k9_factories` provisions persistence implementations through PersistenceFactory
+- `k9_agents` may use persistence components for shared or durable storage
+- `k9_retrieval` may access vector-enabled persistence backends for search
+- `k9_orchestrators` may persist workflow state
+- `k9_monitoring` and `k9_governance` may rely on persistent records
+
+
+## Architectural Positioning
+
+The `k9_persistence` package represents the framework persistence layer of K9-AIF.
 
 It focuses on how data is physically stored and retrieved through managed backend
-implementations, while higher-level packages such as k9_data define how data
+implementations, while higher-level packages such as `k9_data` define how data
 is modeled, interpreted, and used within retrieval and agentic workflows.
 
 This separation preserves clean architectural boundaries between data semantics
 and durable storage mechanics.
 
-# ---------------------------------------------------------------------
-# Architectural Note
-# ---------------------------------------------------------------------
-# k9_persistence defines how data is physically stored and retrieved,
-# while k9_data defines the structure and semantics of that data.
+
+## Architectural Note
+
+`k9_persistence` defines how data is physically stored and retrieved,
+while `k9_data` defines the structure and semantics of that data.
 
 """

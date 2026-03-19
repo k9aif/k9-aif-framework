@@ -31,14 +31,9 @@
   <li><a href="#key-responsibilities">Key Responsibilities</a></li>
   <li><a href="#typical-components">Typical Components</a></li>
   <li><a href="#example-extending-basepersistence">Example: Extending BasePersistence</a></li>
-</ul></li>
-<li><a href="#-">---------------------------------------------------------------------</a>
-<ul>
+  <li><a href="#relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</a></li>
+  <li><a href="#architectural-positioning">Architectural Positioning</a></li>
   <li><a href="#architectural-note">Architectural Note</a></li>
-  <li><a href="#--2">---------------------------------------------------------------------</a></li>
-  <li><a href="#--2">---------------------------------------------------------------------</a></li>
-  <li><a href="#k9_persistence-defines-how-data-is-physically-stored-and-retrieved">k9_persistence defines how data is physically stored and retrieved,</a></li>
-  <li><a href="#while-k9_data-defines-the-structure-and-semantics-of-that-data">while k9_data defines the structure and semantics of that data.</a></li>
 </ul>
 
 
@@ -99,47 +94,45 @@ downstream Solution Building Blocks (SBBs).</p>
 
 <h2 id="example-extending-basepersistence">Example: Extending BasePersistence</h2>
 
-<p>from <a href="k9_core/persistence/base_persistence.html">k9_aif_abb.k9_core.persistence.base_persistence</a> import BasePersistence</p>
+<pre><code>from <a href="k9_core/persistence/base_persistence.html">k9_aif_abb.k9_core.persistence.base_persistence</a> import BasePersistence
 
-<p>class CustomPersistence(BasePersistence):
+class CustomPersistence(BasePersistence):
     def save(self, key, value):
-        pass</p>
+        pass
 
-<pre><code>def load(self, key):
-    pass
+    def load(self, key):
+        pass
 </code></pre>
 
 <p>This example shows how persistence implementations are derived from the
 core BasePersistence abstraction.</p>
 
-<p>Relationship to Other K9-AIF Packages
-        •       k9_core defines the BasePersistence contract
-        •       k9_factories provisions persistence implementations through PersistenceFactory
-        •       k9_agents may use persistence components for shared or durable storage
-        •       k9_retrieval may access vector-enabled persistence backends for search
-        •       k9_orchestrators may persist workflow state
-        •       k9_monitoring and k9_governance may rely on persistent records</p>
+<h2 id="relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</h2>
 
-<p>Architectural Positioning</p>
+<ul>
+<li><code>k9_core</code> defines the BasePersistence contract</li>
+<li><code>k9_factories</code> provisions persistence implementations through PersistenceFactory</li>
+<li><code>k9_agents</code> may use persistence components for shared or durable storage</li>
+<li><code>k9_retrieval</code> may access vector-enabled persistence backends for search</li>
+<li><code>k9_orchestrators</code> may persist workflow state</li>
+<li><code>k9_monitoring</code> and <code>k9_governance</code> may rely on persistent records</li>
+</ul>
 
-<p>The k9_persistence package represents the framework persistence layer of K9-AIF.</p>
+<h2 id="architectural-positioning">Architectural Positioning</h2>
+
+<p>The <code>k9_persistence</code> package represents the framework persistence layer of K9-AIF.</p>
 
 <p>It focuses on how data is physically stored and retrieved through managed backend
-implementations, while higher-level packages such as k9_data define how data
+implementations, while higher-level packages such as <code>k9_data</code> define how data
 is modeled, interpreted, and used within retrieval and agentic workflows.</p>
 
 <p>This separation preserves clean architectural boundaries between data semantics
 and durable storage mechanics.</p>
 
-<h1 id="-">---------------------------------------------------------------------</h1>
+<h2 id="architectural-note">Architectural Note</h2>
 
-<h1 id="architectural-note">Architectural Note</h1>
-
-<h1 id="--2">---------------------------------------------------------------------</h1>
-
-<h1 id="k9_persistence-defines-how-data-is-physically-stored-and-retrieved">k9_persistence defines how data is physically stored and retrieved,</h1>
-
-<h1 id="while-k9_data-defines-the-structure-and-semantics-of-that-data">while k9_data defines the structure and semantics of that data.</h1>
+<p><code>k9_persistence</code> defines how data is physically stored and retrieved,
+while <code>k9_data</code> defines the structure and semantics of that data.</p>
 </div>
 
                         <input id="mod-k9_persistence-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -186,45 +179,48 @@ and durable storage mechanics.</p>
 </span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
 </span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">## Example: Extending BasePersistence</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence</span>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">class CustomPersistence(BasePersistence):</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    def save(self, key, value):</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        pass</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">    class CustomPersistence(BasePersistence):</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">        def save(self, key, value):</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">            pass</span>
 </span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">    def load(self, key):</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">        pass</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">       </span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">        </span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">        def load(self, key):</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">            pass</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>
 </span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">This example shows how persistence implementations are derived from the</span>
 </span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">core BasePersistence abstraction.</span>
 </span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">Relationship to Other K9-AIF Packages</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">	•	k9_core defines the BasePersistence contract</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">	•	k9_factories provisions persistence implementations through PersistenceFactory</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">	•	k9_agents may use persistence components for shared or durable storage</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">	•	k9_retrieval may access vector-enabled persistence backends for search</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">	•	k9_orchestrators may persist workflow state</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">	•	k9_monitoring and k9_governance may rely on persistent records</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">Architectural Positioning</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">## Relationship to Other K9-AIF Packages</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">- `k9_core` defines the BasePersistence contract</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">- `k9_factories` provisions persistence implementations through PersistenceFactory</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">- `k9_agents` may use persistence components for shared or durable storage</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">- `k9_retrieval` may access vector-enabled persistence backends for search</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">- `k9_orchestrators` may persist workflow state</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">- `k9_monitoring` and `k9_governance` may rely on persistent records</span>
 </span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">The k9_persistence package represents the framework persistence layer of K9-AIF.</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">It focuses on how data is physically stored and retrieved through managed backend</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">implementations, while higher-level packages such as k9_data define how data</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">is modeled, interpreted, and used within retrieval and agentic workflows.</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">This separation preserves clean architectural boundaries between data semantics</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">and durable storage mechanics.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">## Architectural Positioning</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">The `k9_persistence` package represents the framework persistence layer of K9-AIF.</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">It focuses on how data is physically stored and retrieved through managed backend</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">implementations, while higher-level packages such as `k9_data` define how data</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">is modeled, interpreted, and used within retrieval and agentic workflows.</span>
 </span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd"># ---------------------------------------------------------------------</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd"># Architectural Note</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd"># ---------------------------------------------------------------------</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd"># k9_persistence defines how data is physically stored and retrieved,</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd"># while k9_data defines the structure and semantics of that data.</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">This separation preserves clean architectural boundaries between data semantics</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">and durable storage mechanics.</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">## Architectural Note</span>
 </span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd">`k9_persistence` defines how data is physically stored and retrieved,</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="sd">while `k9_data` defines the structure and semantics of that data.</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

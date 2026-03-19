@@ -31,6 +31,8 @@
   <li><a href="#key-responsibilities">Key Responsibilities</a></li>
   <li><a href="#supported-monitoring-integrations">Supported Monitoring Integrations</a></li>
   <li><a href="#example-extending-a-monitoring-abb">Example: Extending a Monitoring ABB</a></li>
+  <li><a href="#relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</a></li>
+  <li><a href="#architectural-positioning">Architectural Positioning</a></li>
 </ul>
 
 
@@ -90,29 +92,30 @@ agentic systems remain traceable, debuggable, and operationally reliable.</p>
 
 <h2 id="example-extending-a-monitoring-abb">Example: Extending a Monitoring ABB</h2>
 
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn"><a href="k9_core/monitoring/base_monitoring.html">k9_aif_abb.k9_core.monitoring.base_monitoring</a></span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMonitor</span>
+<pre><code>from <a href="k9_core/monitoring/base_monitoring.html">k9_aif_abb.k9_core.monitoring.base_monitoring</a> import BaseMonitor
 
-<span class="k">class</span><span class="w"> </span><span class="nc">ConsoleMonitor</span><span class="p">(</span><span class="n">BaseMonitor</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[MONITOR] </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+class ConsoleMonitor(BaseMonitor):
+    def log(self, message):
+        print(f"[MONITOR] {message}")
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">metric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[METRIC] </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    def metric(self, name, value):
+        print(f"[METRIC] {name}={value}")
 </code></pre>
-</div>
 
-<p>Relationship to Other K9-AIF Packages
-        •       k9_core defines the BaseMonitor contract
-        •       k9_agents emit execution-level telemetry
-        •       k9_orchestrators provide workflow-level monitoring
-        •       k9_factories may construct monitoring implementations
-        •       k9_governance may audit monitored events
-        •       k9_persistence may store metrics, traces, and logs</p>
+<h2 id="relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</h2>
 
-<p>Architectural Positioning</p>
+<ul>
+<li><code>k9_core</code> defines the BaseMonitor contract</li>
+<li><code>k9_agents</code> emit execution-level telemetry</li>
+<li><code>k9_orchestrators</code> provide workflow-level monitoring</li>
+<li><code>k9_factories</code> may construct monitoring implementations</li>
+<li><code>k9_governance</code> may audit monitored events</li>
+<li><code>k9_persistence</code> may store metrics, traces, and logs</li>
+</ul>
 
-<p>The k9_monitoring package represents the observability layer of K9-AIF.</p>
+<h2 id="architectural-positioning">Architectural Positioning</h2>
+
+<p>The <code>k9_monitoring</code> package represents the observability layer of K9-AIF.</p>
 
 <p>It provides reusable monitoring components built on top of the core ABB
 contracts, enabling downstream implementations to extend or replace runtime
@@ -159,34 +162,35 @@ monitoring behavior while preserving architectural consistency.</p>
 </span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
 </span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">## Example: Extending a Monitoring ABB</span>
 </span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">```python</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">class ConsoleMonitor(BaseMonitor):</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    def log(self, message):</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">        print(f&quot;[MONITOR] {message}&quot;)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    def metric(self, name, value):</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        print(f&quot;[METRIC] {name}={value}&quot;)</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">```</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">Relationship to Other K9-AIF Packages</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">	•	k9_core defines the BaseMonitor contract</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">	•	k9_agents emit execution-level telemetry</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">	•	k9_orchestrators provide workflow-level monitoring</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">	•	k9_factories may construct monitoring implementations</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">	•	k9_governance may audit monitored events</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">	•	k9_persistence may store metrics, traces, and logs</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">    from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">    class ConsoleMonitor(BaseMonitor):</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">        def log(self, message):</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">            print(f&quot;[MONITOR] {message}&quot;)</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">        def metric(self, name, value):</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">            print(f&quot;[METRIC] {name}={value}&quot;)</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">## Relationship to Other K9-AIF Packages</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">- `k9_core` defines the BaseMonitor contract</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">- `k9_agents` emit execution-level telemetry</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">- `k9_orchestrators` provide workflow-level monitoring</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">- `k9_factories` may construct monitoring implementations</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">- `k9_governance` may audit monitored events</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">- `k9_persistence` may store metrics, traces, and logs</span>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">Architectural Positioning</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">The k9_monitoring package represents the observability layer of K9-AIF.</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">It provides reusable monitoring components built on top of the core ABB</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">contracts, enabling downstream implementations to extend or replace runtime</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">monitoring behavior while preserving architectural consistency.</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">## Architectural Positioning</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">The `k9_monitoring` package represents the observability layer of K9-AIF.</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">It provides reusable monitoring components built on top of the core ABB</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">contracts, enabling downstream implementations to extend or replace runtime</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">monitoring behavior while preserving architectural consistency.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

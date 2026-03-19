@@ -32,11 +32,11 @@ The `k9_agents` package provides the agent-level ABB foundation for:
 
 The purpose of this package is to ensure that agents in K9-AIF are:
 
-- **Contract-driven** — built on well-defined interfaces and execution methods
-- **Extensible** — designed for specialization into domain-specific behaviors
-- **Governed** — capable of participating in policy-aware and auditable flows
-- **Composable** — able to function as part of larger orchestrated systems
-- **Observable** — ready for monitoring, tracing, and operational oversight
+- Contract-driven — built on well-defined interfaces and execution methods
+- Extensible — designed for specialization into domain-specific behaviors
+- Governed — capable of participating in policy-aware and auditable flows
+- Composable — able to function as part of larger orchestrated systems
+- Observable — ready for monitoring, tracing, and operational oversight
 
 
 ## Typical Responsibilities of Agent ABBs
@@ -65,13 +65,13 @@ The `k9_agents` package works in conjunction with other ABB packages:
 
 ## Example: Extending an Agent ABB
 
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+    from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
-class MyAgent(BaseAgent):
-    def execute(self, payload):
-        return {
-            "status": "success",
-            "result": payload
-        }
+    class MyAgent(BaseAgent):
+        def execute(self, payload):
+            return {
+                "status": "success",
+                "result": payload
+            }
 
 """

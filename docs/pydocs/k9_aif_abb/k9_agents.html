@@ -102,11 +102,11 @@ integrate cleanly with persistence, monitoring, routing, and external systems.</
 <p>The purpose of this package is to ensure that agents in K9-AIF are:</p>
 
 <ul>
-<li><strong>Contract-driven</strong> — built on well-defined interfaces and execution methods</li>
-<li><strong>Extensible</strong> — designed for specialization into domain-specific behaviors</li>
-<li><strong>Governed</strong> — capable of participating in policy-aware and auditable flows</li>
-<li><strong>Composable</strong> — able to function as part of larger orchestrated systems</li>
-<li><strong>Observable</strong> — ready for monitoring, tracing, and operational oversight</li>
+<li>Contract-driven — built on well-defined interfaces and execution methods</li>
+<li>Extensible — designed for specialization into domain-specific behaviors</li>
+<li>Governed — capable of participating in policy-aware and auditable flows</li>
+<li>Composable — able to function as part of larger orchestrated systems</li>
+<li>Observable — ready for monitoring, tracing, and operational oversight</li>
 </ul>
 
 <h2 id="typical-responsibilities-of-agent-abbs">Typical Responsibilities of Agent ABBs</h2>
@@ -137,14 +137,15 @@ integrate cleanly with persistence, monitoring, routing, and external systems.</
 
 <h2 id="example-extending-an-agent-abb">Example: Extending an Agent ABB</h2>
 
-<p>from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent</p>
+<pre><code>from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent
 
-<p>class MyAgent(BaseAgent):
+class MyAgent(BaseAgent):
     def execute(self, payload):
         return {
             "status": "success",
             "result": payload
-        }</p>
+        }
+</code></pre>
 </div>
 
                         <input id="mod-k9_agents-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -185,11 +186,11 @@ integrate cleanly with persistence, monitoring, routing, and external systems.</
 </span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
 </span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">The purpose of this package is to ensure that agents in K9-AIF are:</span>
 </span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- **Contract-driven** — built on well-defined interfaces and execution methods</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- **Extensible** — designed for specialization into domain-specific behaviors</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- **Governed** — capable of participating in policy-aware and auditable flows</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- **Composable** — able to function as part of larger orchestrated systems</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- **Observable** — ready for monitoring, tracing, and operational oversight</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- Contract-driven — built on well-defined interfaces and execution methods</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- Extensible — designed for specialization into domain-specific behaviors</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- Governed — capable of participating in policy-aware and auditable flows</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- Composable — able to function as part of larger orchestrated systems</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- Observable — ready for monitoring, tracing, and operational oversight</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">## Typical Responsibilities of Agent ABBs</span>
@@ -218,14 +219,14 @@ integrate cleanly with persistence, monitoring, routing, and external systems.</
 </span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
 </span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">## Example: Extending an Agent ABB</span>
 </span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">    from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
 </span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">class MyAgent(BaseAgent):</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    def execute(self, payload):</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        return {</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">            &quot;status&quot;: &quot;success&quot;,</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">            &quot;result&quot;: payload</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">        }</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">    class MyAgent(BaseAgent):</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">        def execute(self, payload):</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">            return {</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">                &quot;status&quot;: &quot;success&quot;,</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">                &quot;result&quot;: payload</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">            }</span>
 </span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
 </span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
