@@ -32,6 +32,13 @@
   <li><a href="#available-factory-modules">Available Factory Modules</a></li>
   <li><a href="#architectural-positioning">Architectural Positioning</a></li>
   <li><a href="#usage-example">Usage Example</a></li>
+</ul></li>
+<li><a href="#example-configuration">Example configuration</a>
+<ul>
+  <li><a href="#create-persistence-backend">Create persistence backend</a></li>
+  <li><a href="#create-llm-provider">Create LLM provider</a></li>
+  <li><a href="#create-router">Create router</a></li>
+  <li><a href="#use-components">Use components</a></li>
 </ul>
 
 
@@ -120,39 +127,41 @@ configuration-driven system behavior.</p>
 
 <h2 id="usage-example">Usage Example</h2>
 
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn"><a href="k9_factories/persistence_factory.html">k9_aif_abb.k9_factories.persistence_factory</a></span><span class="w"> </span><span class="kn">import</span> <span class="n">PersistenceFactory</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn"><a href="k9_factories/llm_factory.html">k9_aif_abb.k9_factories.llm_factory</a></span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMFactory</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn"><a href="k9_factories/router_factory.html">k9_aif_abb.k9_factories.router_factory</a></span><span class="w"> </span><span class="kn">import</span> <span class="n">RouterFactory</span>
+<p>from <a href="k9_factories/persistence_factory.html">k9_aif_abb.k9_factories.persistence_factory</a> import PersistenceFactory
+from <a href="k9_factories/llm_factory.html">k9_aif_abb.k9_factories.llm_factory</a> import LLMFactory
+from <a href="k9_factories/router_factory.html">k9_aif_abb.k9_factories.router_factory</a> import RouterFactory</p>
 
-<span class="c1"># Example configuration</span>
-<span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;vectordb&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;sqlite&quot;</span>
-    <span class="p">},</span>
-    <span class="s2">&quot;llm&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;llama3.2:1b&quot;</span>
-    <span class="p">},</span>
-    <span class="s2">&quot;router&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<h1 id="example-configuration">Example configuration</h1>
 
-<span class="c1"># Create persistence backend</span>
-<span class="n">store</span> <span class="o">=</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<p>config = {
+    "vectordb": {
+        "backend": "sqlite"
+    },
+    "llm": {
+        "provider": "ollama",
+        "model": "llama3.2:1b"
+    },
+    "router": {
+        "type": "default"
+    }
+}</p>
 
-<span class="c1"># Create LLM provider</span>
-<span class="n">llm</span> <span class="o">=</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<h1 id="create-persistence-backend">Create persistence backend</h1>
 
-<span class="c1"># Create router</span>
-<span class="n">router</span> <span class="o">=</span> <span class="n">RouterFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<p>store = PersistenceFactory.create(config)</p>
 
-<span class="c1"># Use components</span>
-<span class="n">response</span> <span class="o">=</span> <span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;Explain K9-AIF in one line&quot;</span><span class="p">)</span>
-<span class="n">route</span> <span class="o">=</span> <span class="n">router</span><span class="o">.</span><span class="n">route</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;sample payload&quot;</span><span class="p">})</span>
-</code></pre>
-</div>
+<h1 id="create-llm-provider">Create LLM provider</h1>
+
+<p>llm = LLMFactory.create(config)</p>
+
+<h1 id="create-router">Create router</h1>
+
+<p>router = RouterFactory.create(config)</p>
+
+<h1 id="use-components">Use components</h1>
+
+<p>response = llm.generate("Explain K9-AIF in one line")
+route = router.route({"input": "sample payload"})</p>
 </div>
 
                         <input id="mod-k9_factories-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -216,40 +225,38 @@ configuration-driven system behavior.</p>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
 </span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">## Usage Example</span>
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">```python</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">from k9_aif_abb.k9_factories.llm_factory import LLMFactory</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd"># Example configuration</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">config = {</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">    &quot;vectordb&quot;: {</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        &quot;backend&quot;: &quot;sqlite&quot;</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">    },</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">    &quot;llm&quot;: {</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        &quot;provider&quot;: &quot;ollama&quot;,</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">        &quot;model&quot;: &quot;llama3.2:1b&quot;</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    },</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    &quot;router&quot;: {</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">        &quot;type&quot;: &quot;default&quot;</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">    }</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">}</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd"># Create persistence backend</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">store = PersistenceFactory.create(config)</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="sd"># Create LLM provider</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">llm = LLMFactory.create(config)</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd"># Create router</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">router = RouterFactory.create(config)</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd"># Use components</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="sd">response = llm.generate(&quot;Explain K9-AIF in one line&quot;)</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a><span class="sd">route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a><span class="sd">```</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>
-</span><span id="L-91"><a href="#L-91"><span class="linenos">91</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">from k9_aif_abb.k9_factories.llm_factory import LLMFactory</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd"># Example configuration</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">config = {</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">    &quot;vectordb&quot;: {</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">        &quot;backend&quot;: &quot;sqlite&quot;</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">    },</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">    &quot;llm&quot;: {</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">        &quot;provider&quot;: &quot;ollama&quot;,</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        &quot;model&quot;: &quot;llama3.2:1b&quot;</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">    },</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    &quot;router&quot;: {</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        &quot;type&quot;: &quot;default&quot;</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">    }</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">}</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd"># Create persistence backend</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">store = PersistenceFactory.create(config)</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd"># Create LLM provider</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="sd">llm = LLMFactory.create(config)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd"># Create router</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">router = RouterFactory.create(config)</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd"># Use components</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">response = llm.generate(&quot;Explain K9-AIF in one line&quot;)</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="sd">route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>
+</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

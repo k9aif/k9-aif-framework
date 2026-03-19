@@ -137,8 +137,7 @@ integrate cleanly with persistence, monitoring, routing, and external systems.</
 
 <h2 id="example-extending-an-agent-abb">Example: Extending an Agent ABB</h2>
 
-<p>```python
-from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent</p>
+<p>from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent</p>
 
 <p>class MyAgent(BaseAgent):
     def execute(self, payload):
@@ -219,17 +218,16 @@ from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent
 </span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
 </span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">## Example: Extending an Agent ABB</span>
 </span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">```python</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">class MyAgent(BaseAgent):</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    def execute(self, payload):</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">        return {</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">            &quot;status&quot;: &quot;success&quot;,</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">            &quot;result&quot;: payload</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd">        }</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">class MyAgent(BaseAgent):</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    def execute(self, payload):</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        return {</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">            &quot;status&quot;: &quot;success&quot;,</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">            &quot;result&quot;: payload</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">        }</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

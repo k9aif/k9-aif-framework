@@ -89,17 +89,15 @@ used directly, extended, or replaced by downstream Solution Building Blocks
 
 <h2 id="example-extending-basestorage">Example: Extending BaseStorage</h2>
 
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn"><a href="k9_core/storage/base_storage.html">k9_aif_abb.k9_core.storage.base_storage</a></span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseStorage</span>
+<p>from <a href="k9_core/storage/base_storage.html">k9_aif_abb.k9_core.storage.base_storage</a> import BaseStorage</p>
 
-<span class="k">class</span><span class="w"> </span><span class="nc">MyCustomStorage</span><span class="p">(</span><span class="n">BaseStorage</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">pass</span>
+<p>class MyCustomStorage(BaseStorage):
+    def save(self, key, value):
+        pass</p>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">pass</span>
+<pre><code>def load(self, key):
+    pass
 </code></pre>
-</div>
 </div>
 
                         <input id="mod-k9_storage-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -143,18 +141,16 @@ used directly, extended, or replaced by downstream Solution Building Blocks
 </span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
 </span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">## Example: Extending BaseStorage</span>
 </span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">```python</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">from k9_aif_abb.k9_core.storage.base_storage import BaseStorage</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">class MyCustomStorage(BaseStorage):</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">    def save(self, key, value):</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">        pass</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">    def load(self, key):</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">        pass</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">        </span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">```</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">from k9_aif_abb.k9_core.storage.base_storage import BaseStorage</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">class MyCustomStorage(BaseStorage):</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    def save(self, key, value):</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">        pass</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    def load(self, key):</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        pass</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">        </span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
