@@ -76,6 +76,7 @@ and retrieved from backend systems.
 This separation preserves clean architectural boundaries between data meaning
 and storage mechanics.
 
+"""
 
 # ---------------------------------------------------------------------
 # Architectural Note
@@ -83,4 +84,4 @@ and storage mechanics.
 # k9_data defines what data is and how it is structured and used,
 # while k9_persistence defines how that data is physically stored and retrieved.
 
-"""
+
