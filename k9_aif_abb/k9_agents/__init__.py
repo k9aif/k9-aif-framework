@@ -2,8 +2,8 @@
 # K9-AIF Framework
 
 """
-SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary  
-(c) 2025 Ravi Natarajan / IBM Consulting (Atlanta, GA)  
+SPDX-License-Identifier: Apache-2.0
+K9-AIF Framework
 All rights reserved.
 
 K9-AIF - Agent-based Integration Framework
