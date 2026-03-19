@@ -2,65 +2,109 @@
 # K9-AIF Framework
 
 """
-K9-AIF - Agent-based Integration Framework
--------------------------------------------
-K9-AIF is a governed, modular, and extensible enterprise framework for
-agentic automation and intelligent orchestration.  
+K9-AIF Framework (ABB Layer)
 
-It provides a unified abstraction layer that transforms Architecture
-Building Blocks (ABBs) into operational Solution Building Blocks (SBBs)
-through configuration-driven governance, monitoring, and persistence.
+K9-AIF (Agent-based Integration Framework) is a governed, modular, and extensible
+architecture-first framework for designing and building agentic systems.
 
-**Key Design Principles**
-- Governed orchestration aligned to TOGAF ADM phases  
-- Layered ABB->SBB architecture: Core, Agents, Factories, Orchestrators  
-- Extensible persistence, messaging, and monitoring back-ends  
-- Interoperability with CrewAI, MCP servers, and external LLM providers  
-- Built-in security, auditability, and policy enforcement hooks  
+This package represents the **Architecture Building Block (ABB) layer** of K9-AIF.
 
-**Framework Extensibility**
-K9-AIF is architected to support multiple enterprise architecture
-methodologies. While the current reference implementation aligns with
-**TOGAF**, it can be readily specialized for **DoDAF**, forming the
-foundation for the forthcoming **K9-AIF-DoDAF** variant intended for
-federal systems engineering automation and compliance.
+It defines the foundational abstractions, base classes, contracts, and extension
+points required to construct enterprise-grade agentic AI systems. These ABBs
+serve as the blueprint from which concrete Solution Building Blocks (SBBs) are
+derived in downstream implementations.
 
-**Primary Packages**
-- `k9_core` - base ABB classes for all framework layers  
-- `k9_agents` - governed SBB implementations (Chat, Persistence, Security, etc.)  
-- `k9_factories` - dynamic factories for orchestration, persistence, and connectors  
-- `k9_monitoring` - observability and telemetry adapters  
-- `k9_persistence` - durable and vector storage back-ends  
-- `k9_orchestrators` - high-level control and routing flows  
-- `k9_utils` - configuration, timing, and transformation utilities  
+K9-AIF introduces a missing architectural layer for agentic AI — enabling systems
+to move from experimental orchestration toward governed, observable, and
+architecturally defensible solutions.
 
-This package forms the foundation for all K9-AIF applications, including
-CrewAI-integrated proofs of concept and future DoDAF-aligned automation
-prototypes for enterprise and government use.
+
+## Core Architectural Principles
+
+- Architecture-first design for agentic systems
+- Clear separation of ABB (architecture) and SBB (implementation)
+- Contract-driven design using base classes and interfaces
+- Extensible orchestration, routing, persistence, and monitoring layers
+- Policy-driven governance and security integration points
+- Interoperability with external agent frameworks and LLM providers
+
+
+## Scope of the ABB Layer
+
+The ABB layer defines the architectural foundation for:
+
+- Base agent definitions and execution contracts
+- Router abstractions for intent-based dispatch
+- Orchestrator abstractions for multi-step coordination
+- Persistence interfaces and storage contracts
+- Monitoring and observability interfaces
+- Factory-based component instantiation
+- Governance, policy, and security extension points
+
+These abstractions are intentionally implementation-agnostic and are designed
+to be specialized into SBBs in application-specific or integration layers.
+
+
+## Primary Packages (ABB Components)
+
+- `k9_core` — Core base classes and abstract framework contracts
+- `k9_agents` — Agent abstractions and agent-related framework components
+- `k9_factories` — Factory abstractions for constructing framework components
+- `k9_monitoring` — Monitoring and telemetry interfaces and adapters
+- `k9_persistence` — Persistence abstractions and storage contracts
+- `k9_orchestrators` — Orchestration and control-flow abstractions
+- `k9_utils` — Shared utilities supporting framework operation
+
 
 ---
 
-** K9-AIF Framework Structure**
+## K9-AIF ABB Package Structure
 
-| Package | Layer | Description |
-|----------|--------|-------------|
-| `k9_core` | ABB (Base Layer) | Defines base abstract classes and interfaces - agents, orchestration, persistence, governance, security, etc. |
-| `k9_agents` | SBB (Implementation Layer) | Concrete, governed implementations of ABBs (ChatAgent, GovernanceAgent, PersistenceAgent, etc.). |
-| `k9_factories` | Integration Layer | Factory classes for orchestration, persistence, monitoring, and LLM connectors. |
-| `k9_monitoring` | Observability Layer | Adapters for Grafana, Prometheus, CloudWatch, and OpenTelemetry metrics. |
-| `k9_persistence` | Data Layer | Concrete persistence back-ends (SQLite, ChromaDB, etc.). |
-| `k9_orchestrators` | Control Layer | Domain-specific orchestrators coordinating multiple ABB/SBBs. |
-| `k9_utils` | Utility Layer | Config loader, logging setup, timer utilities, and XML/JSON transformers. |
-| `policies` | Governance Config | YAML policies defining governance, security, and compliance rules. |
-| `tests` | Verification Layer | Unit and integration tests ensuring ABB/SBB contract compliance. |
+| Package | Architectural Role | Description |
+|---------|------------------|-------------|
+| `k9_core` | ABB Foundation | Defines core abstract classes and interfaces (Agent, Router, Orchestrator, Persistence, Governance, Security). |
+| `k9_agents` | Agent Abstractions | Provides agent-related base classes, patterns, and supporting framework components. |
+| `k9_factories` | Factory Layer | Defines factory abstractions for creating orchestrators, persistence layers, monitoring adapters, and connectors. |
+| `k9_monitoring` | Observability Interfaces | Provides monitoring, telemetry, and runtime observability abstractions. |
+| `k9_persistence` | Persistence Interfaces | Defines storage contracts and abstraction layers for structured and vector data. |
+| `k9_orchestrators` | Orchestration Interfaces | Defines coordination and execution flow abstractions for multi-agent systems. |
+| `k9_utils` | Utility Layer | Provides configuration loading, logging setup, timing utilities, and transformation helpers. |
+| `policies` | Governance Configuration | Contains configuration-driven policies for governance, compliance, and security. |
+| `tests` | Verification Layer | Validates ABB contracts, interfaces, and framework behavior. |
+
 
 ---
 
-**Usage Example**
+## Architectural Positioning
+
+K9-AIF ABB is the architectural foundation of the broader K9-AIF ecosystem.
+
+It does not implement domain-specific solutions. Instead, it defines the reusable
+architectural building blocks required to construct governed agentic systems.
+
+Solution Building Blocks (SBBs) — including concrete agents, orchestrators,
+connectors, and integrations — are derived from these ABBs in higher-level
+implementation layers.
+
+This separation ensures:
+
+- Long-term maintainability  
+- Architectural clarity  
+- Implementation flexibility  
+- Enterprise-grade governance  
+
+
+---
+
+## Example: Defining a Custom Agent from ABB
+
 ```python
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
 
-agent = BaseAgent()
-store = PersistenceFactory.create({"persistence": {"backend": "sqlite"}})
+class MyAgent(BaseAgent):
+    def execute(self, payload):
+        return {
+            "status": "success",
+            "input": payload
+        }
 """

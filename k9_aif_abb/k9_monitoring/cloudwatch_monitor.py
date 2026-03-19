@@ -7,7 +7,7 @@ import boto3
 import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
-from k9_aif_abb.k9_core.monitoring.base_monitor import BaseMonitor
+from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor
 
 
 class CloudWatchMonitor(BaseMonitor):

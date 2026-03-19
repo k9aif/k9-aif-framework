@@ -28,7 +28,11 @@
 
             <h2>Contents</h2>
             <ul>
-  <li><a href="#k9-aif-agent-based-integration-framework">K9-AIF - Agent-based Integration Framework</a></li>
+  <li><a href="#architectural-role">Architectural Role</a></li>
+  <li><a href="#core-design-intent">Core Design Intent</a></li>
+  <li><a href="#typical-responsibilities-of-agent-abbs">Typical Responsibilities of Agent ABBs</a></li>
+  <li><a href="#relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</a></li>
+  <li><a href="#example-extending-an-agent-abb">Example: Extending an Agent ABB</a></li>
 </ul>
 
 
@@ -67,120 +71,81 @@
                     <h1 class="modulename">
 <a href="./../k9_aif_abb.html">k9_aif_abb</a><wbr>.k9_agents    </h1>
 
-                        <div class="docstring"><p>SPDX-License-Identifier: Apache-2.0
-K9-AIF Framework
-All rights reserved.</p>
+                        <div class="docstring"><p>K9-AIF Agents Package (ABB Layer)</p>
 
-<h2 id="k9-aif-agent-based-integration-framework">K9-AIF - Agent-based Integration Framework</h2>
+<p>The <code>k9_agents</code> package defines the agent-oriented Architecture Building Blocks
+(ABBs) of the K9-AIF framework.</p>
 
-<p>K9-AIF is a governed, modular, and extensible enterprise framework for
-agentic automation and intelligent orchestration.  </p>
+<p>It contains the foundational abstractions, patterns, and supporting components
+required to model agents as governed, extensible, and orchestration-aware
+architectural elements within enterprise agentic systems.</p>
 
-<p>It provides a unified abstraction layer that transforms Architecture
-Building Blocks (ABBs) into operational Solution Building Blocks (SBBs)
-through configuration-driven governance, monitoring, and persistence.</p>
+<p>In K9-AIF, agents are treated as architectural building blocks rather than
+standalone scripts or isolated runtime units. They are designed to participate
+in structured orchestration flows, operate under governance policies, and
+integrate cleanly with persistence, monitoring, routing, and external systems.</p>
 
-<p><strong>Key Design Principles</strong></p>
+<h2 id="architectural-role">Architectural Role</h2>
 
-<ul>
-<li>Governed orchestration aligned to TOGAF ADM phases  </li>
-<li>Layered ABB->SBB architecture: Core, Agents, Factories, Orchestrators  </li>
-<li>Extensible persistence, messaging, and monitoring back-ends  </li>
-<li>Interoperability with CrewAI, MCP servers, and external LLM providers  </li>
-<li>Built-in security, auditability, and policy enforcement hooks  </li>
-</ul>
-
-<p><strong>Framework Extensibility</strong>
-K9-AIF is architected to support multiple enterprise architecture
-methodologies. While the current reference implementation aligns with
-<strong>TOGAF</strong>, it can be readily specialized for <strong>DoDAF</strong>, forming the
-foundation for the forthcoming <strong>K9-AIF-DoDAF</strong> variant intended for
-federal systems engineering automation and compliance.</p>
-
-<p><strong>Primary Packages</strong></p>
+<p>The <code>k9_agents</code> package provides the agent-level ABB foundation for:</p>
 
 <ul>
-<li><code>k9_core</code> - base ABB classes for all framework layers  </li>
-<li><code>k9_agents</code> - governed SBB implementations (Chat, Persistence, Security, etc.)  </li>
-<li><code>k9_factories</code> - dynamic factories for orchestration, persistence, and connectors  </li>
-<li><code>k9_monitoring</code> - observability and telemetry adapters  </li>
-<li><code>k9_persistence</code> - durable and vector storage back-ends  </li>
-<li><code>k9_orchestrators</code> - high-level control and routing flows  </li>
-<li><code>k9_utils</code> - configuration, timing, and transformation utilities  </li>
+<li>Defining agent responsibilities and execution patterns</li>
+<li>Establishing reusable agent contracts and extension points</li>
+<li>Supporting governed and policy-aware agent behavior</li>
+<li>Enabling integration with orchestrators, routers, persistence, and monitoring</li>
+<li>Promoting consistent design across domain-specific agent implementations</li>
 </ul>
 
-<p>This package forms the foundation for all K9-AIF applications, including
-CrewAI-integrated proofs of concept and future DoDAF-aligned automation
-prototypes for enterprise and government use.</p>
+<h2 id="core-design-intent">Core Design Intent</h2>
 
-<p>** K9-AIF Framework Structure**</p>
+<p>The purpose of this package is to ensure that agents in K9-AIF are:</p>
 
-<table>
-<thead>
-<tr>
-  <th>Package</th>
-  <th>Layer</th>
-  <th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-  <td><code>k9_core</code></td>
-  <td>ABB (Base Layer)</td>
-  <td>Defines base abstract classes and interfaces - agents, orchestration, persistence, governance, security, etc.</td>
-</tr>
-<tr>
-  <td><code>k9_agents</code></td>
-  <td>SBB (Implementation Layer)</td>
-  <td>Concrete, governed implementations of ABBs (ChatAgent, GovernanceAgent, PersistenceAgent, etc.).</td>
-</tr>
-<tr>
-  <td><code>k9_factories</code></td>
-  <td>Integration Layer</td>
-  <td>Factory classes for orchestration, persistence, monitoring, and LLM connectors.</td>
-</tr>
-<tr>
-  <td><code>k9_monitoring</code></td>
-  <td>Observability Layer</td>
-  <td>Adapters for Grafana, Prometheus, CloudWatch, and OpenTelemetry metrics.</td>
-</tr>
-<tr>
-  <td><code>k9_persistence</code></td>
-  <td>Data Layer</td>
-  <td>Concrete persistence back-ends (SQLite, ChromaDB, etc.).</td>
-</tr>
-<tr>
-  <td><code>k9_orchestrators</code></td>
-  <td>Control Layer</td>
-  <td>Domain-specific orchestrators coordinating multiple ABB/SBBs.</td>
-</tr>
-<tr>
-  <td><code>k9_utils</code></td>
-  <td>Utility Layer</td>
-  <td>Config loader, logging setup, timer utilities, and XML/JSON transformers.</td>
-</tr>
-<tr>
-  <td><code>policies</code></td>
-  <td>Governance Config</td>
-  <td>YAML policies defining governance, security, and compliance rules.</td>
-</tr>
-<tr>
-  <td><code>tests</code></td>
-  <td>Verification Layer</td>
-  <td>Unit and integration tests ensuring ABB/SBB contract compliance.</td>
-</tr>
-</tbody>
-</table>
+<ul>
+<li><strong>Contract-driven</strong> — built on well-defined interfaces and execution methods</li>
+<li><strong>Extensible</strong> — designed for specialization into domain-specific behaviors</li>
+<li><strong>Governed</strong> — capable of participating in policy-aware and auditable flows</li>
+<li><strong>Composable</strong> — able to function as part of larger orchestrated systems</li>
+<li><strong>Observable</strong> — ready for monitoring, tracing, and operational oversight</li>
+</ul>
 
-<hr />
+<h2 id="typical-responsibilities-of-agent-abbs">Typical Responsibilities of Agent ABBs</h2>
 
-<p><strong>Usage Example</strong>
-```python
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from <a href="k9_factories/persistence_factory.html">k9_aif_abb.k9_factories.persistence_factory</a> import PersistenceFactory</p>
+<p>Agent-related ABBs in this package may support patterns such as:</p>
 
-<p>agent = BaseAgent()
-store = PersistenceFactory.create({"persistence": {"backend": "sqlite"}})</p>
+<ul>
+<li>Receiving and processing structured payloads</li>
+<li>Performing domain-specific reasoning or transformation</li>
+<li>Interacting with persistence or retrieval layers</li>
+<li>Calling external services, tools, or APIs</li>
+<li>Returning structured outputs for downstream orchestration</li>
+<li>Participating in monitored and policy-governed execution flows</li>
+</ul>
+
+<h2 id="relationship-to-other-k9-aif-packages">Relationship to Other K9-AIF Packages</h2>
+
+<p>The <code>k9_agents</code> package works in conjunction with other ABB packages:</p>
+
+<ul>
+<li><code>k9_core</code> provides the foundational base classes and interfaces</li>
+<li><code>k9_orchestrators</code> coordinates multi-step and multi-agent execution flows</li>
+<li><code>k9_factories</code> constructs dependent components and integrations</li>
+<li><code>k9_persistence</code> supplies storage and state management abstractions</li>
+<li><code>k9_monitoring</code> supports observability and runtime telemetry</li>
+<li><code>policies</code> provides governance and compliance rules</li>
+</ul>
+
+<h2 id="example-extending-an-agent-abb">Example: Extending an Agent ABB</h2>
+
+<p>```python
+from <a href="k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent</p>
+
+<p>class MyAgent(BaseAgent):
+    def execute(self, payload):
+        return {
+            "status": "success",
+            "result": payload
+        }</p>
 </div>
 
                         <input id="mod-k9_agents-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -191,70 +156,80 @@ store = PersistenceFactory.create({"persistence": {"backend": "sqlite"}})</p>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">K9-AIF Framework</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">All rights reserved.</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">K9-AIF - Agent-based Integration Framework</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">-------------------------------------------</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">K9-AIF is a governed, modular, and extensible enterprise framework for</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">agentic automation and intelligent orchestration.  </span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">K9-AIF Agents Package (ABB Layer)</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">The `k9_agents` package defines the agent-oriented Architecture Building Blocks</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">(ABBs) of the K9-AIF framework.</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">It contains the foundational abstractions, patterns, and supporting components</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">required to model agents as governed, extensible, and orchestration-aware</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">architectural elements within enterprise agentic systems.</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">It provides a unified abstraction layer that transforms Architecture</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">Building Blocks (ABBs) into operational Solution Building Blocks (SBBs)</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">through configuration-driven governance, monitoring, and persistence.</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">**Key Design Principles**</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">- Governed orchestration aligned to TOGAF ADM phases  </span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">- Layered ABB-&gt;SBB architecture: Core, Agents, Factories, Orchestrators  </span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">- Extensible persistence, messaging, and monitoring back-ends  </span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">- Interoperability with CrewAI, MCP servers, and external LLM providers  </span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">- Built-in security, auditability, and policy enforcement hooks  </span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">**Framework Extensibility**</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">K9-AIF is architected to support multiple enterprise architecture</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">methodologies. While the current reference implementation aligns with</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">**TOGAF**, it can be readily specialized for **DoDAF**, forming the</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">foundation for the forthcoming **K9-AIF-DoDAF** variant intended for</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="sd">federal systems engineering automation and compliance.</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="sd">**Primary Packages**</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">- `k9_core` - base ABB classes for all framework layers  </span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">- `k9_agents` - governed SBB implementations (Chat, Persistence, Security, etc.)  </span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- `k9_factories` - dynamic factories for orchestration, persistence, and connectors  </span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- `k9_monitoring` - observability and telemetry adapters  </span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- `k9_persistence` - durable and vector storage back-ends  </span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- `k9_orchestrators` - high-level control and routing flows  </span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- `k9_utils` - configuration, timing, and transformation utilities  </span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">In K9-AIF, agents are treated as architectural building blocks rather than</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">standalone scripts or isolated runtime units. They are designed to participate</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">in structured orchestration flows, operate under governance policies, and</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">integrate cleanly with persistence, monitoring, routing, and external systems.</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">## Architectural Role</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">The `k9_agents` package provides the agent-level ABB foundation for:</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">- Defining agent responsibilities and execution patterns</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">- Establishing reusable agent contracts and extension points</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">- Supporting governed and policy-aware agent behavior</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">- Enabling integration with orchestrators, routers, persistence, and monitoring</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">- Promoting consistent design across domain-specific agent implementations</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">## Core Design Intent</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">The purpose of this package is to ensure that agents in K9-AIF are:</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">- **Contract-driven** — built on well-defined interfaces and execution methods</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- **Extensible** — designed for specialization into domain-specific behaviors</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- **Governed** — capable of participating in policy-aware and auditable flows</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- **Composable** — able to function as part of larger orchestrated systems</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- **Observable** — ready for monitoring, tracing, and operational oversight</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">This package forms the foundation for all K9-AIF applications, including</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">CrewAI-integrated proofs of concept and future DoDAF-aligned automation</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">prototypes for enterprise and government use.</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">** K9-AIF Framework Structure**</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">| Package | Layer | Description |</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">|----------|--------|-------------|</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">| `k9_core` | ABB (Base Layer) | Defines base abstract classes and interfaces - agents, orchestration, persistence, governance, security, etc. |</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">| `k9_agents` | SBB (Implementation Layer) | Concrete, governed implementations of ABBs (ChatAgent, GovernanceAgent, PersistenceAgent, etc.). |</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">| `k9_factories` | Integration Layer | Factory classes for orchestration, persistence, monitoring, and LLM connectors. |</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">| `k9_monitoring` | Observability Layer | Adapters for Grafana, Prometheus, CloudWatch, and OpenTelemetry metrics. |</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">| `k9_persistence` | Data Layer | Concrete persistence back-ends (SQLite, ChromaDB, etc.). |</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">| `k9_orchestrators` | Control Layer | Domain-specific orchestrators coordinating multiple ABB/SBBs. |</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">| `k9_utils` | Utility Layer | Config loader, logging setup, timer utilities, and XML/JSON transformers. |</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">| `policies` | Governance Config | YAML policies defining governance, security, and compliance rules. |</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">| `tests` | Verification Layer | Unit and integration tests ensuring ABB/SBB contract compliance. |</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">---</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">**Usage Example**</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">```python</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">## Typical Responsibilities of Agent ABBs</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">Agent-related ABBs in this package may support patterns such as:</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">- Receiving and processing structured payloads</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">- Performing domain-specific reasoning or transformation</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">- Interacting with persistence or retrieval layers</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">- Calling external services, tools, or APIs</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">- Returning structured outputs for downstream orchestration</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">- Participating in monitored and policy-governed execution flows</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">## Relationship to Other K9-AIF Packages</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">The `k9_agents` package works in conjunction with other ABB packages:</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">- `k9_core` provides the foundational base classes and interfaces</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">- `k9_orchestrators` coordinates multi-step and multi-agent execution flows</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">- `k9_factories` constructs dependent components and integrations</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">- `k9_persistence` supplies storage and state management abstractions</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">- `k9_monitoring` supports observability and runtime telemetry</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">- `policies` provides governance and compliance rules</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>
 </span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">agent = BaseAgent()</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">store = PersistenceFactory.create({&quot;persistence&quot;: {&quot;backend&quot;: &quot;sqlite&quot;}})</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">## Example: Extending an Agent ABB</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">```python</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">class MyAgent(BaseAgent):</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    def execute(self, payload):</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">        return {</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">            &quot;status&quot;: &quot;success&quot;,</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">            &quot;result&quot;: payload</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd">        }</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

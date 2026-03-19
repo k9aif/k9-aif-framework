@@ -8,7 +8,7 @@ from prometheus_client import CollectorRegistry, Counter, Histogram, Gauge, push
 import time
 import threading
 
-from .base_monitoring import BaseMonitor
+from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor
 
 
 class PrometheusMonitor(BaseMonitor):

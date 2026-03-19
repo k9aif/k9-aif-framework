@@ -2,67 +2,77 @@
 # K9-AIF Framework
 
 """
-SPDX-License-Identifier: Apache-2.0
-K9-AIF Framework
-All rights reserved.
+K9-AIF Agents Package (ABB Layer)
 
-K9-AIF - Agent-based Integration Framework
--------------------------------------------
-K9-AIF is a governed, modular, and extensible enterprise framework for
-agentic automation and intelligent orchestration.  
+The `k9_agents` package defines the agent-oriented Architecture Building Blocks
+(ABBs) of the K9-AIF framework.
 
-It provides a unified abstraction layer that transforms Architecture
-Building Blocks (ABBs) into operational Solution Building Blocks (SBBs)
-through configuration-driven governance, monitoring, and persistence.
+It contains the foundational abstractions, patterns, and supporting components
+required to model agents as governed, extensible, and orchestration-aware
+architectural elements within enterprise agentic systems.
 
-**Key Design Principles**
-- Governed orchestration aligned to TOGAF ADM phases  
-- Layered ABB->SBB architecture: Core, Agents, Factories, Orchestrators  
-- Extensible persistence, messaging, and monitoring back-ends  
-- Interoperability with CrewAI, MCP servers, and external LLM providers  
-- Built-in security, auditability, and policy enforcement hooks  
+In K9-AIF, agents are treated as architectural building blocks rather than
+standalone scripts or isolated runtime units. They are designed to participate
+in structured orchestration flows, operate under governance policies, and
+integrate cleanly with persistence, monitoring, routing, and external systems.
 
-**Framework Extensibility**
-K9-AIF is architected to support multiple enterprise architecture
-methodologies. While the current reference implementation aligns with
-**TOGAF**, it can be readily specialized for **DoDAF**, forming the
-foundation for the forthcoming **K9-AIF-DoDAF** variant intended for
-federal systems engineering automation and compliance.
 
-**Primary Packages**
-- `k9_core` - base ABB classes for all framework layers  
-- `k9_agents` - governed SBB implementations (Chat, Persistence, Security, etc.)  
-- `k9_factories` - dynamic factories for orchestration, persistence, and connectors  
-- `k9_monitoring` - observability and telemetry adapters  
-- `k9_persistence` - durable and vector storage back-ends  
-- `k9_orchestrators` - high-level control and routing flows  
-- `k9_utils` - configuration, timing, and transformation utilities  
+## Architectural Role
 
-This package forms the foundation for all K9-AIF applications, including
-CrewAI-integrated proofs of concept and future DoDAF-aligned automation
-prototypes for enterprise and government use.
+The `k9_agents` package provides the agent-level ABB foundation for:
 
-** K9-AIF Framework Structure**
+- Defining agent responsibilities and execution patterns
+- Establishing reusable agent contracts and extension points
+- Supporting governed and policy-aware agent behavior
+- Enabling integration with orchestrators, routers, persistence, and monitoring
+- Promoting consistent design across domain-specific agent implementations
 
-| Package | Layer | Description |
-|----------|--------|-------------|
-| `k9_core` | ABB (Base Layer) | Defines base abstract classes and interfaces - agents, orchestration, persistence, governance, security, etc. |
-| `k9_agents` | SBB (Implementation Layer) | Concrete, governed implementations of ABBs (ChatAgent, GovernanceAgent, PersistenceAgent, etc.). |
-| `k9_factories` | Integration Layer | Factory classes for orchestration, persistence, monitoring, and LLM connectors. |
-| `k9_monitoring` | Observability Layer | Adapters for Grafana, Prometheus, CloudWatch, and OpenTelemetry metrics. |
-| `k9_persistence` | Data Layer | Concrete persistence back-ends (SQLite, ChromaDB, etc.). |
-| `k9_orchestrators` | Control Layer | Domain-specific orchestrators coordinating multiple ABB/SBBs. |
-| `k9_utils` | Utility Layer | Config loader, logging setup, timer utilities, and XML/JSON transformers. |
-| `policies` | Governance Config | YAML policies defining governance, security, and compliance rules. |
-| `tests` | Verification Layer | Unit and integration tests ensuring ABB/SBB contract compliance. |
 
----
+## Core Design Intent
 
-**Usage Example**
+The purpose of this package is to ensure that agents in K9-AIF are:
+
+- **Contract-driven** — built on well-defined interfaces and execution methods
+- **Extensible** — designed for specialization into domain-specific behaviors
+- **Governed** — capable of participating in policy-aware and auditable flows
+- **Composable** — able to function as part of larger orchestrated systems
+- **Observable** — ready for monitoring, tracing, and operational oversight
+
+
+## Typical Responsibilities of Agent ABBs
+
+Agent-related ABBs in this package may support patterns such as:
+
+- Receiving and processing structured payloads
+- Performing domain-specific reasoning or transformation
+- Interacting with persistence or retrieval layers
+- Calling external services, tools, or APIs
+- Returning structured outputs for downstream orchestration
+- Participating in monitored and policy-governed execution flows
+
+
+## Relationship to Other K9-AIF Packages
+
+The `k9_agents` package works in conjunction with other ABB packages:
+
+- `k9_core` provides the foundational base classes and interfaces
+- `k9_orchestrators` coordinates multi-step and multi-agent execution flows
+- `k9_factories` constructs dependent components and integrations
+- `k9_persistence` supplies storage and state management abstractions
+- `k9_monitoring` supports observability and runtime telemetry
+- `policies` provides governance and compliance rules
+
+
+## Example: Extending an Agent ABB
+
 ```python
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
 
-agent = BaseAgent()
-store = PersistenceFactory.create({"persistence": {"backend": "sqlite"}})
+class MyAgent(BaseAgent):
+    def execute(self, payload):
+        return {
+            "status": "success",
+            "result": payload
+        }
+
 """

@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
-# k9_aif_abb/k9_monitoring/otel_monitor.py
+from k9_aif_abb.k9_core.monitoring.base_monitoring import BaseMonitor
 
 from typing import Dict, Any
-from .base_monitoring import BaseMonitor
 
 from opentelemetry import trace, metrics
 from opentelemetry.sdk.resources import Resource
