@@ -1,328 +1,650 @@
+K9aif architecture comparison · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K9-AIF vs AI Framework Landscape</title>
-
-<meta name="description" content="K9-AIF vs AI Framework Landscape - Architecture-first approach to enterprise agent systems">
-
+<title>K9-AIF vs Current AI Framework Landscape</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #0f1117;
-  color: #e2e8f0;
-  min-height: 100vh;
-  padding: 24px;
-}
-
-h1 {
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 6px;
-}
-
-.subtitle {
-  text-align: center;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-
-.tagline {
-  text-align:center;
-  color:#c4b5fd;
-  font-size:0.95rem;
-  margin-bottom:28px;
-  font-weight:600;
-}
-
-/* Tabs */
-.tabs {
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  margin-bottom:28px;
-  flex-wrap:wrap;
-}
-
-.tab {
-  padding:8px 20px;
-  border-radius:20px;
-  border:1px solid #334155;
-  background:#1e2436;
-  color:#94a3b8;
-  cursor:pointer;
-  font-size:0.82rem;
-  font-weight:600;
-  transition:0.2s;
-}
-
-.tab:hover { background:#263045; }
-
-.tab.active {
-  background:#6366f1;
-  color:#fff;
-  border-color:#6366f1;
-}
-
-/* Panels */
-.panel { display:none; }
-.panel.active { display:block; }
-
-/* Grid */
-.compare-grid {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  max-width:1100px;
-  margin:0 auto;
-}
-
-@media (max-width:700px){
-  .compare-grid { grid-template-columns:1fr; }
-}
-
-.arch-col {
-  border-radius:14px;
-  overflow:hidden;
-  border:1px solid #1e2d45;
-}
-
-.col-header {
-  padding:14px;
-  font-weight:700;
-}
-
-.col-k9 .col-header {
-  background:#1e2d55;
-  color:#a5b4fc;
-}
-
-.col-std .col-header {
-  background:#1e3526;
-  color:#86efac;
-}
-
-.col-body {
-  padding:14px;
-  background:#141824;
-}
-
-.layer {
-  margin-bottom:10px;
-  padding:10px;
-  border-radius:10px;
-  font-size:0.8rem;
-  line-height:1.4;
-}
-
-.k9 { background:#1a2040; border:1px solid #2563eb; }
-.std { background:#1a1628; border:1px solid #7c3aed; }
-
-.arrow { text-align:center; margin:5px 0; color:#64748b; }
-
-/* Flow */
-.flow-container { max-width:900px; margin:0 auto; }
-
-.flow-row {
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-  margin-bottom:10px;
-}
-
-.box {
-  padding:8px 12px;
-  border-radius:8px;
-  border:1px solid #334155;
-  font-size:0.75rem;
-}
-
-.arrow-right { color:#64748b; }
-
-/* Table */
-.table-wrap { max-width:1000px; margin:0 auto; overflow-x:auto; }
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  font-size:0.8rem;
-}
-
-td, th {
-  padding:10px;
-  border-bottom:1px solid #1e2436;
-}
-
-th { background:#1e2436; }
-
-td:nth-child(2) { color:#a5b4fc; }
-td:nth-child(3) { color:#86efac; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-bottom: 28px;
+  }
+ 
+  /* Tab nav */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+    background: #1e2436;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+  }
+  .tab:hover:not(.active) { background: #263045; color: #cbd5e1; }
+ 
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+ 
+  /* ============================
+     SIDE-BY-SIDE DIAGRAM
+     ============================ */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+ 
+  .arch-col {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #1e2d45;
+  }
+  .col-header {
+    padding: 14px 18px 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .col-header .badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .col-k9 .col-header { background: linear-gradient(135deg, #1a2040, #1e2d55); border-bottom: 1px solid #263566; color: #a5b4fc; }
+  .col-k9 .col-header .badge { background: #4f46e5; color: #e0e7ff; }
+  .col-std .col-header { background: linear-gradient(135deg, #1a2a1e, #1e3526); border-bottom: 1px solid #1f4a28; color: #86efac; }
+  .col-std .col-header .badge { background: #16a34a; color: #dcfce7; }
+ 
+  .col-body { background: #141824; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+ 
+  .layer {
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    border: 1px solid transparent;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .layer:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  .layer-title {
+    font-weight: 700;
+    font-size: 0.78rem;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .layer-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .layer-desc { color: #94a3b8; font-size: 0.73rem; }
+  .layer-tags {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px;
+  }
+  .tag {
+    font-size: 0.62rem;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+ 
+  /* K9-AIF layer colors */
+  .k9-1 { background: #1a1040; border-color: #3730a3; }
+  .k9-1 .layer-num { background: #4338ca; color: #e0e7ff; }
+  .k9-1 .layer-title { color: #a5b4fc; }
+  .k9-1 .tag { background: #312e81; color: #a5b4fc; }
+ 
+  .k9-2 { background: #1a1430; border-color: #5b21b6; }
+  .k9-2 .layer-num { background: #7c3aed; color: #f3e8ff; }
+  .k9-2 .layer-title { color: #c4b5fd; }
+  .k9-2 .tag { background: #3b0764; color: #c4b5fd; }
+ 
+  .k9-3 { background: #1a2040; border-color: #1d4ed8; }
+  .k9-3 .layer-num { background: #2563eb; color: #dbeafe; }
+  .k9-3 .layer-title { color: #93c5fd; }
+  .k9-3 .tag { background: #1e3a8a; color: #93c5fd; }
+ 
+  .k9-4 { background: #0e2430; border-color: #0369a1; }
+  .k9-4 .layer-num { background: #0284c7; color: #e0f2fe; }
+  .k9-4 .layer-title { color: #7dd3fc; }
+  .k9-4 .tag { background: #0c4a6e; color: #7dd3fc; }
+ 
+  .k9-5 { background: #0e2820; border-color: #065f46; }
+  .k9-5 .layer-num { background: #059669; color: #d1fae5; }
+  .k9-5 .layer-title { color: #6ee7b7; }
+  .k9-5 .tag { background: #064e3b; color: #6ee7b7; }
+ 
+  .k9-6 { background: #201a10; border-color: #92400e; }
+  .k9-6 .layer-num { background: #d97706; color: #fef3c7; }
+  .k9-6 .layer-title { color: #fcd34d; }
+  .k9-6 .tag { background: #78350f; color: #fcd34d; }
+ 
+  .k9-gov {
+    background: linear-gradient(90deg, #1a0820, #200a28);
+    border: 1px dashed #c026d3;
+    border-radius: 10px;
+    padding: 8px 13px;
+    font-size: 0.72rem;
+    color: #e879f9;
+    font-style: italic;
+    text-align: center;
+  }
+ 
+  /* Standard layer colors */
+  .std-1 { background: #0e1a28; border-color: #164e63; }
+  .std-1 .layer-num { background: #0e7490; color: #cffafe; }
+  .std-1 .layer-title { color: #67e8f9; }
+  .std-1 .tag { background: #0c4a6e; color: #67e8f9; }
+ 
+  .std-2 { background: #0e1e1a; border-color: #065f46; }
+  .std-2 .layer-num { background: #059669; color: #d1fae5; }
+  .std-2 .layer-title { color: #6ee7b7; }
+  .std-2 .tag { background: #064e3b; color: #6ee7b7; }
+ 
+  .std-3 { background: #1a1628; border-color: #4c1d95; }
+  .std-3 .layer-num { background: #7c3aed; color: #f3e8ff; }
+  .std-3 .layer-title { color: #c4b5fd; }
+  .std-3 .tag { background: #3b0764; color: #c4b5fd; }
+ 
+  .std-4 { background: #1a1010; border-color: #7f1d1d; }
+  .std-4 .layer-num { background: #dc2626; color: #fee2e2; }
+  .std-4 .layer-title { color: #fca5a5; }
+  .std-4 .tag { background: #450a0a; color: #fca5a5; }
+ 
+  .std-5 { background: #181410; border-color: #78350f; }
+  .std-5 .layer-num { background: #d97706; color: #fef3c7; }
+  .std-5 .layer-title { color: #fcd34d; }
+  .std-5 .tag { background: #451a03; color: #fcd34d; }
+ 
+  .std-6 { background: #121820; border-color: #1e3a5f; }
+  .std-6 .layer-num { background: #3b82f6; color: #dbeafe; }
+  .std-6 .layer-title { color: #93c5fd; }
+  .std-6 .tag { background: #1e3a8a; color: #93c5fd; }
+ 
+  .std-7 { background: #1a1020; border-color: #581c87; }
+  .std-7 .layer-num { background: #9333ea; color: #f3e8ff; }
+  .std-7 .layer-title { color: #d8b4fe; }
+  .std-7 .tag { background: #3b0764; color: #d8b4fe; }
+ 
+  .arrow-down {
+    text-align: center;
+    color: #475569;
+    font-size: 0.9rem;
+    margin: -2px 0;
+  }
+ 
+  /* ============================
+     COMPARISON TABLE
+     ============================ */
+  .table-wrap { max-width: 1000px; margin: 0 auto; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  thead th {
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  thead th:nth-child(1) { background: #1e2436; color: #64748b; width: 22%; }
+  thead th:nth-child(2) { background: #1a2040; color: #a5b4fc; width: 39%; }
+  thead th:nth-child(3) { background: #1a2820; color: #86efac; width: 39%; }
+  tbody tr { border-bottom: 1px solid #1e2436; }
+  tbody tr:hover td { background: #1e2436; }
+  td { padding: 10px 14px; vertical-align: top; color: #cbd5e1; line-height: 1.5; }
+  td:nth-child(1) { color: #64748b; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; background: #13161f; }
+  td:nth-child(2) { background: #111827; border-left: 2px solid #312e81; }
+  td:nth-child(3) { background: #111827; border-left: 2px solid #14532d; }
+  .pro { color: #4ade80; font-weight: 600; }
+  .con { color: #f87171; font-weight: 600; }
+  .neutral { color: #fbbf24; font-weight: 600; }
+ 
+  /* ============================
+     FLOW DIAGRAM
+     ============================ */
+  .flow-container { max-width: 900px; margin: 0 auto; }
+  .flow-title { text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 18px; }
+ 
+  .flow-section { margin-bottom: 28px; }
+  .flow-section-label {
+    font-size: 0.72rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 10px;
+    padding-left: 4px;
+    border-left: 3px solid #334155;
+    padding-left: 10px;
+  }
+ 
+  .flow-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: #475569; font-size: 1.1rem; flex-shrink: 0; }
+ 
+  .fb-purple { background: #1e1040; border-color: #6d28d9; color: #c4b5fd; }
+  .fb-blue   { background: #0e1a38; border-color: #2563eb; color: #93c5fd; }
+  .fb-cyan   { background: #0e1e28; border-color: #0891b2; color: #67e8f9; }
+  .fb-green  { background: #0a1e14; border-color: #15803d; color: #86efac; }
+  .fb-amber  { background: #1e1408; border-color: #d97706; color: #fcd34d; }
+  .fb-red    { background: #1e0a0a; border-color: #dc2626; color: #fca5a5; }
+  .fb-pink   { background: #1e0a18; border-color: #db2777; color: #f9a8d4; }
+  .fb-gray   { background: #141824; border-color: #334155; color: #94a3b8; }
+ 
+  .vs-divider {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #475569;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin: 6px 0;
+  }
+  .flow-note {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-style: italic;
+    margin-top: 4px;
+    padding-left: 4px;
+  }
+ 
+  /* legend */
+  .legend {
+    display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
+    margin-top: 20px;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; color: #94a3b8;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
 </style>
 </head>
-
 <body>
-
-<h1>K9-AIF vs AI Framework Landscape</h1>
-<p class="subtitle">Architectural comparison of enterprise agent systems</p>
-<p class="tagline">K9-AIF makes agent systems enterprise-ready.</p>
-
+ 
+<h1>K9-AIF vs Current AI Framework Landscape</h1>
+<p class="subtitle">Architectural comparison · K9-AIF Agentic Integration Framework &amp; industry-standard multi-agent systems</p>
+ 
 <div class="tabs">
-  <div class="tab active" onclick="showPanel(event,'side')">Architecture</div>
-  <div class="tab" onclick="showPanel(event,'flow')">Flow</div>
-  <div class="tab" onclick="showPanel(event,'table')">Comparison</div>
+  <div class="tab active" onclick="showPanel('side-by-side')">Side-by-Side Architecture</div>
+  <div class="tab" onclick="showPanel('flow')">Orchestration Flow</div>
+  <div class="tab" onclick="showPanel('compare')">Feature Comparison</div>
 </div>
-
-<!-- PANEL 1 -->
-<div class="panel active" id="panel-side">
-<div class="compare-grid">
-
-<div class="arch-col col-k9">
-<div class="col-header">K9-AIF (Architecture-first)</div>
-<div class="col-body">
-
-<div class="layer k9"><b>Enterprise Architecture Layer</b><br>TOGAF-aligned structure, ABB/SBB separation</div>
-<div class="arrow">↓</div>
-
-<div class="layer k9"><b>Orchestration Hierarchy</b><br>Router → Orchestrator → Squads → Agents</div>
-<div class="arrow">↓</div>
-
-<div class="layer k9"><b>Model Routing</b><br>Provider-independent inference abstraction</div>
-<div class="arrow">↓</div>
-
-<div class="layer k9"><b>Config-driven System</b><br>Declarative, auditable deployments</div>
-<div class="arrow">↓</div>
-
-<div class="layer k9"><b>Governance</b><br>Built-in monitoring, lifecycle, security</div>
-<div class="arrow">↓</div>
-
-<div class="layer k9"><b>Agent Core</b><br>Modular, composable agents</div>
-
+ 
+<!-- ===================== PANEL 1: SIDE-BY-SIDE ===================== -->
+<div class="panel active" id="panel-side-by-side">
+  <div class="compare-grid">
+ 
+    <!-- K9-AIF Column -->
+    <div class="arch-col col-k9">
+      <div class="col-header">
+        <span>⬡</span> K9-AIF Framework
+        <span class="badge">ARCHITECTURE-FIRST</span>
+      </div>
+      <div class="col-body">
+ 
+        <div class="layer k9-6">
+          <div class="layer-title"><span class="layer-num">6</span> Enterprise Integration Layer</div>
+          <div class="layer-desc">TOGAF-aligned enterprise architecture patterns. Separation of ABB (Architecture Building Blocks) and SBB (Solution Building Blocks).</div>
+          <div class="layer-tags">
+            <span class="tag">TOGAF</span><span class="tag">ABB</span><span class="tag">SBB</span><span class="tag">SOA</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer k9-5">
+          <div class="layer-title"><span class="layer-num">5</span> Orchestration Hierarchy</div>
+          <div class="layer-desc">Explicit 4-level hierarchy: <strong>Router → Orchestrator → Squads → Agents</strong>. Clear chain of command with defined responsibilities.</div>
+          <div class="layer-tags">
+            <span class="tag">Router</span><span class="tag">Orchestrator</span><span class="tag">Squads</span><span class="tag">Agents</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer k9-4">
+          <div class="layer-title"><span class="layer-num">4</span> Provider-Independent Inference</div>
+          <div class="layer-desc">Unified model routing layer decoupled from specific LLM providers. Swap models without changing business logic.</div>
+          <div class="layer-tags">
+            <span class="tag">Model Agnostic</span><span class="tag">Routing</span><span class="tag">Abstraction</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer k9-3">
+          <div class="layer-title"><span class="layer-num">3</span> Configuration-Driven Composition</div>
+          <div class="layer-desc">System behavior defined via configuration, enabling reproducible and auditable deployments without code changes.</div>
+          <div class="layer-tags">
+            <span class="tag">Config-as-Code</span><span class="tag">Composable</span><span class="tag">Auditable</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer k9-2">
+          <div class="layer-title"><span class="layer-num">2</span> Governance &amp; Monitoring</div>
+          <div class="layer-desc">Built-in governance controls, observability, and lifecycle management as first-class architectural concerns.</div>
+          <div class="layer-tags">
+            <span class="tag">Governance</span><span class="tag">Observability</span><span class="tag">Lifecycle</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer k9-1">
+          <div class="layer-title"><span class="layer-num">1</span> Modular Agent Core</div>
+          <div class="layer-desc">Individual agents as governed, composable units — perception, reasoning, memory, and action with defined interfaces.</div>
+          <div class="layer-tags">
+            <span class="tag">Modular</span><span class="tag">Governed</span><span class="tag">Python API</span>
+          </div>
+        </div>
+ 
+        <div class="k9-gov" style="margin-top:10px;">
+          ⚙ Cross-Cutting: Governance · Security · Extensibility — embedded across ALL layers
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- Standard / Current Column -->
+    <div class="arch-col col-std">
+      <div class="col-header">
+        <span>◈</span> Current AI Framework Landscape
+        <span class="badge">EXECUTION-FIRST</span>
+      </div>
+      <div class="col-body">
+ 
+        <div class="layer std-7">
+          <div class="layer-title"><span class="layer-num">7</span> Agent Ecosystem / Applications</div>
+          <div class="layer-desc">Business-facing AI applications where agent capabilities deliver end-user value (customer service, automation, analytics).</div>
+          <div class="layer-tags">
+            <span class="tag">CrewAI</span><span class="tag">AutoGen</span><span class="tag">LangGraph</span><span class="tag">MetaGPT</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-6">
+          <div class="layer-title"><span class="layer-num">6</span> Security &amp; Compliance Layer</div>
+          <div class="layer-desc">Guardrails, output validation, safety enforcement — often bolted on. Varies widely; SmolAgents lacks it entirely.</div>
+          <div class="layer-tags">
+            <span class="tag">Guardrails</span><span class="tag">Validation</span><span class="tag">Compliance</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-5">
+          <div class="layer-title"><span class="layer-num">5</span> Evaluation &amp; Observability</div>
+          <div class="layer-desc">Monitoring agent behavior, safety assessment and performance evaluation. Often external tooling (LangSmith, etc.).</div>
+          <div class="layer-tags">
+            <span class="tag">Tracing</span><span class="tag">Evals</span><span class="tag">Metrics</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-4">
+          <div class="layer-title"><span class="layer-num">4</span> Deployment Infrastructure</div>
+          <div class="layer-desc">Runtime compute, scaling, state persistence, and cloud provider infrastructure for running agents at scale.</div>
+          <div class="layer-tags">
+            <span class="tag">Kubernetes</span><span class="tag">Cloud</span><span class="tag">Serverless</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-3">
+          <div class="layer-title"><span class="layer-num">3</span> Agent Frameworks</div>
+          <div class="layer-desc">Core orchestration, reasoning loops, tool use and multi-agent coordination libraries. Often execution-centric, not architecture-centric.</div>
+          <div class="layer-tags">
+            <span class="tag">LangChain</span><span class="tag">Swarm</span><span class="tag">ADK</span><span class="tag">Agno</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-2">
+          <div class="layer-title"><span class="layer-num">2</span> Data Operations</div>
+          <div class="layer-desc">Vector databases, RAG pipelines, data loaders, and retrieval infrastructure for grounding agent reasoning.</div>
+          <div class="layer-tags">
+            <span class="tag">RAG</span><span class="tag">VectorDB</span><span class="tag">Embeddings</span>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+ 
+        <div class="layer std-1">
+          <div class="layer-title"><span class="layer-num">1</span> Foundation Models</div>
+          <div class="layer-desc">Core LLMs providing reasoning capabilities (GPT-4, Claude, Gemini, Llama). The engine powering all agent intelligence.</div>
+          <div class="layer-tags">
+            <span class="tag">GPT-4o</span><span class="tag">Claude</span><span class="tag">Gemini</span><span class="tag">Llama</span>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div> K9-AIF: Top-down governance</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Industry Standard: Bottom-up capability stack</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e879f9"></div> K9-AIF: Cross-cutting governance</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Both: Execution &amp; Agent layers</div>
+  </div>
 </div>
-</div>
-
-<div class="arch-col col-std">
-<div class="col-header">Typical Multi-Agent AI Stack</div>
-<div class="col-body">
-
-<div class="layer std"><b>Applications</b><br>Agent-based solutions</div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Security / Guardrails</b></div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Observability</b></div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Infrastructure</b></div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Frameworks</b><br>LangChain, CrewAI, AutoGen</div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Data / RAG</b></div>
-<div class="arrow">↓</div>
-
-<div class="layer std"><b>Foundation Models</b></div>
-
-</div>
-</div>
-
-</div>
-</div>
-
-<!-- PANEL 2 -->
+ 
+<!-- ===================== PANEL 2: FLOW ===================== -->
 <div class="panel" id="panel-flow">
-<div class="flow-container">
-
-<div class="flow-row">
-<div class="box">User</div>
-<div class="arrow-right">→</div>
-<div class="box">Router</div>
-<div class="arrow-right">→</div>
-<div class="box">Orchestrator</div>
-<div class="arrow-right">→</div>
-<div class="box">Squads</div>
-<div class="arrow-right">→</div>
-<div class="box">Agents</div>
+  <div class="flow-container">
+    <p class="flow-title">How a user request flows through each architecture</p>
+ 
+    <div class="flow-section">
+      <div class="flow-section-label">⬡ K9-AIF — Governed Orchestration Flow</div>
+ 
+      <div class="flow-row">
+        <div class="flow-box fb-gray">User / Enterprise App</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-purple">Router<br><small style="font-weight:400;color:#a78bfa">Classifies &amp; routes</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-blue">Orchestrator<br><small style="font-weight:400;color:#7dd3fc">Decomposes task</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-cyan">Squads<br><small style="font-weight:400;color:#67e8f9">Group coordination</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-green">Agents<br><small style="font-weight:400;color:#86efac">Execute task</small></div>
+      </div>
+ 
+      <div class="flow-row" style="margin-left: 20px;">
+        <div class="flow-box fb-pink" style="font-size:0.7rem;">Governance Gate</div>
+        <div class="flow-arrow">⟲</div>
+        <div class="flow-box fb-amber" style="font-size:0.7rem;">Provider-Independent Inference</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-green" style="font-size:0.7rem;">Any LLM</div>
+      </div>
+      <p class="flow-note">★ Config-driven: behavior defined in files, not code. Governance applied at every hop. ABB/SBB separation enforced.</p>
+    </div>
+ 
+    <div class="vs-divider">─────── VS ───────</div>
+ 
+    <div class="flow-section" style="margin-top:18px;">
+      <div class="flow-section-label">◈ Typical Industry Framework (e.g. LangGraph / CrewAI) Flow</div>
+ 
+      <div class="flow-row">
+        <div class="flow-box fb-gray">User Prompt</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-blue">Planning Manager<br><small style="font-weight:400;color:#7dd3fc">Constructs exec graph</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-purple">Reasoning Engine<br><small style="font-weight:400;color:#c4b5fd">LLM decides next step</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-green">Specialist Agents<br><small style="font-weight:400;color:#86efac">Tool use / APIs</small></div>
+      </div>
+ 
+      <div class="flow-row" style="margin-left: 20px;">
+        <div class="flow-box fb-amber" style="font-size:0.7rem;">Memory (Short + Long)</div>
+        <div class="flow-arrow">↔</div>
+        <div class="flow-box fb-red" style="font-size:0.7rem;">External Guardrails (optional)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box fb-gray" style="font-size:0.7rem;">Response</div>
+      </div>
+      <p class="flow-note">⚠ Guardrails vary widely — AutoGen &amp; LangGraph strongest. SmolAgents has none. Frameworks operate in silos with incompatible abstractions.</p>
+    </div>
+ 
+    <div class="flow-section" style="margin-top:28px;">
+      <div class="flow-section-label">◎ Communication Protocols (Industry Standard)</div>
+      <div class="flow-row">
+        <div class="flow-box fb-blue">MCP<br><small style="font-weight:400">Anthropic</small></div>
+        <div class="flow-arrow">·</div>
+        <div class="flow-box fb-green">A2A<br><small style="font-weight:400">Google</small></div>
+        <div class="flow-arrow">·</div>
+        <div class="flow-box fb-purple">AutoGen Messaging<br><small style="font-weight:400">Microsoft</small></div>
+        <div class="flow-arrow">·</div>
+        <div class="flow-box fb-amber">Agent Protocol<br><small style="font-weight:400">LangChain</small></div>
+        <div class="flow-arrow">·</div>
+        <div class="flow-box fb-cyan">AGNTCY<br><small style="font-weight:400">Open</small></div>
+      </div>
+      <p class="flow-note">⚠ No single dominant standard — frameworks are siloed. K9-AIF adopts SOA/REST principles to bridge interoperability gaps.</p>
+    </div>
+ 
+  </div>
 </div>
-
-<br>
-
-<div class="flow-row">
-<div class="box">Prompt</div>
-<div class="arrow-right">→</div>
-<div class="box">Planner</div>
-<div class="arrow-right">→</div>
-<div class="box">LLM</div>
-<div class="arrow-right">→</div>
-<div class="box">Tools</div>
+ 
+<!-- ===================== PANEL 3: TABLE ===================== -->
+<div class="panel" id="panel-compare">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th>⬡ K9-AIF Framework</th>
+          <th>◈ Current AI Frameworks (LangGraph / CrewAI / AutoGen etc.)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Design Philosophy</td>
+          <td><span class="pro">Architecture-first.</span> TOGAF-aligned. Treats multi-agent AI as an enterprise architecture discipline.</td>
+          <td><span class="neutral">Execution-first.</span> Focus on orchestrating LLM calls and managing agent workflows. Architecture is emergent.</td>
+        </tr>
+        <tr>
+          <td>Orchestration Model</td>
+          <td><span class="pro">Explicit hierarchy:</span> Router → Orchestrator → Squads → Agents. Clear chain of command and responsibility.</td>
+          <td><span class="neutral">Varies by framework:</span> LangGraph (state graph), CrewAI (crew/role), AutoGen (conversational), MetaGPT (SOP-guided).</td>
+        </tr>
+        <tr>
+          <td>Governance</td>
+          <td><span class="pro">Built-in, cross-cutting.</span> Governance is a first-class architectural concern embedded at every layer, not added on.</td>
+          <td><span class="con">Inconsistent.</span> AutoGen &amp; LangGraph have strong guardrails. SmolAgents has none. Most require external setup.</td>
+        </tr>
+        <tr>
+          <td>Building Blocks</td>
+          <td><span class="pro">Explicit ABB/SBB separation.</span> Architecture Building Blocks vs. Solution Building Blocks — formal structural patterns.</td>
+          <td><span class="con">No formal separation.</span> Abstractions (agents, tasks, tools, memory) differ per framework and are not portable.</td>
+        </tr>
+        <tr>
+          <td>Model / Provider Binding</td>
+          <td><span class="pro">Provider-independent.</span> Unified inference and model routing layer — swap LLMs without changing business logic.</td>
+          <td><span class="neutral">Varies.</span> Semantic Kernel &amp; Google ADK offer abstractions. Many frameworks tightly couple to specific providers.</td>
+        </tr>
+        <tr>
+          <td>Configuration</td>
+          <td><span class="pro">Configuration-driven composition.</span> System behavior defined declaratively, enabling auditable and reproducible deployments.</td>
+          <td><span class="con">Code-driven.</span> Workflows typically hardcoded (LangGraph DSL, CrewAI Python). Harder to audit without reading code.</td>
+        </tr>
+        <tr>
+          <td>Interoperability</td>
+          <td><span class="pro">SOA principles.</span> Agents exposed as services via RESTful APIs — designed for cross-system integration from the start.</td>
+          <td><span class="con">Siloed.</span> Frameworks use incompatible abstractions. A CrewAI task can't directly invoke a LangGraph workflow.</td>
+        </tr>
+        <tr>
+          <td>Enterprise Alignment</td>
+          <td><span class="pro">Native.</span> Built around enterprise patterns (SOA, TOGAF, layered architecture). Designed for regulated environments.</td>
+          <td><span class="neutral">Emerging.</span> Google ADK and Semantic Kernel have strong enterprise hooks. Most frameworks are developer/research-oriented.</td>
+        </tr>
+        <tr>
+          <td>Security Model</td>
+          <td><span class="pro">Structural.</span> Security woven into architectural layers — not bolted on after the fact.</td>
+          <td><span class="neutral">Mixed.</span> LangGraph &amp; AutoGen provide flow-level checks. Prompt injection, memory hijacking, supply chain risks are common concerns.</td>
+        </tr>
+        <tr>
+          <td>Scalability Approach</td>
+          <td><span class="pro">Modular squads.</span> Composable squad architecture allows horizontal scaling of specialized agent groups.</td>
+          <td><span class="neutral">Infrastructure-dependent.</span> Relies on external deployment infra (Kubernetes, serverless) for scaling. No in-framework scaling primitives.</td>
+        </tr>
+        <tr>
+          <td>Maturity / Ecosystem</td>
+          <td><span class="neutral">Early-stage.</span> Research paper published (TechRxiv). Growing but smaller community than major OSS frameworks.</td>
+          <td><span class="pro">Mature &amp; broad.</span> LangChain, AutoGen, CrewAI have large communities, extensive integrations, and production deployments.</td>
+        </tr>
+        <tr>
+          <td>Primary Audience</td>
+          <td>Enterprise architects, system integrators, regulated industries (healthcare, finance, insurance).</td>
+          <td>Developers, researchers, product teams building agent prototypes through to production pipelines.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
-
-</div>
-</div>
-
-<!-- PANEL 3 -->
-<div class="panel" id="panel-table">
-<div class="table-wrap">
-
-<table>
-<tr>
-<th>Dimension</th>
-<th>K9-AIF</th>
-<th>Typical Frameworks</th>
-</tr>
-
-<tr>
-<td>Design</td>
-<td>Architecture-first</td>
-<td>Execution-first</td>
-</tr>
-
-<tr>
-<td>Governance</td>
-<td>Built-in</td>
-<td>Optional / external</td>
-</tr>
-
-<tr>
-<td>Structure</td>
-<td>Explicit hierarchy</td>
-<td>Varies</td>
-</tr>
-
-<tr>
-<td>Model Layer</td>
-<td>Abstracted</td>
-<td>Coupled</td>
-</tr>
-
-<tr>
-<td>Configuration</td>
-<td>Declarative</td>
-<td>Code-driven</td>
-</tr>
-
-</table>
-
-</div>
-</div>
-
+ 
 <script>
-function showPanel(evt,name){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  evt.currentTarget.classList.add('active');
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
 }
 </script>
-
 </body>
 </html>
