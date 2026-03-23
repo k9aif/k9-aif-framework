@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K9-AIF vs AI Framework Landscape</title>
+
+<meta name="description" content="K9-AIF vs AI Framework Landscape - Architecture-first approach to enterprise agent systems">
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0f1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.tagline {
+  text-align:center;
+  color:#c4b5fd;
+  font-size:0.95rem;
+  margin-bottom:28px;
+  font-weight:600;
+}
+
+/* Tabs */
+.tabs {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:28px;
+  flex-wrap:wrap;
+}
+
+.tab {
+  padding:8px 20px;
+  border-radius:20px;
+  border:1px solid #334155;
+  background:#1e2436;
+  color:#94a3b8;
+  cursor:pointer;
+  font-size:0.82rem;
+  font-weight:600;
+  transition:0.2s;
+}
+
+.tab:hover { background:#263045; }
+
+.tab.active {
+  background:#6366f1;
+  color:#fff;
+  border-color:#6366f1;
+}
+
+/* Panels */
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* Grid */
+.compare-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  max-width:1100px;
+  margin:0 auto;
+}
+
+@media (max-width:700px){
+  .compare-grid { grid-template-columns:1fr; }
+}
+
+.arch-col {
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #1e2d45;
+}
+
+.col-header {
+  padding:14px;
+  font-weight:700;
+}
+
+.col-k9 .col-header {
+  background:#1e2d55;
+  color:#a5b4fc;
+}
+
+.col-std .col-header {
+  background:#1e3526;
+  color:#86efac;
+}
+
+.col-body {
+  padding:14px;
+  background:#141824;
+}
+
+.layer {
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:10px;
+  font-size:0.8rem;
+  line-height:1.4;
+}
+
+.k9 { background:#1a2040; border:1px solid #2563eb; }
+.std { background:#1a1628; border:1px solid #7c3aed; }
+
+.arrow { text-align:center; margin:5px 0; color:#64748b; }
+
+/* Flow */
+.flow-container { max-width:900px; margin:0 auto; }
+
+.flow-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.box {
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #334155;
+  font-size:0.75rem;
+}
+
+.arrow-right { color:#64748b; }
+
+/* Table */
+.table-wrap { max-width:1000px; margin:0 auto; overflow-x:auto; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:0.8rem;
+}
+
+td, th {
+  padding:10px;
+  border-bottom:1px solid #1e2436;
+}
+
+th { background:#1e2436; }
+
+td:nth-child(2) { color:#a5b4fc; }
+td:nth-child(3) { color:#86efac; }
+
+</style>
+</head>
+
+<body>
+
+<h1>K9-AIF vs AI Framework Landscape</h1>
+<p class="subtitle">Architectural comparison of enterprise agent systems</p>
+<p class="tagline">K9-AIF makes agent systems enterprise-ready.</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPanel(event,'side')">Architecture</div>
+  <div class="tab" onclick="showPanel(event,'flow')">Flow</div>
+  <div class="tab" onclick="showPanel(event,'table')">Comparison</div>
+</div>
+
+<!-- PANEL 1 -->
+<div class="panel active" id="panel-side">
+<div class="compare-grid">
+
+<div class="arch-col col-k9">
+<div class="col-header">K9-AIF (Architecture-first)</div>
+<div class="col-body">
+
+<div class="layer k9"><b>Enterprise Architecture Layer</b><br>TOGAF-aligned structure, ABB/SBB separation</div>
+<div class="arrow">↓</div>
+
+<div class="layer k9"><b>Orchestration Hierarchy</b><br>Router → Orchestrator → Squads → Agents</div>
+<div class="arrow">↓</div>
+
+<div class="layer k9"><b>Model Routing</b><br>Provider-independent inference abstraction</div>
+<div class="arrow">↓</div>
+
+<div class="layer k9"><b>Config-driven System</b><br>Declarative, auditable deployments</div>
+<div class="arrow">↓</div>
+
+<div class="layer k9"><b>Governance</b><br>Built-in monitoring, lifecycle, security</div>
+<div class="arrow">↓</div>
+
+<div class="layer k9"><b>Agent Core</b><br>Modular, composable agents</div>
+
+</div>
+</div>
+
+<div class="arch-col col-std">
+<div class="col-header">Typical Multi-Agent AI Stack</div>
+<div class="col-body">
+
+<div class="layer std"><b>Applications</b><br>Agent-based solutions</div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Security / Guardrails</b></div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Observability</b></div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Infrastructure</b></div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Frameworks</b><br>LangChain, CrewAI, AutoGen</div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Data / RAG</b></div>
+<div class="arrow">↓</div>
+
+<div class="layer std"><b>Foundation Models</b></div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- PANEL 2 -->
+<div class="panel" id="panel-flow">
+<div class="flow-container">
+
+<div class="flow-row">
+<div class="box">User</div>
+<div class="arrow-right">→</div>
+<div class="box">Router</div>
+<div class="arrow-right">→</div>
+<div class="box">Orchestrator</div>
+<div class="arrow-right">→</div>
+<div class="box">Squads</div>
+<div class="arrow-right">→</div>
+<div class="box">Agents</div>
+</div>
+
+<br>
+
+<div class="flow-row">
+<div class="box">Prompt</div>
+<div class="arrow-right">→</div>
+<div class="box">Planner</div>
+<div class="arrow-right">→</div>
+<div class="box">LLM</div>
+<div class="arrow-right">→</div>
+<div class="box">Tools</div>
+</div>
+
+</div>
+</div>
+
+<!-- PANEL 3 -->
+<div class="panel" id="panel-table">
+<div class="table-wrap">
+
+<table>
+<tr>
+<th>Dimension</th>
+<th>K9-AIF</th>
+<th>Typical Frameworks</th>
+</tr>
+
+<tr>
+<td>Design</td>
+<td>Architecture-first</td>
+<td>Execution-first</td>
+</tr>
+
+<tr>
+<td>Governance</td>
+<td>Built-in</td>
+<td>Optional / external</td>
+</tr>
+
+<tr>
+<td>Structure</td>
+<td>Explicit hierarchy</td>
+<td>Varies</td>
+</tr>
+
+<tr>
+<td>Model Layer</td>
+<td>Abstracted</td>
+<td>Coupled</td>
+</tr>
+
+<tr>
+<td>Configuration</td>
+<td>Declarative</td>
+<td>Code-driven</td>
+</tr>
+
+</table>
+
+</div>
+</div>
+
+<script>
+function showPanel(evt,name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  evt.currentTarget.classList.add('active');
+}
+</script>
+
+</body>
+</html>
