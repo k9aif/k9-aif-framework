@@ -17,4 +17,4 @@ Additional documentation may be added over time as the framework evolves.
 
 ## K9-AIF diagram showing multiple projects, routers, orchestrators, squads and agent pattern
 
-[![K9-AIF Architecture - multiple projects..](diagrams/k9-aif-architecture.png)](docs/diagrams/k9-multiple-projects-routers.png)
+[![K9-AIF Architecture - multiple projects..](diagrams/k9-multiple-projects-routers.png)](diagrams/k9-multiple-projects-routers.png)
