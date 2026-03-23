@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,6 +83,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
   .col-header .badge {
     font-size: 0.65rem;
@@ -325,9 +325,9 @@
 <p class="subtitle">Architectural comparison · K9-AIF Agentic Integration Framework &amp; industry-standard multi-agent systems</p>
 
 <div class="tabs">
-  <div class="tab active" onclick="showPanel('side-by-side')">Side-by-Side Architecture</div>
-  <div class="tab" onclick="showPanel('flow')">Orchestration Flow</div>
-  <div class="tab" onclick="showPanel('compare')">Feature Comparison</div>
+  <div class="tab active" onclick="showPanel(event, 'side-by-side')">Side-by-Side Architecture</div>
+  <div class="tab" onclick="showPanel(event, 'flow')">Orchestration Flow</div>
+  <div class="tab" onclick="showPanel(event, 'compare')">Feature Comparison</div>
 </div>
 
 <!-- ===================== PANEL 1: SIDE-BY-SIDE ===================== -->
@@ -379,19 +379,19 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer k9-2">
-          <div class="layer-title"><span class="layer-num">2</span> Governance &amp; Monitoring</div>
-          <div class="layer-desc">Built-in governance controls, observability, and lifecycle management as first-class architectural concerns.</div>
+          <div class="layer-title"><span class="layer-num">2</span> Monitoring, Security &amp; Governance Controls</div>
+          <div class="layer-desc">Observability, security services, and governance mechanisms are built into the framework design rather than treated as optional add-ons.</div>
           <div class="layer-tags">
-            <span class="tag">Governance</span><span class="tag">Observability</span><span class="tag">Lifecycle</span>
+            <span class="tag">Governance</span><span class="tag">Security</span><span class="tag">Observability</span>
           </div>
         </div>
         <div class="arrow-down">↓</div>
 
         <div class="layer k9-1">
-          <div class="layer-title"><span class="layer-num">1</span> Modular Agent Core</div>
-          <div class="layer-desc">Individual agents as governed, composable units — perception, reasoning, memory, and action with defined interfaces.</div>
+          <div class="layer-title"><span class="layer-num">1</span> Modular Core Abstractions</div>
+          <div class="layer-desc">BaseAgent, BaseOrchestrator, and BaseRouter provide governed, composable building blocks with explicit interfaces and extension points.</div>
           <div class="layer-tags">
-            <span class="tag">Modular</span><span class="tag">Governed</span><span class="tag">Python API</span>
+            <span class="tag">BaseAgent</span><span class="tag">BaseOrchestrator</span><span class="tag">BaseRouter</span>
           </div>
         </div>
 
@@ -405,14 +405,14 @@
     <!-- Standard / Current Column -->
     <div class="arch-col col-std">
       <div class="col-header">
-        <span>◈</span> Current AI Framework Landscape
+        <span>◈</span> Current AI Framework Landscape (Typical Capability Stack)
         <span class="badge">EXECUTION-FIRST</span>
       </div>
       <div class="col-body">
 
         <div class="layer std-7">
-          <div class="layer-title"><span class="layer-num">7</span> Agent Ecosystem / Applications</div>
-          <div class="layer-desc">Business-facing AI applications where agent capabilities deliver end-user value (customer service, automation, analytics).</div>
+          <div class="layer-title">Agent Ecosystem / Applications</div>
+          <div class="layer-desc">Business-facing AI applications where agent capabilities deliver end-user value, such as customer service, automation, and analytics.</div>
           <div class="layer-tags">
             <span class="tag">CrewAI</span><span class="tag">AutoGen</span><span class="tag">LangGraph</span><span class="tag">MetaGPT</span>
           </div>
@@ -420,8 +420,8 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer std-6">
-          <div class="layer-title"><span class="layer-num">6</span> Security &amp; Compliance Layer</div>
-          <div class="layer-desc">Guardrails, output validation, safety enforcement — often bolted on. Varies widely; SmolAgents lacks it entirely.</div>
+          <div class="layer-title">Security, Safety &amp; Compliance Controls</div>
+          <div class="layer-desc">Guardrails, validation, and compliance controls vary significantly across frameworks and are often added through external tools or platform integration.</div>
           <div class="layer-tags">
             <span class="tag">Guardrails</span><span class="tag">Validation</span><span class="tag">Compliance</span>
           </div>
@@ -429,8 +429,8 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer std-5">
-          <div class="layer-title"><span class="layer-num">5</span> Evaluation &amp; Observability</div>
-          <div class="layer-desc">Monitoring agent behavior, safety assessment and performance evaluation. Often external tooling (LangSmith, etc.).</div>
+          <div class="layer-title">Evaluation &amp; Observability</div>
+          <div class="layer-desc">Monitoring agent behavior, safety assessment, and performance evaluation are often handled through external tooling and platform add-ons.</div>
           <div class="layer-tags">
             <span class="tag">Tracing</span><span class="tag">Evals</span><span class="tag">Metrics</span>
           </div>
@@ -438,17 +438,17 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer std-4">
-          <div class="layer-title"><span class="layer-num">4</span> Deployment Infrastructure</div>
-          <div class="layer-desc">Runtime compute, scaling, state persistence, and cloud provider infrastructure for running agents at scale.</div>
+          <div class="layer-title">Runtime Environment / Hosting</div>
+          <div class="layer-desc">Agent systems may run locally, in containers, on Kubernetes, serverless platforms, or cloud environments. This is an external deployment concern rather than a core framework layer.</div>
           <div class="layer-tags">
-            <span class="tag">Kubernetes</span><span class="tag">Cloud</span><span class="tag">Serverless</span>
+            <span class="tag">Containers</span><span class="tag">Kubernetes</span><span class="tag">Cloud</span><span class="tag">Local</span>
           </div>
         </div>
         <div class="arrow-down">↓</div>
 
         <div class="layer std-3">
-          <div class="layer-title"><span class="layer-num">3</span> Agent Frameworks</div>
-          <div class="layer-desc">Core orchestration, reasoning loops, tool use and multi-agent coordination libraries. Often execution-centric, not architecture-centric.</div>
+          <div class="layer-title">Agent Frameworks</div>
+          <div class="layer-desc">Core orchestration, reasoning loops, tool use, and multi-agent coordination libraries. Most are execution-centric rather than architecture-centric.</div>
           <div class="layer-tags">
             <span class="tag">LangChain</span><span class="tag">Swarm</span><span class="tag">ADK</span><span class="tag">Agno</span>
           </div>
@@ -456,7 +456,7 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer std-2">
-          <div class="layer-title"><span class="layer-num">2</span> Data Operations</div>
+          <div class="layer-title">Data Operations</div>
           <div class="layer-desc">Vector databases, RAG pipelines, data loaders, and retrieval infrastructure for grounding agent reasoning.</div>
           <div class="layer-tags">
             <span class="tag">RAG</span><span class="tag">VectorDB</span><span class="tag">Embeddings</span>
@@ -465,8 +465,8 @@
         <div class="arrow-down">↓</div>
 
         <div class="layer std-1">
-          <div class="layer-title"><span class="layer-num">1</span> Foundation Models</div>
-          <div class="layer-desc">Core LLMs providing reasoning capabilities (GPT-4, Claude, Gemini, Llama). The engine powering all agent intelligence.</div>
+          <div class="layer-title">Foundation Models</div>
+          <div class="layer-desc">Core LLMs providing reasoning capabilities and language generation for agent systems.</div>
           <div class="layer-tags">
             <span class="tag">GPT-4o</span><span class="tag">Claude</span><span class="tag">Gemini</span><span class="tag">Llama</span>
           </div>
@@ -479,9 +479,9 @@
 
   <div class="legend">
     <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div> K9-AIF: Top-down governance</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Industry Standard: Bottom-up capability stack</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Industry: Typical capability stack</div>
     <div class="legend-item"><div class="legend-dot" style="background:#e879f9"></div> K9-AIF: Cross-cutting governance</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Both: Execution &amp; Agent layers</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Both: Agent execution ecosystem</div>
   </div>
 </div>
 
@@ -637,11 +637,11 @@
 </div>
 
 <script>
-function showPanel(name) {
+function showPanel(event, name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
-  event.target.classList.add('active');
+  event.currentTarget.classList.add('active');
 }
 </script>
 
