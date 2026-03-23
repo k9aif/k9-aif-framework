@@ -1,5 +1,3 @@
-K9aif architecture comparison · HTML
-Copy
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +28,7 @@ Copy
     font-size: 0.85rem;
     margin-bottom: 28px;
   }
- 
+
   /* Tab nav */
   .tabs {
     display: flex;
@@ -56,11 +54,11 @@ Copy
     color: #fff;
   }
   .tab:hover:not(.active) { background: #263045; color: #cbd5e1; }
- 
+
   /* Panels */
   .panel { display: none; }
   .panel.active { display: block; }
- 
+
   /* ============================
      SIDE-BY-SIDE DIAGRAM
      ============================ */
@@ -72,7 +70,7 @@ Copy
     margin: 0 auto;
   }
   @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
- 
+
   .arch-col {
     border-radius: 14px;
     overflow: hidden;
@@ -98,9 +96,9 @@ Copy
   .col-k9 .col-header .badge { background: #4f46e5; color: #e0e7ff; }
   .col-std .col-header { background: linear-gradient(135deg, #1a2a1e, #1e3526); border-bottom: 1px solid #1f4a28; color: #86efac; }
   .col-std .col-header .badge { background: #16a34a; color: #dcfce7; }
- 
+
   .col-body { background: #141824; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
- 
+
   .layer {
     border-radius: 10px;
     padding: 10px 13px;
@@ -139,38 +137,38 @@ Copy
     font-weight: 600;
     letter-spacing: 0.3px;
   }
- 
+
   /* K9-AIF layer colors */
   .k9-1 { background: #1a1040; border-color: #3730a3; }
   .k9-1 .layer-num { background: #4338ca; color: #e0e7ff; }
   .k9-1 .layer-title { color: #a5b4fc; }
   .k9-1 .tag { background: #312e81; color: #a5b4fc; }
- 
+
   .k9-2 { background: #1a1430; border-color: #5b21b6; }
   .k9-2 .layer-num { background: #7c3aed; color: #f3e8ff; }
   .k9-2 .layer-title { color: #c4b5fd; }
   .k9-2 .tag { background: #3b0764; color: #c4b5fd; }
- 
+
   .k9-3 { background: #1a2040; border-color: #1d4ed8; }
   .k9-3 .layer-num { background: #2563eb; color: #dbeafe; }
   .k9-3 .layer-title { color: #93c5fd; }
   .k9-3 .tag { background: #1e3a8a; color: #93c5fd; }
- 
+
   .k9-4 { background: #0e2430; border-color: #0369a1; }
   .k9-4 .layer-num { background: #0284c7; color: #e0f2fe; }
   .k9-4 .layer-title { color: #7dd3fc; }
   .k9-4 .tag { background: #0c4a6e; color: #7dd3fc; }
- 
+
   .k9-5 { background: #0e2820; border-color: #065f46; }
   .k9-5 .layer-num { background: #059669; color: #d1fae5; }
   .k9-5 .layer-title { color: #6ee7b7; }
   .k9-5 .tag { background: #064e3b; color: #6ee7b7; }
- 
+
   .k9-6 { background: #201a10; border-color: #92400e; }
   .k9-6 .layer-num { background: #d97706; color: #fef3c7; }
   .k9-6 .layer-title { color: #fcd34d; }
   .k9-6 .tag { background: #78350f; color: #fcd34d; }
- 
+
   .k9-gov {
     background: linear-gradient(90deg, #1a0820, #200a28);
     border: 1px dashed #c026d3;
@@ -181,50 +179,50 @@ Copy
     font-style: italic;
     text-align: center;
   }
- 
+
   /* Standard layer colors */
   .std-1 { background: #0e1a28; border-color: #164e63; }
   .std-1 .layer-num { background: #0e7490; color: #cffafe; }
   .std-1 .layer-title { color: #67e8f9; }
   .std-1 .tag { background: #0c4a6e; color: #67e8f9; }
- 
+
   .std-2 { background: #0e1e1a; border-color: #065f46; }
   .std-2 .layer-num { background: #059669; color: #d1fae5; }
   .std-2 .layer-title { color: #6ee7b7; }
   .std-2 .tag { background: #064e3b; color: #6ee7b7; }
- 
+
   .std-3 { background: #1a1628; border-color: #4c1d95; }
   .std-3 .layer-num { background: #7c3aed; color: #f3e8ff; }
   .std-3 .layer-title { color: #c4b5fd; }
   .std-3 .tag { background: #3b0764; color: #c4b5fd; }
- 
+
   .std-4 { background: #1a1010; border-color: #7f1d1d; }
   .std-4 .layer-num { background: #dc2626; color: #fee2e2; }
   .std-4 .layer-title { color: #fca5a5; }
   .std-4 .tag { background: #450a0a; color: #fca5a5; }
- 
+
   .std-5 { background: #181410; border-color: #78350f; }
   .std-5 .layer-num { background: #d97706; color: #fef3c7; }
   .std-5 .layer-title { color: #fcd34d; }
   .std-5 .tag { background: #451a03; color: #fcd34d; }
- 
+
   .std-6 { background: #121820; border-color: #1e3a5f; }
   .std-6 .layer-num { background: #3b82f6; color: #dbeafe; }
   .std-6 .layer-title { color: #93c5fd; }
   .std-6 .tag { background: #1e3a8a; color: #93c5fd; }
- 
+
   .std-7 { background: #1a1020; border-color: #581c87; }
   .std-7 .layer-num { background: #9333ea; color: #f3e8ff; }
   .std-7 .layer-title { color: #d8b4fe; }
   .std-7 .tag { background: #3b0764; color: #d8b4fe; }
- 
+
   .arrow-down {
     text-align: center;
     color: #475569;
     font-size: 0.9rem;
     margin: -2px 0;
   }
- 
+
   /* ============================
      COMPARISON TABLE
      ============================ */
@@ -250,13 +248,13 @@ Copy
   .pro { color: #4ade80; font-weight: 600; }
   .con { color: #f87171; font-weight: 600; }
   .neutral { color: #fbbf24; font-weight: 600; }
- 
+
   /* ============================
      FLOW DIAGRAM
      ============================ */
   .flow-container { max-width: 900px; margin: 0 auto; }
   .flow-title { text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 18px; }
- 
+
   .flow-section { margin-bottom: 28px; }
   .flow-section-label {
     font-size: 0.72rem; font-weight: 700; color: #64748b;
@@ -266,7 +264,7 @@ Copy
     border-left: 3px solid #334155;
     padding-left: 10px;
   }
- 
+
   .flow-row {
     display: flex; align-items: center; gap: 8px;
     margin-bottom: 8px;
@@ -281,7 +279,7 @@ Copy
     white-space: nowrap;
   }
   .flow-arrow { color: #475569; font-size: 1.1rem; flex-shrink: 0; }
- 
+
   .fb-purple { background: #1e1040; border-color: #6d28d9; color: #c4b5fd; }
   .fb-blue   { background: #0e1a38; border-color: #2563eb; color: #93c5fd; }
   .fb-cyan   { background: #0e1e28; border-color: #0891b2; color: #67e8f9; }
@@ -290,7 +288,7 @@ Copy
   .fb-red    { background: #1e0a0a; border-color: #dc2626; color: #fca5a5; }
   .fb-pink   { background: #1e0a18; border-color: #db2777; color: #f9a8d4; }
   .fb-gray   { background: #141824; border-color: #334155; color: #94a3b8; }
- 
+
   .vs-divider {
     text-align: center;
     font-size: 0.7rem;
@@ -306,7 +304,7 @@ Copy
     margin-top: 4px;
     padding-left: 4px;
   }
- 
+
   /* legend */
   .legend {
     display: flex; gap: 18px; flex-wrap: wrap; justify-content: center;
@@ -322,20 +320,20 @@ Copy
 </style>
 </head>
 <body>
- 
+
 <h1>K9-AIF vs Current AI Framework Landscape</h1>
 <p class="subtitle">Architectural comparison · K9-AIF Agentic Integration Framework &amp; industry-standard multi-agent systems</p>
- 
+
 <div class="tabs">
   <div class="tab active" onclick="showPanel('side-by-side')">Side-by-Side Architecture</div>
   <div class="tab" onclick="showPanel('flow')">Orchestration Flow</div>
   <div class="tab" onclick="showPanel('compare')">Feature Comparison</div>
 </div>
- 
+
 <!-- ===================== PANEL 1: SIDE-BY-SIDE ===================== -->
 <div class="panel active" id="panel-side-by-side">
   <div class="compare-grid">
- 
+
     <!-- K9-AIF Column -->
     <div class="arch-col col-k9">
       <div class="col-header">
@@ -343,7 +341,7 @@ Copy
         <span class="badge">ARCHITECTURE-FIRST</span>
       </div>
       <div class="col-body">
- 
+
         <div class="layer k9-6">
           <div class="layer-title"><span class="layer-num">6</span> Enterprise Integration Layer</div>
           <div class="layer-desc">TOGAF-aligned enterprise architecture patterns. Separation of ABB (Architecture Building Blocks) and SBB (Solution Building Blocks).</div>
@@ -352,7 +350,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer k9-5">
           <div class="layer-title"><span class="layer-num">5</span> Orchestration Hierarchy</div>
           <div class="layer-desc">Explicit 4-level hierarchy: <strong>Router → Orchestrator → Squads → Agents</strong>. Clear chain of command with defined responsibilities.</div>
@@ -361,7 +359,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer k9-4">
           <div class="layer-title"><span class="layer-num">4</span> Provider-Independent Inference</div>
           <div class="layer-desc">Unified model routing layer decoupled from specific LLM providers. Swap models without changing business logic.</div>
@@ -370,7 +368,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer k9-3">
           <div class="layer-title"><span class="layer-num">3</span> Configuration-Driven Composition</div>
           <div class="layer-desc">System behavior defined via configuration, enabling reproducible and auditable deployments without code changes.</div>
@@ -379,7 +377,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer k9-2">
           <div class="layer-title"><span class="layer-num">2</span> Governance &amp; Monitoring</div>
           <div class="layer-desc">Built-in governance controls, observability, and lifecycle management as first-class architectural concerns.</div>
@@ -388,7 +386,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer k9-1">
           <div class="layer-title"><span class="layer-num">1</span> Modular Agent Core</div>
           <div class="layer-desc">Individual agents as governed, composable units — perception, reasoning, memory, and action with defined interfaces.</div>
@@ -396,14 +394,14 @@ Copy
             <span class="tag">Modular</span><span class="tag">Governed</span><span class="tag">Python API</span>
           </div>
         </div>
- 
+
         <div class="k9-gov" style="margin-top:10px;">
           ⚙ Cross-Cutting: Governance · Security · Extensibility — embedded across ALL layers
         </div>
- 
+
       </div>
     </div>
- 
+
     <!-- Standard / Current Column -->
     <div class="arch-col col-std">
       <div class="col-header">
@@ -411,7 +409,7 @@ Copy
         <span class="badge">EXECUTION-FIRST</span>
       </div>
       <div class="col-body">
- 
+
         <div class="layer std-7">
           <div class="layer-title"><span class="layer-num">7</span> Agent Ecosystem / Applications</div>
           <div class="layer-desc">Business-facing AI applications where agent capabilities deliver end-user value (customer service, automation, analytics).</div>
@@ -420,7 +418,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-6">
           <div class="layer-title"><span class="layer-num">6</span> Security &amp; Compliance Layer</div>
           <div class="layer-desc">Guardrails, output validation, safety enforcement — often bolted on. Varies widely; SmolAgents lacks it entirely.</div>
@@ -429,7 +427,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-5">
           <div class="layer-title"><span class="layer-num">5</span> Evaluation &amp; Observability</div>
           <div class="layer-desc">Monitoring agent behavior, safety assessment and performance evaluation. Often external tooling (LangSmith, etc.).</div>
@@ -438,7 +436,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-4">
           <div class="layer-title"><span class="layer-num">4</span> Deployment Infrastructure</div>
           <div class="layer-desc">Runtime compute, scaling, state persistence, and cloud provider infrastructure for running agents at scale.</div>
@@ -447,7 +445,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-3">
           <div class="layer-title"><span class="layer-num">3</span> Agent Frameworks</div>
           <div class="layer-desc">Core orchestration, reasoning loops, tool use and multi-agent coordination libraries. Often execution-centric, not architecture-centric.</div>
@@ -456,7 +454,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-2">
           <div class="layer-title"><span class="layer-num">2</span> Data Operations</div>
           <div class="layer-desc">Vector databases, RAG pipelines, data loaders, and retrieval infrastructure for grounding agent reasoning.</div>
@@ -465,7 +463,7 @@ Copy
           </div>
         </div>
         <div class="arrow-down">↓</div>
- 
+
         <div class="layer std-1">
           <div class="layer-title"><span class="layer-num">1</span> Foundation Models</div>
           <div class="layer-desc">Core LLMs providing reasoning capabilities (GPT-4, Claude, Gemini, Llama). The engine powering all agent intelligence.</div>
@@ -473,12 +471,12 @@ Copy
             <span class="tag">GPT-4o</span><span class="tag">Claude</span><span class="tag">Gemini</span><span class="tag">Llama</span>
           </div>
         </div>
- 
+
       </div>
     </div>
- 
+
   </div>
- 
+
   <div class="legend">
     <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div> K9-AIF: Top-down governance</div>
     <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Industry Standard: Bottom-up capability stack</div>
@@ -486,15 +484,15 @@ Copy
     <div class="legend-item"><div class="legend-dot" style="background:#94a3b8"></div> Both: Execution &amp; Agent layers</div>
   </div>
 </div>
- 
+
 <!-- ===================== PANEL 2: FLOW ===================== -->
 <div class="panel" id="panel-flow">
   <div class="flow-container">
     <p class="flow-title">How a user request flows through each architecture</p>
- 
+
     <div class="flow-section">
       <div class="flow-section-label">⬡ K9-AIF — Governed Orchestration Flow</div>
- 
+
       <div class="flow-row">
         <div class="flow-box fb-gray">User / Enterprise App</div>
         <div class="flow-arrow">→</div>
@@ -506,7 +504,7 @@ Copy
         <div class="flow-arrow">→</div>
         <div class="flow-box fb-green">Agents<br><small style="font-weight:400;color:#86efac">Execute task</small></div>
       </div>
- 
+
       <div class="flow-row" style="margin-left: 20px;">
         <div class="flow-box fb-pink" style="font-size:0.7rem;">Governance Gate</div>
         <div class="flow-arrow">⟲</div>
@@ -516,12 +514,12 @@ Copy
       </div>
       <p class="flow-note">★ Config-driven: behavior defined in files, not code. Governance applied at every hop. ABB/SBB separation enforced.</p>
     </div>
- 
+
     <div class="vs-divider">─────── VS ───────</div>
- 
+
     <div class="flow-section" style="margin-top:18px;">
       <div class="flow-section-label">◈ Typical Industry Framework (e.g. LangGraph / CrewAI) Flow</div>
- 
+
       <div class="flow-row">
         <div class="flow-box fb-gray">User Prompt</div>
         <div class="flow-arrow">→</div>
@@ -531,7 +529,7 @@ Copy
         <div class="flow-arrow">→</div>
         <div class="flow-box fb-green">Specialist Agents<br><small style="font-weight:400;color:#86efac">Tool use / APIs</small></div>
       </div>
- 
+
       <div class="flow-row" style="margin-left: 20px;">
         <div class="flow-box fb-amber" style="font-size:0.7rem;">Memory (Short + Long)</div>
         <div class="flow-arrow">↔</div>
@@ -541,7 +539,7 @@ Copy
       </div>
       <p class="flow-note">⚠ Guardrails vary widely — AutoGen &amp; LangGraph strongest. SmolAgents has none. Frameworks operate in silos with incompatible abstractions.</p>
     </div>
- 
+
     <div class="flow-section" style="margin-top:28px;">
       <div class="flow-section-label">◎ Communication Protocols (Industry Standard)</div>
       <div class="flow-row">
@@ -557,10 +555,10 @@ Copy
       </div>
       <p class="flow-note">⚠ No single dominant standard — frameworks are siloed. K9-AIF adopts SOA/REST principles to bridge interoperability gaps.</p>
     </div>
- 
+
   </div>
 </div>
- 
+
 <!-- ===================== PANEL 3: TABLE ===================== -->
 <div class="panel" id="panel-compare">
   <div class="table-wrap">
@@ -637,7 +635,7 @@ Copy
     </table>
   </div>
 </div>
- 
+
 <script>
 function showPanel(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -645,6 +643,244 @@ function showPanel(name) {
   document.getElementById('panel-' + name).classList.add('active');
   event.target.classList.add('active');
 }
+</script>
+
+<!-- ===================== CHARTS SECTION ===================== -->
+<div style="max-width:1100px;margin:48px auto 0;padding-bottom:60px;">
+
+  <div style="text-align:center;margin-bottom:6px;">
+    <span style="font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#475569;">Strengths Analysis</span>
+  </div>
+  <h2 style="text-align:center;font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:4px;">K9-AIF Competitive Positioning</h2>
+  <p style="text-align:center;color:#64748b;font-size:0.8rem;margin-bottom:36px;">Scored across 8 enterprise-readiness dimensions vs. typical industry frameworks</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <!-- RADAR CHART -->
+    <div style="background:#141824;border:1px solid #1e2d45;border-radius:14px;padding:24px;">
+      <div style="font-size:0.75rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Radar — Capability Score (0–10)</div>
+      <div style="font-size:0.72rem;color:#475569;margin-bottom:16px;">K9-AIF vs Industry Average</div>
+      <div style="position:relative;height:300px;">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- DONUT CHART -->
+    <div style="background:#141824;border:1px solid #1e2d45;border-radius:14px;padding:24px;">
+      <div style="font-size:0.75rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Donut — Strength Composition</div>
+      <div style="font-size:0.72rem;color:#475569;margin-bottom:16px;">K9-AIF score distribution across pillars</div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <div style="position:relative;height:260px;flex:1;">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:0.72rem;min-width:130px;" id="donut-legend"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BAR CHART -->
+  <div style="background:#141824;border:1px solid #1e2d45;border-radius:14px;padding:24px;margin-top:24px;">
+    <div style="font-size:0.75rem;font-weight:700;color:#94a3b8;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Bar — Head-to-Head Scores</div>
+    <div style="font-size:0.72rem;color:#475569;margin-bottom:16px;">K9-AIF vs Industry Average across all evaluated dimensions</div>
+    <div style="position:relative;height:260px;">
+      <canvas id="barChart"></canvas>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:14px;font-size:0.72rem;color:#64748b;justify-content:center;">
+      <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#6366f1;"></span>K9-AIF</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#334155;"></span>Industry Average</span>
+    </div>
+  </div>
+
+  <p style="text-align:center;color:#334155;font-size:0.68rem;margin-top:18px;">Scores are qualitative assessments based on architectural documentation and independent AI evaluations. Maturity reflects current ecosystem size.</p>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const dims = [
+  'Governance',
+  'Enterprise Alignment',
+  'Security Model',
+  'Interoperability',
+  'Orchestration Clarity',
+  'Provider Independence',
+  'Config-Driven Design',
+  'Maturity & Ecosystem'
+];
+
+const k9Scores   = [9, 9, 8, 7, 9, 9, 9, 3];
+const indScores  = [5, 5, 5, 4, 6, 5, 4, 9];
+
+const donutColors = [
+  '#6366f1','#818cf8','#a5b4fc','#7c3aed',
+  '#4f46e5','#06b6d4','#0891b2','#334155'
+];
+
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+
+// ---- RADAR ----
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: dims,
+    datasets: [
+      {
+        label: 'K9-AIF',
+        data: k9Scores,
+        backgroundColor: 'rgba(99,102,241,0.18)',
+        borderColor: '#6366f1',
+        borderWidth: 2,
+        pointBackgroundColor: '#6366f1',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Industry Avg',
+        data: indScores,
+        backgroundColor: 'rgba(51,65,85,0.25)',
+        borderColor: '#475569',
+        borderWidth: 1.5,
+        borderDash: [4,3],
+        pointBackgroundColor: '#475569',
+        pointRadius: 3,
+        pointHoverRadius: 5
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#64748b', padding: 16, boxWidth: 12, font: { size: 11 } }
+      },
+      tooltip: { backgroundColor: '#1e2436', borderColor: '#334155', borderWidth: 1, titleColor: '#e2e8f0', bodyColor: '#94a3b8' }
+    },
+    scales: {
+      r: {
+        min: 0, max: 10,
+        ticks: { stepSize: 2, color: '#334155', backdropColor: 'transparent', font: { size: 10 } },
+        grid: { color: '#1e2d45' },
+        angleLines: { color: '#1e2d45' },
+        pointLabels: { color: '#64748b', font: { size: 10.5 } }
+      }
+    }
+  }
+});
+
+// ---- DONUT ----
+const donutLegend = document.getElementById('donut-legend');
+dims.forEach((d, i) => {
+  donutLegend.innerHTML += `<div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${donutColors[i]};flex-shrink:0;"></span><span style="color:#94a3b8;">${d}</span></div>`;
+});
+
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: dims,
+    datasets: [{
+      data: k9Scores,
+      backgroundColor: donutColors,
+      borderColor: '#141824',
+      borderWidth: 3,
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e2436',
+        borderColor: '#334155',
+        borderWidth: 1,
+        titleColor: '#e2e8f0',
+        bodyColor: '#94a3b8',
+        callbacks: {
+          label: ctx => `  Score: ${ctx.parsed} / 10`
+        }
+      }
+    }
+  },
+  plugins: [{
+    id: 'centerLabel',
+    beforeDraw(chart) {
+      const { width, height, ctx } = chart;
+      ctx.save();
+      const total = k9Scores.filter((_, i) => i < 7).reduce((a,b) => a+b, 0);
+      const avg = (total / 7).toFixed(1);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const cx = width / 2, cy = height / 2;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '700 22px Segoe UI, system-ui, sans-serif';
+      ctx.fillText(avg, cx, cy - 8);
+      ctx.fillStyle = '#475569';
+      ctx.font = '400 10px Segoe UI, system-ui, sans-serif';
+      ctx.fillText('avg score', cx, cy + 12);
+      ctx.restore();
+    }
+  }]
+});
+
+// ---- BAR ----
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: dims,
+    datasets: [
+      {
+        label: 'K9-AIF',
+        data: k9Scores,
+        backgroundColor: 'rgba(99,102,241,0.85)',
+        borderRadius: 5,
+        borderSkipped: false,
+        barPercentage: 0.38,
+        categoryPercentage: 0.72
+      },
+      {
+        label: 'Industry Average',
+        data: indScores,
+        backgroundColor: 'rgba(51,65,85,0.7)',
+        borderRadius: 5,
+        borderSkipped: false,
+        barPercentage: 0.38,
+        categoryPercentage: 0.72
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1e2436',
+        borderColor: '#334155',
+        borderWidth: 1,
+        titleColor: '#e2e8f0',
+        bodyColor: '#94a3b8'
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#1e2d45' },
+        ticks: { color: '#64748b', font: { size: 10.5 }, maxRotation: 25 }
+      },
+      y: {
+        min: 0, max: 10,
+        grid: { color: '#1e2d45' },
+        ticks: { color: '#475569', stepSize: 2 }
+      }
+    }
+  }
+});
 </script>
 </body>
 </html>
