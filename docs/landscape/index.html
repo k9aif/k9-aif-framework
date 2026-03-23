@@ -813,8 +813,8 @@ new Chart(document.getElementById('donutChart'), {
     beforeDraw(chart) {
       const { width, height, ctx } = chart;
       ctx.save();
-      const total = k9Scores.filter((_, i) => i < 7).reduce((a,b) => a+b, 0);
-      const avg = (total / 7).toFixed(1);
+      const total = k9Scores.reduce((a,b) => a+b, 0);
+      const avg = (total / k9Scores.length).toFixed(1);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const cx = width / 2, cy = height / 2;
