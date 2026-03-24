@@ -1,9 +1,3 @@
----
-title: "From POC to Production: An Architecture-First Approach with K9-AIF"
-date: 2026-03-24
-description: "Why most AI POCs fail and how an architecture-first approach with K9-AIF enables scalable, production-ready systems."
----
-
 # From POC to Production: An Architecture-First Approach with K9-AIF
 
 ## Introduction
