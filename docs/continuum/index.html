@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF Evolution Loop</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f7f1eb;
+      color: #3b2f2a;
+    }
+    .wrap {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    .title {
+      text-align: center;
+      font-size: 34px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #4d382f;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 18px;
+      color: #7a6358;
+      margin-bottom: 26px;
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: linear-gradient(180deg, #f8f2ec 0%, #f4ede7 100%);
+      border-radius: 22px;
+      box-shadow: 0 10px 30px rgba(88, 63, 47, 0.10);
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 22px;
+      margin-top: 18px;
+      font-size: 15px;
+      color: #6d594f;
+      flex-wrap: wrap;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 8px; }
+    .swatch {
+      width: 16px; height: 16px; border-radius: 4px; display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">K9-AIF Continuous Architecture Evolution</div>
+    <div class="subtitle">We don’t just define systems — we define how systems improve themselves without breaking architecture.</div>
+
+    <svg viewBox="0 0 1280 900" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="abbGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ecd8c6"/>
+          <stop offset="100%" stop-color="#e8c4a4"/>
+        </linearGradient>
+        <linearGradient id="contGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f7efe7"/>
+          <stop offset="100%" stop-color="#e9d8c8"/>
+        </linearGradient>
+        <linearGradient id="sbbGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fff7ef"/>
+          <stop offset="100%" stop-color="#f3dfcd"/>
+        </linearGradient>
+        <linearGradient id="gateGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f3b37c"/>
+          <stop offset="100%" stop-color="#dd7c2b"/>
+        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#8c6c56" flood-opacity="0.18"/>
+        </filter>
+        <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#8a6450"/>
+        </marker>
+        <marker id="arrowOrange" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+          <path d="M0,0 L12,6 L0,12 z" fill="#d6782c"/>
+        </marker>
+      </defs>
+
+      <!-- ABB -->
+      <rect x="180" y="60" rx="32" width="920" height="150" fill="url(#abbGrad)" stroke="#d9b79a" stroke-width="2.5" filter="url(#shadow)"/>
+      <text x="640" y="100" text-anchor="middle" font-size="28" font-weight="700">ABB Layer — Stable Architecture</text>
+      <text x="640" y="130" text-anchor="middle" font-size="16">Principles • Patterns • Contracts • Constraints • Standards</text>
+
+      <!-- Governance Gate -->
+      <rect x="450" y="240" rx="22" width="380" height="90" fill="url(#gateGrad)" filter="url(#shadow)"/>
+      <text x="640" y="275" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">Governance Gate</text>
+      <text x="640" y="305" text-anchor="middle" font-size="16" fill="#fff">Evaluate • Generalize • Standardize • Promote to ABB</text>
+
+      <!-- Continuum -->
+      <rect x="200" y="380" rx="28" width="880" height="140" fill="url(#contGrad)" stroke="#d8c2af" stroke-width="2" filter="url(#shadow)"/>
+      <text x="640" y="420" text-anchor="middle" font-size="26" font-weight="700">K9-AIF Continuum (Pattern Repository)</text>
+      <text x="640" y="450" text-anchor="middle" font-size="16">Shared patterns • Templates • Proven solutions • Reuse catalog</text>
+
+      <!-- SBB -->
+      <text x="640" y="560" text-anchor="middle" font-size="28" font-weight="700">SBB Layer — Solution Implementations</text>
+
+      <rect x="150" y="600" rx="26" width="260" height="130" fill="url(#sbbGrad)" stroke="#d8c2af" filter="url(#shadow)"/>
+      <text x="280" y="640" text-anchor="middle" font-size="22" font-weight="700">SBB A</text>
+      <text x="280" y="670" text-anchor="middle" font-size="16">Discovers pattern</text>
+
+      <rect x="510" y="600" rx="26" width="260" height="130" fill="url(#sbbGrad)" stroke="#d8c2af" filter="url(#shadow)"/>
+      <text x="640" y="640" text-anchor="middle" font-size="22" font-weight="700">SBB B</text>
+      <text x="640" y="670" text-anchor="middle" font-size="16">Reuses from Continuum</text>
+
+      <rect x="870" y="600" rx="26" width="260" height="130" fill="url(#sbbGrad)" stroke="#d8c2af" filter="url(#shadow)"/>
+      <text x="1000" y="640" text-anchor="middle" font-size="22" font-weight="700">SBB C</text>
+      <text x="1000" y="670" text-anchor="middle" font-size="16">Extends and improves</text>
+
+      <!-- arrows -->
+      <path d="M280 600 C280 540, 400 520, 400 520" stroke="#8a6450" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+      <text x="360" y="520" font-size="14">Publish Pattern</text>
+
+      <path d="M640 520 C640 560, 640 600, 640 600" stroke="#8a6450" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+      <text x="660" y="560" font-size="14">Reuse</text>
+
+      <path d="M1000 600 C1000 540, 880 520, 880 520" stroke="#8a6450" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+      <text x="900" y="520" font-size="14">Publish Pattern</text>
+
+      <path d="M640 380 C640 340, 640 330, 640 330" stroke="#d6782c" stroke-width="4" fill="none" marker-end="url(#arrowOrange)"/>
+      <text x="660" y="350" font-size="14" fill="#c56d28">Promote</text>
+
+      <path d="M640 240 C640 200, 640 180, 640 180" stroke="#8a6450" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+      <!-- footer -->
+      <text x="640" y="820" text-anchor="middle" font-size="20" font-weight="700">SBBs publish. Continuum shares. Governance standardizes.</text>
+    </svg>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:#e8c9af"></i>ABB: stable architecture layer</span>
+      <span><i class="swatch" style="background:#f3dfcd"></i>SBB: solution implementation layer</span>
+      <span><i class="swatch" style="background:#dd7c2b"></i>Governance and promotion</span>
+    </div>
+  </div>
+</body>
+</html>
