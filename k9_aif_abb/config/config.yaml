@@ -109,6 +109,14 @@ messaging:
   security_protocol: PLAINTEXT
   auto_create: true
 
+postgres:
+  host: "192.168.1.98"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  database: "k9aif"
+  schema: "k9aif"
+
 # ------------------------------------------------------------
 # K9 Inference Router
 # ------------------------------------------------------------
