@@ -141,7 +141,7 @@ governed multi-agent architectures across multiple domains.
 Example demonstration systems include:
 
 - **ACME Health Insurance Claims Assistant**Multi-agent insurance workflow demo including eligibility checks,
-  provider lookup, and claims support.→ [examples/acme-health-insurance](examples/acme-health-insurance)
+  provider lookup, and claims support.→ [examples/acme_health_insurance](examples/acme_health_insurance)
 - **K9Chat** – Minimal chat application demonstrating K9-AIF squads, agents, and model routing.
   [examples/k9chat](examples/k9chat)
 - **WeatherAssist Decision Support System**
