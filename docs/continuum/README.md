@@ -127,3 +127,7 @@ It ensures that:
 - architecture evolves in a governed manner  
 
 > Systems improve continuously — without breaking architecture.
+
+## Diagram
+
+[![K9-AIF Continuum](diagrams/k9-aif-continuum.png)](diagrams/k9-aif-continuum.png)
