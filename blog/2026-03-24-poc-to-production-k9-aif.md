@@ -17,18 +17,24 @@ It is how the POC is built.
 
 ## The Real Issue
 
-Most POCs are treated as isolated experiments.
+Most POCs are built as isolated efforts.
 
-They are built:
-- quickly  
-- independently  
-- without considering how they will scale  
+They are:
+- quick  
+- tool-driven  
+- optimized for demonstration  
+
+But not designed for:
+
+- integration  
+- reuse  
+- scalability  
 
 As a result:
 
-- they cannot integrate easily  
-- they are not reusable  
-- they need to be rebuilt for production  
+- they are difficult to integrate  
+- they cannot scale easily  
+- they often need to be rebuilt  
 
 > A POC built in isolation rarely survives beyond the experiment.
 
@@ -44,31 +50,75 @@ It should be:
 
 This is the key.
 
-When a POC is built within a defined structure:
+---
 
-- it aligns with the system  
-- it integrates naturally  
-- it can scale without rework  
+## The K9-AIF Approach
+
+K9-AIF provides a set of architecturally proven building blocks.
+
+These are referred to as **Architecture Building Blocks (ABB)**.
+
+The ABBs define the structure, boundaries, and patterns of the system.
 
 ---
 
-## Doing It Right
+## Building a POC the Right Way
 
-The challenge is how to start with structure without slowing down.
+When building a POC:
 
-This is where K9-AIF comes in.
+- we do not start from scratch  
+- we do not create a new structure  
 
-Instead of starting from a blank slate, K9-AIF provides a structured way to build a POC correctly from the beginning.
+Instead:
 
-Using the K9-AIF generator, teams can:
+> **we extend and reuse the existing ABBs**
 
-- start with a predefined structure  
-- build within clear boundaries  
-- avoid ad-hoc implementations  
+The implementation built on top of these ABBs is called a:
 
-This ensures that the POC is not just a demonstration, but:
+> **Solution Building Block (SBB)**
+
+In this context:
+
+> **a POC is simply an SBB**
+
+---
+
+## Why This Matters
+
+Because the POC is built on top of ABBs:
+
+- it already aligns with the system structure  
+- it follows established patterns  
+- it integrates more easily  
+- it can scale without rework  
+
+The POC is no longer:
+
+- a prototype  
+- a throwaway solution  
+
+It becomes:
 
 > **the first version of a system that is designed to scale**
+
+---
+
+## Using Existing Agentic Frameworks
+
+K9-AIF does not replace existing tools or frameworks.
+
+Instead, it provides the structure around them.
+
+For example:
+
+- agentic frameworks like CrewAI can be used  
+- but they are encapsulated within the larger architectural structure  
+
+This ensures that:
+
+- tools are used consistently  
+- implementations remain aligned  
+- systems do not fragment over time  
 
 ---
 
@@ -78,11 +128,11 @@ A POC proves that something works.
 
 Production proves that it works **at scale and delivers value**.
 
-> **ROI is realized not at the POC stage, but when the system is integrated and scaled.**
+> **ROI is realized when the system is integrated and scaled — not at the POC stage itself.**
 
-When the POC is built correctly:
+When built correctly:
 
-- scaling is straightforward  
+- scaling is natural  
 - integration is predictable  
 - rework is minimized  
 
@@ -94,14 +144,15 @@ Enterprises do not need more POCs.
 
 They need POCs that are built **as part of a well-architected system**.
 
-That is the difference between:
+By reusing proven architectural building blocks and implementing solutions within that structure:
 
-- proving an idea  
-- building something that lasts  
+- systems remain consistent  
+- implementations are reusable  
+- scaling becomes straightforward  
 
 ---
 
 ## Final Thought
 
-> Build the POC as part of the system —  
-> not apart from it.
+> Build the POC on the architecture —  
+> not outside of it.
