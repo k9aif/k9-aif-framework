@@ -1,251 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K9-AIF — Start Here</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #0f1117;
-  color: #e2e8f0;
-}
-
-/* Layout */
-.container {
-  display: flex;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 260px;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  background: #020617;
-  padding: 20px;
-  border-right: 1px solid #1f2937;
-}
-
-.sidebar h2 {
-  font-size: 1rem;
-  color: #93c5fd;
-  margin-bottom: 15px;
-}
-
-.sidebar a {
-  display: block;
-  color: #94a3b8;
-  text-decoration: none;
-  margin: 10px 0;
-  font-size: 0.9rem;
-}
-
-.sidebar a:hover {
-  color: #60a5fa;
-}
-
-/* Content */
-.content {
-  flex: 1;
-  padding: 40px;
-  max-width: 900px;
-}
-
-h1 {
-  color: white;
-}
-
-h2 {
-  margin-top: 50px;
-  color: #93c5fd;
-}
-
-p {
-  color: #cbd5f5;
-  line-height: 1.7;
-  margin-top: 10px;
-}
-
-ul {
-  margin-top: 10px;
-  padding-left: 20px;
-}
-
-.section {
-  margin-bottom: 40px;
-}
-
-.tagline {
-  color: #a5b4fc;
-  margin-bottom: 20px;
-}
-
-.divider {
-  margin: 40px 0;
-  border-top: 1px solid #1f2937;
-}
-
-/* Mobile Header */
-.mobile-header {
-  display: none;
-  background: #020617;
-  padding: 15px;
-  border-bottom: 1px solid #1f2937;
-}
-
-.menu-btn {
-  background: none;
-  border: none;
-  color: #93c5fd;
-  font-size: 1rem;
-}
-
-/* Mobile Sidebar */
-.mobile-menu {
-  display: none;
-  background: #020617;
-  padding: 15px;
-}
-
-.mobile-menu a {
-  display: block;
-  margin: 10px 0;
-  color: #94a3b8;
-  text-decoration: none;
-}
-
-/* Responsive */
-@media (max-width: 900px) {
-  .container {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    display: none;
-  }
-
-  .mobile-header {
-    display: block;
-  }
-
-  .content {
-    padding: 20px;
-  }
-}
-</style>
-
-<script>
-function toggleMenu() {
-  const menu = document.getElementById("mobileMenu");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
-</script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Start Here — K9-AIF</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-
-<!-- Mobile Header -->
-<div class="mobile-header">
-  <button class="menu-btn" onclick="toggleMenu()">☰ Start Here</button>
-</div>
-
-<!-- Mobile Menu -->
-<div id="mobileMenu" class="mobile-menu">
-  <a href="#path">The Path of K9-AIF</a>
-  <a href="#what">What K9-AIF Is</a>
-  <a href="#stakeholders">K9-AIF for Stakeholders</a>
-  <a href="#vs">K9-AIF vs Agent Frameworks</a>
-  <a href="#fail">Where Agent Systems Fail</a>
-  <a href="#faq">FAQ</a>
-</div>
-
-<div class="container">
-
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Start Here</h2>
-    <a href="#path">The Path of K9-AIF</a>
-    <a href="#what">What K9-AIF Is</a>
-    <a href="#stakeholders">K9-AIF for Stakeholders</a>
-    <a href="#vs">K9-AIF vs Agent Frameworks</a>
-    <a href="#fail">Where Agent Systems Fail</a>
-    <a href="#faq">FAQ</a>
+  <div class="mobile-topbar">
+    <div class="mobile-title">K9-AIF — Start Here</div>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobileMenu" onclick="toggleMenu()">Sections</button>
   </div>
 
-  <!-- Content -->
-  <div class="content">
-
-    <h1>K9-AIF — Start Here</h1>
-    <p class="tagline">K9-AIF makes agent systems enterprise-ready.</p>
-
-    <p>
-      K9-AIF is an architecture-driven framework that introduces structure,
-      governance, and controlled execution paths to agentic AI systems.
-    </p>
-
-    <div class="divider"></div>
-
-    <div id="path" class="section">
-      <h2>The Path of K9-AIF</h2>
-      <p>Every system follows a structured lifecycle:</p>
-      <ul>
-        <li>Intake</li>
-        <li>Routing</li>
-        <li>Orchestration</li>
-        <li>Squads</li>
-        <li>Agents</li>
-        <li>Governance</li>
-        <li>Persistence</li>
-      </ul>
-    </div>
-
-    <div id="what" class="section">
-      <h2>What K9-AIF Is</h2>
-      <p>
-        K9-AIF is not just an agent framework. It is an architectural execution model
-        that enforces structure and governance by design.
-      </p>
-    </div>
-
-    <div id="stakeholders" class="section">
-      <h2>K9-AIF for Stakeholders</h2>
-      <p>
-        Built for architects, leaders, and developers who need scalable,
-        governed AI systems.
-      </p>
-    </div>
-
-    <div id="vs" class="section">
-      <h2>K9-AIF vs Agent Frameworks</h2>
-      <p>
-        Traditional frameworks focus on agent orchestration.
-        K9-AIF introduces architecture, lifecycle, and governance.
-      </p>
-    </div>
-
-    <div id="fail" class="section">
-      <h2>Where Agent Systems Fail</h2>
-      <ul>
-        <li>No governance</li>
-        <li>No structure</li>
-        <li>Difficult to scale</li>
-        <li>No traceability</li>
-      </ul>
-    </div>
-
-    <div id="faq" class="section">
-      <h2>FAQ</h2>
-      <p><strong>Is K9-AIF a replacement?</strong><br>No, it complements existing frameworks.</p>
-      <p><strong>Does it depend on one LLM?</strong><br>No, it is provider-agnostic.</p>
-    </div>
-
+  <div id="mobileMenu" class="mobile-menu">
+    <a href="index.html" class="active">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
   </div>
 
-</div>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>K9-AIF — Start Here</h1>
+        <p>K9-AIF makes agent systems enterprise-ready.</p>
+      </div>
 
+      <div class="toc-title">Contents</div>
+      <nav class="nav">
+        <a href="index.html" class="active">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        A guided overview for architects, technical leaders, and enterprise stakeholders.
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="hero">
+        <div class="eyebrow">Architecture Overview</div>
+        <h2>Understanding K9-AIF</h2>
+        <p class="tagline">A guided introduction to the architecture, philosophy, and positioning of K9-AIF.</p>
+        <div class="summary">
+          <p><strong>K9-AIF is an architecture-first framework for building governed, modular multi-agent AI systems.</strong></p><p>This reading path is designed for stakeholders who want to understand why K9-AIF exists, what it is, how it differs from agent frameworks, and where it creates value.</p>
+        </div>
+        <div class="links">
+          <a class="button-link" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+          <a class="button-link" href="https://pydocs.k9aif.com/" target="_blank" rel="noopener noreferrer">Python API Docs</a>
+          <a class="button-link" href="https://k9aif.com/" target="_blank" rel="noopener noreferrer">Main Site</a>
+        </div>
+      </div>
+
+      <article class="doc">
+        <h1>Understanding K9-AIF</h1>
+<p>This section provides a structured introduction to the K9-AIF architecture,
+design philosophy, and positioning.</p>
+<p>K9-AIF is an architecture-first framework for building governed, modular
+multi-agent AI systems aligned with enterprise architecture principles.</p>
+<hr />
+<h2>Recommended Reading Order</h2>
+<ol>
+<li><p><strong>The Path of K9-AIF</strong><br />
+→ Why K9-AIF exists and the problems it addresses<br />
+<code>the-path-of-k9-aif.html</code></p>
+</li>
+<li><p><strong>What K9-AIF Is</strong><br />
+→ Core concepts and architectural model<br />
+<code>what-k9-aif-is.html</code></p>
+</li>
+<li><p><strong>K9-AIF for Stakeholders</strong><br />
+→ Value across architects, developers, and organizations<br />
+<code>k9-aif-for-stakeholders.html</code></p>
+</li>
+<li><p><strong>K9-AIF vs Agent Frameworks</strong><br />
+→ How K9-AIF differs from orchestration-first approaches<br />
+<code>k9-aif-vs-agent-frameworks.html</code></p>
+</li>
+<li><p><strong>Where Agent Systems Fail</strong><br />
+→ Common pitfalls in current agentic AI systems<br />
+<code>where-agent-systems-fail.html</code></p>
+</li>
+<li><p><strong>FAQ</strong><br />
+→ Common questions and clarifications<br />
+<code>faq.html</code></p>
+</li>
+</ol>
+<hr />
+<ul>
+<li><a href="the-path-of-k9-aif.html">The Path of K9-AIF</a></li>
+<li><a href="what-k9-aif-is.html">What K9-AIF Is</a></li>
+<li><a href="k9-aif-for-stakeholders.html">K9-AIF for Stakeholders</a></li>
+<li><a href="k9-aif-vs-agent-frameworks.html">K9-AIF vs Agent Frameworks</a></li>
+<li><a href="where-agent-systems-fail.html">Where Agent Systems Fail</a></li>
+<li><a href="faq.html">FAQ</a></li>
+</ul>
+<hr />
+<h2>Key Idea</h2>
+<p>K9-AIF treats agentic AI as an architectural discipline rather than
+an orchestration problem.</p>
+<p>It introduces structure, governance, and layering to enable production-grade
+multi-agent systems.</p>
+<hr />
+<h2>Related Resources</h2>
+<ul>
+<li><a href="https://github.com/k9aif/k9-aif-framework">K9-AIF GitHub Repository</a></li>
+<li><a href="https://github.com/k9aif/k9-aif-framework/tree/main/blog">K9-AIF Architecture Blog</a></li>
+</ul>
+
+      </article>
+
+      <div class="footer-note">
+        K9-AIF treats agentic AI as an architectural discipline, not just an orchestration problem.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.menu-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF vs Agent Frameworks — K9-AIF</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="mobile-topbar">
+    <div class="mobile-title">K9-AIF — Start Here</div>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobileMenu" onclick="toggleMenu()">Sections</button>
+  </div>
+
+  <div id="mobileMenu" class="mobile-menu">
+    <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="active">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>K9-AIF — Start Here</h1>
+        <p>K9-AIF makes agent systems enterprise-ready.</p>
+      </div>
+
+      <div class="toc-title">Contents</div>
+      <nav class="nav">
+        <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="active">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        A guided overview for architects, technical leaders, and enterprise stakeholders.
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="hero">
+        <div class="eyebrow">Architecture Overview</div>
+        <h2>K9-AIF vs Agent Frameworks</h2>
+        <p class="tagline">How K9-AIF complements orchestration-first frameworks rather than replacing them.</p>
+        <div class="summary">
+          <p><strong>Agent frameworks and K9-AIF solve different problems.</strong></p><p>Modern frameworks help build agent behavior. K9-AIF defines the architecture around that behavior.</p>
+        </div>
+        <div class="links">
+          <a class="button-link" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+          <a class="button-link" href="https://pydocs.k9aif.com/" target="_blank" rel="noopener noreferrer">Python API Docs</a>
+          <a class="button-link" href="https://k9aif.com/" target="_blank" rel="noopener noreferrer">Main Site</a>
+        </div>
+      </div>
+
+      <article class="doc">
+        <h1>K9-AIF vs Agent Frameworks</h1>
+<p>The rise of agent frameworks has accelerated the adoption of agentic AI.</p>
+<p>Frameworks such as CrewAI, LangGraph, and others have made it easier to build multi-agent workflows and experiments.</p>
+<p>However, an important distinction must be made:</p>
+<p><strong>K9-AIF is not another agent framework.</strong></p>
+<p>It operates at a different layer.</p>
+<hr />
+<h2>The Core Difference</h2>
+<p>Agent frameworks answer:</p>
+<blockquote>
+<p>“How do agents collaborate to complete a task?”</p>
+</blockquote>
+<p>K9-AIF answers:</p>
+<blockquote>
+<p>“How do we design and operate agent systems that can scale, evolve, and remain governable over time?”</p>
+</blockquote>
+<hr />
+<h2>Execution vs Architecture</h2>
+<p>This difference can be understood simply:</p>
+<ul>
+<li><strong>Agent Frameworks</strong> → execution layer</li>
+<li><strong>K9-AIF</strong> → architectural layer</li>
+</ul>
+<p>Agent frameworks focus on:</p>
+<ul>
+<li>task orchestration</li>
+<li>agent collaboration</li>
+<li>runtime execution</li>
+</ul>
+<p>K9-AIF focuses on:</p>
+<ul>
+<li>system structure</li>
+<li>governance</li>
+<li>layering and separation of concerns</li>
+<li>long-term evolution</li>
+</ul>
+<hr />
+<h2>Where Agent Frameworks Excel</h2>
+<p>Agent frameworks are highly effective for:</p>
+<ul>
+<li>rapid prototyping</li>
+<li>experimentation</li>
+<li>building task-oriented workflows</li>
+<li>exploring agent collaboration patterns</li>
+</ul>
+<p>They are essential to the ecosystem.</p>
+<p>K9-AIF does not replace them.</p>
+<hr />
+<h2>Where Agent Frameworks Typically Fall Short</h2>
+<p>As systems grow, common challenges emerge:</p>
+<ul>
+<li>lack of global governance</li>
+<li>inconsistent observability</li>
+<li>tight coupling between components</li>
+<li>difficulty scaling across teams</li>
+<li>limited architectural boundaries</li>
+</ul>
+<p>These are not flaws — they are simply outside the scope of most frameworks.</p>
+<hr />
+<h2>How K9-AIF Complements Them</h2>
+<p>K9-AIF provides the structure that surrounds and governs execution frameworks.</p>
+<p>Within K9-AIF:</p>
+<ul>
+<li>agent frameworks can be used to implement <strong>Agents or Squads (SBBs)</strong></li>
+<li>orchestrators can wrap and control these implementations</li>
+<li>routing and policy layers govern how and when they are invoked</li>
+</ul>
+<p>This creates a layered system where:</p>
+<ul>
+<li>execution is flexible</li>
+<li>architecture remains stable</li>
+</ul>
+<hr />
+<h2>Example Perspective</h2>
+<p>Without K9-AIF:</p>
+<ul>
+<li>agents interact directly</li>
+<li>workflows grow organically</li>
+<li>governance is added later (if at all)</li>
+</ul>
+<p>With K9-AIF:</p>
+<ul>
+<li>routing is controlled</li>
+<li>orchestration is explicit</li>
+<li>agents operate within defined boundaries</li>
+<li>governance is built into the system</li>
+</ul>
+<hr />
+<h2>Why This Matters</h2>
+<p>As organizations move beyond experiments, they need:</p>
+<ul>
+<li>consistency across teams</li>
+<li>auditability and traceability</li>
+<li>the ability to evolve systems safely</li>
+<li>protection from architectural drift</li>
+</ul>
+<p>Agent frameworks alone do not address these concerns.</p>
+<p>K9-AIF does.</p>
+<hr />
+<h2>A Practical View</h2>
+<p>Think of it this way:</p>
+<ul>
+<li>You can use CrewAI to build a powerful multi-agent workflow</li>
+<li>You use K9-AIF to ensure that workflow:<ul>
+<li>fits into a larger system</li>
+<li>follows governance rules</li>
+<li>can be monitored and audited</li>
+<li>can evolve over time</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2>Not Competing — Complementary</h2>
+<p>K9-AIF and agent frameworks are not competitors.</p>
+<p>They operate at different layers and solve different problems.</p>
+<p>In many real-world systems:</p>
+<p><strong>K9-AIF will define the architecture,<br />
+and agent frameworks will implement parts of that architecture.</strong></p>
+<hr />
+<h2>The Outcome</h2>
+<p>By combining both:</p>
+<ul>
+<li>teams retain the speed of modern agent frameworks</li>
+<li>organizations gain the discipline of enterprise architecture</li>
+</ul>
+<hr />
+<p>K9-AIF does not aim to replace how agents are built.</p>
+<p>It defines how agent systems should be structured.</p>
+
+      </article>
+
+      <div class="footer-note">
+        K9-AIF treats agentic AI as an architectural discipline, not just an orchestration problem.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.menu-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  </script>
+</body>
+</html>

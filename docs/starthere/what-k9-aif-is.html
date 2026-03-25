@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What K9-AIF Is — K9-AIF</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="mobile-topbar">
+    <div class="mobile-title">K9-AIF — Start Here</div>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobileMenu" onclick="toggleMenu()">Sections</button>
+  </div>
+
+  <div id="mobileMenu" class="mobile-menu">
+    <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="active">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>K9-AIF — Start Here</h1>
+        <p>K9-AIF makes agent systems enterprise-ready.</p>
+      </div>
+
+      <div class="toc-title">Contents</div>
+      <nav class="nav">
+        <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="active">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        A guided overview for architects, technical leaders, and enterprise stakeholders.
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="hero">
+        <div class="eyebrow">Architecture Overview</div>
+        <h2>What K9-AIF Is</h2>
+        <p class="tagline">A precise definition of K9-AIF as an architectural framework and reference model.</p>
+        <div class="summary">
+          <p><strong>K9-AIF is not a runtime, not a platform, and not only a methodology.</strong></p><p>It defines how enterprise-grade multi-agent systems should be architected, composed, and governed.</p>
+        </div>
+        <div class="links">
+          <a class="button-link" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+          <a class="button-link" href="https://pydocs.k9aif.com/" target="_blank" rel="noopener noreferrer">Python API Docs</a>
+          <a class="button-link" href="https://k9aif.com/" target="_blank" rel="noopener noreferrer">Main Site</a>
+        </div>
+      </div>
+
+      <article class="doc">
+        <h1>What K9-AIF Is (and Is Not)</h1>
+<p>One of the most common questions is:</p>
+<p><strong>Is K9-AIF a framework, a platform, a runtime, or a methodology?</strong></p>
+<p>The answer requires precision.</p>
+<hr />
+<h2>The Short Answer</h2>
+<p><strong>K9-AIF is an architectural framework and reference model for governed agentic systems.</strong></p>
+<p>It is:</p>
+<ul>
+<li>not a runtime</li>
+<li>not a platform</li>
+<li>not just a methodology</li>
+</ul>
+<hr />
+<h2>The Precise Definition</h2>
+<p>K9-AIF is a <strong>governed, architecture-first framework</strong> that defines how to:</p>
+<ul>
+<li>design</li>
+<li>compose</li>
+<li>and operate</li>
+</ul>
+<p>enterprise-grade multi-agent AI systems using:</p>
+<ul>
+<li>modular building blocks (ABB / SBB)</li>
+<li>hierarchical orchestration</li>
+<li>explicit governance boundaries</li>
+</ul>
+<hr />
+<h2>What K9-AIF Is</h2>
+<h3>1. An Architectural Framework</h3>
+<p>K9-AIF provides structure and discipline for building agentic systems.</p>
+<p>It introduces:</p>
+<ul>
+<li>clear separation of concerns</li>
+<li>layered architecture</li>
+<li>defined roles for each component (Router, Orchestrator, Squads, Agents)</li>
+</ul>
+<p>This allows systems to scale without collapsing under complexity.</p>
+<hr />
+<h3>2. A Reference Model</h3>
+<p>K9-AIF defines <strong>how components should interact</strong>, not just how they execute.</p>
+<p>It gives:</p>
+<ul>
+<li>architectural patterns</li>
+<li>interaction boundaries</li>
+<li>extension points</li>
+</ul>
+<p>This ensures consistency across implementations.</p>
+<hr />
+<h3>3. A Governance-Oriented Design</h3>
+<p>Governance is not an afterthought in K9-AIF.</p>
+<p>It is built into the architecture through:</p>
+<ul>
+<li>routing control</li>
+<li>orchestration layers</li>
+<li>monitoring and observability</li>
+<li>policy enforcement points</li>
+</ul>
+<hr />
+<h3>4. A Provider-Independent Approach</h3>
+<p>K9-AIF separates inference from system logic.</p>
+<p>This means:</p>
+<ul>
+<li>models can be swapped</li>
+<li>vendors can change</li>
+<li>policies can evolve</li>
+</ul>
+<p>without requiring system rewrites.</p>
+<hr />
+<h2>What K9-AIF Is Not</h2>
+<h3>Not a Runtime</h3>
+<p>K9-AIF does not define a single execution engine.</p>
+<p>You can implement it using:</p>
+<ul>
+<li>CrewAI</li>
+<li>custom orchestrators</li>
+<li>cloud-native workflows</li>
+<li>or other frameworks</li>
+</ul>
+<hr />
+<h3>Not a Platform</h3>
+<p>K9-AIF does not lock you into:</p>
+<ul>
+<li>a vendor</li>
+<li>a cloud provider</li>
+<li>a specific toolchain</li>
+</ul>
+<p>It is intentionally <strong>portable and adaptable</strong>.</p>
+<hr />
+<h3>Not Just a Methodology</h3>
+<p>While K9-AIF includes architectural thinking similar to TOGAF,
+it goes beyond guidance.</p>
+<p>It provides:</p>
+<ul>
+<li>concrete structure</li>
+<li>base classes (ABB)</li>
+<li>implementation patterns (SBB)</li>
+</ul>
+<hr />
+<h2>Why This Distinction Matters</h2>
+<p>Many agent solutions today blur the lines between:</p>
+<ul>
+<li>architecture</li>
+<li>implementation</li>
+<li>and execution</li>
+</ul>
+<p>This leads to:</p>
+<ul>
+<li>tight coupling</li>
+<li>poor scalability</li>
+<li>lack of governance</li>
+</ul>
+<p>K9-AIF separates these concerns clearly.</p>
+<hr />
+<h2>A Simple Way to Think About It</h2>
+<ul>
+<li><strong>Frameworks like CrewAI</strong> → define how agents collaborate</li>
+<li><strong>Platforms like Azure/AWS</strong> → provide infrastructure</li>
+<li><strong>Runtimes</strong> → execute workflows</li>
+</ul>
+<p><strong>K9-AIF defines how the entire system should be architected.</strong></p>
+<hr />
+<h2>The Outcome</h2>
+<p>By treating agentic AI as an architectural problem, K9-AIF enables:</p>
+<ul>
+<li>systems that can evolve without major refactoring</li>
+<li>consistent governance and observability</li>
+<li>long-term maintainability</li>
+<li>enterprise-level credibility</li>
+</ul>
+<hr />
+<p>K9-AIF is not about building faster demos.</p>
+<p>It is about building systems that last.</p>
+
+      </article>
+
+      <div class="footer-note">
+        K9-AIF treats agentic AI as an architectural discipline, not just an orchestration problem.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.menu-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  </script>
+</body>
+</html>

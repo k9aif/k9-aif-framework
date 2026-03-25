@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Where Agent Systems Fail — K9-AIF</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="mobile-topbar">
+    <div class="mobile-title">K9-AIF — Start Here</div>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobileMenu" onclick="toggleMenu()">Sections</button>
+  </div>
+
+  <div id="mobileMenu" class="mobile-menu">
+    <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="active">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>K9-AIF — Start Here</h1>
+        <p>K9-AIF makes agent systems enterprise-ready.</p>
+      </div>
+
+      <div class="toc-title">Contents</div>
+      <nav class="nav">
+        <a href="index.html" class="">Start Here</a>
+<a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+<a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+<a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+<a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+<a href="where-agent-systems-fail.html" class="active">Where Agent Systems Fail</a>
+<a href="faq.html" class="">FAQ</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        A guided overview for architects, technical leaders, and enterprise stakeholders.
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="hero">
+        <div class="eyebrow">Architecture Overview</div>
+        <h2>Where Agent Systems Fail</h2>
+        <p class="tagline">Common failure patterns that emerge when agent systems move from demos to production.</p>
+        <div class="summary">
+          <p><strong>Most agent systems fail not because they cannot work, but because they cannot scale, govern, or sustain.</strong></p><p>This section outlines the recurring architectural failure modes K9-AIF is designed to address.</p>
+        </div>
+        <div class="links">
+          <a class="button-link" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+          <a class="button-link" href="https://pydocs.k9aif.com/" target="_blank" rel="noopener noreferrer">Python API Docs</a>
+          <a class="button-link" href="https://k9aif.com/" target="_blank" rel="noopener noreferrer">Main Site</a>
+        </div>
+      </div>
+
+      <article class="doc">
+        <h1>Where Agent Systems Fail</h1>
+<p>Agentic AI systems are rapidly evolving.</p>
+<p>Many demonstrations show impressive capabilities — agents collaborating, reasoning, and completing complex tasks.</p>
+<p>However, as these systems move from experimentation to production, a different reality emerges.</p>
+<p><strong>Most agent systems fail not because they cannot work,<br />
+but because they cannot scale, govern, or sustain.</strong></p>
+<hr />
+<h2>The Pattern of Failure</h2>
+<p>Across industries, similar patterns appear:</p>
+<ul>
+<li>systems grow organically without structure</li>
+<li>components become tightly coupled</li>
+<li>observability is inconsistent or missing</li>
+<li>governance is introduced too late</li>
+<li>changes require rework instead of evolution</li>
+</ul>
+<p>These issues are not always visible in early prototypes.<br />
+They emerge over time.</p>
+<hr />
+<h2>1. Regulated Decision Systems</h2>
+<p>In domains such as healthcare, insurance, and finance:</p>
+<ul>
+<li>decisions must be explainable</li>
+<li>processes must be auditable</li>
+<li>outcomes must be traceable</li>
+</ul>
+<p>Typical agent implementations:</p>
+<ul>
+<li>lack structured logging</li>
+<li>do not preserve decision paths</li>
+<li>cannot provide consistent audit trails</li>
+</ul>
+<p><strong>Result:</strong> systems cannot pass regulatory scrutiny.</p>
+<hr />
+<h2>2. Multi-Team Development</h2>
+<p>As multiple teams build agents:</p>
+<ul>
+<li>interfaces become inconsistent</li>
+<li>assumptions differ across implementations</li>
+<li>dependencies increase</li>
+</ul>
+<p>Typical outcome:</p>
+<ul>
+<li>tightly coupled systems</li>
+<li>fragile integrations</li>
+<li>difficulty scaling across teams</li>
+</ul>
+<p><strong>Result:</strong> coordination overhead grows faster than system value.</p>
+<hr />
+<h2>3. Model and Vendor Dependency</h2>
+<p>Many systems embed model usage directly into business logic.</p>
+<p>This leads to:</p>
+<ul>
+<li>difficulty switching providers</li>
+<li>rework when models change</li>
+<li>inability to enforce policy centrally</li>
+</ul>
+<p><strong>Result:</strong> vendor lock-in and reduced flexibility.</p>
+<hr />
+<h2>4. Agent Sprawl</h2>
+<p>Without architectural boundaries:</p>
+<ul>
+<li>agents interact directly with each other</li>
+<li>new agents are added without coordination</li>
+<li>workflows become unpredictable</li>
+</ul>
+<p><strong>Result:</strong> loss of control and increasing complexity.</p>
+<hr />
+<h2>5. Lack of Governance</h2>
+<p>Governance is often added after systems grow.</p>
+<p>This creates:</p>
+<ul>
+<li>inconsistent enforcement</li>
+<li>gaps in monitoring</li>
+<li>limited visibility into system behavior</li>
+</ul>
+<p><strong>Result:</strong> systems that cannot be trusted in production environments.</p>
+<hr />
+<h2>6. System Evolution Failure</h2>
+<p>As requirements change:</p>
+<ul>
+<li>existing systems require major rewrites</li>
+<li>small changes ripple across components</li>
+<li>architecture becomes difficult to maintain</li>
+</ul>
+<p><strong>Result:</strong> systems stagnate or are replaced entirely.</p>
+<hr />
+<h2>Why These Failures Occur</h2>
+<p>These failures are not caused by poor engineering.</p>
+<p>They occur because:</p>
+<ul>
+<li>systems are built as collections of agents</li>
+<li>rather than as <strong>architected systems with defined boundaries and responsibilities</strong></li>
+</ul>
+<hr />
+<h2>How K9-AIF Addresses These Challenges</h2>
+<p>K9-AIF introduces structure where these failures typically occur:</p>
+<ul>
+<li><strong>Layered architecture</strong> → separates concerns</li>
+<li><strong>ABB / SBB model</strong> → enforces consistent contracts</li>
+<li><strong>Hierarchical orchestration</strong> → prevents uncontrolled interactions</li>
+<li><strong>Inference isolation</strong> → reduces vendor coupling</li>
+<li><strong>Monitoring and governance layers</strong> → ensure visibility and control</li>
+</ul>
+<p>These are not features added later.<br />
+They are part of the system design from the beginning.</p>
+<hr />
+<h2>A Different Approach</h2>
+<p>Instead of asking:</p>
+<blockquote>
+<p>“How do we build smarter agents?”</p>
+</blockquote>
+<p>K9-AIF asks:</p>
+<blockquote>
+<p>“How do we build systems where agents can operate safely, predictably, and sustainably?”</p>
+</blockquote>
+<hr />
+<h2>The Outcome</h2>
+<p>When these concerns are addressed early:</p>
+<ul>
+<li>systems scale more predictably</li>
+<li>teams collaborate more effectively</li>
+<li>governance becomes manageable</li>
+<li>evolution becomes incremental instead of disruptive</li>
+</ul>
+<hr />
+<p>Agentic AI systems do not fail because of lack of capability.</p>
+<p>They fail because of lack of architecture.</p>
+<p>K9-AIF exists to address that gap.</p>
+
+      </article>
+
+      <div class="footer-note">
+        K9-AIF treats agentic AI as an architectural discipline, not just an orchestration problem.
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.menu-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+  </script>
+</body>
+</html>
