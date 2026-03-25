@@ -61,6 +61,7 @@ def generator_preview(app_name: str, squad_name: str = "default_squad"):
     print("[PREVIEW] Will create:")
 
     print(f"  {app_dir}/agents/")
+    print(f"  {app_dir}/squads/")
     print(f"  {app_dir}/orchestrators/")
     print(f"  {app_dir}/config/")
     print(f"  {app_dir}/tests/")
@@ -69,6 +70,8 @@ def generator_preview(app_name: str, squad_name: str = "default_squad"):
     print(f"  {app_dir}/agents/retrieval_agent.py")
     print(f"  {app_dir}/agents/enrichment_agent.py")
     print(f"  {app_dir}/agents/summarizer_agent.py")
+
+    print(f"  {app_dir}/squads/default_squad.py")
 
     print(f"  {app_dir}/orchestrators/default_orchestrator.py")
 
@@ -95,6 +98,7 @@ def generator_run(
 
     app_dir = PROJECTS_DIR / app_folder
     agents_dir = app_dir / "agents"
+    squads_dir = app_dir / "squads"
     orch_dir = app_dir / "orchestrators"
     config_dir = app_dir / "config"
     tests_dir = app_dir / "tests"
@@ -102,7 +106,7 @@ def generator_run(
     print("\n[INFO] Working...")
     time.sleep(0.5)
 
-    for d in (agents_dir, orch_dir, config_dir, tests_dir):
+    for d in (agents_dir, squads_dir, orch_dir, config_dir, tests_dir):
         print(f"[INFO] Creating folder: {d}")
         d.mkdir(parents=True, exist_ok=True)
         time.sleep(0.2)
@@ -129,6 +133,20 @@ def generator_run(
         print(f"[INFO] Writing file: {path}")
         path.write_text(code + "\n", encoding="utf-8")
         time.sleep(0.1)
+
+    print("[INFO] Generating squad...")
+    squad_code = render_template(
+        "squad_template.py.j2",
+        {
+            "app_name": app_class_prefix,
+            "squad_name": squad_name,
+            "agents": agents,
+            "timestamp": timestamp,
+        }
+    )
+    squad_path = squads_dir / "default_squad.py"
+    print(f"[INFO] Writing file: {squad_path}")
+    squad_path.write_text(squad_code + "\n", encoding="utf-8")
 
     print("[INFO] Generating orchestrator...")
     orch_code = render_template(
@@ -216,7 +234,7 @@ def generator_run(
     )
     (tests_dir / "conftest.py").write_text(conftest_code + "\n", encoding="utf-8")
 
-    for d in (app_dir, agents_dir, orch_dir, config_dir, tests_dir):
+    for d in (app_dir, agents_dir, squads_dir, orch_dir, config_dir, tests_dir):
         init_file = d / "__init__.py"
         if not init_file.exists():
             init_code = render_template(

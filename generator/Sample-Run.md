@@ -1,46 +1,41 @@
-## Preview the files to be generated
+## Preview & Run (generate) the files to be generated
 
 ```bash
 
-   NOTE:  Application names are automatically converted to snake_case to follow Python package naming conventions.
+(.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % ./k9_generator.sh preview my_app
 
-  (.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % ./k9_generator.sh preview MyApp
+=== K9-AIF Generator v0.1.0 ===
 
-   === K9-AIF Generator v0.1.0 ===
+Preview of files that will be generated for my_app
 
-   Preview of files that will be generated for MyApp
+[PREVIEW] Application: my_app
+[PREVIEW] Target folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app
+[PREVIEW] Will create:
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/squads/
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/main.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/retrieval_agent.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/enrichment_agent.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/summarizer_agent.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/squads/default_squad.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/default_orchestrator.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/config.yaml
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/squads.yaml
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/agents.yaml
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/test_my_app.py
+  /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/conftest.py
 
-   [PREVIEW] Application: MyApp
-   [PREVIEW] Target folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app
-   [PREVIEW] Will create:
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/main.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/retrieval_agent.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/enrichment_agent.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/summarizer_agent.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/default_orchestrator.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/config.yaml
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/squads.yaml
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/agents.yaml
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/test_my_app.py
-     /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/conftest.py
-
-    --- Done! ---
-```
-
-## Generate the files
-
-```bash
-
+ --- Done! ---
 (.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % ./k9_generator.sh run my_app    
 
 === K9-AIF Generator v0.1.0 ===
 
 [INFO] Working...
 [INFO] Creating folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents
+[INFO] Creating folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/squads
 [INFO] Creating folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators
 [INFO] Creating folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config
 [INFO] Creating folder: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests
@@ -48,6 +43,8 @@
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/retrieval_agent.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/enrichment_agent.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/summarizer_agent.py
+[INFO] Generating squad...
+[INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/squads/default_squad.py
 [INFO] Generating orchestrator...
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/default_orchestrator.py
 [INFO] Generating config.yaml, squads.yaml, and agents.yaml...
@@ -56,6 +53,7 @@
 [INFO] Generating tests/conftest.py...
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/__init__.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/agents/__init__.py
+[INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/squads/__init__.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/orchestrators/__init__.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/config/__init__.py
 [INFO] Writing file: /Users/ravinatarajan/ai/k9-aif-framework/k9_projects/my_app/tests/__init__.py
@@ -77,6 +75,9 @@ my_app/
   orchestrators/
     __init__.py
     default_orchestrator.py
+  squads/
+    __init__.py
+    default_squad.py
   tests/
     __init__.py
     conftest.py
@@ -89,9 +90,11 @@ cd k9_projects/my_app
 python main.py
 
 Ready to Rumble!
-(.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework %
+(.venv) ravinatarajan@Ravis-MacBook-Pro k9-aif-framework % 
 
 ```
+
+---
 
 ## Run the Application generated
 
