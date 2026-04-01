@@ -38,7 +38,7 @@ persistence:
   - name: sqlite
     class: k9_aif_abb.k9_core.persistence.base_persistence.SQLitePersistence
     kwargs:
-      db_path: "/Users/ravinatarajan/Framework/k9_aif_state.db"
+      db_path: "./runtime/k9_aif_state.db"
   - name: memory
     class: k9_aif_abb.k9_core.persistence.base_persistence.MemoryPersistence
     kwargs: {}
