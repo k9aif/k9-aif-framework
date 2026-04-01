@@ -5,6 +5,21 @@
 # Routes detected intents to orchestrators by merging ABB + SBB orchestrator registries.
 # Publishes structured console events through the global message bus (Redpanda/WebSocket).
 
+"""
+DEPRECATED / NOT CURRENTLY INTEGRATED
+
+This module represents an earlier experimental Intent Router ABB design.
+It is not currently used by active K9-AIF examples or the primary runtime path.
+
+The recommended direction is to build intent-routing capabilities as
+OOB Solution Building Blocks (SBBs) using stable ABB contracts such as:
+- BaseRouter
+- BaseHandler
+- BaseOrchestrator
+
+This file is retained temporarily for reference only.
+"""
+
 import yaml
 import logging
 import glob
