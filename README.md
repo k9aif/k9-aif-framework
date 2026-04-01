@@ -167,18 +167,20 @@ Example demonstration systems include:
 
 ## Design Goals
 
-K9-AIF is designed to support the development of governed, composable agentic AI systems aligned with enterprise architecture practices.
+K9-AIF is designed to support the development of governed, modular
+agentic AI systems aligned with enterprise architecture practices.
 
 Key architectural goals include:
 
 - Modular architecture supporting independently deployable AI capabilities
-- Composable intelligence through reusable architectural building blocks
-- Governed AI workflows with policy and control integration
-- Clear orchestration boundaries between agents, tools, and services
+- Reusable architectural building blocks for consistent system composition
+- Governed AI workflows with policy, control, and observability integration
+- Clear orchestration boundaries between agents, tools, squads, and services
 - Scalable integration with enterprise systems and external platforms
-- Support architecture-driven routing of inference requests across multiple models and providers.
+- Architecture-driven routing of inference requests across multiple models and providers
 
-The framework bridges traditional **enterprise architecture principles** with emerging **agentic AI system design**.
+The framework bridges traditional **enterprise architecture principles**
+with emerging **agentic AI system design**.
 
 ---
 
