@@ -99,17 +99,17 @@ A typical K9-AIF system is organized into a set of architectural layers
 that separate interface concerns, orchestration, external integration,
 inference, and persistence.
 
-1. **Presentation Layer**Handles incoming user or system interactions through web interfaces,
+1. **Presentation Layer** Handles incoming user or system interactions through web interfaces,
    conversational channels, or APIs.
-2. **Application Layer**Coordinates orchestration flows, routing, and workflow execution
+2. **Application Layer** Coordinates orchestration flows, routing, and workflow execution
    across agents and services.
-3. **Integration Layer**Provides governed access to external systems, APIs, tools,
+3. **Integration Layer** Provides governed access to external systems, APIs, tools,
    messaging platforms, and storage services.
-4. **Inference Layer**Supports model invocation, retrieval-augmented generation (RAG),
+4. **Inference Layer** Supports model invocation, retrieval-augmented generation (RAG),
    and context-aware reasoning.
-5. **Data Layer**Provides persistence, object storage, and messaging infrastructure
+5. **Data Layer** Provides persistence, object storage, and messaging infrastructure
    used by the framework.
-6. **Cross-Cutting Concerns**Security, governance, and observability apply across all layers to
+6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to
    enforce policy, auditability, monitoring, and operational control.
 
 
