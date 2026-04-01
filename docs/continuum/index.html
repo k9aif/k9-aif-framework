@@ -15,7 +15,7 @@
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 980px;
       margin: auto;
     }
 
@@ -29,19 +29,66 @@
       text-align: center;
       font-size: 16px;
       color: #6f5a4f;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
     }
 
-    .content {
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.6;
-      margin-bottom: 30px;
+    .intro {
+      font-size: 17px;
+      line-height: 1.75;
       color: #4a3a32;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-size: 24px;
+      margin-top: 40px;
+      margin-bottom: 14px;
+      color: #2f241f;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #fffaf6;
+      border: 1px solid #e4d8cf;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin: 0;
+      line-height: 1.7;
+      font-size: 16px;
+      color: #4a3a32;
+    }
+
+    .steps {
+      margin: 0 0 30px 20px;
+      padding: 0;
+      line-height: 1.8;
+      font-size: 16px;
+      color: #4a3a32;
+    }
+
+    .steps li {
+      margin-bottom: 8px;
     }
 
     .diagram {
       text-align: center;
+      margin-top: 20px;
     }
 
     .diagram img {
@@ -56,6 +103,13 @@
       margin-top: 15px;
       font-style: italic;
       color: #6f5a4f;
+    }
+
+    .summary {
+      margin-top: 28px;
+      font-size: 17px;
+      line-height: 1.75;
+      color: #4a3a32;
     }
 
     .link {
@@ -85,12 +139,45 @@
       We don’t just define systems — we define how they evolve without breaking architecture.
     </div>
 
-    <div class="content">
-      The K9-AIF Continuum defines how architectural knowledge is captured, shared, and evolved across implementations.
-      <br/><br/>
-      It bridges Solution Building Blocks (SBBs) and Architectural Building Blocks (ABBs),
-      enabling structured reuse and governed evolution of patterns.
+    <div class="intro">
+      The K9-AIF Continuum explains how architectural knowledge is captured, shared, and evolved across implementations.
+      It provides a governed bridge between <strong>Solution Building Blocks (SBBs)</strong>, where working patterns emerge,
+      and <strong>Architectural Building Blocks (ABBs)</strong>, where proven patterns are standardized.
     </div>
+
+    <div class="intro">
+      In simple terms, ABBs define reusable architectural intent, while SBBs realize that intent in concrete solutions.
+      The Continuum helps useful implementation patterns mature into reusable architectural guidance across the framework.
+    </div>
+
+    <h2>ABB and SBB in K9-AIF</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h3>ABB — Architectural Building Blocks</h3>
+        <p>
+          ABBs define architectural capabilities, contracts, boundaries, and interaction patterns.
+          They remain abstract and reusable. They do not directly implement business solutions.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>SBB — Solution Building Blocks</h3>
+        <p>
+          SBBs implement and realize architectural intent in working systems. They provide concrete,
+          domain-specific solutions, integrations, and reusable implementation patterns.
+        </p>
+      </div>
+    </div>
+
+    <h2>How the Continuum Works</h2>
+
+    <ol class="steps">
+      <li><strong>SBBs implement</strong> architectural ideas in working solutions.</li>
+      <li><strong>Reusable patterns are captured</strong> from those implementations.</li>
+      <li><strong>Governance evaluates</strong> which patterns are broadly useful and aligned.</li>
+      <li><strong>Validated patterns influence ABB evolution</strong> and strengthen the framework architecture.</li>
+    </ol>
 
     <div class="diagram">
       <img src="diagrams/k9-aif-continuum.png" alt="K9-AIF Continuum Diagram"/>
@@ -98,6 +185,11 @@
 
     <div class="caption">
       SBBs publish → Continuum shares → Governance standardizes → ABB evolves
+    </div>
+
+    <div class="summary">
+      The K9-AIF Continuum provides a controlled bridge between innovation and standardization.
+      It allows systems to improve continuously while keeping architectural consistency and governance intact.
     </div>
 
     <div class="link">
