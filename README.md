@@ -360,9 +360,12 @@ The K9-AIF blog contains architecture discussions, design evaluations, and evolv
 Recent posts:
 
 • Agent Squads in K9-AIF  
-https://github.com/k9aif/k9-aif-framework/blob/main/blog/2026-03-14-agent-squads-in-k9-aif.md
+https://blog.k9aif.com/agent-squads-in-k9-aif/
 
 • Architectural Evaluation of K9-AIF  
-https://github.com/k9aif/k9-aif-framework/blob/main/blog/2026-03-14-k9-aif-architectural-evaluation-claude.md
+https://blog.k9aif.com/k9-aif-architectural-evaluation-claude/
 
-More posts can be found in the `/blog` directory.
+More posts can be found at:  
+https://blog.k9aif.com/
+
+
