@@ -317,7 +317,20 @@ The core implementation of the K9-AIF architecture is provided in the
 This package contains the **Architecture Building Blocks (ABB)** and
 supporting framework components used to construct K9-AIF applications.
 
-Location: k9_aif_abb
+**Location:** `k9_aif_abb`
+
+---
+
+## Quick Start (Linux / Ubuntu)
+
+Clone the framework and create a Python virtual environment:
+
+```bash
+git clone https://github.com/k9aif/k9-aif-framework.git
+cd k9-aif-framework
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
 ---
 
