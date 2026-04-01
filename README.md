@@ -1,7 +1,9 @@
 # K9-AIF — K9 Agentic Integration Framework
 
-K9-AIF is a modular architecture framework for building governed
-enterprise-scale multi-agent AI systems.
+K9-AIF is an architecture-first framework for designing governed, enterprise-scale multi-agent AI systems.
+
+Unlike agent runtimes that focus mainly on execution, K9-AIF defines the architectural structure, 
+interaction boundaries, and governance model needed to build scalable agentic AI systems.
 
 The framework separates Architecture Building Blocks (ABB) from
 Solution Building Blocks (SBB), enabling extensible and composable
@@ -25,6 +27,15 @@ disciplines, including:
 - Modern multi-agent AI systems
 
 The goal is to enable **composable, scalable, and governed agentic AI applications**.
+
+---
+
+## A Simple Way to Think About It
+
+- Frameworks like CrewAI define how agents collaborate.
+- Cloud platforms like Azure or AWS provide infrastructure.
+- Runtimes execute workflows.
+- **K9-AIF defines how the full AI system should be architected.**
 
 ---
 
