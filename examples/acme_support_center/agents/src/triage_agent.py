@@ -117,24 +117,24 @@ class TriageAgent(AcmeBaseAgent):
     def _classify_with_llm(self, request: str) -> Optional[Dict[str, str]]:
         try:
             prompt = f"""
-                Classify this customer support request.
+Classify this customer support request.
 
-                Return ONLY valid JSON.
-                Do not add markdown.
-                Do not add explanation.
+Return ONLY valid JSON.
+Do not add markdown.
+Do not add explanation.
 
-                Schema:
-                {{
-                    "intent": "account_help | troubleshooting | knowledge_lookup | escalation | general_support",
-                    "category": "string",
-                    "priority": "low | medium | high"
-                }}
+Schema:
+{{
+  "intent": "account_help | troubleshooting | knowledge_lookup | escalation | general_support",
+  "category": "string",
+  "priority": "low | medium | high"
+}}
 
-                Request:
-                {request}
-            exir
-            """.strip()
+Request:
+{request}
+""".strip()
 
+            print("TriageAgent: analyzing request...")
             result = self.run_inference(prompt, task_type="classification")
             text = (result.get("text") or "").strip()
 
@@ -157,9 +157,13 @@ class TriageAgent(AcmeBaseAgent):
                 }
 
         except Exception as exc:
-            log.warning("LLM triage failed in %s: %s", self.name, exc)
+            log.info(
+                "LLM triage response was not usable in %s; using rule-based fallback.",
+                self.name,
+             )
+            log.debug("LLM triage parse reason in %s: %s", self.name, exc)
 
-        return None
+            return None
 
     # =========================
     # RULE FALLBACK (CRITICAL)
