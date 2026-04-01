@@ -330,8 +330,11 @@ git clone https://github.com/k9aif/k9-aif-framework.git
 cd k9-aif-framework
 python3 -m venv .venv
 source .venv/bin/activate
-```
 
+pip install --upgrade pip
+pip install -r requirements.txt
+
+```
 ---
 
 ## Project Status
