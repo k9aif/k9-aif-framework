@@ -5,10 +5,10 @@
 
 import traceback
 from typing import Dict, Any
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 
-class FrameworkOrchestrator(BaseAgent):
+class FrameworkOrchestrator(BaseOrchestrator):
     """
     K9-AIF FrameworkOrchestrator ABB
     --------------------------------
@@ -23,9 +23,9 @@ class FrameworkOrchestrator(BaseAgent):
 
     layer = "Framework Orchestrator ABB"
 
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Executes a governed orchestration flow."""
-        self.log(" FrameworkOrchestrator execution started")
+        self.log("FrameworkOrchestrator execution started")
 
         try:
             query = payload.get("message", "")
@@ -75,3 +75,7 @@ class FrameworkOrchestrator(BaseAgent):
             self.log(f"[ERROR] Orchestrator error: {e}", level="ERROR")
             traceback.print_exc()
             return {"reply": "[WARN] Framework orchestration failed."}
+
+    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Compatibility wrapper for older callers."""
+        return await self.execute_flow(payload)
