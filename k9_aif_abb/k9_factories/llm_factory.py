@@ -15,7 +15,11 @@ class LLMFactory:
     """
     K9-AIF Factory ABB - LLMFactory
     -------------------------------
-    Unified model manager for Granite / Ollama / watsonx.ai models.
+    Unified model manager for configured LLM backends.
+
+    Current implementation supports Ollama-backed model instances.
+    Additional provider dispatch (for example watsonx.ai or other backends)
+    can be added in future versions without changing the public factory pattern.
 
     Backward-compatible with older agents expecting:
       - LLMFactory.is_bootstrapped
@@ -146,6 +150,7 @@ class LLMFactory:
                 f"LLM model alias '{alias}' must be a string or dict, got {type(model_cfg).__name__}"
             )
 
+        # TODO: add provider-based dispatch here when non-Ollama backends are supported.
         inst = OllamaLLM(
             host=base_url,
             model=model_name,
