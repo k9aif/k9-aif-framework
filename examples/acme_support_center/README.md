@@ -169,7 +169,6 @@ This demonstrates the core K9-AIF principle:
 while **Solution Building Blocks (SBB)** define the implementation and behavior.
 
 ---
----
 
 ## Runtime Logs
 
@@ -196,7 +195,5 @@ tail -f runtime/logs/acme_support_center.log
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.UTILS.BOOTSTRAP | Bootstrap complete | squads=['support_squad'] | orchestrators=['support_orchestrator']
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.ORCHESTRATORS.SUPPORT_ORCHESTRATOR | Starting orchestrator runtime: support_orchestrator
 ```
-
----
 
 ---
