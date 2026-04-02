@@ -11,6 +11,7 @@ from k9_aif_abb.k9_utils.config_loader import load_app_config
 from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
 from k9_aif_abb.k9_orchestrators.registry.orchestrator_registry import OrchestratorRegistry
 from k9_aif_abb.k9_squad.squad_loader import SquadLoader
+from k9_aif_abb.k9_core.logging.log_setup import setup_logging
 
 from examples.acme_support_center.utils.systems_check import run_system_checks
 from examples.acme_support_center.agents.src.triage_agent import TriageAgent
@@ -31,8 +32,6 @@ class ACMESupportBootstrap:
         self.orchestrators: Dict[str, Any] = {}
 
     def initialize(self) -> None:
-        log.info("Initializing %s ...", self.app_name)
-
         root_dir = Path(__file__).resolve().parents[3]
         sbb_config_path = root_dir / "examples" / self.app_name / "config" / "config.yaml"
         squads_path = root_dir / "examples" / self.app_name / "config" / "squads.yaml"
@@ -41,6 +40,9 @@ class ACMESupportBootstrap:
             app_name=self.app_name,
             sbb_config=sbb_config_path,
         )
+
+        setup_logging(app_name=self.app_name, app_config=self.config)
+        log.info("Initializing %s ...", self.app_name)
 
         ok = run_system_checks(self.config)
         if not ok:

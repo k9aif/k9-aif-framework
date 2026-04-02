@@ -136,7 +136,7 @@ logging:
   orchestrator_logger: true
   router_logger: true
   level: INFO
-  log_dir: ./runtime/logs
+  dir: ./runtime/logs
 
 governance:
   enabled: true

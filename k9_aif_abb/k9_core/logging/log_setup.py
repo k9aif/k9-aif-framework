@@ -71,9 +71,12 @@ def setup_logging(app_name: str | None = None,
     root_logger.addHandler(ch)
 
     # File handler
+    log_filename = f"{app_name}.log" if app_name else "k9_aif.log"
+
     fh = RotatingFileHandler(
-        logs_dir / "k9_aif.log", maxBytes=2_000_000, backupCount=5
+        logs_dir / log_filename, maxBytes=2_000_000, backupCount=5
     )
+
     fh.setFormatter(K9LoggingFormatter(config={**(app_config or {}), "logging": {"color": False}}))  # file logs = no color
     fh.setLevel(log_level)
     root_logger.addHandler(fh)
