@@ -4,7 +4,8 @@
 # File: k9_aif_abb/k9_orchestrators/framework_orchestrator.py
 
 import traceback
-from typing import Dict, Any
+from typing import Any, Dict
+
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 
@@ -25,13 +26,13 @@ class FrameworkOrchestrator(BaseOrchestrator):
 
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Executes a governed orchestration flow."""
-        self.log("FrameworkOrchestrator execution started")
+        self.logger.info("FrameworkOrchestrator execution started")
 
         try:
             query = payload.get("message", "")
 
             # Publish routing event
-            if getattr(self, "messaging", None):
+            if self.message_bus:
                 event = {
                     "event_type": "orchestration_start",
                     "agent": self.__class__.__name__,
@@ -40,7 +41,7 @@ class FrameworkOrchestrator(BaseOrchestrator):
                     "status": "started",
                 }
                 try:
-                    self.messaging.publish(event)
+                    self.message_bus.publish(event)
                 except Exception:
                     pass
 
@@ -56,7 +57,7 @@ class FrameworkOrchestrator(BaseOrchestrator):
             )
 
             # Publish orchestration completion event
-            if getattr(self, "messaging", None):
+            if self.message_bus:
                 completion = {
                     "event_type": "orchestration_complete",
                     "agent": self.__class__.__name__,
@@ -64,15 +65,15 @@ class FrameworkOrchestrator(BaseOrchestrator):
                     "status": "completed",
                 }
                 try:
-                    self.messaging.publish(completion)
+                    self.message_bus.publish(completion)
                 except Exception:
                     pass
 
-            self.log("[OK] FrameworkOrchestrator execution complete")
+            self.logger.info("[OK] FrameworkOrchestrator execution complete")
             return {"reply": reply}
 
         except Exception as e:
-            self.log(f"[ERROR] Orchestrator error: {e}", level="ERROR")
+            self.logger.error(f"[ERROR] Orchestrator error: {e}")
             traceback.print_exc()
             return {"reply": "[WARN] Framework orchestration failed."}
 
