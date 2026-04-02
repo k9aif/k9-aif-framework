@@ -63,7 +63,7 @@ class ModelRouterFactory:
         catalog = cls._build_catalog(cfg)
 
         if router_type == "k9":
-            router = K9ModelRouter(catalog)
+            router = K9ModelRouter(catalog, config=cfg)
 
         elif router_type == "default":
             default_alias = router_cfg.get("default_model_alias", "general")
@@ -89,7 +89,8 @@ class ModelRouterFactory:
                     "router": config.get("router", {}),
                     "model_catalog": config.get("model_catalog", {}),
                     "llm_factory": config.get("llm_factory", {}),
-                }
+                },
+                "postgres": config.get("postgres", {}),
             }
 
         return config

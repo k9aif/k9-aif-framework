@@ -10,7 +10,7 @@ from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
 
 
-class PersistenceAgent(BaseAgent):
+class PersistenceAgent(BaseAgent):a
     """
     ABB/SBB Bridge Agent
     --------------------
