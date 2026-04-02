@@ -167,3 +167,36 @@ This demonstrates the core K9-AIF principle:
 
 **Architecture Building Blocks (ABB)** define the system structure,  
 while **Solution Building Blocks (SBB)** define the implementation and behavior.
+
+---
+---
+
+## Runtime Logs
+
+K9-AIF uses the framework logging system (ABB logging) to capture runtime activity.
+
+When you run the ACME Support Center example, logs are written to:
+
+```text
+runtime/logs/acme_support_center.log
+```
+
+You can view logs in real time using:
+
+```bash
+tail -f runtime/logs/acme_support_center.log
+```
+
+### Example log output
+
+```text
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.UTILS.BOOTSTRAP | Initializing acme_support_center ...
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.AGENTS.SRC.TRIAGE_AGENT | Initialized TriageAgent | pattern=react | model=general
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.AGENTS.SRC.KNOWLEDGE_AGENT | Initialized KnowledgeAgent | pattern=rag | model=general
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.UTILS.BOOTSTRAP | Bootstrap complete | squads=['support_squad'] | orchestrators=['support_orchestrator']
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.ORCHESTRATORS.SUPPORT_ORCHESTRATOR | Starting orchestrator runtime: support_orchestrator
+```
+
+---
+
+---
