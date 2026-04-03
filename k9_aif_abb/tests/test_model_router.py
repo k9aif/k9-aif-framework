@@ -50,7 +50,7 @@ def main():
 
     
     request = InferenceRequest(
-        prompt="Explain what K9-AIF architecture is.",
+        prompt="What is the capital of France?",
         task_type="chat",
     )
 
