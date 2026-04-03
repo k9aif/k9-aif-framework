@@ -328,11 +328,14 @@ Clone the framework and create a Python virtual environment:
 ```bash
 git clone https://github.com/k9aif/k9-aif-framework.git
 cd k9-aif-framework
-python3 -m venv .venv
+
+python3.11 --version
+python3.11 -m venv .venv
 source .venv/bin/activate
 
-(.venv) pip install --upgrade pip
-(.venv) pip install -r requirements.txt
+python --version
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
 ```
 once this is done: you can directly test out the demos:
