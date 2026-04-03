@@ -331,8 +331,8 @@ cd k9-aif-framework
 python3 -m venv .venv
 source .venv/bin/activate
 
-pip install --upgrade pip
-pip install -r requirements.txt
+(.venv) pip install --upgrade pip
+(.venv) pip install -r requirements.txt
 
 ```
 once this is done: you can directly test out the demos:
