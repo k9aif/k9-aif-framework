@@ -347,7 +347,7 @@ from the k9-aif-framework folder, run the commands:
 test programs from the tests folder can be run like below:
 
 ``` bash
-phython -m k9_aif_abb.tests.<test program name>
+python -m k9_aif_abb.tests.<test program name>
 
 ```
 ---
