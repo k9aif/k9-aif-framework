@@ -25,12 +25,30 @@ def main():
     LLMFactory.reset()
     LLMFactory.bootstrap(config)
 
+    ModelRouterFactory.reset()
+
     print("\n--- Creating Router ---")
     router = ModelRouterFactory.get_router(config)
     assert router is not None, "Router factory returned None"
-
     print(f"Router type: {router.__class__.__name__}")
 
+    print("\n--- Router Persistence ---")
+    print(
+        "Configured provider:",
+        config["inference"]["router"]["persistence"]["provider"]
+    )
+
+    if hasattr(router, "state_store") and hasattr(router.state_store, "db"):
+        db = router.state_store.db
+        print("Storage backend class:", db.__class__.__name__)
+
+        if hasattr(db, "db_path"):
+            print("SQLite DB path:", db.db_path)
+
+        if hasattr(db, "database_url"):
+            print("Database URL:", db.database_url)
+
+    
     request = InferenceRequest(
         prompt="Explain what K9-AIF architecture is.",
         task_type="chat",

@@ -14,7 +14,6 @@ from ..catalog.model_catalog import ModelCatalog
 from .base_model_router import BaseModelRouter
 
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
-from k9_aif_abb.k9_storage.postgres_database_storage import PostgresDatabaseStorage
 from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
 
 
@@ -26,7 +25,7 @@ class K9ModelRouter(BaseModelRouter):
 
     Current capabilities:
     - catalog-based model selection
-    - PostgreSQL-backed session persistence
+    - session persistence
     - user turn persistence
     - routing decision persistence
     - model affinity persistence
@@ -49,11 +48,12 @@ class K9ModelRouter(BaseModelRouter):
         self.config = config or {}
         self.monitor = monitor
 
-        if state_store is not None:
-            self.state_store = state_store
-        else:
-            self.db_storage = PostgresDatabaseStorage(config=self.config, monitor=monitor)
-            self.state_store = RoutingStateStore(self.db_storage)
+        if state_store is None:
+            raise ValueError(
+                "K9ModelRouter requires a state_store provided by ModelRouterFactory"
+            )
+
+        self.state_store = state_store
 
     # ------------------------------------------------------------------
     # Internal Helpers
@@ -66,7 +66,10 @@ class K9ModelRouter(BaseModelRouter):
         user_id = getattr(request, "user_id", None)
         return str(user_id) if user_id else "anonymous"
 
-    def _persist_request_context(self, request: InferenceRequest) -> tuple[str, str, int]:
+    def _persist_request_context(
+        self,
+        request: InferenceRequest,
+    ) -> tuple[str, str, int]:
         session_id = self._resolve_session_id(request)
         user_id = self._resolve_user_id(request)
 

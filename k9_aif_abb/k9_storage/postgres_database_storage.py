@@ -97,6 +97,26 @@ class PostgresDatabaseStorage(BaseDatabaseStorage):
             session.close()
 
     # ------------------------------------------------------------------
+    # Session Access (required by RoutingStateStore)
+    # ------------------------------------------------------------------
+    @contextmanager
+    def get_session(self):
+        """
+        Provide a simple session context (same contract as SQLite backend).
+        """
+        if self.SessionLocal is None:
+            raise RuntimeError("PostgresDatabaseStorage is not connected")
+
+        session: Session = self.SessionLocal()
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    # ------------------------------------------------------------------
     # Internal Helpers
     # ------------------------------------------------------------------
     def _get_table(self, table: str) -> Table:
