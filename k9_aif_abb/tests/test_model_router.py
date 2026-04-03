@@ -3,58 +3,53 @@
 
 # tests/test_model_router.py
 
+from pathlib import Path
+
+import yaml
+
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 
 
-CONFIG = {
-    "inference": {
-        "router": {
-            "type": "k9"
-        },
-        "llm_factory": {
-            "provider": "ollama",
-            "base_url": "http://192.168.1.98:11434",
-            "models": {
-                "general": "llama3.2:1b"
-            }
-        },
-        "model_catalog": {
-            "default_model": "general",
-            "models": {
-                "general": {
-                    "provider": "ollama",
-                    "llm_ref": "general",
-                    "capabilities": ["chat"]
-                }
-            }
-        }
-    }
-}
+def load_config():
+    config_path = Path("k9_aif_abb/config/config.yaml")
+    with config_path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def main():
+    config = load_config()
 
-    print("\n--- Bootstrapping LLMFactory ---")
-    LLMFactory.bootstrap(CONFIG)
+    print("\n--- Resetting and Bootstrapping LLMFactory ---")
+    LLMFactory.reset()
+    LLMFactory.bootstrap(config)
 
     print("\n--- Creating Router ---")
-    router = ModelRouterFactory.get_router(CONFIG)
+    router = ModelRouterFactory.get_router(config)
+    assert router is not None, "Router factory returned None"
 
     print(f"Router type: {router.__class__.__name__}")
 
     request = InferenceRequest(
         prompt="Explain what K9-AIF architecture is.",
-        task_type="chat"
+        task_type="chat",
     )
 
     print("\n--- Invoking Router ---")
     response = router.invoke(request)
 
+    assert response is not None, "Router returned no response"
+    assert hasattr(response, "model_alias"), "Response missing model_alias"
+    assert hasattr(response, "output"), "Response missing output"
+    assert response.model_alias, "Response model_alias is empty"
+    assert response.output, "Response output is empty"
+
     print("\n--- Response ---")
     print("Model:", response.model_alias)
     print("Output:", response.output)
+
+    print("\n[OK] Model router smoke test passed.")
 
 
 if __name__ == "__main__":

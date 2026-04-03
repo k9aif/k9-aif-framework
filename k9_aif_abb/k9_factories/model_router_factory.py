@@ -62,7 +62,7 @@ class ModelRouterFactory:
 
         catalog = cls._build_catalog(cfg)
 
-        if router_type == "k9":
+        if router_type in ("k9", "k9_model_router"):
             router = K9ModelRouter(catalog, config=cfg)
 
         elif router_type == "default":
