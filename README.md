@@ -335,6 +335,21 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 ```
+once this is done: you can diretly test out the demos:
+from the k9-aif-framework folder, run the commands:
+
+``` bash
+./run_k9chat.sh
+./run_acme_support_center.sh
+
+```
+
+test programs from the tests folder can be run like below:
+
+``` bash
+phython -m k9_aif_abb.tests.<test program name>
+
+```
 ---
 
 ## Project Status
