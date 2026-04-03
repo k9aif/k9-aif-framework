@@ -127,6 +127,22 @@ inference:
     type: k9_model_router
     default_model: general
 
+    persistence:
+      enabled: true
+      provider: sqlite  # sqlite | postgres | memory
+
+      sqlite:
+        db_path: "./runtime/k9_model_router.db"
+
+      postgres:
+        host: "192.168.1.98"
+        port: 5432
+        user: "postgres"
+        password: "postgres"
+        database: "k9aif"
+        schema: "k9aif"
+        schema_file: "k9_aif_abb/db/k9_db_schema.sql"
+
   llm_factory:
     base_url: "http://192.168.1.98:11434"
     models:

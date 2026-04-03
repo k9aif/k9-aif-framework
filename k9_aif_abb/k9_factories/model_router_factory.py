@@ -12,6 +12,11 @@ from k9_aif_abb.k9_inference.routers.base_model_router import BaseModelRouter
 from k9_aif_abb.k9_inference.routers.default_model_router import DefaultModelRouter
 from k9_aif_abb.k9_inference.routers.k9_model_router import K9ModelRouter
 
+from k9_aif_abb.k9_core.persistence.base_persistence import MemoryPersistence
+from k9_aif_abb.k9_storage.sqlite_database_storage import SQLiteDatabaseStorage
+from k9_aif_abb.k9_storage.postgres_database_storage import PostgresDatabaseStorage
+from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
+
 
 class ModelRouterFactory:
     """
@@ -22,6 +27,7 @@ class ModelRouterFactory:
     Responsibilities:
       - read inference router config
       - build model catalog
+      - build router persistence backend
       - instantiate configured router implementation
       - cache router instances if needed
     """
@@ -38,12 +44,12 @@ class ModelRouterFactory:
           1. Nested:
              inference:
                router:
-                 type: k9
+                 type: k9_model_router
                model_catalog:
                  ...
           2. Flattened:
              router:
-               type: k9
+               type: k9_model_router
              model_catalog:
                ...
         """
@@ -56,14 +62,23 @@ class ModelRouterFactory:
         if not LLMFactory.is_bootstrapped():
             LLMFactory.bootstrap(config)
 
-        cache_key = router_type
+        persistence_cfg = router_cfg.get("persistence", {})
+        provider = (persistence_cfg.get("provider") or "sqlite").lower()
+        enabled = persistence_cfg.get("enabled", True)
+        cache_key = f"{router_type}:{enabled}:{provider}"
+
         if cache_key in cls._instances:
             return cls._instances[cache_key]
 
         catalog = cls._build_catalog(cfg)
 
-        if router_type == "k9":
-            router = K9ModelRouter(catalog)
+        if router_type in ("k9", "k9_model_router"):
+            state_store = cls._build_router_state_store(cfg)
+            router = K9ModelRouter(
+                catalog=catalog,
+                config=cfg,
+                state_store=state_store,
+            )
 
         elif router_type == "default":
             default_alias = router_cfg.get("default_model_alias", "general")
@@ -73,8 +88,50 @@ class ModelRouterFactory:
             raise ValueError(f"Unsupported router type: {router_type}")
 
         cls._instances[cache_key] = router
-        cls.logger.info(f"Router ready -> {router.__class__.__name__}")
+        cls.logger.info("Router ready -> %s", router.__class__.__name__)
         return router
+
+    @classmethod
+    def _build_router_state_store(cls, config: Dict[str, Any]) -> RoutingStateStore:
+        """
+        Build router state store based on inference.router.persistence config.
+        """
+        inf_cfg = config.get("inference", {})
+        router_cfg = inf_cfg.get("router", {})
+        persistence_cfg = router_cfg.get("persistence", {})
+
+        enabled = persistence_cfg.get("enabled", True)
+        provider = (persistence_cfg.get("provider") or "sqlite").lower()
+
+        if not enabled:
+            cls.logger.info(
+                "Model router persistence disabled; using MemoryPersistence."
+            )
+            storage = MemoryPersistence()
+
+        elif provider == "sqlite":
+            sqlite_cfg = persistence_cfg.get("sqlite", {})
+            db_path = sqlite_cfg.get("db_path", "./runtime/k9_model_router.db")
+            cls.logger.info(
+                "Model router persistence provider -> sqlite (%s)",
+                db_path,
+            )
+            storage = SQLiteDatabaseStorage(db_path=db_path)
+
+        elif provider == "postgres":
+            cls.logger.info("Model router persistence provider -> postgres")
+            storage = PostgresDatabaseStorage(config=config)
+
+        elif provider == "memory":
+            cls.logger.info("Model router persistence provider -> memory")
+            storage = MemoryPersistence()
+
+        else:
+            raise ValueError(
+                f"Unsupported model router persistence provider: {provider}"
+            )
+
+        return RoutingStateStore(storage)
 
     @classmethod
     def _normalize_config(cls, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,7 +146,8 @@ class ModelRouterFactory:
                     "router": config.get("router", {}),
                     "model_catalog": config.get("model_catalog", {}),
                     "llm_factory": config.get("llm_factory", {}),
-                }
+                },
+                "postgres": config.get("postgres", {}),
             }
 
         return config
@@ -144,7 +202,8 @@ class ModelRouterFactory:
             }
 
             cls.logger.info(
-                "[ModelRouterFactory] model_catalog missing; derived minimal catalog from llm_factory.models"
+                "[ModelRouterFactory] model_catalog missing; "
+                "derived minimal catalog from llm_factory.models"
             )
 
         return ModelCatalog(catalog_cfg)
