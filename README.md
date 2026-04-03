@@ -335,7 +335,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 ```
-once this is done: you can diretly test out the demos:
+once this is done: you can directly test out the demos:
 from the k9-aif-framework folder, run the commands:
 
 ``` bash
