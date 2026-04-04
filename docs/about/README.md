@@ -14,6 +14,7 @@ The retrieval component evolved into a system. The system evolved into a framewo
 
 **The name stayed — because it still means something.**
 
+``` ascii
 
    / \__
   ( ^   @\___
@@ -21,4 +22,5 @@ The retrieval component evolved into a system. The system evolved into a framewo
  /   (_____/
 /_____/   U
 
+```
 # Ready to Rumble!
