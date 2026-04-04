@@ -1,0 +1,147 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7fb;
+  color: #1f2937;
+}
+
+.app-shell {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.subtitle {
+  margin: 6px 0 0 0;
+  color: #6b7280;
+}
+
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.badge {
+  background: #e8eefc;
+  color: #1d4ed8;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chat-panel {
+  background: #ffffff;
+  border: 1px solid #dbe3ef;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  min-height: 75vh;
+  overflow: hidden;
+}
+
+.chat-history {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: #fbfcfe;
+}
+
+.message {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.message.user {
+  justify-content: flex-end;
+}
+
+.message.assistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.message.user .bubble {
+  background: #2563eb;
+  color: white;
+  border-bottom-right-radius: 6px;
+}
+
+.message.assistant .bubble {
+  background: #eef2f7;
+  color: #111827;
+  border-bottom-left-radius: 6px;
+}
+
+.input-panel {
+  border-top: 1px solid #e5e7eb;
+  padding: 18px;
+  background: white;
+}
+
+textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  padding: 14px;
+  font-size: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: #2563eb;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

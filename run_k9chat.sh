@@ -1,1 +1,1 @@
-python -m examples.k9chat.chat
+uvicorn examples.k9chat.app:app --reload
