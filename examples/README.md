@@ -2,35 +2,34 @@
 
 This folder contains example applications built using the **K9-AIF Framework**.
 
-Each example demonstrates how the framework can be used to implement
-domain-specific AI applications.
-
-The examples show:
-
-- How to structure applications on top of the K9-AIF framework
-- How to build domain workflows and orchestration logic
-- How to integrate LLM capabilities into real-world scenarios
-
-Examples may include:
-
-- Insurance experience centers
-- Document processing applications
-- Domain advisors
-- Retrieval-based assistants
-
-Each example is self-contained and focuses on illustrating practical usage
-of the framework in a specific domain.
-
-Refer to the main project documentation for details about the K9-AIF
-architecture and framework components.
+These examples demonstrate how K9-AIF can be used to implement practical,
+domain-oriented AI applications while preserving architectural structure,
+modularity, and governance.
 
 ---
 
-Some examples may be **generated using the K9-AIF application generator**
-and then extended with domain-specific logic.
+## What These Examples Show
 
-Example:
+- How to structure applications on top of K9-AIF
+- How to compose **Squads, Agents, and Orchestrators**
+- How to apply **model routing via ModelRouterFactory**
+- How to integrate LLM capabilities into real-world workflows
+- How to build reusable, extensible AI application patterns
 
-```bash
-./k9_generator.sh run acme-health-insurance
+---
 
+## Available Examples
+
+### K9Chat
+
+A lightweight chat example demonstrating:
+
+- squad-driven execution
+- model routing via **ModelRouterFactory** and default **K9ModelRouter**
+- browser and CLI interaction
+- runtime metadata (provider, model, host)
+
+See:
+
+```text id="n51z84"
+examples/k9chat/
