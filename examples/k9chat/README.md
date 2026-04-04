@@ -14,6 +14,15 @@ This example showcases:
 
 ---
 
+## Class Diagram
+
+The following class diagram illustrates the core K9Chat object-oriented structure and shows how the example uses K9-AIF abstractions such as `BaseAgent`, `ModelRouterFactory`, `BaseModelRouter`, and `InferenceRequest`.
+
+![K9Chat Class Diagram](../diagrams/k9-chat-class-diagram.png)
+
+---
+
+
 ## Contents
 
 - `chat.py` — Shared chat backend logic used by both CLI and web UI
