@@ -33,3 +33,19 @@ See:
 
 ```text id="n51z84"
 examples/k9chat/
+```
+
+### Acme Support Center
+
+A lightweight chat example demonstrating:
+
+- squad-driven execution
+- model routing via **ModelRouterFactory** and default **K9ModelRouter**
+- browser and CLI interaction
+- runtime metadata (provider, model, host)
+
+See:
+
+```text id="n51z84"
+examples/acme_support_center/
+```
