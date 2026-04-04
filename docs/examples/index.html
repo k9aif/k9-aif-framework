@@ -1,1 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples | K9-AIF</title>
+  <style>
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 60px 28px;
+      line-height: 1.8;
+      color: #1c1c1c;
+      background: #f8f7f4;
+    }
 
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1c1c1c;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: #777;
+      margin-bottom: 2rem;
+    }
+
+    hr {
+      border: none;
+      border-top: 3px solid #2d6ae0;
+      margin: 0 0 2.5rem 0;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+      font-size: 1.02rem;
+    }
+
+    .example-card {
+      background: #eef3fc;
+      border-left: 4px solid #2d6ae0;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.3rem;
+      margin: 1.5rem 0;
+    }
+
+    .example-card h2 {
+      margin: 0 0 0.4rem 0;
+      font-size: 1.2rem;
+      color: #1a3a6e;
+    }
+
+    .example-card p {
+      margin: 0.5rem 0;
+      color: #1c1c1c;
+    }
+
+    .example-card a {
+      display: inline-block;
+      margin-top: 0.6rem;
+      color: #2d6ae0;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .example-card a:hover {
+      text-decoration: underline;
+    }
+
+    .run-box {
+      background: #f1f3f7;
+      border: 1px solid #d7dde8;
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 2rem 0;
+    }
+
+    .run-box h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: #1c1c1c;
+    }
+
+    pre {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .closing {
+      margin-top: 2.5rem;
+      font-size: 1rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Examples</h1>
+  <p class="subtitle">K9-AIF Framework</p>
+  <hr />
+
+  <p>
+    This section contains example applications built using the <strong>K9-AIF Framework</strong>.
+    These examples demonstrate how K9-AIF can be applied to practical, domain-oriented AI systems
+    while preserving architectural structure, modularity, and governance.
+  </p>
+
+  <p>
+    The examples illustrate how to structure applications on top of K9-AIF, compose squads and
+    orchestrators, and integrate LLM capabilities into real-world workflows.
+  </p>
+
+  <div class="example-card">
+    <h2>K9Chat</h2>
+    <p>
+      A lightweight chat example demonstrating squad-driven execution, model abstraction,
+      browser and CLI interaction, and runtime metadata display.
+    </p>
+    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
+      View K9Chat →
+    </a>
+  </div>
+
+  <div class="example-card">
+    <h2>ACME Support Center</h2>
+    <p>
+      A support-oriented example showing how K9-AIF can be used to structure customer-facing
+      service workflows and agent collaboration patterns.
+    </p>
+    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
+      View ACME Support Center →
+    </a>
+  </div>
+
+  <div class="example-card">
+    <h2>ACME Health Insurance Claims</h2>
+    <p>
+      A domain-oriented example demonstrating how K9-AIF can support claims-related workflows,
+      structured processing, and extensible enterprise AI solution patterns.
+    </p>
+    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
+      View ACME Health Insurance Claims →
+    </a>
+  </div>
+
+  <div class="run-box">
+    <h2>How to Run the Examples</h2>
+    <p>
+      From the root of the <code>k9-aif-framework</code> repository, the included shell scripts can be used
+      to quickly launch selected examples.
+    </p>
+
+    <pre><code>./run_k9chat.sh
+./run_model_router.sh
+./run_acme_support_center.sh</code></pre>
+
+    <p>
+      These scripts provide a simple way to start working examples without needing to remember
+      the underlying Python module commands.
+    </p>
+  </div>
+
+  <p class="closing">
+    These examples are intentionally practical. They are not intended to be full production products
+    out of the box, but to demonstrate how K9-AIF can be used as an architecture-first framework for
+    building modular, governed, and extensible AI applications.
+  </p>
+
+</body>
+</html>
