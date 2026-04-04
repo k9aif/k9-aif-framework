@@ -10,7 +10,6 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 
@@ -25,9 +24,6 @@ class ChatAgent(BaseAgent):
                 config = yaml.safe_load(f)
 
         super().__init__(config)
-
-        if not LLMFactory.is_bootstrapped():
-            LLMFactory.bootstrap(config)
 
         self.router = ModelRouterFactory.get_router(config)
 
