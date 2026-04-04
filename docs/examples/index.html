@@ -54,8 +54,17 @@
     }
 
     .example-card p {
-      margin: 0.5rem 0;
+      margin: 0.6rem 0;
       color: #1c1c1c;
+    }
+
+    .example-card ul {
+      margin: 0.75rem 0 0.5rem 1.2rem;
+      padding: 0;
+    }
+
+    .example-card li {
+      margin-bottom: 0.35rem;
     }
 
     .example-card a {
@@ -113,45 +122,87 @@
 
   <p>
     This section contains example applications built using the <strong>K9-AIF Framework</strong>.
-    These examples demonstrate how K9-AIF can be applied to practical, domain-oriented AI systems
-    while preserving architectural structure, modularity, and governance.
+    These examples are intended to show how K9-AIF can be applied to practical, domain-oriented
+    AI systems while preserving architectural structure, modularity, and governance.
   </p>
 
   <p>
-    The examples illustrate how to structure applications on top of K9-AIF, compose squads and
-    orchestrators, and integrate LLM capabilities into real-world workflows.
+    Together, they demonstrate how K9-AIF uses stable <strong>Architecture Building Blocks (ABB)</strong>
+    to host configurable <strong>Solution Building Blocks (SBB)</strong>, including routing,
+    orchestration, squads, agent behaviors, model abstraction, and domain workflows.
   </p>
-
-  <div class="example-card">
-    <h2>K9Chat</h2>
-    <p>
-      A lightweight chat example demonstrating squad-driven execution, model abstraction,
-      browser and CLI interaction, and runtime metadata display.
-    </p>
-    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
-      View K9Chat →
-    </a>
-  </div>
 
   <div class="example-card">
     <h2>ACME Support Center</h2>
     <p>
-      A support-oriented example showing how K9-AIF can be used to structure customer-facing
-      service workflows and agent collaboration patterns.
+      An enterprise-style support workflow example built on the <strong>K9-AIF Framework</strong>.
+    </p>
+    <p>
+      ACME Support Center demonstrates how K9-AIF can structure a customer-facing support system
+      using specialized agents, configurable reasoning behaviors, and stable framework architecture.
+    </p>
+    <ul>
+      <li><strong>Router → Orchestrator → Squad → Agent</strong> execution flow</li>
+      <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
+      <li>configurable reasoning patterns such as <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and <strong>multi-agent collaboration</strong></li>
+      <li>clear separation between <strong>Architecture Building Blocks (ABB)</strong> and <strong>Solution Building Blocks (SBB)</strong></li>
+      <li>squad-based specialization across support roles</li>
+      <li>runtime logging and observability through K9-AIF framework logging</li>
+    </ul>
+    <p>
+      This example is a strong reference implementation of how K9-AIF can support modular,
+      enterprise-oriented multi-agent service architectures.
     </p>
     <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
-      View ACME Support Center →
+      View Code &amp; Documentation →
+    </a>
+  </div>
+
+  <div class="example-card">
+    <h2>K9Chat</h2>
+    <p>
+      A lightweight browser-based chat example built on the <strong>K9-AIF Framework</strong>.
+    </p>
+    <p>
+      K9Chat demonstrates how a simple chat experience can be implemented using K9-AIF building
+      blocks while remaining configuration-driven and model-provider agnostic.
+    </p>
+    <ul>
+      <li><strong>Squad + Agent</strong> execution pattern</li>
+      <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
+      <li>default <strong>K9ModelRouter</strong> routing behavior</li>
+      <li>integration with configurable LLM providers such as <strong>Ollama</strong></li>
+      <li>default <strong>SQLite-backed router state persistence</strong></li>
+      <li>browser-based interaction with runtime metadata display</li>
+    </ul>
+    <p>
+      This example serves as a clean starting point for understanding how K9-AIF separates agent
+      logic, routing, inference configuration, persistence, and UI integration.
+    </p>
+    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
+      View Code &amp; Documentation →
     </a>
   </div>
 
   <div class="example-card">
     <h2>ACME Health Insurance Claims</h2>
     <p>
-      A domain-oriented example demonstrating how K9-AIF can support claims-related workflows,
-      structured processing, and extensible enterprise AI solution patterns.
+      A domain-oriented example showing how K9-AIF can support structured, document-heavy,
+      workflow-driven enterprise scenarios.
+    </p>
+    <ul>
+      <li>claims-related workflow structure</li>
+      <li>intake and document-processing patterns</li>
+      <li>domain-specific orchestration</li>
+      <li>extensible enterprise solution design aligned to real business processes</li>
+      <li>modular AI solution composition using K9-AIF concepts</li>
+    </ul>
+    <p>
+      This example reflects how K9-AIF can be applied in business domains where architecture,
+      modularity, and workflow structure matter more than a single prompt-response interaction.
     </p>
     <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
-      View ACME Health Insurance Claims →
+      View Code &amp; Documentation →
     </a>
   </div>
 
@@ -167,8 +218,8 @@
 ./run_acme_support_center.sh</code></pre>
 
     <p>
-      These scripts provide a simple way to start working examples without needing to remember
-      the underlying Python module commands.
+      For deeper implementation details, class diagrams, and example-specific documentation,
+      use the links above to open the corresponding example folders in the repository.
     </p>
   </div>
 
