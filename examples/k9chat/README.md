@@ -1,13 +1,14 @@
 # K9Chat Example
 
 K9Chat is a lightweight example application built on the **K9-AIF Framework**.
+
 It demonstrates how a simple chat experience can be implemented using K9-AIF building blocks while remaining configuration-driven and model-provider agnostic.
 
 This example showcases:
 
 - ABB / SBB architectural separation
 - Squad and Agent structure
-- Model routing via **K9ModelRouter**
+- Model routing via **ModelRouterFactory** and the default **K9ModelRouter**
 - Integration with LLM providers (for example **Ollama**)
 - A reusable backend service shared by both **CLI** and **browser UI**
 
@@ -42,18 +43,18 @@ Install UI dependencies if needed:
 pip install fastapi uvicorn jinja2
 
 ```
+---
 
 ## Running K9Chat (Browser UI)
 
-From the root of the k9-aif-framework repository, start the FastAPI server:
+From the root of the k9-aif-framework repository, run:
 
-```bash
-
+``` bash
 ./run_k9chat.sh
-
-the above .sh runs the command "uvicorn examples.k9chat.app:app --reload""
-
-then you will see the startup output on the terminal,
-the k9chat should be in:  http://127.0.0.1:8000 
-
 ```
+The above scipt runs:
+
+``` bash
+uvicorn examples.k9chat.app:app --reload
+```
+
