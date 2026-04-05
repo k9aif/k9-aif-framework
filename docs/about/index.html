@@ -3,163 +3,345 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About K9 Agentic Integration Framework (K9-AIF)</title>
+  <title>About K9-AIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
   <style>
+    :root {
+      --bg: #09090f;
+      --surface: #111118;
+      --surface2: #16161f;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(99,168,255,0.25);
+      --text: #e8e8f0;
+      --muted: #8a90c0;
+      --accent: #63a8ff;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --glow: rgba(99,168,255,0.12);
+      --shadow: 0 12px 30px rgba(0,0,0,0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      font-family: Georgia, "Times New Roman", serif;
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 60px 28px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      font-weight: 400;
       line-height: 1.8;
-      color: #1c1c1c;
-      background: #f8f7f4;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      padding-top: 60px;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(9, 9, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo span {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.15rem;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #09090f !important;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600 !important;
+    }
+
+    .page-wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 52px 28px 100px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 28px 0 34px;
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 760px;
+      height: 420px;
+      background: radial-gradient(ellipse at center, rgba(99,168,255,0.09) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
     }
 
     h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1c1c1c;
-      margin-bottom: 0.5rem;
+      font-family: "DM Serif Display", serif;
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 0.9rem;
+      text-wrap: balance;
     }
 
     .subtitle {
-      font-size: 1rem;
-      color: #888;
-      margin-bottom: 2rem;
+      font-size: 1.08rem;
+      color: var(--muted);
+      line-height: 1.85;
+      max-width: 700px;
+      margin: 0 auto;
     }
 
-    hr {
-      border: none;
-      border-top: 3px solid #2d6ae0;
-      margin: 0 0 2.5rem 0;
+    .content {
+      margin-top: 10px;
     }
 
-    p {
-      margin-bottom: 1.3rem;
-      font-size: 1.02rem;
-      color: #1c1c1c;
+    .content p {
+      font-size: 1.04rem;
+      color: var(--muted);
+      line-height: 1.9;
+      margin-bottom: 1.25rem;
+    }
+
+    .content strong {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .callout,
+    .thesis {
+      background: linear-gradient(180deg, rgba(17,17,24,0.98), rgba(22,22,31,0.98));
+      border-left: 4px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      box-shadow: var(--shadow);
+      margin: 2rem 0;
     }
 
     .callout {
-      background: #eef3fc;
-      border-left: 4px solid #2d6ae0;
-      border-radius: 0 8px 8px 0;
       padding: 1rem 1.3rem;
-      margin: 1.8rem 0;
-      font-size: 1.05rem;
-      color: #1a3a6e;
+      font-size: 1.04rem;
+      color: #dbe8ff;
       font-style: italic;
-      line-height: 1.7;
+      line-height: 1.8;
     }
 
     .thesis {
-      background: #e8f0fb;
-      border-left: 4px solid #2d6ae0;
-      border-radius: 0 8px 8px 0;
-      padding: 1.1rem 1.3rem;
-      margin: 2rem 0;
-      font-size: 1.05rem;
+      padding: 1.1rem 1.35rem;
+      font-size: 1.08rem;
       font-weight: 700;
-      line-height: 1.7;
-      color: #183b72;
+      color: #ffffff;
+      line-height: 1.8;
     }
 
     .evolution {
-      border-left: 2px solid #ddd7cf;
+      border-left: 2px solid rgba(255,255,255,0.10);
       padding-left: 1.2rem;
-      margin: 1.5rem 0;
-      color: #444;
+      margin: 1.8rem 0;
     }
 
     .evolution p {
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.45rem;
+      color: var(--muted);
     }
 
     .closing {
-      font-size: 1.02rem;
+      font-size: 1.04rem;
       font-weight: 600;
-      color: #1c1c1c;
+      color: #ffffff;
       margin-top: 2rem;
     }
 
     .author-signoff {
       margin-top: 2rem;
-      font-size: 0.98rem;
-      color: #666;
+      font-size: 1rem;
+      color: var(--muted);
       font-style: italic;
+    }
+
+    @media (max-width: 700px) {
+      nav {
+        padding: 0 20px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .page-wrap {
+        padding: 40px 20px 80px;
+      }
+
+      .content p {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h1>About K9-AIF</h1>
-  <p class="subtitle">K9 Agentic Integration Framework</p>
-  <hr />
+  <nav>
+    <a class="nav-logo" href="https://k9aif.com/">
+      <span>K9-AIF</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="https://k9aif.com/">Home</a></li>
+      <li><a href="https://pydocs.k9aif.com/starthere/">Docs</a></li>
+      <li><a href="https://pydocs.k9aif.com/examples/">Examples</a></li>
+      <li><a href="https://blog.k9aif.com/" target="_blank" rel="noopener noreferrer">Blog</a></li>
+      <li><a href="https://pydocs.k9aif.com/about/">About</a></li>
+      <li><a class="nav-cta" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub →</a></li>
+    </ul>
+  </nav>
 
-  <p>
-    K9 Agentic Integration Framework (K9-AIF) did not begin as a grand architectural vision.
-    It began as a retrieval component — a focused capability designed to fetch the right
-    information, precisely and reliably, at enterprise scale.
-  </p>
+  <div class="page-wrap">
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-inner">
+        <div class="eyebrow">About</div>
+        <h1>About K9-AIF</h1>
+        <p class="subtitle">
+          K9 Agentic Integration Framework — the architectural path, intent, and thinking behind K9-AIF.
+        </p>
+      </div>
+    </section>
 
-  <div class="callout">
-    The name K9 stayed for a reason. It represents discipline, precision, and purpose —
-    not exploration for its own sake.
+    <section class="content">
+      <p>
+        K9 Agentic Integration Framework (K9-AIF) did not begin as a grand architectural vision.
+        It began as a retrieval component — a focused capability designed to fetch the right
+        information, precisely and reliably, at enterprise scale.
+      </p>
+
+      <div class="callout">
+        The name K9 stayed for a reason. It represents discipline, precision, and purpose —
+        not exploration for its own sake.
+      </div>
+
+      <p>
+        But retrieval exposed deeper questions: what governs what gets fetched, what determines
+        which agent should act, and when should a system act autonomously versus defer to a human?
+      </p>
+
+      <p>
+        Those questions were no longer just about retrieval. They were about control, structure,
+        orchestration, and governance.
+      </p>
+
+      <p>
+        Answering them required more than a component. It required architecture.
+      </p>
+
+      <p>
+        At that point, I began to draw on over three decades of experience in enterprise systems —
+        integration, service-oriented architecture (SOA), object-oriented analysis and design (OOA/OOD),
+        UML, and design patterns.
+      </p>
+
+      <p>
+        These disciplines were never just about building systems — they were about structuring
+        complexity, defining boundaries, managing interactions, and governing behavior.
+      </p>
+
+      <p>
+        Applying those same principles through a TOGAF-aligned architectural lens made it clear
+        that agentic AI systems require the same rigor. They need more than tools, models, and
+        agents. They need architecture building blocks, solution building blocks, governance
+        boundaries, orchestration layers, integration patterns, and decision frameworks.
+      </p>
+
+      <div class="thesis">
+        K9-AIF was not created to simply run agents — it was created to structure, govern, and integrate them.
+      </div>
+
+      <p>
+        That realization changed everything.
+      </p>
+
+      <p>
+        What began as a retrieval capability started to evolve into something broader: a structured
+        framework for architecting agentic AI systems in a disciplined, modular, and enterprise-aligned way.
+      </p>
+
+      <div class="evolution">
+        <p>The retrieval component evolved into a system.</p>
+        <p>The system evolved into a framework.</p>
+      </div>
+
+      <p class="closing">The name stayed — because it still means something.</p>
+
+      <p class="author-signoff">— Ravi Natarajan</p>
+    </section>
   </div>
-
-  <p>
-    But retrieval exposed deeper questions: what governs what gets fetched, what determines
-    which agent should act, and when should a system act autonomously versus defer to a human?
-  </p>
-
-  <p>
-    Those questions were no longer just about retrieval. They were about control, structure,
-    orchestration, and governance.
-  </p>
-
-  <p>
-    Answering them required more than a component. It required architecture.
-  </p>
-
-  <p>
-    At that point, I began to draw on over three decades of experience in enterprise systems —
-    integration, service-oriented architecture (SOA), object-oriented analysis and design (OOA/OOD),
-    UML, and design patterns.
-  </p>
-
-  <p>
-    These disciplines were never just about building systems — they were about structuring
-    complexity, defining boundaries, managing interactions, and governing behavior.
-  </p>
-
-  <p>
-    Applying those same principles through a TOGAF-aligned architectural lens made it clear
-    that agentic AI systems require the same rigor. They need more than tools, models, and
-    agents. They need architecture building blocks, solution building blocks, governance
-    boundaries, orchestration layers, integration patterns, and decision frameworks.
-  </p>
-
-  <div class="thesis">
-    K9-AIF was not created to simply run agents — it was created to structure, govern, and integrate them.
-  </div>
-
-  <p>
-    That realization changed everything.
-  </p>
-
-  <p>
-    What began as a retrieval capability started to evolve into something broader: a structured
-    framework for architecting agentic AI systems in a disciplined, modular, and enterprise-aligned way.
-  </p>
-
-  <div class="evolution">
-    <p>The retrieval component evolved into a system.</p>
-    <p>The system evolved into a framework.</p>
-  </div>
-
-  <p class="closing">The name stayed — because it still means something.</p>
-  
-  <p class="author-signoff">— Ravi Natarajan</p>
 
 </body>
 </html>
