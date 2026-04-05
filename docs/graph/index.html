@@ -177,6 +177,11 @@
       text-decoration: underline;
     }
 
+    .diagram {
+      text-align: center;
+      margin-top: 20px;
+    }
+
     @media (max-width: 720px) {
       .wrapper {
         padding: 28px 18px 64px;
@@ -277,23 +282,8 @@
       </div>
     </div>
 
-    <div class="flow-box">
-      <h3>Current Highlight: K9-AIF Runtime Backbone</h3>
-      <div class="flow">
-BaseRouter
-   ↓ ROUTES_TO
-BaseOrchestrator
-   ↓ COORDINATES
-BaseSquad
-   ↓ MANAGES
-BaseAgent
-   ↓ REQUESTS_MODEL
-ModelRouterFactory
-   ↓ CREATES
-K9ModelRouter
-   ↓ USES_FACTORY
-LLMFactory
-      </div>
+   <div class="diagram">
+      <img src="diagrams/k9-graph-flow-colorful.png" alt="Current Highlight: K9-AIF Runtime Backbone"/>
     </div>
 
     <p class="footer-note">
