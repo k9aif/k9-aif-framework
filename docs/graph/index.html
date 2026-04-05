@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF Graph Explorer</title>
+  <meta name="description" content="K9-AIF Architecture Graph Explorer - curated architecture views of the K9-AIF framework." />
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --panel: #141b2d;
+      --panel-2: #101726;
+      --border: #2a3653;
+      --text: #f5f7fb;
+      --muted: #c6d0e1;
+      --muted-2: #98a6c0;
+      --accent: #8ab4ff;
+      --accent-2: #7c5cff;
+      --success: #56d364;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(124,92,255,0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(138,180,255,0.16), transparent 28%),
+        linear-gradient(180deg, #0b0f19 0%, #0a0e17 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .wrapper {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 42px 24px 80px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 32px 16px 26px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 7px 14px;
+      border: 1px solid rgba(138,180,255,0.25);
+      border-radius: 999px;
+      background: rgba(138,180,255,0.08);
+      color: var(--accent);
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 3.2rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      max-width: 860px;
+      margin: 18px auto 0;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .status {
+      margin-top: 18px;
+      color: var(--success);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .section-title {
+      margin: 48px 0 18px;
+      font-size: 1.2rem;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 22px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(20,27,45,0.98), rgba(16,23,38,0.98));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 20px 20px;
+      box-shadow: var(--shadow);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      min-height: 245px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(138,180,255,0.42);
+      box-shadow: 0 14px 36px rgba(0,0,0,0.45);
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .mini-flow {
+      margin-top: 16px;
+      font-size: 0.92rem;
+      line-height: 1.8;
+      color: var(--muted-2);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 14px;
+    }
+
+    .flow-box {
+      margin-top: 18px;
+      background: linear-gradient(180deg, rgba(16,23,38,0.92), rgba(11,15,25,0.92));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .flow-box h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+
+    .flow {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.98rem;
+      line-height: 2;
+      color: #d7e3ff;
+      white-space: pre-wrap;
+    }
+
+    .footer-note {
+      margin-top: 34px;
+      text-align: center;
+      color: var(--muted-2);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .footer-note a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-note a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 720px) {
+      .wrapper {
+        padding: 28px 18px 64px;
+      }
+
+      .card {
+        min-height: auto;
+      }
+
+      .hero p {
+        font-size: 1rem;
+      }
+
+      .flow {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <section class="hero">
+      <div class="eyebrow">K9-AIF • Architecture Explorer</div>
+      <h1>K9-AIF Graph Explorer</h1>
+      <p>
+        A curated architecture view of the <strong>K9-AIF</strong> framework, backed by a Neo4j knowledge graph.
+        This explorer highlights the runtime flow, inference architecture, execution layer, supporting services,
+        and framework contracts that shape K9-AIF as an architecture-first agentic AI framework.
+      </p>
+      <div class="status">● Interactive graph-backed experiences are in progress</div>
+    </section>
+
+    <h2 class="section-title">Curated Architecture Views</h2>
+    <div class="grid">
+      <div class="card">
+        <div>
+          <h2>Runtime Flow</h2>
+          <p>
+            Understand how requests move through K9-AIF at runtime — from routing and orchestration
+            to agents, model selection, and inference execution.
+          </p>
+          <div class="mini-flow">
+            BaseRouter → BaseOrchestrator → BaseAgent → ModelRouterFactory → K9ModelRouter → LLMFactory
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h2>Inference Architecture</h2>
+          <p>
+            Explore how K9-AIF separates model routing, inference abstraction, and model provisioning
+            through factory and router patterns.
+          </p>
+          <div class="mini-flow">
+            ModelRouterFactory → K9ModelRouter / DefaultModelRouter → BaseModelRouter → LLMFactory
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h2>Execution Layer</h2>
+          <p>
+            See how routers, orchestrators, squads, and agents work together to coordinate execution
+            across the K9-AIF framework.
+          </p>
+          <div class="mini-flow">
+            BaseRouter → BaseOrchestrator → FrameworkOrchestrator → BaseAgent
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h2>Supporting Services</h2>
+          <p>
+            View the persistence, queueing, retrieval, and monitoring components that support the
+            broader execution lifecycle in K9-AIF.
+          </p>
+          <div class="mini-flow">
+            BasePersistence / BaseQueue / BaseRetriever / BaseMonitor
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h2>Framework Contracts</h2>
+          <p>
+            Inspect the base contracts and implementation relationships that define how K9-AIF stays
+            extensible, modular, and architecture-driven.
+          </p>
+          <div class="mini-flow">
+            Base classes → implementation classes → semantic runtime relationships
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-box">
+      <h3>Current Highlight: K9-AIF Runtime Backbone</h3>
+      <div class="flow">
+BaseRouter
+   ↓ ROUTES_TO
+BaseOrchestrator
+   ↓ COORDINATES
+BaseAgent
+   ↓ REQUESTS_MODEL_ROUTING
+ModelRouterFactory
+   ↓ CREATES
+K9ModelRouter
+   ↓ USES_FACTORY
+LLMFactory
+      </div>
+    </div>
+
+    <p class="footer-note">
+      This site is an evolving architecture companion for the K9-AIF framework.
+      Future versions will include curated, interactive graph views powered by Neo4j.
+      <br /><br />
+      Learn more at <a href="https://k9aif.com" target="_blank" rel="noopener noreferrer">k9aif.com</a>
+      and <a href="https://pydocs.k9aif.com" target="_blank" rel="noopener noreferrer">pydocs.k9aif.com</a>.
+    </p>
+  </div>
+</body>
+</html>
