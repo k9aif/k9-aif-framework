@@ -3,231 +3,588 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Examples | K9-AIF</title>
+  <title>Examples — K9-AIF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
   <style>
-    body {
-      font-family: Georgia, "Times New Roman", serif;
-      max-width: 920px;
-      margin: 0 auto;
-      padding: 60px 28px;
-      line-height: 1.8;
-      color: #1c1c1c;
-      background: #f8f7f4;
+    :root {
+      --bg: #09090f;
+      --surface: #111118;
+      --surface2: #16161f;
+      --border: rgba(255,255,255,0.07);
+      --border-accent: rgba(99,168,255,0.25);
+      --text: #e8e8f0;
+      --muted: #8a90c0;
+      --accent: #63a8ff;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --glow: rgba(99,168,255,0.12);
+      --card-shadow: 0 12px 30px rgba(0,0,0,0.22);
     }
 
-    h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      color: #1c1c1c;
-    }
-
-    .subtitle {
-      font-size: 1rem;
-      color: #777;
-      margin-bottom: 2rem;
-    }
-
-    hr {
-      border: none;
-      border-top: 3px solid #2d6ae0;
-      margin: 0 0 2.5rem 0;
-    }
-
-    p {
-      margin-bottom: 1.25rem;
-      font-size: 1.02rem;
-    }
-
-    .example-card {
-      background: #eef3fc;
-      border-left: 4px solid #2d6ae0;
-      border-radius: 0 8px 8px 0;
-      padding: 1rem 1.3rem;
-      margin: 1.5rem 0;
-    }
-
-    .example-card h2 {
-      margin: 0 0 0.4rem 0;
-      font-size: 1.2rem;
-      color: #1a3a6e;
-    }
-
-    .example-card p {
-      margin: 0.6rem 0;
-      color: #1c1c1c;
-    }
-
-    .example-card ul {
-      margin: 0.75rem 0 0.5rem 1.2rem;
+    * {
+      box-sizing: border-box;
+      margin: 0;
       padding: 0;
     }
 
-    .example-card li {
-      margin-bottom: 0.35rem;
+    html {
+      scroll-behavior: smooth;
     }
 
-    .example-card a {
-      display: inline-block;
-      margin-top: 0.6rem;
-      color: #2d6ae0;
-      font-weight: 600;
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      font-weight: 400;
+      line-height: 1.8;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      padding-top: 60px;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(9, 9, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
     }
 
-    .example-card a:hover {
+    .nav-logo span {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.15rem;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .nav-cta {
+      background: var(--accent);
+      color: #09090f !important;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-weight: 600 !important;
+    }
+
+    .page-wrap {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 48px 28px 100px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 30px 0 36px;
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 760px;
+      height: 420px;
+      background: radial-gradient(ellipse at center, rgba(99,168,255,0.09) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-family: "DM Serif Display", serif;
+      font-size: clamp(2.6rem, 5vw, 4rem);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 1rem;
+      text-wrap: balance;
+    }
+
+    .hero-subtitle {
+      font-size: 1.12rem;
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0 auto 2rem;
+      line-height: 1.85;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 1.2rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: transform 0.2s, opacity 0.2s, border-color 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #09090f;
+    }
+
+    .btn-primary:hover,
+    .btn-secondary:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .section-intro {
+      max-width: 920px;
+      margin: 0 auto 2.5rem;
+      text-align: left;
+      background: linear-gradient(180deg, rgba(17,17,24,0.95), rgba(22,22,31,0.95));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 24px 20px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .section-intro p {
+      font-size: 1.02rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      line-height: 1.85;
+    }
+
+    .section-intro p:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-intro strong {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-top: 1rem;
+    }
+
+    .example-card {
+      background: linear-gradient(180deg, rgba(17,17,24,0.98), rgba(22,22,31,0.98));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 22px 20px;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .example-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-accent);
+      background: linear-gradient(180deg, rgba(22,22,31,1), rgba(24,24,36,1));
+    }
+
+    .example-card-header {
+      margin-bottom: 0.9rem;
+    }
+
+    .example-card-tag {
+      display: inline-block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .example-card h2 {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.45rem;
+      line-height: 1.2;
+      color: #fff;
+      margin: 0;
+    }
+
+    .example-card p {
+      font-size: 0.98rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+
+    .example-card strong {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 0.2rem 0 1.1rem;
+      padding: 0;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .feature-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .feature-list strong {
+      color: #fff;
+    }
+
+    .card-actions {
+      margin-top: auto;
+      padding-top: 0.8rem;
+    }
+
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .card-link:hover {
       text-decoration: underline;
     }
 
     .run-box {
-      background: #f1f3f7;
-      border: 1px solid #d7dde8;
-      border-radius: 10px;
-      padding: 1.2rem 1.4rem;
-      margin: 2rem 0;
+      margin-top: 32px;
+      background: linear-gradient(180deg, rgba(17,17,24,0.98), rgba(22,22,31,0.98));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--card-shadow);
     }
 
     .run-box h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      color: #1c1c1c;
+      font-family: "DM Serif Display", serif;
+      font-size: 1.6rem;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 0.8rem;
+    }
+
+    .run-box p {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.8;
+      margin-bottom: 1rem;
     }
 
     pre {
-      background: #1f2937;
-      color: #f9fafb;
+      background: #0d1118;
+      color: #f4f7ff;
+      border: 1px solid rgba(255,255,255,0.06);
       padding: 1rem 1.2rem;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow-x: auto;
       font-size: 0.95rem;
-      line-height: 1.6;
+      line-height: 1.7;
+      margin: 1rem 0 1.2rem;
     }
 
     code {
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-family: "JetBrains Mono", monospace;
     }
 
     .closing {
       margin-top: 2.5rem;
       font-size: 1rem;
-      color: #444;
+      color: var(--muted);
+      line-height: 1.9;
+      max-width: 920px;
+    }
+
+    .closing strong {
+      color: #fff;
+    }
+
+    @media (max-width: 700px) {
+      nav {
+        padding: 0 20px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .page-wrap {
+        padding: 36px 20px 80px;
+      }
+
+      .section-intro,
+      .run-box,
+      .example-card {
+        padding: 20px 18px;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-
-  <h1>Examples</h1>
-  <p class="subtitle">K9-AIF Framework</p>
-  <hr />
-
-  <p>
-    This section contains example applications built using the <strong>K9-AIF Framework</strong>.
-    These examples are intended to show how K9-AIF can be applied to practical, domain-oriented
-    AI systems while preserving architectural structure, modularity, and governance.
-  </p>
-
-  <p>
-    Together, they demonstrate how K9-AIF uses stable <strong>Architecture Building Blocks (ABB)</strong>
-    to host configurable <strong>Solution Building Blocks (SBB)</strong>, including routing,
-    orchestration, squads, agent behaviors, model abstraction, and domain workflows.
-  </p>
-
-  <div class="example-card">
-    <h2>ACME Support Center</h2>
-    <p>
-      An enterprise-style support workflow example built on the <strong>K9-AIF Framework</strong>.
-    </p>
-    <p>
-      ACME Support Center demonstrates how K9-AIF can structure a customer-facing support system
-      using specialized agents, configurable reasoning behaviors, and stable framework architecture.
-    </p>
-    <ul>
-      <li><strong>Router → Orchestrator → Squad → Agent</strong> execution flow</li>
-      <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
-      <li>configurable reasoning patterns such as <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and <strong>multi-agent collaboration</strong></li>
-      <li>clear separation between <strong>Architecture Building Blocks (ABB)</strong> and <strong>Solution Building Blocks (SBB)</strong></li>
-      <li>squad-based specialization across support roles</li>
-      <li>runtime logging and observability through K9-AIF framework logging</li>
-    </ul>
-    <p>
-      This example is a strong reference implementation of how K9-AIF can support modular,
-      enterprise-oriented multi-agent service architectures.
-    </p>
-    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
-      View Code &amp; Documentation →
+  <nav>
+    <a class="nav-logo" href="https://k9aif.com/">
+      <span>K9-AIF</span>
     </a>
-  </div>
-
-  <div class="example-card">
-    <h2>K9Chat</h2>
-    <p>
-      A lightweight browser-based chat example built on the <strong>K9-AIF Framework</strong>.
-    </p>
-    <p>
-      K9Chat demonstrates how a simple chat experience can be implemented using K9-AIF building
-      blocks while remaining configuration-driven and model-provider agnostic.
-    </p>
-    <ul>
-      <li><strong>Squad + Agent</strong> execution pattern</li>
-      <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
-      <li>default <strong>K9ModelRouter</strong> routing behavior</li>
-      <li>integration with configurable LLM providers such as <strong>Ollama</strong></li>
-      <li>default <strong>SQLite-backed router state persistence</strong></li>
-      <li>browser-based interaction with runtime metadata display</li>
+    <ul class="nav-links">
+      <li><a href="https://k9aif.com/">Home</a></li>
+      <li><a href="https://pydocs.k9aif.com/starthere/">Docs</a></li>
+      <li><a href="https://pydocs.k9aif.com/examples/">Examples</a></li>
+      <li><a href="https://blog.k9aif.com/">Blog</a></li>
+      <li><a href="https://pydocs.k9aif.com/about/">About</a></li>
+      <li><a class="nav-cta" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub →</a></li>
     </ul>
-    <p>
-      This example serves as a clean starting point for understanding how K9-AIF separates agent
-      logic, routing, inference configuration, persistence, and UI integration.
-    </p>
-    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
-      View Code &amp; Documentation →
-    </a>
-  </div>
+  </nav>
 
-  <div class="example-card">
-    <h2>ACME Health Insurance Claims</h2>
-    <p>
-      A domain-oriented example showing how K9-AIF can support structured, document-heavy,
-      workflow-driven enterprise scenarios.
-    </p>
-    <ul>
-      <li>claims-related workflow structure</li>
-      <li>intake and document-processing patterns</li>
-      <li>domain-specific orchestration</li>
-      <li>extensible enterprise solution design aligned to real business processes</li>
-      <li>modular AI solution composition using K9-AIF concepts</li>
-    </ul>
-    <p>
-      This example reflects how K9-AIF can be applied in business domains where architecture,
-      modularity, and workflow structure matter more than a single prompt-response interaction.
-    </p>
-    <a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
-      View Code &amp; Documentation →
-    </a>
-  </div>
+  <div class="page-wrap">
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-inner">
+        <div class="eyebrow">Reference Applications</div>
+        <h1>Examples built with K9-AIF</h1>
+        <p class="hero-subtitle">
+          Practical demos showing how K9-AIF structures routing, orchestration, squads, agents,
+          model abstraction, and domain workflows in real AI applications.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples" target="_blank" rel="noopener noreferrer">View Examples on GitHub</a>
+          <a class="btn-secondary" href="https://pydocs.k9aif.com/starthere/">Start Here</a>
+        </div>
+      </div>
+    </section>
 
-  <div class="run-box">
-    <h2>How to Run the Examples</h2>
-    <p>
-      From the root of the <code>k9-aif-framework</code> repository, the included shell scripts can be used
-      to quickly launch selected examples.
-    </p>
+    <section class="section-intro">
+      <p>
+        These examples show how the <strong>K9-AIF Framework</strong> can be applied to practical,
+        domain-oriented AI systems while preserving architectural structure, modularity, and governance.
+      </p>
+      <p>
+        Together, they demonstrate how K9-AIF uses stable <strong>Architecture Building Blocks (ABB)</strong>
+        to host configurable <strong>Solution Building Blocks (SBB)</strong>, including routing,
+        orchestration, squads, agent behaviors, model abstraction, and domain workflows.
+      </p>
+    </section>
 
-    <pre><code>./run_k9chat.sh
+    <section class="examples-grid">
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Featured Example</div>
+          <h2>ACME Support Center</h2>
+        </div>
+
+        <p>
+          An enterprise-style support workflow example built on the <strong>K9-AIF Framework</strong>.
+        </p>
+
+        <p>
+          ACME Support Center demonstrates how K9-AIF can structure a customer-facing support system
+          using specialized agents, configurable reasoning behaviors, and stable framework architecture.
+        </p>
+
+        <ul class="feature-list">
+          <li><strong>Router → Orchestrator → Squad → Agent</strong> execution flow</li>
+          <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
+          <li>Configurable reasoning patterns such as <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and <strong>multi-agent collaboration</strong></li>
+          <li>Clear separation between <strong>Architecture Building Blocks (ABB)</strong> and <strong>Solution Building Blocks (SBB)</strong></li>
+          <li>Squad-based specialization across support roles</li>
+          <li>Runtime logging and observability through K9-AIF framework logging</li>
+        </ul>
+
+        <p>
+          This example is a strong reference implementation of how K9-AIF can support modular,
+          enterprise-oriented multi-agent service architectures.
+        </p>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Lightweight Demo</div>
+          <h2>K9Chat</h2>
+        </div>
+
+        <p>
+          A lightweight browser-based chat example built on the <strong>K9-AIF Framework</strong>.
+        </p>
+
+        <p>
+          K9Chat demonstrates how a simple chat experience can be implemented using K9-AIF building
+          blocks while remaining configuration-driven and model-provider agnostic.
+        </p>
+
+        <ul class="feature-list">
+          <li><strong>Squad + Agent</strong> execution pattern</li>
+          <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
+          <li>Default <strong>K9ModelRouter</strong> routing behavior</li>
+          <li>Integration with configurable LLM providers such as <strong>Ollama</strong></li>
+          <li>Default <strong>SQLite-backed router state persistence</strong></li>
+          <li>Browser-based interaction with runtime metadata display</li>
+        </ul>
+
+        <p>
+          This example serves as a clean starting point for understanding how K9-AIF separates agent
+          logic, routing, inference configuration, persistence, and UI integration.
+        </p>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Domain Workflow</div>
+          <h2>ACME Health Insurance Claims</h2>
+        </div>
+
+        <p>
+          A domain-oriented example showing how K9-AIF can support structured, document-heavy,
+          workflow-driven enterprise scenarios.
+        </p>
+
+        <ul class="feature-list">
+          <li>Claims-related workflow structure</li>
+          <li>Intake and document-processing patterns</li>
+          <li>Domain-specific orchestration</li>
+          <li>Extensible enterprise solution design aligned to real business processes</li>
+          <li>Modular AI solution composition using K9-AIF concepts</li>
+        </ul>
+
+        <p>
+          This example reflects how K9-AIF can be applied in business domains where architecture,
+          modularity, and workflow structure matter more than a single prompt-response interaction.
+        </p>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+    </section>
+
+    <section class="run-box">
+      <h2>How to run the examples</h2>
+      <p>
+        From the root of the <code>k9-aif-framework</code> repository, the included shell scripts can be
+        used to quickly launch selected examples.
+      </p>
+
+      <pre><code>./run_k9chat.sh
 ./run_model_router.sh
 ./run_acme_support_center.sh</code></pre>
 
-    <p>
-      For deeper implementation details, class diagrams, and example-specific documentation,
-      use the links above to open the corresponding example folders in the repository.
+      <p>
+        For deeper implementation details, class diagrams, and example-specific documentation,
+        use the links above to open the corresponding example folders in the repository.
+      </p>
+    </section>
+
+    <p class="closing">
+      These examples are intentionally practical. They are not intended to be full production products
+      out of the box, but to demonstrate how K9-AIF can be used as an
+      <strong>architecture-first framework</strong> for building modular, governed, and extensible AI applications.
     </p>
   </div>
-
-  <p class="closing">
-    These examples are intentionally practical. They are not intended to be full production products
-    out of the box, but to demonstrate how K9-AIF can be used as an architecture-first framework for
-    building modular, governed, and extensible AI applications.
-  </p>
-
 </body>
 </html>
