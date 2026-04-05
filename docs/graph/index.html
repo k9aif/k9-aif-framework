@@ -245,7 +245,7 @@
             across the K9-AIF framework.
           </p>
           <div class="mini-flow">
-            BaseRouter → BaseOrchestrator → FrameworkOrchestrator → BaseAgent
+            BaseRouter → BaseOrchestrator → FrameworkOrchestrator → BaseSquad → BaseAgent
           </div>
         </div>
       </div>
@@ -284,8 +284,10 @@ BaseRouter
    ↓ ROUTES_TO
 BaseOrchestrator
    ↓ COORDINATES
+BaseSquad
+   ↓ MANAGES
 BaseAgent
-   ↓ REQUESTS_MODEL_ROUTING
+   ↓ REQUESTS_MODEL
 ModelRouterFactory
    ↓ CREATES
 K9ModelRouter
