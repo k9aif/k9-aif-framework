@@ -1,13 +1,13 @@
 :root{
   --bg:#f7f7f7;
   --panel:#ffffff;
-  --panel2:#f3f4f6;
-  --text:#333333;
-  --muted:#5f6b7a;
-  --line:#dddddd;
-  --accent:#0a58ca;
+  --panel2:#ffffff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --line:#e5e7eb;
+  --accent:#2563eb;
   --accent2:#1d4ed8;
-  --sidebar:290px;
+  --sidebar:270px;
 }
 
 *{box-sizing:border-box}
@@ -157,9 +157,10 @@ a:hover{
 }
 
 .content{
-  max-width:980px;
-  margin:0 auto;
-  padding:40px 38px 70px;
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:24px 24px 60px 28px;
   min-width:0;
 }
 
