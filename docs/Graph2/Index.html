@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF Graph Navigator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #050a14; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0a0f1e; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+    button { cursor: pointer; transition: opacity 0.2s; }
+    button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useRef, useCallback } = React;
+const e = React.createElement;
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const ARCH_DOMAINS = [
+{ id: “k9_core”,         label: “k9_core”,         role: “Foundation”,   color: “#00d4ff”, description: “Base abstractions: Agent, LLM, Governance, Orchestration, Connectors, Persistence, UI” },
+{ id: “k9_agents”,       label: “k9_agents”,       role: “ABB Layer”,    color: “#7c3aed”, description: “Concrete ABB implementations: Chat, Async, Enrichment, Routing, Security, Storage, IoT, Messaging, Web” },
+{ id: “k9_inference”,    label: “k9_inference”,    role: “Inference”,    color: “#f59e0b”, description: “Model routing: BaseModelRouter, K9ModelRouter, DefaultModelRouter, ModelCatalog, InferenceRequest/Response” },
+{ id: “k9_orchestrators”,label: “k9_orchestrators”,role: “Orchestration”,color: “#10b981”, description: “Framework, Governance, Diagnostic, LiveAgent orchestrators + OrchestratorRegistry” },
+{ id: “k9_factories”,    label: “k9_factories”,    role: “Factory”,      color: “#f43f5e”, description: “Factory wiring for LLM, Connector, Governance, Router, Persistence, Monitor, Streaming, Security” },
+{ id: “k9_governance”,   label: “k9_governance”,   role: “Governance”,   color: “#8b5cf6”, description: “Governance rules: ProfanityGovernance extends BaseGovernance” },
+{ id: “k9_monitoring”,   label: “k9_monitoring”,   role: “Observability”,color: “#06b6d4”, description: “OTel, Prometheus, CloudWatch, Console monitors extending BaseMonitor” },
+{ id: “k9_persistence”,  label: “k9_persistence”,  role: “Persistence”,  color: “#84cc16”, description: “ChromaDB, SQLite persistence extending BasePersistence” },
+{ id: “k9_storage”,      label: “k9_storage”,      role: “Storage”,      color: “#fb923c”, description: “File, Object, Database (Postgres, SQLite) storage + RoutingStateStore” },
+{ id: “k9_mcp”,          label: “k9_mcp”,          role: “MCP”,          color: “#e879f9”, description: “MCP server layer: MCPInferenceServer, BaseMCPServer” },
+{ id: “k9_squad”,        label: “k9_squad”,        role: “Squad”,        color: “#34d399”, description: “Squad construct: BaseSquad, SquadContext, SquadLoader, SquadMonitor” },
+{ id: “k9_data”,         label: “k9_data”,         role: “Data”,         color: “#60a5fa”, description: “BaseVectorDB, VectorDBFactory, K9Retriever extending BaseRetriever” },
+{ id: “k9_utils”,        label: “k9_utils”,        role: “Utils”,        color: “#fbbf24”, description: “Config, logging, OCR, XML/JSON transformers, K9 ASCII, inspector” },
+];
+
+const ARCH_LINKS = [
+{ source: “k9_agents”,        target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_inference”,     target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_orchestrators”, target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_governance”,    target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_monitoring”,    target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_persistence”,   target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_storage”,       target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_mcp”,           target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_data”,          target: “k9_core”,        type: “EXTENDS” },
+{ source: “k9_factories”,     target: “k9_inference”,   type: “WIRES” },
+{ source: “k9_factories”,     target: “k9_core”,        type: “WIRES” },
+{ source: “k9_factories”,     target: “k9_governance”,  type: “WIRES” },
+{ source: “k9_factories”,     target: “k9_monitoring”,  type: “WIRES” },
+{ source: “k9_factories”,     target: “k9_persistence”, type: “WIRES” },
+{ source: “k9_factories”,     target: “k9_storage”,     type: “WIRES” },
+{ source: “k9_orchestrators”, target: “k9_agents”,      type: “USES” },
+{ source: “k9_orchestrators”, target: “k9_inference”,   type: “USES” },
+{ source: “k9_orchestrators”, target: “k9_governance”,  type: “USES” },
+{ source: “k9_squad”,         target: “k9_orchestrators”,type: “USES” },
+{ source: “k9_squad”,         target: “k9_monitoring”,  type: “USES” },
+{ source: “k9_agents”,        target: “k9_data”,        type: “USES” },
+{ source: “k9_agents”,        target: “k9_mcp”,         type: “USES” },
+{ source: “k9_utils”,         target: “k9_core”,        type: “SUPPORTS” },
+];
+
+const CODE_PACKAGES = {
+k9_core: { color: “#00d4ff”, modules: {
+“k9_core.agent”:        { classes: [“BaseAgent”,“BaseMCPAgent”] },
+“k9_core.inference”:    { classes: [“BaseLLM”,“MockLLM”,“OllamaLLM”] },
+“k9_core.orchestration”:{ classes: [“Handler”,“AgentHandler”,“BaseOrchestrator”] },
+“k9_core.governance”:   { classes: [“BaseGovernance”,“BaseRulesAgent”,“NoopGovernance”] },
+“k9_core.messaging”:    { classes: [“BaseMessageAgent”,“BaseQueue”,“LocalQueue”,“K9EventBus”] },
+“k9_core.monitoring”:   { classes: [“BaseMonitor”,“LoggerMonitor”,“MonitorServer”] },
+“k9_core.persistence”:  { classes: [“BasePersistence”,“MemoryPersistence”] },
+“k9_core.integration”:  { classes: [“BaseConnector”,“MCPClientConnector”,“MCPHttpConnector”,“MCPStdioConnector”] },
+“k9_core.router”:       { classes: [“BaseRouter”] },
+“k9_core.retrieval”:    { classes: [“BaseRetriever”,“BaseDocParser”] },
+“k9_core.storage”:      { classes: [“BaseStorage”] },
+“k9_core.presentation”: { classes: [“BaseUI”,“ConsoleUI”] },
+“k9_core.iot”:          { classes: [“BaseIoTAgent”] },
+“k9_core.logging”:      { classes: [“BaseLoggingAgent”] },
+“k9_core.streaming”:    { classes: [“BaseStreamProvider”,“RedpandaStreamProvider”] },
+}},
+k9_agents: { color: “#7c3aed”, modules: {
+“k9_agents.chat”:        { classes: [“ChatAgentABB”] },
+“k9_agents.async_agent”: { classes: [“AsyncAgent”] },
+“k9_agents.enrichment”:  { classes: [“EnrichmentAgent”] },
+“k9_agents.router”:      { classes: [“RouterAgent”] },
+“k9_agents.security”:    { classes: [“AuthAgent”,“EncryptionAgent”,“SecretManagerAgent”] },
+“k9_agents.storage”:     { classes: [“FileStorageAgent”,“ObjectStorageAgent”,“StorageAgent”] },
+“k9_agents.messaging”:   { classes: [“KafkaAgent”,“MessageAgent”,“QueueMessageAgent”,“SQSAgent”,“TopicMessageAgent”] },
+“k9_agents.logging”:     { classes: [“CloudLoggingAgent”,“ConsoleLoggingAgent”,“FileLoggingAgent”] },
+“k9_agents.integration”: { classes: [“BaseConnector”,“MCPClientAgent”] },
+“k9_agents.iot”:         { classes: [“MQTTAgent”] },
+“k9_agents.retrieval”:   { classes: [“DoclingParser”] },
+“k9_agents.web”:         { classes: [“WebSearchAgent”] },
+“k9_agents.governance”:  { classes: [“GovernanceAgent”] },
+“k9_agents.formatters”:  { classes: [“WebFormatterAgent”] },
+“k9_agents.presentation”:{ classes: [“WebUI”] },
+“k9_agents.registry”:    { classes: [“AgentRegistry”] },
+}},
+k9_inference: { color: “#f59e0b”, modules: {
+“k9_inference.routers”: { classes: [“BaseModelRouter”,“DefaultModelRouter”,“K9ModelRouter”] },
+“k9_inference.catalog”: { classes: [“ModelCatalog”] },
+“k9_inference.models”:  { classes: [“InferenceRequest”,“InferenceResponse”,“RouteDecision”] },
+}},
+k9_orchestrators: { color: “#10b981”, modules: {
+“k9_orchestrators”:          { classes: [“FrameworkOrchestrator”,“GovernanceOrchestrator”,“DiagnosticOrchestrator”,“LiveAgentOrchestrator”] },
+“k9_orchestrators.registry”: { classes: [“OrchestratorRegistry”] },
+}},
+k9_factories: { color: “#f43f5e”, modules: {
+“k9_factories”: { classes: [“LLMFactory”,“ModelRouterFactory”,“ConnectorFactory”,“GovernanceFactory”,“OrchestrationFactory”,“PersistenceFactory”,“RouterFactory”,“SecurityFactory”,“StreamingFactory”,“MonitorFactory”,“MessageFactory”,“RetrieverFactory”] },
+}},
+k9_monitoring: { color: “#06b6d4”, modules: {
+“k9_monitoring”: { classes: [“OTelMonitor”,“PrometheusMonitor”,“CloudWatchMonitor”,“ConsoleMonitor”,“MonitorServer”] },
+}},
+k9_persistence: { color: “#84cc16”, modules: {
+“k9_persistence”: { classes: [“ChromaDBPersistence”,“SQLitePersistence”] },
+}},
+k9_storage: { color: “#fb923c”, modules: {
+“k9_storage”: { classes: [“LocalFileStorage”,“BaseObjectStorage”,“BaseDatabaseStorage”,“PostgresDatabaseStorage”,“SQLiteDatabaseStorage”,“RoutingStateStore”] },
+}},
+k9_mcp: { color: “#e879f9”, modules: {
+“k9_mcp”:         { classes: [“MCPInferenceServer”] },
+“k9_mcp.servers”: { classes: [“BaseMCPServer”] },
+}},
+k9_squad: { color: “#34d399”, modules: {
+“k9_squad”: { classes: [“BaseSquad”,“SquadContext”,“SquadLoader”,“DefaultSquadMonitor”] },
+}},
+k9_data: { color: “#60a5fa”, modules: {
+“k9_data”:          { classes: [“BaseVectorDB”,“VectorDBFactory”] },
+“k9_data.retrieval”:{ classes: [“K9Retriever”] },
+}},
+k9_governance: { color: “#8b5cf6”, modules: {
+“k9_governance”: { classes: [“ProfanityGovernance”] },
+}},
+k9_utils: { color: “#fbbf24”, modules: {
+“k9_utils”: { classes: [“FrameworkLogger”,”_BaseDataTransformer”,“JsonToXmlDataTransformer”,“XmlToJsonDataTransformer”] },
+}},
+};
+
+// ─── Architecture Graph ───────────────────────────────────────────────────────
+
+function ArchGraph({ onNodeSelect }) {
+const svgRef = useRef(null);
+
+useEffect(() => {
+const el = svgRef.current;
+if (!el) return;
+const W = el.clientWidth || 900;
+const H = el.clientHeight || 600;
+d3.select(el).selectAll(”*”).remove();
+
+```
+const svg = d3.select(el).attr("viewBox", `0 0 ${W} ${H}`);
+const defs = svg.append("defs");
+
+const gf = defs.append("filter").attr("id", "ag-glow");
+gf.append("feGaussianBlur").attr("stdDeviation", "4").attr("result", "cb");
+const fm = gf.append("feMerge");
+fm.append("feMergeNode").attr("in", "cb");
+fm.append("feMergeNode").attr("in", "SourceGraphic");
+
+const linkColors = { EXTENDS: "#00d4ff", WIRES: "#f43f5e", USES: "#10b981", SUPPORTS: "#fbbf24" };
+Object.entries(linkColors).forEach(([type, color]) => {
+  defs.append("marker")
+    .attr("id", `ag-arrow-${type}`)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 30).attr("refY", 0)
+    .attr("markerWidth", 6).attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path").attr("d", "M0,-5L10,0L0,5").attr("fill", color).attr("opacity", 0.7);
+});
+
+const nodes = ARCH_DOMAINS.map(d => ({ ...d }));
+const links = ARCH_LINKS.map(l => ({ ...l }));
+
+const sim = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(130).strength(0.4))
+  .force("charge", d3.forceManyBody().strength(-600))
+  .force("center", d3.forceCenter(W / 2, H / 2))
+  .force("collision", d3.forceCollide(62));
+
+const g = svg.append("g");
+svg.call(d3.zoom().scaleExtent([0.3, 3]).on("zoom", ev => g.attr("transform", ev.transform)));
+
+const link = g.append("g").selectAll("line").data(links).join("line")
+  .attr("stroke", d => linkColors[d.type] || "#555")
+  .attr("stroke-width", 1.5)
+  .attr("stroke-opacity", 0.4)
+  .attr("stroke-dasharray", d => d.type === "WIRES" ? "4,3" : d.type === "SUPPORTS" ? "2,4" : "none")
+  .attr("marker-end", d => `url(#ag-arrow-${d.type})`);
+
+const node = g.append("g").selectAll("g").data(nodes).join("g")
+  .style("cursor", "pointer")
+  .call(d3.drag()
+    .on("start", (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on("drag",  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+    .on("end",   (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+  )
+  .on("click", (ev, d) => { ev.stopPropagation(); onNodeSelect(d); });
+
+node.append("circle").attr("r", 34).attr("fill", "none")
+  .attr("stroke", d => d.color).attr("stroke-width", 1).attr("stroke-opacity", 0.25)
+  .attr("filter", "url(#ag-glow)");
+
+node.append("circle").attr("r", 26)
+  .attr("fill", d => d.color + "22")
+  .attr("stroke", d => d.color).attr("stroke-width", 2)
+  .attr("filter", "url(#ag-glow)");
+
+node.append("text").attr("y", -36).attr("text-anchor", "middle")
+  .attr("fill", d => d.color).attr("font-size", "9px")
+  .attr("font-family", "'Space Mono', monospace").attr("opacity", 0.8)
+  .text(d => d.role.toUpperCase());
+
+node.append("text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+  .attr("fill", "#e2e8f0").attr("font-size", "9px")
+  .attr("font-family", "'Space Mono', monospace").attr("font-weight", "bold")
+  .each(function(d) {
+    const parts = d.label.replace("k9_", "").split("_");
+    const t = d3.select(this);
+    if (parts.length === 1) { t.text(parts[0]); }
+    else {
+      t.append("tspan").attr("x", 0).attr("dy", "-0.5em").text(parts[0]);
+      t.append("tspan").attr("x", 0).attr("dy", "1.2em").text(parts.slice(1).join("_"));
+    }
+  });
+
+node.on("mouseenter", function(ev, d) {
+  d3.select(this).select("circle:nth-child(2)")
+    .transition().duration(200).attr("r", 30).attr("fill", d.color + "44");
+  link.attr("stroke-opacity", l =>
+    (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.08);
+}).on("mouseleave", function(ev, d) {
+  d3.select(this).select("circle:nth-child(2)")
+    .transition().duration(200).attr("r", 26).attr("fill", d.color + "22");
+  link.attr("stroke-opacity", 0.4);
+});
+
+sim.on("tick", () => {
+  link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
+return () => sim.stop();
+```
+
+}, [onNodeSelect]);
+
+return e(“svg”, { ref: svgRef, style: { width: “100%”, height: “100%” } });
+}
+
+// ─── Code Graph ───────────────────────────────────────────────────────────────
+
+function CodeGraph({ onNodeSelect }) {
+const svgRef = useRef(null);
+const [selectedPkg, setSelectedPkg] = useState(null);
+
+const buildGraph = useCallback((pkgFilter) => {
+const el = svgRef.current;
+if (!el) return;
+const W = el.clientWidth || 900;
+const H = el.clientHeight || 560;
+d3.select(el).selectAll(”*”).remove();
+
+```
+const svg = d3.select(el).attr("viewBox", `0 0 ${W} ${H}`);
+const defs = svg.append("defs");
+const gf = defs.append("filter").attr("id", "cg-glow");
+gf.append("feGaussianBlur").attr("stdDeviation", "3").attr("result", "cb");
+const fm = gf.append("feMerge");
+fm.append("feMergeNode").attr("in", "cb");
+fm.append("feMergeNode").attr("in", "SourceGraphic");
+
+const pkgKeys = pkgFilter ? [pkgFilter] : Object.keys(CODE_PACKAGES);
+const nodes = [], links = [], seen = new Set();
+
+pkgKeys.forEach(pk => {
+  const pkg = CODE_PACKAGES[pk];
+  if (!seen.has(pk)) { nodes.push({ id: pk, type: "package", color: pkg.color, label: pk }); seen.add(pk); }
+  Object.entries(pkg.modules).forEach(([mk, mod]) => {
+    if (!seen.has(mk)) { nodes.push({ id: mk, type: "module", color: pkg.color, label: mk.split(".").pop() }); seen.add(mk); }
+    links.push({ source: pk, target: mk });
+    mod.classes.forEach(cls => {
+      const cid = `${mk}::${cls}`;
+      if (!seen.has(cid)) { nodes.push({ id: cid, type: "class", color: pkg.color, label: cls }); seen.add(cid); }
+      links.push({ source: mk, target: cid });
+    });
+  });
+});
+
+const nodeR = d => d.type === "package" ? 22 : d.type === "module" ? 14 : 9;
+
+const sim = d3.forceSimulation(nodes)
+  .force("link", d3.forceLink(links).id(d => d.id).distance(70).strength(0.6))
+  .force("charge", d3.forceManyBody().strength(-200))
+  .force("center", d3.forceCenter(W / 2, H / 2))
+  .force("collision", d3.forceCollide(d => nodeR(d) + 8));
+
+const g = svg.append("g");
+svg.call(d3.zoom().scaleExtent([0.2, 4]).on("zoom", ev => g.attr("transform", ev.transform)));
+
+const link = g.append("g").selectAll("line").data(links).join("line")
+  .attr("stroke", d => {
+    const src = nodes.find(n => n.id === (typeof d.source === "object" ? d.source.id : d.source));
+    return src ? src.color + "44" : "#33333366";
+  }).attr("stroke-width", 1);
+
+const node = g.append("g").selectAll("g").data(nodes).join("g")
+  .style("cursor", "pointer")
+  .call(d3.drag()
+    .on("start", (ev, d) => { if (!ev.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on("drag",  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+    .on("end",   (ev, d) => { if (!ev.active) sim.alphaTarget(0); d.fx = null; d.fy = null; })
+  )
+  .on("click", (ev, d) => { ev.stopPropagation(); onNodeSelect(d); });
+
+node.append("circle")
+  .attr("r", d => nodeR(d))
+  .attr("fill", d => d.color + (d.type === "package" ? "33" : d.type === "module" ? "22" : "15"))
+  .attr("stroke", d => d.color)
+  .attr("stroke-width", d => d.type === "package" ? 2.5 : d.type === "module" ? 1.5 : 1)
+  .attr("filter", d => d.type === "package" ? "url(#cg-glow)" : "none");
+
+node.append("text")
+  .attr("text-anchor", "middle").attr("y", d => nodeR(d) + 11)
+  .attr("fill", d => d.type === "class" ? "#94a3b8" : "#e2e8f0")
+  .attr("font-size", d => d.type === "package" ? "10px" : d.type === "module" ? "8px" : "7px")
+  .attr("font-family", "'Space Mono', monospace")
+  .text(d => d.label.length > 22 ? d.label.slice(0, 20) + "…" : d.label);
+
+node.filter(d => d.type === "package").append("text")
+  .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+  .attr("fill", d => d.color).attr("font-size", "8px")
+  .attr("font-family", "'Space Mono', monospace").attr("font-weight", "bold")
+  .text("PKG");
+
+node.filter(d => d.type === "module").append("text")
+  .attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+  .attr("fill", d => d.color).attr("font-size", "7px")
+  .attr("font-family", "'Space Mono', monospace").text("M");
+
+sim.on("tick", () => {
+  link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
+return () => sim.stop();
+```
+
+}, [onNodeSelect]);
+
+useEffect(() => { buildGraph(selectedPkg); }, [selectedPkg, buildGraph]);
+
+const pillBase = { padding: “3px 10px”, borderRadius: 20, fontSize: 9, fontFamily: “‘Space Mono’, monospace”, border: “1px solid”, cursor: “pointer”, background: “transparent” };
+
+return e(“div”, { style: { width: “100%”, height: “100%”, position: “relative” } },
+e(“div”, { style: { position: “absolute”, top: 12, left: 12, zIndex: 10, display: “flex”, flexWrap: “wrap”, gap: 6, maxWidth: “75%” } },
+e(“button”, {
+onClick: () => setSelectedPkg(null),
+style: { …pillBase, borderColor: “#334155”, color: selectedPkg === null ? “#e2e8f0” : “#64748b”, background: selectedPkg === null ? “#1e293b” : “transparent” }
+}, “ALL”),
+…Object.entries(CODE_PACKAGES).map(([pk, pd]) =>
+e(“button”, {
+key: pk,
+onClick: () => setSelectedPkg(pk === selectedPkg ? null : pk),
+style: { …pillBase, borderColor: pd.color + (selectedPkg === pk ? “99” : “44”), color: selectedPkg === pk ? pd.color : “#64748b”, background: selectedPkg === pk ? pd.color + “22” : “transparent” }
+}, pk.replace(“k9_”, “”))
+)
+),
+e(“svg”, { ref: svgRef, style: { width: “100%”, height: “100%” } })
+);
+}
+
+// ─── Legend ───────────────────────────────────────────────────────────────────
+
+function Legend({ tab }) {
+const archItems = [
+{ color: “#00d4ff”, label: “EXTENDS”, dash: “none” },
+{ color: “#f43f5e”, label: “WIRES”,   dash: “4,3” },
+{ color: “#10b981”, label: “USES”,    dash: “none” },
+{ color: “#fbbf24”, label: “SUPPORTS”,dash: “2,4” },
+];
+const codeItems = [
+{ color: “#00d4ff”, r: 11, label: “Package” },
+{ color: “#7c3aed”, r: 7,  label: “Module”  },
+{ color: “#94a3b8”, r: 4,  label: “Class”   },
+];
+const mono = “‘Space Mono’, monospace”;
+if (tab === “arch”) {
+return e(“div”, { style: { display: “flex”, gap: 16, alignItems: “center” } },
+…archItems.map(i =>
+e(“div”, { key: i.label, style: { display: “flex”, alignItems: “center”, gap: 5 } },
+e(“svg”, { width: 28, height: 10 },
+e(“line”, { x1: 0, y1: 5, x2: 28, y2: 5, stroke: i.color, strokeWidth: 1.5, strokeDasharray: i.dash, opacity: 0.8 })
+),
+e(“span”, { style: { color: “#64748b”, fontSize: 9, fontFamily: mono } }, i.label)
+)
+)
+);
+}
+return e(“div”, { style: { display: “flex”, gap: 16, alignItems: “center” } },
+…codeItems.map(i =>
+e(“div”, { key: i.label, style: { display: “flex”, alignItems: “center”, gap: 5 } },
+e(“svg”, { width: i.r * 2 + 4, height: i.r * 2 + 4 },
+e(“circle”, { cx: i.r + 2, cy: i.r + 2, r: i.r, fill: i.color + “22”, stroke: i.color, strokeWidth: 1.5 })
+),
+e(“span”, { style: { color: “#64748b”, fontSize: 9, fontFamily: mono } }, i.label)
+)
+)
+);
+}
+
+// ─── Detail Panel ─────────────────────────────────────────────────────────────
+
+function DetailPanel({ node, onClose }) {
+if (!node) return null;
+const pkgData = CODE_PACKAGES[node.id];
+const classCount = pkgData ? Object.values(pkgData.modules).reduce((a, m) => a + m.classes.length, 0) : null;
+const moduleCount = pkgData ? Object.keys(pkgData.modules).length : null;
+const mono = “‘Space Mono’, monospace”;
+
+return e(“div”, {
+style: { position: “absolute”, bottom: 16, left: 16, width: 290, background: “#0a0f1e”, border: `1px solid ${node.color}44`, borderRadius: 8, padding: 16, zIndex: 10 }
+},
+e(“div”, { style: { display: “flex”, justifyContent: “space-between”, alignItems: “flex-start” } },
+e(“div”, null,
+e(“div”, { style: { color: node.color, fontSize: 9, fontFamily: mono, letterSpacing: 2, marginBottom: 4 } },
+(node.role || node.type || “”).toUpperCase()
+),
+e(“div”, { style: { color: “#e2e8f0”, fontSize: 13, fontFamily: mono, fontWeight: “bold” } }, node.label)
+),
+e(“button”, { onClick: onClose, style: { background: “none”, border: “none”, color: “#64748b”, fontSize: 16, cursor: “pointer” } }, “✕”)
+),
+node.description && e(“p”, { style: { color: “#94a3b8”, fontSize: 10, fontFamily: mono, marginTop: 10, lineHeight: 1.7 } }, node.description),
+classCount !== null && e(“div”, { style: { marginTop: 12, display: “flex”, gap: 16 } },
+e(“div”, { style: { textAlign: “center” } },
+e(“div”, { style: { color: node.color, fontSize: 18, fontFamily: mono, fontWeight: “bold” } }, moduleCount),
+e(“div”, { style: { color: “#64748b”, fontSize: 8, fontFamily: mono } }, “MODULES”)
+),
+e(“div”, { style: { textAlign: “center” } },
+e(“div”, { style: { color: node.color, fontSize: 18, fontFamily: mono, fontWeight: “bold” } }, classCount),
+e(“div”, { style: { color: “#64748b”, fontSize: 8, fontFamily: mono } }, “CLASSES”)
+)
+),
+pkgData && e(“div”, { style: { marginTop: 10, maxHeight: 130, overflowY: “auto” } },
+…Object.entries(pkgData.modules).map(([mk, mod]) =>
+e(“div”, { key: mk, style: { marginBottom: 6 } },
+e(“div”, { style: { color: node.color, fontSize: 8, fontFamily: mono, opacity: 0.8 } }, mk.split(”.”).pop()),
+e(“div”, { style: { color: “#64748b”, fontSize: 8, fontFamily: mono, paddingLeft: 8 } }, mod.classes.join(” · “))
+)
+)
+)
+);
+}
+
+// ─── Neo4j Panel ──────────────────────────────────────────────────────────────
+
+function Neo4jPanel({ onClose }) {
+const [uri,    setUri]    = useState(“neo4j+s://xxxx.databases.neo4j.io”);
+const [user,   setUser]   = useState(“neo4j”);
+const [pass,   setPass]   = useState(””);
+const [status, setStatus] = useState(null);
+const mono = “‘Space Mono’, monospace”;
+
+const input = (val, onChange, type = “text”) => e(“input”, {
+type, value: val, onChange: ev => onChange(ev.target.value),
+style: { width: “100%”, padding: “8px 12px”, background: “#0f172a”, border: “1px solid #1e293b”, borderRadius: 6, color: “#e2e8f0”, fontFamily: mono, fontSize: 11, outline: “none” }
+});
+
+return e(“div”, {
+style: { position: “absolute”, top: 0, right: 0, bottom: 0, width: 320, background: “#0a0f1e”, borderLeft: “1px solid #1e293b”, padding: 24, zIndex: 20, display: “flex”, flexDirection: “column”, gap: 14, overflowY: “auto” }
+},
+e(“div”, { style: { display: “flex”, justifyContent: “space-between”, alignItems: “center” } },
+e(“span”, { style: { color: “#00d4ff”, fontFamily: mono, fontSize: 11, letterSpacing: 2 } }, “NEO4J CONNECTION”),
+e(“button”, { onClick: onClose, style: { background: “none”, border: “none”, color: “#64748b”, fontSize: 16, cursor: “pointer” } }, “✕”)
+),
+e(“div”, { style: { padding: 12, background: “#7c3aed11”, border: “1px solid #7c3aed33”, borderRadius: 6 } },
+e(“p”, { style: { color: “#94a3b8”, fontSize: 9, fontFamily: mono, lineHeight: 1.7, margin: 0 } },
+“Currently showing static data from your Cypher schema. Connect a live Neo4j instance to query your actual graph in real-time.”
+)
+),
+e(“div”, { style: { display: “flex”, flexDirection: “column”, gap: 6 } },
+e(“label”, { style: { color: “#64748b”, fontSize: 9, fontFamily: mono } }, “BOLT URI”),
+input(uri, setUri)
+),
+e(“div”, { style: { display: “flex”, flexDirection: “column”, gap: 6 } },
+e(“label”, { style: { color: “#64748b”, fontSize: 9, fontFamily: mono } }, “USERNAME”),
+input(user, setUser)
+),
+e(“div”, { style: { display: “flex”, flexDirection: “column”, gap: 6 } },
+e(“label”, { style: { color: “#64748b”, fontSize: 9, fontFamily: mono } }, “PASSWORD”),
+input(pass, setPass, “password”)
+),
+e(“button”, {
+onClick: () => setStatus(“⚠ Live Neo4j requires a server-side proxy. See note below.”),
+style: { padding: 10, background: “#00d4ff11”, border: “1px solid #00d4ff44”, borderRadius: 6, color: “#00d4ff”, fontFamily: mono, fontSize: 10, letterSpacing: 1 }
+}, “TEST CONNECTION”),
+status && e(“div”, { style: { padding: 10, background: “#f59e0b11”, border: “1px solid #f59e0b33”, borderRadius: 6 } },
+e(“p”, { style: { color: “#f59e0b”, fontSize: 9, fontFamily: mono, lineHeight: 1.7, margin: 0 } }, status)
+),
+e(“div”, { style: { marginTop: “auto”, padding: 10, background: “#0f172a”, borderRadius: 6, border: “1px solid #1e293b” } },
+e(“p”, { style: { color: “#64748b”, fontSize: 8, fontFamily: mono, lineHeight: 1.8, margin: 0 } },
+“Sample Cypher for live nav:”
+),
+e(“p”, { style: { color: “#00d4ff”, fontSize: 8, fontFamily: mono, lineHeight: 1.8, margin: “4px 0 0” } },
+“MATCH (n)-[r]->(m) RETURN n,r,m LIMIT 200”
+)
+)
+);
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+function App() {
+const [tab,          setTab]          = useState(“arch”);
+const [selectedNode, setSelectedNode] = useState(null);
+const [showNeo4j,    setShowNeo4j]    = useState(false);
+const handleNodeSelect = useCallback(n => setSelectedNode(n), []);
+const mono = “‘Space Mono’, monospace”;
+
+const totalModules = Object.values(CODE_PACKAGES).reduce((a, p) => a + Object.keys(p.modules).length, 0);
+const totalClasses = Object.values(CODE_PACKAGES).reduce((a, p) => a + Object.values(p.modules).reduce((b, m) => b + m.classes.length, 0), 0);
+
+const tabBtn = (t, label) => e(“button”, {
+onClick: () => setTab(t),
+style: {
+padding: “8px 20px”, fontFamily: mono, fontSize: 10, letterSpacing: 2,
+background: tab === t ? “#00d4ff11” : “transparent”,
+color: tab === t ? “#00d4ff” : “#64748b”,
+border: “none”, borderBottom: tab === t ? “2px solid #00d4ff” : “2px solid transparent”,
+cursor: “pointer”
+}
+}, label);
+
+return e(“div”, {
+style: { width: “100%”, height: “100vh”, background: “#050a14”, display: “flex”, flexDirection: “column”, fontFamily: mono, overflow: “hidden”, position: “relative” }
+},
+// Header
+e(“div”, { style: { padding: “12px 20px”, borderBottom: “1px solid #0f172a”, display: “flex”, alignItems: “center”, justifyContent: “space-between”, background: “#070c18” } },
+e(“div”, { style: { display: “flex”, alignItems: “center”, gap: 12 } },
+e(“div”, { style: { width: 8, height: 8, borderRadius: “50%”, background: “#00d4ff”, boxShadow: “0 0 8px #00d4ff” } }),
+e(“span”, { style: { color: “#00d4ff”, fontSize: 12, letterSpacing: 3, fontWeight: “bold” } }, “K9-AIF”),
+e(“span”, { style: { color: “#334155”, fontSize: 10 } }, “/ GRAPH NAVIGATOR”),
+e(“span”, { style: { color: “#1e293b”, fontSize: 9 } }, “v1.0”)
+),
+e(“div”, { style: { display: “flex”, alignItems: “center”, gap: 16 } },
+e(“div”, { style: { display: “flex”, gap: 16 } },
+…[
+{ v: Object.keys(CODE_PACKAGES).length, l: “PACKAGES” },
+{ v: totalModules, l: “MODULES” },
+{ v: totalClasses, l: “CLASSES” },
+].map(s => e(“div”, { key: s.l, style: { textAlign: “right” } },
+e(“div”, { style: { color: “#e2e8f0”, fontSize: 13, fontWeight: “bold” } }, s.v),
+e(“div”, { style: { color: “#334155”, fontSize: 8, letterSpacing: 1 } }, s.l)
+))
+),
+e(“button”, {
+onClick: () => setShowNeo4j(v => !v),
+style: { padding: “6px 14px”, borderRadius: 4, background: showNeo4j ? “#7c3aed22” : “transparent”, border: `1px solid ${showNeo4j ? "#7c3aed" : "#1e293b"}`, color: showNeo4j ? “#7c3aed” : “#64748b”, fontSize: 9, letterSpacing: 1, cursor: “pointer”, fontFamily: mono }
+}, “⬡ NEO4J”)
+)
+),
+// Tab bar
+e(“div”, { style: { display: “flex”, alignItems: “center”, justifyContent: “space-between”, padding: “0 20px”, background: “#070c18”, borderBottom: “1px solid #0f172a” } },
+e(“div”, { style: { display: “flex” } }, tabBtn(“arch”, “ARCHITECTURE”), tabBtn(“code”, “CODE GRAPH”)),
+e(Legend, { tab })
+),
+// Graph area
+e(“div”, { style: { flex: 1, position: “relative”, overflow: “hidden” } },
+e(“div”, { style: { position: “absolute”, inset: 0, pointerEvents: “none”, backgroundImage: “linear-gradient(#0f172a 1px, transparent 1px), linear-gradient(90deg, #0f172a 1px, transparent 1px)”, backgroundSize: “40px 40px”, opacity: 0.4 } }),
+tab === “arch” && e(ArchGraph, { onNodeSelect: handleNodeSelect }),
+tab === “code” && e(CodeGraph, { onNodeSelect: handleNodeSelect }),
+selectedNode && e(DetailPanel, { node: selectedNode, onClose: () => setSelectedNode(null) }),
+showNeo4j && e(Neo4jPanel, { onClose: () => setShowNeo4j(false) }),
+!selectedNode && e(“div”, {
+style: { position: “absolute”, bottom: 16, right: showNeo4j ? 336 : 16, color: “#1e293b”, fontSize: 9, fontFamily: mono, textAlign: “right”, pointerEvents: “none” }
+}, “DRAG · SCROLL TO ZOOM · CLICK NODE”)
+)
+);
+}
+
+ReactDOM.createRoot(document.getElementById(“root”)).render(e(App));
+</script>
+
+</body>
+</html>
