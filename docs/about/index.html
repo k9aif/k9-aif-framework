@@ -11,18 +11,17 @@
   />
   <style>
     :root {
-      --bg: #09090f;
-      --surface: #111118;
-      --surface2: #16161f;
-      --border: rgba(255,255,255,0.07);
-      --border-accent: rgba(99,168,255,0.25);
-      --text: #e8e8f0;
-      --muted: #8a90c0;
-      --accent: #63a8ff;
-      --accent2: #a78bfa;
-      --accent3: #34d399;
-      --glow: rgba(99,168,255,0.12);
-      --shadow: 0 12px 30px rgba(0,0,0,0.22);
+      --bg: #f7f7f7;
+      --surface: #ffffff;
+      --surface2: #faf8f4;
+      --border: #e5e7eb;
+      --border-accent: #d7dce5;
+      --text: #2f2f2f;
+      --muted: #6b7280;
+      --accent: #0a58ca;
+      --accent-soft: #eef4ff;
+      --warm-title: #3b3128;
+      --shadow: 0 4px 18px rgba(0,0,0,0.05);
     }
 
     * {
@@ -58,7 +57,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(9, 9, 15, 0.85);
+      background: rgba(255,255,255,0.94);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
@@ -73,7 +72,7 @@
     .nav-logo span {
       font-family: "DM Serif Display", serif;
       font-size: 1.15rem;
-      color: var(--text);
+      color: var(--warm-title);
     }
 
     .nav-links {
@@ -97,7 +96,7 @@
 
     .nav-cta {
       background: var(--accent);
-      color: #09090f !important;
+      color: white !important;
       padding: 6px 16px;
       border-radius: 6px;
       font-weight: 600 !important;
@@ -115,18 +114,6 @@
       position: relative;
     }
 
-    .hero-glow {
-      position: absolute;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 760px;
-      height: 420px;
-      background: radial-gradient(ellipse at center, rgba(99,168,255,0.09) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
     .hero-inner {
       position: relative;
       z-index: 1;
@@ -136,7 +123,7 @@
 
     .eyebrow {
       display: inline-block;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -149,7 +136,7 @@
       font-size: clamp(2.4rem, 5vw, 3.8rem);
       line-height: 1.08;
       letter-spacing: -0.02em;
-      color: #fff;
+      color: var(--warm-title);
       margin-bottom: 0.9rem;
       text-wrap: balance;
     }
@@ -168,19 +155,19 @@
 
     .content p {
       font-size: 1.04rem;
-      color: #c9d1e6;
+      color: #444;
       line-height: 1.9;
       margin-bottom: 1.25rem;
     }
 
     .content strong {
-      color: #fff;
+      color: var(--text);
       font-weight: 700;
     }
 
     .callout,
     .thesis {
-      background: linear-gradient(180deg, rgba(17,17,24,0.98), rgba(22,22,31,0.98));
+      background: var(--surface);
       border-left: 4px solid var(--accent);
       border-radius: 0 10px 10px 0;
       box-shadow: var(--shadow);
@@ -190,7 +177,7 @@
     .callout {
       padding: 1rem 1.3rem;
       font-size: 1.04rem;
-      color: #dbe8ff;
+      color: #3f4d66;
       font-style: italic;
       line-height: 1.8;
     }
@@ -199,12 +186,13 @@
       padding: 1.1rem 1.35rem;
       font-size: 1.08rem;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--warm-title);
       line-height: 1.8;
+      background: var(--surface2);
     }
 
     .evolution {
-      border-left: 2px solid rgba(255,255,255,0.10);
+      border-left: 2px solid #d9d9d9;
       padding-left: 1.2rem;
       margin: 1.8rem 0;
     }
@@ -217,7 +205,7 @@
     .closing {
       font-size: 1.04rem;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--warm-title);
       margin-top: 2rem;
     }
 
@@ -265,7 +253,6 @@
 
   <div class="page-wrap">
     <section class="hero">
-      <div class="hero-glow"></div>
       <div class="hero-inner">
         <div class="eyebrow">About</div>
         <h1>About K9-AIF</h1>
