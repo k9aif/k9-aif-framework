@@ -35,5 +35,5 @@ class K9CrewAIAdapter:
         Main adapter entrypoint for K9-AIF callers.
         """
         crew_input = self.mapper.to_crewai_input(payload)
-        result = self.orchestrator_adapter.execute(crew_input)
+        result = self.orchestrator_adapter.execute_flow(crew_input)
         return self.mapper.from_crewai_output(result)

@@ -1,69 +1,85 @@
-# Examples
+# Weather Assist — Architecture Demo (CrewAI + K9-AIF)
 
-This folder contains example applications and supporting diagrams built using the **K9-AIF Framework**.
-
-These examples demonstrate how K9-AIF can be used to implement practical,
-domain-oriented AI applications while preserving architectural structure,
-modularity, and governance.
+This example demonstrates how a **CrewAI-based agent application** can be integrated into the **K9-AIF architecture framework** using a clean adapter pattern.
 
 ---
 
-## What These Examples Show
+## What This Is
 
-- How to structure applications on top of K9-AIF
-- How to compose **Squads, Agents, and Orchestrators**
-- How to apply **model routing via ModelRouterFactory**
-- How to integrate LLM capabilities into real-world workflows
-- How to build reusable, extensible AI application patterns
+This is a **side-by-side architecture demonstration**:
 
----
-
-## Folder Structure
-
-### `k9chat/`
-
-A lightweight chat example demonstrating:
-
-- squad-driven execution
-- model routing via **ModelRouterFactory** and the default **K9ModelRouter**
-- browser and CLI interaction
-- runtime metadata (provider, model, host)
+- A **pure CrewAI application**
+- The **same application governed by K9-AIF**
 
 ---
 
-### `acme_support_center/`
+## Project Structure
 
-A support-oriented example demonstrating:
-
-- squad-based orchestration
-- multi-agent collaboration patterns
-- customer support workflow structure
-- modular service interaction using K9-AIF building blocks
+examples/weather_assist/
+crewai/     # Standalone CrewAI implementation
+k9/         # K9-AIF integrated version
+diagrams/   # Architecture diagram
 
 ---
 
-### `acme_health_insurance/`
+## Architecture Diagram
 
-A domain-oriented example demonstrating:
-
-- claims-related workflow structure
-- document and intake-oriented processing patterns
-- extensible enterprise AI solution design
-- domain-aligned orchestration using K9-AIF concepts
+![K9-AIF + CrewAI Integration](weather_assist/diagrams/k9-aif-crewai-integration-flow.png)
 
 ---
 
-### `diagrams/`
-
-Supporting architectural diagrams for the examples, including:
-
-- class diagrams
-- runtime flow diagrams
-- example-specific architecture visuals
-
-Example:
+## Architecture (Conceptual View)
 
 ```text
-examples/diagrams/k9-chat-class-diagram.png
+User
+  ↓
+K9 Orchestrator (BaseOrchestrator)
+  ↓
+K9CrewAIAdapter
+  ↓
+CrewAIOrchestratorAdapter
+  ↓
+CrewAI Crew
+  ↓
+Agents (Weather Agent, Summary Agent)
+
+---
+
+## How to Run.
+
+### Standalone CrewAI
+
+``` bash
+python -m examples.weather_assist.crewai.main "Atlanta"
 
 ```
+
+### K9-AIF Integrated
+
+``` bash
+python -m examples.weather_assist.k9.main "Atlanta"
+```
+
+what you will see in the output:
+
+``` code
+
+K9 Base Class      : BaseOrchestrator
+K9 Orchestrator    : WeatherAssistOrchestrator
+CrewAI Object      : Crew
+CrewAI Agents      :
+  1. Weather Agent
+  2. Weather Summary Agent
+K9 Adapter         : K9CrewAIAdapter
+CrewAI Bridge      : CrewAIOrchestratorAdapter
+```
+
+### What this demoonstrates
+
+User → K9-AIF → CrewAI
+
+K9-AIF owns the system boundary.
+Clean Integration
+True Extensibility
+
+---
