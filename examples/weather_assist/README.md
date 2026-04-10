@@ -24,7 +24,7 @@ diagrams/   # Architecture diagram
 
 ## Architecture Diagram
 
-![K9-AIF + CrewAI Integration](weather_assist/diagrams/k9-aif-crewai-integration-flow.png)
+![K9-AIF + CrewAI Integration](diagrams/k9-aif-crewai-integration-flow.png)
 
 ---
 
