@@ -1,85 +1,35 @@
-# Weather Assist — Architecture Demo (CrewAI + K9-AIF)
+# Examples
 
-This example demonstrates how a **CrewAI-based agent application** can be integrated into the **K9-AIF architecture framework** using a clean adapter pattern.
+This folder contains example applications built using the **K9-AIF Framework**.
 
----
-
-## What This Is
-
-This is a **side-by-side architecture demonstration**:
-
-- A **pure CrewAI application**
-- The **same application governed by K9-AIF**
+These examples demonstrate how K9-AIF can be used to implement practical,
+domain-oriented AI applications while preserving architectural structure,
+modularity, and governance.
 
 ---
 
-## Project Structure
+## What These Examples Show
 
-examples/weather_assist/
-crewai/     # Standalone CrewAI implementation
-k9/         # K9-AIF integrated version
-diagrams/   # Architecture diagram
-
----
-
-## Architecture Diagram
-
-![K9-AIF + CrewAI Integration](weather_assist/diagrams/k9-aif-crewai-integration-flow.png)
+- How to structure applications on top of K9-AIF
+- How to compose **Squads, Agents, and Orchestrators**
+- How to apply **model routing via ModelRouterFactory**
+- How to integrate LLM capabilities into real-world workflows
+- How to build reusable, extensible AI application patterns
 
 ---
 
-## Architecture (Conceptual View)
+## Available Examples
 
-```text
-User
-  ↓
-K9 Orchestrator (BaseOrchestrator)
-  ↓
-K9CrewAIAdapter
-  ↓
-CrewAIOrchestratorAdapter
-  ↓
-CrewAI Crew
-  ↓
-Agents (Weather Agent, Summary Agent)
+### K9Chat
 
----
+A lightweight chat example demonstrating:
 
-## How to Run.
+- squad-driven execution
+- model routing via **ModelRouterFactory** and default **K9ModelRouter**
+- browser and CLI interaction
+- runtime metadata (provider, model, host)
 
-### Standalone CrewAI
+See:
 
-``` bash
-python -m examples.weather_assist.crewai.main "Atlanta"
-
-```
-
-### K9-AIF Integrated
-
-``` bash
-python -m examples.weather_assist.k9.main "Atlanta"
-```
-
-what you will see in the output:
-
-``` code
-
-K9 Base Class      : BaseOrchestrator
-K9 Orchestrator    : WeatherAssistOrchestrator
-CrewAI Object      : Crew
-CrewAI Agents      :
-  1. Weather Agent
-  2. Weather Summary Agent
-K9 Adapter         : K9CrewAIAdapter
-CrewAI Bridge      : CrewAIOrchestratorAdapter
-```
-
-### What this demoonstrates
-
-User → K9-AIF → CrewAI
-
-K9-AIF owns the system boundary.
-Clean Integration
-True Extensibility
-
----
+```text id="n51z84"
+examples/k9chat/
