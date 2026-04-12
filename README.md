@@ -379,17 +379,6 @@ systems and multi-agent orchestration are welcome.
 
 ---
 
-## Author
-
-**Ravi Natarajan**
-AI Systems Architect
-Agentic AI • Multi-Agent Systems • LLM Applications
-
-Email: ravinatarajan@k9aif.com
-Website: https://k9aif.com
-
----
-
 ## Architectural Foundations
 
 K9-AIF draws inspiration from established software architecture and enterprise architecture practices, including:
@@ -414,5 +403,17 @@ https://blog.k9aif.com/k9-aif-architectural-evaluation-claude/
 
 More posts can be found at:  
 https://blog.k9aif.com/
+
+---
+## Author
+
+**Ravi Natarajan**
+AI Systems Architect
+Agentic AI • Multi-Agent Systems • LLM Applications
+
+Email: ravinatarajan@k9aif.com
+Website: https://k9aif.com
+
+---
 
 
