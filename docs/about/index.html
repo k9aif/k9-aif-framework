@@ -4,151 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About K9-AIF</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet"
-  />
+  <link rel="stylesheet" href="../docs_styles.css" />
   <style>
-    :root {
-      --bg: #f7f7f7;
-      --surface: #ffffff;
-      --surface2: #faf8f4;
-      --border: #e5e7eb;
-      --border-accent: #d7dce5;
-      --text: #2f2f2f;
-      --muted: #6b7280;
-      --accent: #0a58ca;
-      --accent-soft: #eef4ff;
-      --warm-title: #3b3128;
-      --shadow: 0 4px 18px rgba(0,0,0,0.05);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: "DM Sans", sans-serif;
-      font-weight: 400;
-      line-height: 1.8;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      padding-top: 60px;
-    }
-
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 0 40px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(255,255,255,0.94);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
-    .nav-logo span {
-      font-family: "DM Serif Display", serif;
-      font-size: 1.15rem;
-      color: var(--warm-title);
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      font-weight: 500;
-      transition: color 0.2s ease;
-    }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    .nav-cta {
-      background: var(--accent);
-      color: white !important;
-      padding: 6px 16px;
-      border-radius: 6px;
-      font-weight: 600 !important;
-    }
-
     .page-wrap {
       max-width: 920px;
-      margin: 0 auto;
-      padding: 52px 28px 100px;
     }
 
     .hero {
       text-align: center;
       padding: 18px 0 22px;
-      position: relative;
     }
 
     .hero-inner {
-      position: relative;
-      z-index: 1;
       max-width: 760px;
       margin: 0 auto;
     }
 
-   .eyebrow {
-  display: inline-block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.7rem;
-}
-
-
-      h1 {
-  font-family: "DM Sans", sans-serif;
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-  .subtitle {
-  font-size: 1rem;
-  color: var(--muted);
-  line-height: 1.75;
-  max-width: 700px;
-  margin: 0 auto;
-}
+    .subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 700px;
+      margin: 0 auto;
+    }
 
     .content {
       margin-top: 10px;
@@ -187,9 +65,9 @@
       padding: 1.1rem 1.35rem;
       font-size: 1.08rem;
       font-weight: 700;
-      color: var(--warm-title);
+      color: var(--text);
       line-height: 1.8;
-      background: var(--surface2);
+      background: var(--surface-soft-2);
     }
 
     .evolution {
@@ -206,7 +84,7 @@
     .closing {
       font-size: 1.04rem;
       font-weight: 600;
-      color: var(--warm-title);
+      color: var(--text);
       margin-top: 2rem;
     }
 
@@ -218,14 +96,6 @@
     }
 
     @media (max-width: 700px) {
-      nav {
-        padding: 0 20px;
-      }
-
-      .nav-links {
-        display: none;
-      }
-
       .page-wrap {
         padding: 40px 20px 80px;
       }
