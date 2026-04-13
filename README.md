@@ -2,7 +2,7 @@
 
 K9-AIF is an architecture-first framework for designing governed, enterprise-scale multi-agent AI systems.
 
-Unlike agent runtimes that focus mainly on execution, K9-AIF defines the architectural structure, 
+Unlike agent runtimes that focus mainly on execution, K9-AIF defines the architectural structure,
 interaction boundaries, and governance model needed to build scalable agentic AI systems.
 
 The framework separates Architecture Building Blocks (ABB) from
@@ -112,8 +112,8 @@ inference, and persistence.
 6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to
    enforce policy, auditability, monitoring, and operational control.
 
-
 ---
+
 ## Agent Squads
 
 K9-AIF introduces the concept of **Agent Squads**.
@@ -124,7 +124,7 @@ Rather than orchestrators invoking individual agents directly, K9-AIF introduces
 
 Execution hierarchy:
 
-Router --> Orchestrator --> Squads --> Agents  
+Router --> Orchestrator --> Squads --> Agents
 
 Squads allow enterprise workflows to be modeled as **capability-based teams of agents**.
 
@@ -143,7 +143,9 @@ Core squad framework components include:
 - `SquadLoader`
 - `SquadContext`
 - `DefaultSquadMonitor`
+
 ---
+
 ## Prototype Implementations
 
 Prototype systems based on K9-AIF demonstrate how the framework can support
@@ -186,22 +188,20 @@ with emerging **agentic AI system design**.
 
 ## Framework Comparison
 
-K9-AIF focuses on architectural structure and governed orchestration of multi-agent systems.  
+K9-AIF focuses on architectural structure and governed orchestration of multi-agent systems.
 The table below highlights how the framework differs from several popular agentic AI frameworks.
 
-
-| Capability | K9-AIF | CrewAI | LangGraph | AgentStack |
-|------------|--------|--------|-----------|------------|
-| Architecture-first framework | ✅ Yes | ⚠️ Limited | ⚠️ Partial | ⚠️ Platform-centric |
-| ABB/SBB architectural separation | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| Explicit orchestration hierarchy | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews | ⚠️ Graph workflows | ⚠️ Agent services |
-| Team abstraction | ✅ Squads | ✅ Crews | ❌ None | ⚠️ Agent groups |
-| Declarative configuration | ✅ YAML-driven | ⚠️ Partial | ⚠️ Code-centric | ⚠️ Platform config |
-| Enterprise architecture alignment | ✅ Yes | ❌ No | ❌ No | ⚠️ Partial |
-| Governance & observability hooks | ✅ Built into ABBs | ⚠️ Limited | ⚠️ Limited | ⚠️ Platform dependent |
+| Capability                        | K9-AIF                                        | CrewAI       | LangGraph            | AgentStack              |
+| --------------------------------- | --------------------------------------------- | ------------ | -------------------- | ----------------------- |
+| Architecture-first framework      | ✅ Yes                                        | ⚠️ Limited | ⚠️ Partial         | ⚠️ Platform-centric   |
+| ABB/SBB architectural separation  | ✅ Yes                                        | ❌ No        | ❌ No                | ❌ No                   |
+| Explicit orchestration hierarchy  | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews   | ⚠️ Graph workflows | ⚠️ Agent services     |
+| Team abstraction                  | ✅ Squads                                     | ✅ Crews     | ❌ None              | ⚠️ Agent groups       |
+| Declarative configuration         | ✅ YAML-driven                                | ⚠️ Partial | ⚠️ Code-centric    | ⚠️ Platform config    |
+| Enterprise architecture alignment | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
+| Governance & observability hooks  | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
 
 K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
-
 
 ---
 
@@ -239,11 +239,10 @@ This enables:
 
 For detailed implementation documentation see:
 
-See the full documentation for the inference layer in  
+See the full documentation for the inference layer in
 [`k9_aif_abb/k9_inference`](k9_aif_abb/k9_inference)
 
 ---
-
 
 ## Example Use Cases
 
@@ -290,6 +289,7 @@ Examples:
   ./k9_generator.sh run ACMEInsurance
   ./k9_generator.sh recycle PetStore
 ```
+
 Refer to: [K9-AIF Generator](generator/README.md)
 
 ---
@@ -338,10 +338,11 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
 ```
+
 once this is done: you can directly test out the demos:
 from the k9-aif-framework folder, run the commands:
 
-``` bash
+```bash
 ./run_k9chat.sh
 ./run_acme_support_center.sh
 
@@ -349,10 +350,11 @@ from the k9-aif-framework folder, run the commands:
 
 test programs from the tests folder can be run like below:
 
-``` bash
+```bash
 python -m k9_aif_abb.tests.<test program name>
 
 ```
+
 ---
 
 ## Project Status
@@ -395,16 +397,17 @@ The K9-AIF blog contains architecture discussions, design evaluations, and evolv
 
 Recent posts:
 
-• Agent Squads in K9-AIF  
-https://blog.k9aif.com/agent-squads-in-k9-aif/
+• From Agents to Architecture: Integration CrewAI into K9-AIF
+https://blog.k9x.ai/crewai-application-and-k9-aif/
 
-• Architectural Evaluation of K9-AIF  
+• Architectural Evaluation of K9-AIF
 https://blog.k9aif.com/k9-aif-architectural-evaluation-claude/
 
-More posts can be found at:  
-https://blog.k9aif.com/
+More posts can be found at:
+https://blog.k9x.ai
 
 ---
+
 ## Author
 
 **Ravi Natarajan**
@@ -412,8 +415,6 @@ AI Systems Architect
 Agentic AI • Multi-Agent Systems • LLM Applications
 
 Email: ravinatarajan@k9aif.com
-Website: https://k9aif.com
+Website: https://k9x.ai
 
 ---
-
-

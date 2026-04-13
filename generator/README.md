@@ -4,13 +4,13 @@ The K9-AIF Generator bootstraps new applications that follow the architecture an
 
 It creates a ready-to-run application scaffold including:
 
--	Agents
--	Orchestrator
--	Squad configuration
--	Agent configuration
--	Application configuration
--	Entry point (main.py)
--	Test scaffolding
+- Agents
+- Orchestrator
+- Squad configuration
+- Agent configuration
+- Application configuration
+- Entry point (main.py)
+- Test scaffolding
 
 The generator uses Jinja2 templates to produce consistent project layouts for K9-AIF based applications.
 
@@ -20,74 +20,78 @@ The generator uses Jinja2 templates to produce consistent project layouts for K9
 
 From the root of the K9-AIF framework repository:
 
-``` code
+```code
 k9-aif-framework/
 
 ```
 
 1. Preview what will be generated
-   
-``` bash
+
+```bash
 ./k9_generator.sh preview MyApp
 
 ```
+
 This shows the directory structure without creating files.
 
 2. Generate the App
 
-``` bash
+```bash
 ./k9_generator.sh run MyApp
 
 ```
+
 The generator will create:
 
-``` code
+```code
 k9_projects/MyApp
 
 ```
 
 3. Change into the generated app folder
 
-``` bash
+```bash
 cd k9_projects/MyApp
 
 ```
 
 4. Run the Application
 
-``` bash
+```bash
 python main.py
 ```
 
 You should see output similar to:
 
-``` code
+```code
 Executing MyApp with request: {'query': 'hello'}
 
 Hello World from K9-AIF Application Stub
 ```
+
 This confirms the generated K9-AIF application scaffold is working.
 
 5. Run tests
 
 The generator also creates a test scaffold.
 
-``` bash
+```bash
 pytest
 ```
 
 Expected output:
 
-``` code
+```code
 [K9-AIF] Testing generated code...
 
 [K9-AIF] All tests passed!
 ```
+
 ---
 
 ## Generated App Structure
 
-``` code
+```code
 
 k9_projects/MyApp/
 
@@ -135,3 +139,4 @@ If you encounter issues running the generator, please contact:
 
 ravinatarajan@k9aif.com
 
+https://www.k9x.ai
