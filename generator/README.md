@@ -137,6 +137,6 @@ This document explains:
 
 If you encounter issues running the generator, please contact:
 
-ravinatarajan@k9aif.com
+ravinatarajan@k9x.ai
 
 https://www.k9x.ai

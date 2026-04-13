@@ -401,7 +401,7 @@ Recent posts:
 https://blog.k9x.ai/crewai-application-and-k9-aif/
 
 • Architectural Evaluation of K9-AIF
-https://blog.k9aif.com/k9-aif-architectural-evaluation-claude/
+https://blog.k9x.ai/k9-aif-architectural-evaluation-claude/
 
 More posts can be found at:
 https://blog.k9x.ai
@@ -414,7 +414,7 @@ https://blog.k9x.ai
 AI Systems Architect
 Agentic AI • Multi-Agent Systems • LLM Applications
 
-Email: ravinatarajan@k9aif.com
+Email: ravinatarajan@k9x.ai
 Website: https://k9x.ai
 
 ---

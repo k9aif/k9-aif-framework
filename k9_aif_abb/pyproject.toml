@@ -11,7 +11,7 @@ description = "K9-AIF - Governed, Modular Framework for Agentic AI Applications"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "Ravi Natarajan", email = "ravi@k9aif.com" }
+  { name = "Ravi Natarajan", email = "ravi@k9x.ai" }
 ]
 license = { text = "Apache-2.0" }
 dependencies = [
@@ -23,7 +23,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/k9aif/k9-aif-framework"
 Source = "https://github.com/k9aif/k9-aif-framework"
-Documentation = "https://k9aif.com"
+Documentation = "https://k9x.ai"
 
 [tool.setuptools]
 include-package-data = true

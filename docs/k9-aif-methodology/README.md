@@ -13,4 +13,4 @@ K9-AIF Intake operates through three structured pipelines:
 
 A human-in-the-loop (HIL) approval gate ensures that architecture is validated before implementation begins.
 
-work in progress: intake.k9aif.com  
+work in progress: intake.k9x.ai  

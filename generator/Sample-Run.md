@@ -169,7 +169,7 @@ you can run the pytest command from main folder or within the my_app folder. eit
 Enjoy! 
 
 ```code
-if you need help or does not work for you,  contact: ravinatarajan@k9aif.com
+if you need help or does not work for you,  contact: ravinatarajan@k9x.ai
 
 ```
 

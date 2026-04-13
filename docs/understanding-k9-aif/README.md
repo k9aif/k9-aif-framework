@@ -58,4 +58,4 @@ multi-agent systems.
 ## Related Resources
 
 - [K9-AIF GitHub Repository](https://github.com/k9aif/k9-aif-framework)
-- [K9-AIF Architecture Blog](https://blog.k9aif.com)
+- [K9-AIF Architecture Blog](https://blog.k9x.ai)
