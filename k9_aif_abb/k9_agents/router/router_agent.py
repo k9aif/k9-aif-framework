@@ -1,83 +1,81 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
-# K9-AIF - RouterAgent (ABB Core, Debug Instrumented)
+# K9-AIF - RouterAgent (ABB Core)
 
 import logging
 import yaml
 from typing import Dict, Any, Optional
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+
+from k9_aif_abb.k9_core.router.base_router import BaseRouter
 
 
-class RouterAgent(BaseAgent):
+class RouterAgent(BaseRouter):
     layer = "Router ABB"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None):
-        super().__init__(config=config, name="RouterAgent", monitor=monitor)
+    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, message_bus=None):
+        super().__init__(config=config, monitor=monitor, message_bus=message_bus)
         self.logger = logging.getLogger("RouterAgent")
 
         try:
-            raw_registry = config.get("orchestrators", {}) or self._load_registry()
-            print(f"[Router ABB]  Raw orchestrator registry type: {type(raw_registry)}")
+            raw_registry = (config or {}).get("orchestrators", {}) or self._load_registry()
             self.registry = self._normalize_registry(raw_registry)
 
-            print(f"[Router ABB] [OK] Loaded {len(self.registry)} orchestrators:")
+            self.logger.info(f"[{self.layer}] Loaded {len(self.registry)} orchestrators")
             for intent, orch in self.registry.items():
-                print(f"    -> intent='{intent}' -> orchestrator='{orch}'")
-
-            self.log(f"[OK] Router registry initialized with {len(self.registry)} intents")
+                self.logger.info(f"[{self.layer}] intent='{intent}' -> orchestrator='{orch}'")
         except Exception as e:
             self.registry = {}
-            self.log(f"[WARN] Failed to load orchestrator registry: {e}")
+            self.logger.warning(f"[{self.layer}] Failed to load orchestrator registry: {e}")
 
     # ------------------------------------------------------------------
     def _load_registry(self) -> Dict[str, Any]:
         """Load orchestrators.yaml if not provided by config."""
         try:
             path = "k9_aif_abb/config/orchestrators.yaml"
-            print(f"[Router ABB]  Loading orchestrator registry from {path}")
             with open(path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-                print(f"[Router ABB] [OK] File read successfully: {len(data.get('orchestrators', []))} entries found")
+                data = yaml.safe_load(f) or {}
                 return data.get("orchestrators", [])
         except Exception as e:
-            print(f"[Router ABB] [ERROR] Failed to read orchestrators.yaml: {e}")
+            self.logger.error(f"[{self.layer}] Failed to read orchestrators.yaml: {e}")
             return {}
 
     # ------------------------------------------------------------------
     def _normalize_registry(self, raw: Any) -> Dict[str, str]:
-        """Convert orchestrator list -> dict: intent -> name."""
-        mapping = {}
+        """Convert orchestrator list/dict -> dict: intent -> name."""
+        mapping: Dict[str, str] = {}
+
         if isinstance(raw, dict):
             for k, v in raw.items():
-                mapping[k] = v.get("name", "")
+                if isinstance(v, dict):
+                    mapping[k] = v.get("name", "")
+                elif isinstance(v, str):
+                    mapping[k] = v
+
         elif isinstance(raw, list):
             for entry in raw:
+                if not isinstance(entry, dict):
+                    continue
                 intent = entry.get("intent")
                 name = entry.get("name")
                 if intent and name:
                     mapping[intent] = name
-                    print(f"[Router ABB] [INFO] Mapped intent='{intent}' -> '{name}'")
-                else:
-                    print(f"[Router ABB] [WARN] Skipping invalid entry: {entry}")
-        else:
-            print(f"[Router ABB] [WARN] Unexpected registry format: {type(raw)}")
+
         return mapping
 
     # ------------------------------------------------------------------
-    def route(self, intent: str) -> Optional[str]:
-        orch_name = self.registry.get(intent)
-        if orch_name:
-            self.log(f" Routed intent={intent} -> {orch_name}")
-        else:
-            self.log(f"[WARN] No orchestrator found for intent={intent}")
-        return orch_name
+    def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        payload = self.normalize(payload)
 
-    # ------------------------------------------------------------------
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        self.log(" RouterAgent execution started (ABB mode)")
         intent = payload.get("intent", "unknown")
-        orchestrator = self.route(intent)
-        print(f"[Router ABB] [INFO] Executed route: intent='{intent}', orchestrator='{orchestrator}'")
+        orchestrator = self.registry.get(intent)
 
-        return {"intent": intent, "orchestrator": orchestrator}
+        if orchestrator:
+            self.logger.info(f"[{self.layer}] Routed intent='{intent}' -> '{orchestrator}'")
+        else:
+            self.logger.warning(f"[{self.layer}] No orchestrator found for intent='{intent}'")
+
+        return {
+            "intent": intent,
+            "orchestrator": orchestrator,
+        }

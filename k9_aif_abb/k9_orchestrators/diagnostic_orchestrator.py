@@ -1,14 +1,13 @@
-# SPDX-License-Identifier: Apache-2.0
+ # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
 # File: k9_aif_abb/k9_orchestrators/diagnostic_orchestrator.py
 
 import traceback
 from typing import Dict, Any
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
-
-class DiagnosticOrchestrator(BaseAgent):
+class DiagnosticOrchestrator(BaseOrchestrator):
     """
     K9-AIF DiagnosticOrchestrator ABB
     ---------------------------------
@@ -17,8 +16,8 @@ class DiagnosticOrchestrator(BaseAgent):
 
     layer = "Diagnostic Orchestrator ABB"
 
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        self.log(" DiagnosticOrchestrator execution started")
+    def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self.logger.info("DiagnosticOrchestrator execution started")
 
         try:
             query = payload.get("message", "")
@@ -39,10 +38,10 @@ class DiagnosticOrchestrator(BaseAgent):
                     "status": "success",
                 })
 
-            self.log("[OK] Diagnostic orchestration complete")
+            self.logger.info("[OK] Diagnostic orchestration complete")
             return {"reply": reply}
 
         except Exception as e:
-            self.log(f"[ERROR] Diagnostic orchestration error: {e}", level="ERROR")
+            self.logger.error(f"[ERROR] Diagnostic orchestration error: {e}")
             traceback.print_exc()
             return {"reply": "[WARN] Diagnostic orchestration failed."}

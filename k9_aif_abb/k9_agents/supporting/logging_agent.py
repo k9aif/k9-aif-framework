@@ -3,40 +3,34 @@
 
 # File: k9_aif_abb/k9_agents/logging/logging_agent.py
 
-from typing import Dict, Any
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from typing import Dict, Any, Optional
+from k9_aif_abb.k9_core.monitoring.base_logging_agent import BaseLoggingAgent
 
 
-class LoggingAgent(BaseAgent):
+class LoggingAgent(BaseLoggingAgent):
     """
     K9-AIF LoggingAgent
     -------------------
-    ABB-level agent for framework-wide logging.
-    Used primarily in orchestrator chains or smoke tests
-    to trace payloads as they traverse the pipeline.
+    ABB-level logging agent for emitting structured log messages.
 
     Responsibilities:
-    - Log incoming requests
-    - Optionally emit monitoring events
-    - Return payload unchanged (pass-through)
+    - Emit log messages via unified logging interface
+    - Integrate with Python logging system
+    - Serve as a bridge for monitoring/telemetry
     """
 
     layer = "Logging ABB"
 
-    def __init__(self, config: Dict[str, Any] | None = None):
-        super().__init__(config or {}, name="LoggingAgent")
-        self.name = self.config.get("logging", {}).get("name", self.name)
-        self.log(f"[{self.layer}] Initialized '{self.name}'")
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        cfg = config or {}
+        name = cfg.get("logging", {}).get("name", "LoggingAgent")
+        super().__init__(name=name)
+        self.config = cfg
 
-    def execute(self, request: dict) -> dict:
-        """Log and return the incoming request (no mutation)."""
-        self.log(f"[{self.layer}] {self.name} received: {request}", level="INFO")
-
-        # Example: future monitoring hook
-        if hasattr(self, "monitor") and self.monitor:
-            try:
-                self.monitor.observe("logging_event", {"agent": self.name})
-            except Exception:
-                self.log(f"[{self.layer}] monitor.observe failed", "WARN")
-
-        return request
+    def log(self, message: str, level: str = "INFO"):
+        """
+        Emit a log message using the configured logging backend.
+        """
+        getattr(self.logger, level.lower(), self.logger.info)(
+            f"[{self.layer}:{self.name}] {message}"
+        )

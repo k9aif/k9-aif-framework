@@ -76,7 +76,3 @@ class FrameworkOrchestrator(BaseOrchestrator):
             self.logger.error(f"[ERROR] Orchestrator error: {e}")
             traceback.print_exc()
             return {"reply": "[WARN] Framework orchestration failed."}
-
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Compatibility wrapper for older callers."""
-        return await self.execute_flow(payload)

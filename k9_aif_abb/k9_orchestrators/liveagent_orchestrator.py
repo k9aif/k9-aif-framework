@@ -5,10 +5,10 @@
 
 import traceback
 from typing import Dict, Any
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 
-class LiveAgentOrchestrator(BaseAgent):
+class LiveAgentOrchestrator(BaseOrchestrator):
     """
     K9-AIF LiveAgentOrchestrator ABB
     --------------------------------
@@ -18,29 +18,46 @@ class LiveAgentOrchestrator(BaseAgent):
 
     layer = "LiveAgent Orchestrator ABB"
 
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        self.log(" LiveAgentOrchestrator execution started")
+    async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self.logger.info("LiveAgentOrchestrator execution started")
 
         try:
             query = payload.get("message", "")
+
+            if self.message_bus:
+                try:
+                    self.message_bus.publish({
+                        "event_type": "escalation_start",
+                        "agent": self.__class__.__name__,
+                        "layer": self.layer,
+                        "query": query,
+                        "status": "initiated",
+                    })
+                except Exception:
+                    pass
+
             reply = (
-                " **LiveAgentOrchestrator**\n"
-                f"Your query has been forwarded to a human support specialist.\n\n"
+                "**LiveAgentOrchestrator**\n"
+                "Your query has been forwarded to a human support specialist.\n\n"
                 f"**Summary:** {query}\n"
-                f"A Live Agent will follow up shortly."
+                "A Live Agent will follow up shortly."
             )
 
-            if getattr(self, "messaging", None):
-                self.messaging.publish({
-                    "event_type": "escalation_triggered",
-                    "layer": self.layer,
-                    "status": "initiated",
-                })
+            if self.message_bus:
+                try:
+                    self.message_bus.publish({
+                        "event_type": "escalation_triggered",
+                        "agent": self.__class__.__name__,
+                        "layer": self.layer,
+                        "status": "initiated",
+                    })
+                except Exception:
+                    pass
 
-            self.log("[OK] LiveAgent escalation initiated")
+            self.logger.info("[OK] LiveAgent escalation initiated")
             return {"reply": reply}
 
         except Exception as e:
-            self.log(f"[ERROR] LiveAgent orchestration error: {e}", level="ERROR")
+            self.logger.error(f"[ERROR] LiveAgent orchestration error: {e}")
             traceback.print_exc()
             return {"reply": "[WARN] Live agent escalation failed."}
