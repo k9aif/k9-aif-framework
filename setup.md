@@ -40,5 +40,21 @@ Now, since this is working, you can then go to the folders and look at the code.
 
 ```
 
+## Run other .sh scripts
+
+From the same folder (ai/k9-aif-framework), run all the .sh (if on windows, convert it to .bat)
+and all examples should run flawlessly. 
+
+The acme_support_center is a chat and uses command prompt, meaning, the chat prompt will appear and you can try something like "cannot login to my laptop" and so on to test out the support center. 
+
+with this code base, you can add UI to it and customize it. Make it more interesting. The main thing is, once you see this working, then, look at the code to understand how it is done. 
+
+Enjoy.  If you need help or want to share your thoughts, email me at ravinatarajan@k9x.ai
+
+https://k9x.ai 
+
+---
+
+
 
 
