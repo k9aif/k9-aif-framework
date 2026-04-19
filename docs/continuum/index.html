@@ -7,156 +7,167 @@
   <title>K9-AIF Continuum</title>
 
   <style>
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f4efe9;
-      color: #3b2f2a;
-      margin: 0;
-      padding: 40px 20px;
-    }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f7f8fa;
+    color: #374151;
+    margin: 0;
+    padding: 40px 20px;
+  }
 
-    .container {
-      max-width: 980px;
-      margin: auto;
-    }
+  .container {
+    max-width: 980px;
+    margin: auto;
+  }
 
-    h1 {
-      text-align: center;
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
+  h1 {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: #111827;
+  }
 
-    .subtitle {
-      text-align: center;
-      font-size: 16px;
-      color: #6f5a4f;
-      margin-bottom: 50px;
-    }
+  .subtitle {
+    text-align: center;
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 50px;
+  }
 
-    .intro {
-      font-size: 17px;
-      line-height: 1.75;
-      color: #4a3a32;
-      margin-bottom: 28px;
-    }
+  .intro {
+    font-size: 17px;
+    line-height: 1.75;
+    color: #374151;
+    margin-bottom: 28px;
+  }
 
-    h2 {
-      font-size: 24px;
-      margin-top: 40px;
-      margin-bottom: 14px;
-      color: #2f241f;
-    }
+  .intro-highlight {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 4px solid #2563eb;
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 18px;
-      margin-top: 18px;
-      margin-bottom: 28px;
-    }
+  h2 {
+    font-size: 24px;
+    margin-top: 40px;
+    margin-bottom: 14px;
+    color: #111827;
+  }
 
-    .card {
-      background: #fffaf6;
-      border: 1px solid #e4d8cf;
-      border-radius: 10px;
-      padding: 20px;
-    }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+    margin-bottom: 28px;
+  }
 
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 20px;
-    }
+  .card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+  }
 
-    .card p {
-      margin: 0;
-      line-height: 1.7;
-      font-size: 16px;
-      color: #4a3a32;
-    }
+  .card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #111827;
+  }
 
-    .steps {
-      margin: 0 0 30px 20px;
-      padding: 0;
-      line-height: 1.8;
-      font-size: 16px;
-      color: #4a3a32;
-    }
+  .card p {
+    margin: 0;
+    line-height: 1.7;
+    font-size: 16px;
+    color: #374151;
+  }
 
-    .steps li {
-      margin-bottom: 8px;
-    }
+  .steps {
+    margin: 0 0 30px 20px;
+    padding: 0;
+    line-height: 1.8;
+    font-size: 16px;
+    color: #374151;
+  }
 
-    .diagram {
-      text-align: center;
-      margin-top: 20px;
-    }
+  .steps li {
+    margin-bottom: 8px;
+  }
 
-    .diagram img {
-      width: 100%;
-      max-width: 1000px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
+  .diagram {
+    text-align: center;
+    margin-top: 20px;
+  }
 
-    .caption {
-      text-align: center;
-      margin-top: 15px;
-      font-style: italic;
-      color: #6f5a4f;
-    }
+  .diagram img {
+    width: 100%;
+    max-width: 1000px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
 
-    .summary {
-      margin-top: 28px;
-      font-size: 17px;
-      line-height: 1.75;
-      color: #4a3a32;
-    }
+  .caption {
+    text-align: center;
+    margin-top: 15px;
+    font-style: italic;
+    color: #6b7280;
+  }
 
-    .link {
-      text-align: center;
-      margin-top: 20px;
-      margin-bottom: 30px;
-    }
+  .summary {
+    margin-top: 28px;
+    font-size: 17px;
+    line-height: 1.75;
+    color: #374151;
+  }
 
-    .link a {
-      color: #d6782c;
-      text-decoration: none;
-      font-weight: 500;
-    }
+  .link {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 30px;
+  }
 
-    .link a:hover {
-      text-decoration: underline;
-    }
+  .link a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+  }
 
-    .implementation {
-      font-size: 16px;
-      line-height: 1.8;
-      color: #4a3a32;
-      margin-top: 20px;
-      margin-bottom: 20px;
-    }
+  .link a:hover {
+    text-decoration: underline;
+  }
 
-    .implementation-list {
-      margin-top: 12px;
-      margin-left: 20px;
-      padding-left: 0;
-      font-size: 16px;
-      line-height: 1.8;
-      color: #4a3a32;
-    }
+  .implementation {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #374151;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
 
-    .implementation-list li {
-      margin-bottom: 8px;
-    }
+  .implementation-list {
+    margin-top: 12px;
+    margin-left: 20px;
+    padding-left: 0;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #374151;
+  }
+
+  .implementation-list li {
+    margin-bottom: 8px;
+  }
 
   .section-divider {
     border: none;
     height: 1px;
-    background: #d8cfc8;
+    background: #e5e7eb;
     margin: 18px 0 24px 0;
   }
-  </style>
+</style>
 </head>
 
 <body>
