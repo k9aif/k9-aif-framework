@@ -13,8 +13,19 @@ from k9_aif_abb.k9_core.router.base_router import BaseRouter
 class RouterAgent(BaseRouter):
     layer = "Router ABB"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, message_bus=None):
-        super().__init__(config=config, monitor=monitor, message_bus=message_bus)
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        monitor=None,
+        message_bus=None,
+        governance=None,
+    ):
+        super().__init__(
+            config=config,
+            monitor=monitor,
+            message_bus=message_bus,
+            governance=governance,
+        )
         self.logger = logging.getLogger("RouterAgent")
 
         try:
@@ -28,7 +39,6 @@ class RouterAgent(BaseRouter):
             self.registry = {}
             self.logger.warning(f"[{self.layer}] Failed to load orchestrator registry: {e}")
 
-    # ------------------------------------------------------------------
     def _load_registry(self) -> Dict[str, Any]:
         """Load orchestrators.yaml if not provided by config."""
         try:
@@ -40,7 +50,6 @@ class RouterAgent(BaseRouter):
             self.logger.error(f"[{self.layer}] Failed to read orchestrators.yaml: {e}")
             return {}
 
-    # ------------------------------------------------------------------
     def _normalize_registry(self, raw: Any) -> Dict[str, str]:
         """Convert orchestrator list/dict -> dict: intent -> name."""
         mapping: Dict[str, str] = {}
@@ -63,9 +72,13 @@ class RouterAgent(BaseRouter):
 
         return mapping
 
-    # ------------------------------------------------------------------
-    def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         payload = self.normalize(payload)
+
+        payload = await self.apply_pre_governance(payload)
+
+        if payload.get("blocked"):
+            return payload
 
         intent = payload.get("intent", "unknown")
         orchestrator = self.registry.get(intent)
@@ -75,7 +88,10 @@ class RouterAgent(BaseRouter):
         else:
             self.logger.warning(f"[{self.layer}] No orchestrator found for intent='{intent}'")
 
-        return {
+        result = {
             "intent": intent,
             "orchestrator": orchestrator,
         }
+
+        result = await self.apply_post_governance(result)
+        return result
