@@ -1,0 +1,12 @@
+router:
+  class: examples.zero_trust_execution_demo.demo_router.DemoRouter
+  enable_zero_trust: true
+
+orchestrators:
+  claims:
+    class: examples.zero_trust_execution_demo.demo_orchestrator.DemoClaimsOrchestrator
+    enable_zero_trust: true
+
+routes:
+  claims:
+    orchestrator: claims
