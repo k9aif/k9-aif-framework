@@ -52,8 +52,6 @@ Start here for a structured explanation of K9-AIF:
 
 ---
 
----
-
 ## Zero Trust Execution Layer
 
 K9-AIF extends its architecture-first approach with a **Zero Trust Execution Layer**.
