@@ -3,7 +3,7 @@
 K9-AIF is an architecture-first framework for designing governed, enterprise-scale multi-agent AI systems.
 
 Unlike agent runtimes that focus mainly on execution, K9-AIF defines the architectural structure,
-interaction boundaries, and governance model needed to build scalable agentic AI systems.
+interaction boundaries, governance model, and runtime execution control needed to build scalable agentic AI systems.
 
 The framework separates Architecture Building Blocks (ABB) from
 Solution Building Blocks (SBB), enabling extensible and composable
@@ -51,6 +51,34 @@ Start here for a structured explanation of K9-AIF:
 - [FAQ](docs/understanding-k9-aif/06-faq.md)
 
 ---
+
+---
+
+## Zero Trust Execution Layer
+
+K9-AIF extends its architecture-first approach with a **Zero Trust Execution Layer**.
+
+Traditional Zero Trust focuses on access — who can reach a system.
+
+K9-AIF applies Zero Trust to **execution**:
+
+- Every action is verified before execution  
+- Contextual risk is evaluated (identity, data sensitivity, destination)  
+- Policies are enforced at runtime (allow, conditional, deny)  
+
+This layer is integrated across the architecture:
+
+- **Router** — pre-routing enforcement  
+- **Orchestrator** — pre-execution enforcement  
+
+Architecture principle:
+
+> Zero Trust is not a checkpoint — it is a layer applied across the system.
+
+![Zero Trust Execution Layer](docs/diagrams/k9-security_class_diagram.png)
+
+---
+
 
 # Core Architectural Concepts
 
@@ -109,8 +137,7 @@ inference, and persistence.
    and context-aware reasoning.
 5. **Data Layer** Provides persistence, object storage, and messaging infrastructure
    used by the framework.
-6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to
-   enforce policy, auditability, monitoring, and operational control.
+6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to enforce policy, auditability, monitoring, and operational control. This includes the **Zero Trust Execution Layer**, which verifies, risk-evaluates, and enforces policy on all actions before execution across routers, orchestrators, agents, and integrations.
 
 ---
 
@@ -127,6 +154,7 @@ Execution hierarchy:
 Router --> Orchestrator --> Squads --> Agents
 
 Squads allow enterprise workflows to be modeled as **capability-based teams of agents**.
+All squad-level execution remains subject to K9-AIF’s governance and Zero Trust execution controls, ensuring that agent actions are verified and policy-enforced at runtime.
 
 Examples include:
 
@@ -180,6 +208,7 @@ Key architectural goals include:
 - Clear orchestration boundaries between agents, tools, squads, and services
 - Scalable integration with enterprise systems and external platforms
 - Architecture-driven routing of inference requests across multiple models and providers
+- Runtime execution control using a Zero Trust model, ensuring that all agentic actions are verified, risk-evaluated, and policy-enforced before execution
 
 The framework bridges traditional **enterprise architecture principles**
 with emerging **agentic AI system design**.
@@ -200,6 +229,7 @@ The table below highlights how the framework differs from several popular agenti
 | Declarative configuration         | ✅ YAML-driven                                | ⚠️ Partial | ⚠️ Code-centric    | ⚠️ Platform config    |
 | Enterprise architecture alignment | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
 | Governance & observability hooks  | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
+| Runtime execution control (Zero Trust) | ✅ Yes (Router + Orchestrator enforcement) | ❌ No | ❌ No | ❌ No |
 
 K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
 
