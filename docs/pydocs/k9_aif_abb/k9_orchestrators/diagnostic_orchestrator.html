@@ -37,7 +37,7 @@
                                 <a class="variable" href="#DiagnosticOrchestrator.layer">layer</a>
                         </li>
                         <li>
-                                <a class="function" href="#DiagnosticOrchestrator.execute">execute</a>
+                                <a class="function" href="#DiagnosticOrchestrator.execute_flow">execute_flow</a>
                         </li>
                 </ul>
 
@@ -63,54 +63,53 @@
 
                         <label class="view-source-button" for="mod-diagnostic_orchestrator-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a> <span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="c1"># File: k9_aif_abb/k9_orchestrators/diagnostic_orchestrator.py</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.agent.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.orchestration.base_orchestrator</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseOrchestrator</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DiagnosticOrchestrator</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    K9-AIF DiagnosticOrchestrator ABB</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">    ---------------------------------</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    Runs self-checks, status queries, and dependency health validation.</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="n">layer</span> <span class="o">=</span> <span class="s2">&quot;Diagnostic Orchestrator ABB&quot;</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot; DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>            <span class="p">)</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>                <span class="p">})</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DiagnosticOrchestrator</span><span class="p">(</span><span class="n">BaseOrchestrator</span><span class="p">):</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    K9-AIF DiagnosticOrchestrator ABB</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    ---------------------------------</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">    Runs self-checks, status queries, and dependency health validation.</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="n">layer</span> <span class="o">=</span> <span class="s2">&quot;Diagnostic Orchestrator ABB&quot;</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>            <span class="p">)</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>                <span class="p">})</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
 </span></pre></div>
 
 
@@ -120,50 +119,50 @@
 <div class="attr class">
             
     <span class="def">class</span>
-    <span class="name">DiagnosticOrchestrator</span><wbr>(<span class="base"><a href="../k9_core/agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></span>):
+    <span class="name">DiagnosticOrchestrator</span><wbr>(<span class="base"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator">k9_aif_abb.k9_core.orchestration.base_orchestrator.BaseOrchestrator</a></span>):
 
                 <label class="view-source-button" for="DiagnosticOrchestrator-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#DiagnosticOrchestrator"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DiagnosticOrchestrator-12"><a href="#DiagnosticOrchestrator-12"><span class="linenos">12</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DiagnosticOrchestrator</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
-</span><span id="DiagnosticOrchestrator-13"><a href="#DiagnosticOrchestrator-13"><span class="linenos">13</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="DiagnosticOrchestrator-14"><a href="#DiagnosticOrchestrator-14"><span class="linenos">14</span></a><span class="sd">    K9-AIF DiagnosticOrchestrator ABB</span>
-</span><span id="DiagnosticOrchestrator-15"><a href="#DiagnosticOrchestrator-15"><span class="linenos">15</span></a><span class="sd">    ---------------------------------</span>
-</span><span id="DiagnosticOrchestrator-16"><a href="#DiagnosticOrchestrator-16"><span class="linenos">16</span></a><span class="sd">    Runs self-checks, status queries, and dependency health validation.</span>
-</span><span id="DiagnosticOrchestrator-17"><a href="#DiagnosticOrchestrator-17"><span class="linenos">17</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="DiagnosticOrchestrator-18"><a href="#DiagnosticOrchestrator-18"><span class="linenos">18</span></a>
-</span><span id="DiagnosticOrchestrator-19"><a href="#DiagnosticOrchestrator-19"><span class="linenos">19</span></a>    <span class="n">layer</span> <span class="o">=</span> <span class="s2">&quot;Diagnostic Orchestrator ABB&quot;</span>
-</span><span id="DiagnosticOrchestrator-20"><a href="#DiagnosticOrchestrator-20"><span class="linenos">20</span></a>
-</span><span id="DiagnosticOrchestrator-21"><a href="#DiagnosticOrchestrator-21"><span class="linenos">21</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="DiagnosticOrchestrator-22"><a href="#DiagnosticOrchestrator-22"><span class="linenos">22</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot; DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator-23"><a href="#DiagnosticOrchestrator-23"><span class="linenos">23</span></a>
-</span><span id="DiagnosticOrchestrator-24"><a href="#DiagnosticOrchestrator-24"><span class="linenos">24</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="DiagnosticOrchestrator-25"><a href="#DiagnosticOrchestrator-25"><span class="linenos">25</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator-26"><a href="#DiagnosticOrchestrator-26"><span class="linenos">26</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="DiagnosticOrchestrator-27"><a href="#DiagnosticOrchestrator-27"><span class="linenos">27</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-28"><a href="#DiagnosticOrchestrator-28"><span class="linenos">28</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-29"><a href="#DiagnosticOrchestrator-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-30"><a href="#DiagnosticOrchestrator-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-31"><a href="#DiagnosticOrchestrator-31"><span class="linenos">31</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-32"><a href="#DiagnosticOrchestrator-32"><span class="linenos">32</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-33"><a href="#DiagnosticOrchestrator-33"><span class="linenos">33</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator-34"><a href="#DiagnosticOrchestrator-34"><span class="linenos">34</span></a>            <span class="p">)</span>
-</span><span id="DiagnosticOrchestrator-35"><a href="#DiagnosticOrchestrator-35"><span class="linenos">35</span></a>
-</span><span id="DiagnosticOrchestrator-36"><a href="#DiagnosticOrchestrator-36"><span class="linenos">36</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="DiagnosticOrchestrator-37"><a href="#DiagnosticOrchestrator-37"><span class="linenos">37</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
-</span><span id="DiagnosticOrchestrator-38"><a href="#DiagnosticOrchestrator-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator-39"><a href="#DiagnosticOrchestrator-39"><span class="linenos">39</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator-40"><a href="#DiagnosticOrchestrator-40"><span class="linenos">40</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator-41"><a href="#DiagnosticOrchestrator-41"><span class="linenos">41</span></a>                <span class="p">})</span>
-</span><span id="DiagnosticOrchestrator-42"><a href="#DiagnosticOrchestrator-42"><span class="linenos">42</span></a>
-</span><span id="DiagnosticOrchestrator-43"><a href="#DiagnosticOrchestrator-43"><span class="linenos">43</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator-44"><a href="#DiagnosticOrchestrator-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
-</span><span id="DiagnosticOrchestrator-45"><a href="#DiagnosticOrchestrator-45"><span class="linenos">45</span></a>
-</span><span id="DiagnosticOrchestrator-46"><a href="#DiagnosticOrchestrator-46"><span class="linenos">46</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="DiagnosticOrchestrator-47"><a href="#DiagnosticOrchestrator-47"><span class="linenos">47</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator-48"><a href="#DiagnosticOrchestrator-48"><span class="linenos">48</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
-</span><span id="DiagnosticOrchestrator-49"><a href="#DiagnosticOrchestrator-49"><span class="linenos">49</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DiagnosticOrchestrator-11"><a href="#DiagnosticOrchestrator-11"><span class="linenos">11</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DiagnosticOrchestrator</span><span class="p">(</span><span class="n">BaseOrchestrator</span><span class="p">):</span>
+</span><span id="DiagnosticOrchestrator-12"><a href="#DiagnosticOrchestrator-12"><span class="linenos">12</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="DiagnosticOrchestrator-13"><a href="#DiagnosticOrchestrator-13"><span class="linenos">13</span></a><span class="sd">    K9-AIF DiagnosticOrchestrator ABB</span>
+</span><span id="DiagnosticOrchestrator-14"><a href="#DiagnosticOrchestrator-14"><span class="linenos">14</span></a><span class="sd">    ---------------------------------</span>
+</span><span id="DiagnosticOrchestrator-15"><a href="#DiagnosticOrchestrator-15"><span class="linenos">15</span></a><span class="sd">    Runs self-checks, status queries, and dependency health validation.</span>
+</span><span id="DiagnosticOrchestrator-16"><a href="#DiagnosticOrchestrator-16"><span class="linenos">16</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="DiagnosticOrchestrator-17"><a href="#DiagnosticOrchestrator-17"><span class="linenos">17</span></a>
+</span><span id="DiagnosticOrchestrator-18"><a href="#DiagnosticOrchestrator-18"><span class="linenos">18</span></a>    <span class="n">layer</span> <span class="o">=</span> <span class="s2">&quot;Diagnostic Orchestrator ABB&quot;</span>
+</span><span id="DiagnosticOrchestrator-19"><a href="#DiagnosticOrchestrator-19"><span class="linenos">19</span></a>
+</span><span id="DiagnosticOrchestrator-20"><a href="#DiagnosticOrchestrator-20"><span class="linenos">20</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="DiagnosticOrchestrator-21"><a href="#DiagnosticOrchestrator-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator-22"><a href="#DiagnosticOrchestrator-22"><span class="linenos">22</span></a>
+</span><span id="DiagnosticOrchestrator-23"><a href="#DiagnosticOrchestrator-23"><span class="linenos">23</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="DiagnosticOrchestrator-24"><a href="#DiagnosticOrchestrator-24"><span class="linenos">24</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator-25"><a href="#DiagnosticOrchestrator-25"><span class="linenos">25</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="DiagnosticOrchestrator-26"><a href="#DiagnosticOrchestrator-26"><span class="linenos">26</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-27"><a href="#DiagnosticOrchestrator-27"><span class="linenos">27</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-28"><a href="#DiagnosticOrchestrator-28"><span class="linenos">28</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-29"><a href="#DiagnosticOrchestrator-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-30"><a href="#DiagnosticOrchestrator-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-31"><a href="#DiagnosticOrchestrator-31"><span class="linenos">31</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-32"><a href="#DiagnosticOrchestrator-32"><span class="linenos">32</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator-33"><a href="#DiagnosticOrchestrator-33"><span class="linenos">33</span></a>            <span class="p">)</span>
+</span><span id="DiagnosticOrchestrator-34"><a href="#DiagnosticOrchestrator-34"><span class="linenos">34</span></a>
+</span><span id="DiagnosticOrchestrator-35"><a href="#DiagnosticOrchestrator-35"><span class="linenos">35</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="DiagnosticOrchestrator-36"><a href="#DiagnosticOrchestrator-36"><span class="linenos">36</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
+</span><span id="DiagnosticOrchestrator-37"><a href="#DiagnosticOrchestrator-37"><span class="linenos">37</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator-38"><a href="#DiagnosticOrchestrator-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator-39"><a href="#DiagnosticOrchestrator-39"><span class="linenos">39</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator-40"><a href="#DiagnosticOrchestrator-40"><span class="linenos">40</span></a>                <span class="p">})</span>
+</span><span id="DiagnosticOrchestrator-41"><a href="#DiagnosticOrchestrator-41"><span class="linenos">41</span></a>
+</span><span id="DiagnosticOrchestrator-42"><a href="#DiagnosticOrchestrator-42"><span class="linenos">42</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator-43"><a href="#DiagnosticOrchestrator-43"><span class="linenos">43</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
+</span><span id="DiagnosticOrchestrator-44"><a href="#DiagnosticOrchestrator-44"><span class="linenos">44</span></a>
+</span><span id="DiagnosticOrchestrator-45"><a href="#DiagnosticOrchestrator-45"><span class="linenos">45</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="DiagnosticOrchestrator-46"><a href="#DiagnosticOrchestrator-46"><span class="linenos">46</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator-47"><a href="#DiagnosticOrchestrator-47"><span class="linenos">47</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+</span><span id="DiagnosticOrchestrator-48"><a href="#DiagnosticOrchestrator-48"><span class="linenos">48</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
 </span></pre></div>
 
 
@@ -185,77 +184,67 @@
     
 
                             </div>
-                            <div id="DiagnosticOrchestrator.execute" class="classattr">
-                                        <input id="DiagnosticOrchestrator.execute-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                            <div id="DiagnosticOrchestrator.execute_flow" class="classattr">
+                                        <input id="DiagnosticOrchestrator.execute_flow-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="def">async def</span>
-        <span class="name">execute</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+        <span class="def">def</span>
+        <span class="name">execute_flow</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
 
-                <label class="view-source-button" for="DiagnosticOrchestrator.execute-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="DiagnosticOrchestrator.execute_flow-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#DiagnosticOrchestrator.execute"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DiagnosticOrchestrator.execute-21"><a href="#DiagnosticOrchestrator.execute-21"><span class="linenos">21</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="DiagnosticOrchestrator.execute-22"><a href="#DiagnosticOrchestrator.execute-22"><span class="linenos">22</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot; DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator.execute-23"><a href="#DiagnosticOrchestrator.execute-23"><span class="linenos">23</span></a>
-</span><span id="DiagnosticOrchestrator.execute-24"><a href="#DiagnosticOrchestrator.execute-24"><span class="linenos">24</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="DiagnosticOrchestrator.execute-25"><a href="#DiagnosticOrchestrator.execute-25"><span class="linenos">25</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator.execute-26"><a href="#DiagnosticOrchestrator.execute-26"><span class="linenos">26</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="DiagnosticOrchestrator.execute-27"><a href="#DiagnosticOrchestrator.execute-27"><span class="linenos">27</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-28"><a href="#DiagnosticOrchestrator.execute-28"><span class="linenos">28</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-29"><a href="#DiagnosticOrchestrator.execute-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-30"><a href="#DiagnosticOrchestrator.execute-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-31"><a href="#DiagnosticOrchestrator.execute-31"><span class="linenos">31</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-32"><a href="#DiagnosticOrchestrator.execute-32"><span class="linenos">32</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-33"><a href="#DiagnosticOrchestrator.execute-33"><span class="linenos">33</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="DiagnosticOrchestrator.execute-34"><a href="#DiagnosticOrchestrator.execute-34"><span class="linenos">34</span></a>            <span class="p">)</span>
-</span><span id="DiagnosticOrchestrator.execute-35"><a href="#DiagnosticOrchestrator.execute-35"><span class="linenos">35</span></a>
-</span><span id="DiagnosticOrchestrator.execute-36"><a href="#DiagnosticOrchestrator.execute-36"><span class="linenos">36</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-</span><span id="DiagnosticOrchestrator.execute-37"><a href="#DiagnosticOrchestrator.execute-37"><span class="linenos">37</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
-</span><span id="DiagnosticOrchestrator.execute-38"><a href="#DiagnosticOrchestrator.execute-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator.execute-39"><a href="#DiagnosticOrchestrator.execute-39"><span class="linenos">39</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator.execute-40"><a href="#DiagnosticOrchestrator.execute-40"><span class="linenos">40</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
-</span><span id="DiagnosticOrchestrator.execute-41"><a href="#DiagnosticOrchestrator.execute-41"><span class="linenos">41</span></a>                <span class="p">})</span>
-</span><span id="DiagnosticOrchestrator.execute-42"><a href="#DiagnosticOrchestrator.execute-42"><span class="linenos">42</span></a>
-</span><span id="DiagnosticOrchestrator.execute-43"><a href="#DiagnosticOrchestrator.execute-43"><span class="linenos">43</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator.execute-44"><a href="#DiagnosticOrchestrator.execute-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
-</span><span id="DiagnosticOrchestrator.execute-45"><a href="#DiagnosticOrchestrator.execute-45"><span class="linenos">45</span></a>
-</span><span id="DiagnosticOrchestrator.execute-46"><a href="#DiagnosticOrchestrator.execute-46"><span class="linenos">46</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="DiagnosticOrchestrator.execute-47"><a href="#DiagnosticOrchestrator.execute-47"><span class="linenos">47</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;ERROR&quot;</span><span class="p">)</span>
-</span><span id="DiagnosticOrchestrator.execute-48"><a href="#DiagnosticOrchestrator.execute-48"><span class="linenos">48</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
-</span><span id="DiagnosticOrchestrator.execute-49"><a href="#DiagnosticOrchestrator.execute-49"><span class="linenos">49</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
+    <a class="headerlink" href="#DiagnosticOrchestrator.execute_flow"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DiagnosticOrchestrator.execute_flow-20"><a href="#DiagnosticOrchestrator.execute_flow-20"><span class="linenos">20</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-21"><a href="#DiagnosticOrchestrator.execute_flow-21"><span class="linenos">21</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DiagnosticOrchestrator execution started&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-22"><a href="#DiagnosticOrchestrator.execute_flow-22"><span class="linenos">22</span></a>
+</span><span id="DiagnosticOrchestrator.execute_flow-23"><a href="#DiagnosticOrchestrator.execute_flow-23"><span class="linenos">23</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-24"><a href="#DiagnosticOrchestrator.execute_flow-24"><span class="linenos">24</span></a>            <span class="n">query</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-25"><a href="#DiagnosticOrchestrator.execute_flow-25"><span class="linenos">25</span></a>            <span class="n">reply</span> <span class="o">=</span> <span class="p">(</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-26"><a href="#DiagnosticOrchestrator.execute_flow-26"><span class="linenos">26</span></a>                <span class="s2">&quot; **DiagnosticOrchestrator**</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-27"><a href="#DiagnosticOrchestrator.execute_flow-27"><span class="linenos">27</span></a>                <span class="s2">&quot;Performing system status validation...</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-28"><a href="#DiagnosticOrchestrator.execute_flow-28"><span class="linenos">28</span></a>                <span class="s2">&quot;[OK] MessageBus connected</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-29"><a href="#DiagnosticOrchestrator.execute_flow-29"><span class="linenos">29</span></a>                <span class="s2">&quot;[OK] Persistence layer active</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-30"><a href="#DiagnosticOrchestrator.execute_flow-30"><span class="linenos">30</span></a>                <span class="s2">&quot;[OK] Router enforcement verified</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-31"><a href="#DiagnosticOrchestrator.execute_flow-31"><span class="linenos">31</span></a>                <span class="s2">&quot;[OK] LLM Provider available</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-32"><a href="#DiagnosticOrchestrator.execute_flow-32"><span class="linenos">32</span></a>                <span class="sa">f</span><span class="s2">&quot;**Query:** </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-33"><a href="#DiagnosticOrchestrator.execute_flow-33"><span class="linenos">33</span></a>            <span class="p">)</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-34"><a href="#DiagnosticOrchestrator.execute_flow-34"><span class="linenos">34</span></a>
+</span><span id="DiagnosticOrchestrator.execute_flow-35"><a href="#DiagnosticOrchestrator.execute_flow-35"><span class="linenos">35</span></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;messaging&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-36"><a href="#DiagnosticOrchestrator.execute_flow-36"><span class="linenos">36</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">messaging</span><span class="o">.</span><span class="n">publish</span><span class="p">({</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-37"><a href="#DiagnosticOrchestrator.execute_flow-37"><span class="linenos">37</span></a>                    <span class="s2">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;diagnostic_check_complete&quot;</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-38"><a href="#DiagnosticOrchestrator.execute_flow-38"><span class="linenos">38</span></a>                    <span class="s2">&quot;layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-39"><a href="#DiagnosticOrchestrator.execute_flow-39"><span class="linenos">39</span></a>                    <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-40"><a href="#DiagnosticOrchestrator.execute_flow-40"><span class="linenos">40</span></a>                <span class="p">})</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-41"><a href="#DiagnosticOrchestrator.execute_flow-41"><span class="linenos">41</span></a>
+</span><span id="DiagnosticOrchestrator.execute_flow-42"><a href="#DiagnosticOrchestrator.execute_flow-42"><span class="linenos">42</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[OK] Diagnostic orchestration complete&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-43"><a href="#DiagnosticOrchestrator.execute_flow-43"><span class="linenos">43</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="n">reply</span><span class="p">}</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-44"><a href="#DiagnosticOrchestrator.execute_flow-44"><span class="linenos">44</span></a>
+</span><span id="DiagnosticOrchestrator.execute_flow-45"><a href="#DiagnosticOrchestrator.execute_flow-45"><span class="linenos">45</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-46"><a href="#DiagnosticOrchestrator.execute_flow-46"><span class="linenos">46</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ERROR] Diagnostic orchestration error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-47"><a href="#DiagnosticOrchestrator.execute_flow-47"><span class="linenos">47</span></a>            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+</span><span id="DiagnosticOrchestrator.execute_flow-48"><a href="#DiagnosticOrchestrator.execute_flow-48"><span class="linenos">48</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;reply&quot;</span><span class="p">:</span> <span class="s2">&quot;[WARN] Diagnostic orchestration failed.&quot;</span><span class="p">}</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Execute the agent's primary logic.</p>
-
-<p>Subclasses <strong>must</strong> implement this method to perform their
-core business or orchestration function.</p>
-
-<h2 id="parameters">Parameters</h2>
-
-<p>payload : Dict[str, Any]
-    Input data structure (task request, document, or event).</p>
-
-<h2 id="returns">Returns</h2>
-
-<p>Dict[str, Any]
-    Standardized response or result payload.</p>
-</div>
-
+    
 
                             </div>
                             <div class="inherited">
                                 <h5>Inherited Members</h5>
                                 <dl>
-                                    <div><dt><a href="../k9_core/agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></dt>
-                                <dd id="DiagnosticOrchestrator.__init__" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.__init__">BaseAgent</a></dd>
-                <dd id="DiagnosticOrchestrator.config" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.config">config</a></dd>
-                <dd id="DiagnosticOrchestrator.monitor" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.monitor">monitor</a></dd>
-                <dd id="DiagnosticOrchestrator.message_bus" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.message_bus">message_bus</a></dd>
-                <dd id="DiagnosticOrchestrator.logger" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.logger">logger</a></dd>
-                <dd id="DiagnosticOrchestrator.publish_event" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.publish_event">publish_event</a></dd>
+                                    <div><dt><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator">k9_aif_abb.k9_core.orchestration.base_orchestrator.BaseOrchestrator</a></dt>
+                                <dd id="DiagnosticOrchestrator.__init__" class="function"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.__init__">BaseOrchestrator</a></dd>
+                <dd id="DiagnosticOrchestrator.config" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.config">config</a></dd>
+                <dd id="DiagnosticOrchestrator.monitor" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.monitor">monitor</a></dd>
+                <dd id="DiagnosticOrchestrator.message_bus" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.message_bus">message_bus</a></dd>
+                <dd id="DiagnosticOrchestrator.governance" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.governance">governance</a></dd>
+                <dd id="DiagnosticOrchestrator.enable_zero_trust" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.enable_zero_trust">enable_zero_trust</a></dd>
+                <dd id="DiagnosticOrchestrator.logger" class="variable"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.logger">logger</a></dd>
+                <dd id="DiagnosticOrchestrator.publish_status" class="function"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.publish_status">publish_status</a></dd>
+                <dd id="DiagnosticOrchestrator.apply_pre_governance" class="function"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.apply_pre_governance">apply_pre_governance</a></dd>
+                <dd id="DiagnosticOrchestrator.apply_post_governance" class="function"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.apply_post_governance">apply_post_governance</a></dd>
+                <dd id="DiagnosticOrchestrator.apply_zero_trust" class="function"><a href="../k9_core/orchestration/base_orchestrator.html#BaseOrchestrator.apply_zero_trust">apply_zero_trust</a></dd>
 
             </div>
                                 </dl>

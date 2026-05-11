@@ -94,32 +94,7 @@
 
             <div class="docstring"><h1 id="baseagent">BaseAgent</h1>
 
-<p>Abstract foundation for all K9-AIF agents (domain, orchestration, or utility).</p>
-
-<p>Each agent:</p>
-
-<ul>
-<li>Executes a single, well-defined function (<code><a href="#WebSearchAgent.execute">execute()</a></code>).</li>
-<li>Publishes structured events through an optional message bus.</li>
-<li>Records operational activity through an optional monitor.</li>
-<li>Operates under the K9-AIF governance and observability model.</li>
-</ul>
-
-<p>This class <strong>must not</strong> import any higher-layer modules (such as Orchestrator or Router)
-to prevent circular dependencies. All integrations occur via interfaces (monitor, message_bus).</p>
-
-<h2 id="attributes">Attributes</h2>
-
-<p>layer : str
-    Logical layer identifier used for logging and monitoring.
-config : Dict[str, Any]
-    Configuration dictionary passed during initialization.
-monitor : Optional[Any]
-    Optional monitoring object implementing <code>record_event(event: Dict)</code>.
-message_bus : Optional[Any]
-    Optional messaging interface implementing <code>publish(event: Dict)</code>.
-logger : logging.Logger
-    Logger scoped to the agent class.</p>
+<p>Abstract foundation for all K9-AIF agents.</p>
 </div>
 
 
@@ -127,14 +102,16 @@ logger : logging.Logger
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="../../k9_core/agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></dt>
-                                <dd id="WebSearchAgent.__init__" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.__init__">BaseAgent</a></dd>
-                <dd id="WebSearchAgent.layer" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.layer">layer</a></dd>
+                                <dd id="WebSearchAgent.layer" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.layer">layer</a></dd>
                 <dd id="WebSearchAgent.config" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.config">config</a></dd>
                 <dd id="WebSearchAgent.monitor" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.monitor">monitor</a></dd>
                 <dd id="WebSearchAgent.message_bus" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.message_bus">message_bus</a></dd>
+                <dd id="WebSearchAgent.governance" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.governance">governance</a></dd>
                 <dd id="WebSearchAgent.logger" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.logger">logger</a></dd>
                 <dd id="WebSearchAgent.execute" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.execute">execute</a></dd>
                 <dd id="WebSearchAgent.publish_event" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.publish_event">publish_event</a></dd>
+                <dd id="WebSearchAgent.apply_pre_governance" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.apply_pre_governance">apply_pre_governance</a></dd>
+                <dd id="WebSearchAgent.apply_post_governance" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.apply_post_governance">apply_post_governance</a></dd>
 
             </div>
                                 </dl>

@@ -183,18 +183,7 @@
 </span></pre></div>
 
 
-            <div class="docstring"><p>Initialize the base agent.</p>
-
-<h2 id="parameters">Parameters</h2>
-
-<p>config : Dict[str, Any], optional
-    Configuration values for the agent instance.
-monitor : object, optional
-    Monitoring instance for observability hooks.
-message_bus : object, optional
-    Message bus instance for publishing structured events.</p>
-</div>
-
+    
 
                             </div>
                             <div id="AuthAgent.api_key" class="classattr">
@@ -259,22 +248,7 @@ message_bus : object, optional
 </span></pre></div>
 
 
-            <div class="docstring"><p>Execute the agent's primary logic.</p>
-
-<p>Subclasses <strong>must</strong> implement this method to perform their
-core business or orchestration function.</p>
-
-<h2 id="parameters">Parameters</h2>
-
-<p>payload : Dict[str, Any]
-    Input data structure (task request, document, or event).</p>
-
-<h2 id="returns">Returns</h2>
-
-<p>Dict[str, Any]
-    Standardized response or result payload.</p>
-</div>
-
+    
 
                             </div>
                             <div class="inherited">
@@ -285,8 +259,11 @@ core business or orchestration function.</p>
                 <dd id="AuthAgent.config" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.config">config</a></dd>
                 <dd id="AuthAgent.monitor" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.monitor">monitor</a></dd>
                 <dd id="AuthAgent.message_bus" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.message_bus">message_bus</a></dd>
+                <dd id="AuthAgent.governance" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.governance">governance</a></dd>
                 <dd id="AuthAgent.logger" class="variable"><a href="../../k9_core/agent/base_agent.html#BaseAgent.logger">logger</a></dd>
                 <dd id="AuthAgent.publish_event" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.publish_event">publish_event</a></dd>
+                <dd id="AuthAgent.apply_pre_governance" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.apply_pre_governance">apply_pre_governance</a></dd>
+                <dd id="AuthAgent.apply_post_governance" class="function"><a href="../../k9_core/agent/base_agent.html#BaseAgent.apply_post_governance">apply_post_governance</a></dd>
 
             </div>
                                 </dl>

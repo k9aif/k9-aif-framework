@@ -4,7 +4,7 @@
 # File: k9_aif_abb/k9_agents/logging/logging_agent.py
 
 from typing import Dict, Any, Optional
-from k9_aif_abb.k9_core.monitoring.base_logging_agent import BaseLoggingAgent
+from k9_aif_abb.k9_core.logging.base_logger import BaseLoggingAgent
 
 
 class LoggingAgent(BaseLoggingAgent):
