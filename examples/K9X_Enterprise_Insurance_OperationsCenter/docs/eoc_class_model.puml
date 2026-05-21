@@ -1,0 +1,531 @@
+@startuml K9X_Enterprise_Insurance_OperationsCenter
+
+skinparam groupInheritance 2
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor White
+  BorderColor #444
+  ArrowColor #444
+}
+skinparam package {
+  BackgroundColor #F8F8FF
+  BorderColor #888
+}
+
+hide empty members
+
+' ─────────────────────────────────────────────
+' FRAMEWORK (k9_aif_abb — abstract base classes)
+' ─────────────────────────────────────────────
+package "k9_aif_abb Framework" #EEF {
+  abstract class BaseRouter {
+    +config : Dict
+    +route(event_type, payload) : bool
+    +close()
+  }
+  abstract class K9ModelRouter {
+    +catalog : ModelCatalog
+    +config : dict
+    +state_store : RoutingStateStore
+    +invoke(request) : InferenceResponse
+    +route(request) : RouteDecision
+  }
+  abstract class BaseOrchestrator {
+    +config : Dict
+    +execute_flow(payload) : Dict
+  }
+  abstract class BaseAgent {
+    +config : Dict
+    +monitor
+    +logger
+    +execute(payload) : Dict
+  }
+  class K9EventBus {
+    +topic : str
+    +broker : str
+    +publish(payload)
+    +subscribe_async(handler)
+    +close()
+  }
+  class ModelCatalog
+  class RoutingStateStore
+  class SquadLoader
+  class AgentRegistry
+  class OrchestratorRegistry
+  class Squad {
+    +execute(payload) : Dict
+  }
+}
+
+' ─────────────────────────────────────────────
+' API MODELS
+' ─────────────────────────────────────────────
+package "api.models" #FFF8E1 {
+  class EOCEvent {
+    +event_type : str
+    +event_id : Optional[str]
+    +correlation_id : Optional[str]
+  }
+  class ClaimSubmittedEvent {
+    +event_type = "claim_submitted"
+    +claim_id : Optional[str]
+    +claimant_id : str
+    +policy_id : str
+    +claim_type : str
+    +amount_claimed : float
+    +notes : Optional[str]
+    +is_repeat_claimant : Optional[bool]
+  }
+  class DocumentReceivedEvent {
+    +event_type = "document_received"
+    +document_id : Optional[str]
+    +claim_id : Optional[str]
+    +claimant_id : Optional[str]
+    +filename : str
+    +file_type : Optional[str]
+    +raw_text : Optional[str]
+    +file_path : Optional[str]
+  }
+  class FraudSignalEvent {
+    +event_type = "fraud_signal_raised"
+    +alert_id : Optional[str]
+    +alert_source : str
+    +claimant_id : Optional[str]
+    +claim_id : Optional[str]
+    +description : str
+    +amount_claimed : Optional[float]
+    +severity : Optional[str]
+  }
+  class PolicyChangeEvent {
+    +event_type = "policy_change_requested"
+    +policy_id : str
+    +claimant_id : Optional[str]
+    +change_type : str
+    +change_description : str
+    +notes : Optional[str]
+  }
+  class CatastropheAlertEvent {
+    +event_type = "catastrophe_alert_issued"
+    +alert_id : Optional[str]
+    +alert_description : str
+    +estimated_exposure : Optional[float]
+    +affected_regions : Optional[List[str]]
+    +severity : Optional[str]
+  }
+  class CustomerInteractionEvent {
+    +event_type = "customer_interaction_logged"
+    +interaction_id : Optional[str]
+    +customer_id : str
+    +policy_id : Optional[str]
+    +interaction_type : str
+    +customer_message : str
+    +channel : Optional[str]
+  }
+  class AuditQueryRequest {
+    +query_correlation_id : Optional[str]
+    +query_event_id : Optional[str]
+    +query_agent_name : Optional[str]
+    +query_event_type : Optional[str]
+    +limit : int = 100
+  }
+  class EscalationResolveRequest {
+    +operator_id : str
+    +resolution : str
+    +resolution_notes : Optional[str]
+  }
+  class EOCEventResponse {
+    +status : str
+    +event_id : str
+    +correlation_id : str
+    +squad_id : Optional[str]
+    +final_decision : Optional[str]
+    +confidence : Optional[float]
+    +escalated : Optional[bool]
+    +ticket_id : Optional[str]
+    +audit_id : Optional[str]
+    +details : Optional[Dict]
+  }
+  class TraceStep {
+    +step : int
+    +component : str
+    +layer : str
+    +status : str
+    +message : str
+    +final : bool
+    +latency_ms : Optional[int]
+    +tools : Optional[List[str]]
+    +agent_result : Optional[Dict]
+  }
+  class ScenarioRunRequest {
+    +event_type : str
+    +payload : Optional[Dict]
+  }
+  class ScenarioRunResponse {
+    +event_type : str
+    +event_id : str
+    +correlation_id : str
+    +squad_id : Optional[str]
+    +trace : List[TraceStep]
+    +result : Dict
+    +error : Optional[str]
+  }
+  class HealthResponse {
+    +status : str
+    +service : str
+    +version : str
+    +components : Dict[str, str]
+  }
+
+  EOCEvent <|-- ClaimSubmittedEvent
+  EOCEvent <|-- DocumentReceivedEvent
+  EOCEvent <|-- FraudSignalEvent
+  EOCEvent <|-- PolicyChangeEvent
+  EOCEvent <|-- CatastropheAlertEvent
+  EOCEvent <|-- CustomerInteractionEvent
+  ScenarioRunResponse *-- TraceStep : trace
+}
+
+' ─────────────────────────────────────────────
+' ROUTER LAYER
+' ─────────────────────────────────────────────
+package "router" #E8F5E9 {
+  class EOCRouter {
+    -_broker : str
+    -_buses : Dict[str, K9EventBus]
+    -_ROUTING_TABLE : Dict[str, str]
+    +__init__(config)
+    +route(event_type, payload) : bool
+    +supported_event_types() : list
+    +close()
+  }
+  class EOCModelRouter {
+    -GUARDIAN_REQUIRED_TASKS : set
+    -COST_SENSITIVE_TASKS : set
+    +__init__(catalog, config, monitor, state_store)
+    +invoke(request) : InferenceResponse
+    +route(request) : RouteDecision
+  }
+
+  BaseRouter <|-- EOCRouter
+  K9ModelRouter <|-- EOCModelRouter
+  EOCRouter *-- K9EventBus : "_buses (1 per topic)"
+  EOCModelRouter --> ModelCatalog
+  EOCModelRouter --> RoutingStateStore
+}
+
+' ─────────────────────────────────────────────
+' ORCHESTRATOR LAYER
+' ─────────────────────────────────────────────
+package "orchestrators" #E3F2FD {
+  class EOCOrchestrator {
+    -_handlers : Dict[str, BaseOrchestrator]
+    -_ROUTING : Dict[str, type]
+    +__init__(config)
+    +execute_flow(payload) : Dict
+    -_initialize()
+  }
+  class ClaimsProcessingOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class DocumentIntelligenceOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class RiskAssessmentOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class PolicyManagementOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class CatastropheResponseOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class CustomerServiceOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+  }
+  class AuditComplianceOrchestrator {
+    -_squad : Squad
+    -_agent_map : Dict[str, BaseAgent]
+    -_event_bus : K9EventBus
+    +start(squads_yaml_path)
+    +execute_flow(payload) : Dict
+    -_load_squad(path) : Squad
+    -_assemble_report(entries, query) : Dict
+  }
+
+  BaseOrchestrator <|-- EOCOrchestrator
+  BaseOrchestrator <|-- ClaimsProcessingOrchestrator
+  BaseOrchestrator <|-- DocumentIntelligenceOrchestrator
+  BaseOrchestrator <|-- RiskAssessmentOrchestrator
+  BaseOrchestrator <|-- PolicyManagementOrchestrator
+  BaseOrchestrator <|-- CatastropheResponseOrchestrator
+  BaseOrchestrator <|-- CustomerServiceOrchestrator
+  BaseOrchestrator <|-- AuditComplianceOrchestrator
+
+  EOCOrchestrator *-- ClaimsProcessingOrchestrator      : "_handlers"
+  EOCOrchestrator *-- DocumentIntelligenceOrchestrator  : "_handlers"
+  EOCOrchestrator *-- RiskAssessmentOrchestrator        : "_handlers"
+  EOCOrchestrator *-- PolicyManagementOrchestrator      : "_handlers"
+  EOCOrchestrator *-- CatastropheResponseOrchestrator   : "_handlers"
+  EOCOrchestrator *-- CustomerServiceOrchestrator       : "_handlers"
+  EOCOrchestrator *-- AuditComplianceOrchestrator       : "_handlers"
+
+  ClaimsProcessingOrchestrator       *-- Squad : "_squad"
+  DocumentIntelligenceOrchestrator   *-- Squad : "_squad"
+  RiskAssessmentOrchestrator         *-- Squad : "_squad"
+  PolicyManagementOrchestrator       *-- Squad : "_squad"
+  CatastropheResponseOrchestrator    *-- Squad : "_squad"
+  CustomerServiceOrchestrator        *-- Squad : "_squad"
+  AuditComplianceOrchestrator        *-- Squad : "_squad"
+
+  ClaimsProcessingOrchestrator       *-- K9EventBus : "_event_bus"
+  DocumentIntelligenceOrchestrator   *-- K9EventBus : "_event_bus"
+  RiskAssessmentOrchestrator         *-- K9EventBus : "_event_bus"
+  PolicyManagementOrchestrator       *-- K9EventBus : "_event_bus"
+  CatastropheResponseOrchestrator    *-- K9EventBus : "_event_bus"
+  CustomerServiceOrchestrator        *-- K9EventBus : "_event_bus"
+  AuditComplianceOrchestrator        *-- K9EventBus : "_event_bus"
+}
+
+' ─────────────────────────────────────────────
+' AGENT LAYER
+' ─────────────────────────────────────────────
+package "agents.src" #FBE9E7 {
+  class ClaimsTriageAgent {
+    -REQUIRED_CLAIM_FIELDS : list
+    -PRIORITY_THRESHOLDS : dict
+    +execute(payload) : Dict
+    -_score_priority(amount) : str
+    -_check_coverage(payload) : bool
+    -_persist(payload, result)
+  }
+  class AdjudicationAgent {
+    +execute(payload) : Dict
+    -_parse_response(raw) : tuple
+    -_persist(result)
+  }
+  class DocumentExtractorAgent {
+    -_tesseract_available : bool
+    +execute(payload) : Dict
+    -_ocr_extract(file_path) : str
+    -_check_tesseract() : bool
+    -_parse_json_output(raw) : Dict
+    -_persist(payload, result)
+  }
+  class FraudDetectionAgent {
+    -FRAUD_SIGNAL_KEYWORDS : list
+    -RISK_SCORE_HIGH : float
+    -RISK_SCORE_MEDIUM : float
+    +execute(payload) : Dict
+    -_apply_rule_signals(payload) : List[str]
+    -_score_from_rules(signals) : float
+    -_build_context(payload) : str
+    -_parse_response(raw) : tuple
+    -_persist(payload, result)
+  }
+  class GuardAgent {
+    -PII_PATTERNS : dict
+    +execute(payload) : Dict
+    -_extract_text(payload) : str
+    -_pattern_scan(text) : List[Dict]
+    -_mask_pii(text, findings) : str
+    -_parse_guardian_output(raw, findings) : tuple
+  }
+  class AuditAgent {
+    -_TABLE = "eoc.audit_entries"
+    -_pg_cfg : Dict
+    +execute(payload) : Dict
+    -_write_audit(payload) : Dict
+    -_query_audit(payload) : Dict
+    -_resolve_confidence(payload) : float
+    -_resolve_disposition(payload) : str
+    -_resolve_governance_checks(payload) : Dict
+    -_connect()
+    -_persist_entry(entry)
+    -_fetch_entries(filters, limit) : List[Dict]
+  }
+  class EscalationAgent {
+    -DEFAULT_CONFIDENCE_THRESHOLD : float
+    -_threshold : float
+    +execute(payload) : Dict
+    -_persist(ticket)
+    -_build_reason(confidence, guard_failed, forced) : str
+    -_derive_priority(confidence, guard_failed) : str
+    -_safe_context(payload) : Dict
+  }
+  class GraphSyncAgent {
+    -_graph_enabled : bool
+    -_driver
+    +execute(payload) : Dict
+    -_build_operations(payload, event_type) : List[Dict]
+    -_execute_operations(operations) : List[Dict]
+    -_run_operation(session, op) : Dict
+    -_connect_neo4j()
+  }
+
+  BaseAgent <|-- ClaimsTriageAgent
+  BaseAgent <|-- AdjudicationAgent
+  BaseAgent <|-- DocumentExtractorAgent
+  BaseAgent <|-- FraudDetectionAgent
+  BaseAgent <|-- GuardAgent
+  BaseAgent <|-- AuditAgent
+  BaseAgent <|-- EscalationAgent
+  BaseAgent <|-- GraphSyncAgent
+}
+
+' ─────────────────────────────────────────────
+' UTILITIES
+' ─────────────────────────────────────────────
+package "utils" #F3E5F5 {
+  class AgentLoader {
+    -yaml_dir : Path
+    -_by_class : Dict[str, Dict]
+    +__init__(yaml_dir)
+    +get_agent_yaml(class_name) : Dict
+    +merge_with_global(class_name, global_config) : Dict
+    +has_agent(class_name) : bool
+    +list_classes() : List[str]
+    -_load_all()
+  }
+  class "llm_invoke\n<<module>>" as llm_invoke_mod {
+    +llm_invoke(config, request) : InferenceResponse
+    +register_sse_callback(fn)
+    -_sse_callback : Optional[Callable]
+  }
+  class "pg\n<<module>>" as pg_mod {
+    +pg_cfg(config) : Dict
+    +pg_connect(config)
+    +pg_upsert(conn, table, row, conflict_col)
+    +pg_insert_ignore(conn, table, row, conflict_col)
+  }
+}
+
+' ─────────────────────────────────────────────
+' FASTAPI APPLICATION
+' ─────────────────────────────────────────────
+package "api.app" #ECEFF1 {
+  class EOCApp {
+    -_config : Dict
+    -_orchestrator : EOCOrchestrator
+    -_audit_agent : AuditAgent
+    -_sse_events : List[Dict]
+    -_kafka_producer
+    -_pending_results : Dict
+    +GET /health : HealthResponse
+    +POST /events/submit : EOCEventResponse
+    +POST /events/claim : EOCEventResponse
+    +POST /events/document : EOCEventResponse
+    +POST /events/fraud-signal : EOCEventResponse
+    +POST /events/policy-change : EOCEventResponse
+    +POST /events/catastrophe : EOCEventResponse
+    +POST /events/customer-interaction : EOCEventResponse
+    +GET /audit/query : Dict
+    +GET /escalation/queue : Dict
+    +POST /escalation/{ticket_id}/resolve : Dict
+    +GET /events/stream : SSE
+    +GET /events/recent : Dict
+    +GET /api/eoc/scenarios : Dict
+    +POST /api/eoc/run : ScenarioRunResponse
+    +GET /api/eoc/architecture : Dict
+    +GET /api/eoc/config-summary : Dict
+    +GET /api/eoc/graph : Dict
+  }
+}
+
+' ─────────────────────────────────────────────
+' CROSS-PACKAGE RELATIONSHIPS
+' ─────────────────────────────────────────────
+
+' App composes orchestrator + audit agent
+EOCApp *-- EOCOrchestrator        : "_orchestrator"
+EOCApp *-- AuditAgent             : "_audit_agent"
+EOCApp --> EOCModelRouter         : "injects into ModelRouterFactory"
+EOCApp ..> EOCEventResponse       : "returns"
+EOCApp ..> ScenarioRunResponse    : "returns"
+EOCApp ..> HealthResponse         : "returns"
+
+' Orchestrators use AgentLoader to configure agents
+ClaimsProcessingOrchestrator      --> AgentLoader : "uses"
+DocumentIntelligenceOrchestrator  --> AgentLoader : "uses"
+RiskAssessmentOrchestrator        --> AgentLoader : "uses"
+PolicyManagementOrchestrator      --> AgentLoader : "uses"
+CatastropheResponseOrchestrator   --> AgentLoader : "uses"
+CustomerServiceOrchestrator       --> AgentLoader : "uses"
+AuditComplianceOrchestrator       --> AgentLoader : "uses"
+
+' Orchestrators use SquadLoader / registries
+ClaimsProcessingOrchestrator      --> SquadLoader          : "loads squad"
+ClaimsProcessingOrchestrator      --> AgentRegistry        : "registers agents"
+ClaimsProcessingOrchestrator      --> OrchestratorRegistry : "registers orchestrators"
+
+' Agents use llm_invoke
+ClaimsTriageAgent      --> llm_invoke_mod : "llm_invoke()"
+AdjudicationAgent      --> llm_invoke_mod : "llm_invoke()"
+DocumentExtractorAgent --> llm_invoke_mod : "llm_invoke()"
+FraudDetectionAgent    --> llm_invoke_mod : "llm_invoke()"
+GuardAgent             --> llm_invoke_mod : "llm_invoke()"
+
+' llm_invoke uses EOCModelRouter via factory
+llm_invoke_mod --> EOCModelRouter : "ModelRouterFactory.get()"
+
+' Agents use pg utilities
+ClaimsTriageAgent      --> pg_mod : "pg_connect / pg_upsert"
+AdjudicationAgent      --> pg_mod : "pg_connect / pg_upsert"
+DocumentExtractorAgent --> pg_mod : "pg_connect / pg_upsert"
+FraudDetectionAgent    --> pg_mod : "pg_connect / pg_upsert"
+AuditAgent             --> pg_mod : "pg_connect / pg_insert_ignore"
+EscalationAgent        --> pg_mod : "pg_connect / pg_insert_ignore"
+
+' Squad aggregates agents (pipeline)
+Squad o-- ClaimsTriageAgent      : "agent pipeline"
+Squad o-- AdjudicationAgent      : "agent pipeline"
+Squad o-- DocumentExtractorAgent : "agent pipeline"
+Squad o-- FraudDetectionAgent    : "agent pipeline"
+Squad o-- GuardAgent             : "agent pipeline"
+Squad o-- AuditAgent             : "agent pipeline"
+Squad o-- EscalationAgent        : "agent pipeline"
+Squad o-- GraphSyncAgent         : "agent pipeline"
+
+' API accepts event models
+EOCApp ..> ClaimSubmittedEvent       : "accepts"
+EOCApp ..> DocumentReceivedEvent     : "accepts"
+EOCApp ..> FraudSignalEvent          : "accepts"
+EOCApp ..> PolicyChangeEvent         : "accepts"
+EOCApp ..> CatastropheAlertEvent     : "accepts"
+EOCApp ..> CustomerInteractionEvent  : "accepts"
+EOCApp ..> AuditQueryRequest         : "accepts"
+EOCApp ..> EscalationResolveRequest  : "accepts"
+EOCApp ..> ScenarioRunRequest        : "accepts"
+
+@enduml

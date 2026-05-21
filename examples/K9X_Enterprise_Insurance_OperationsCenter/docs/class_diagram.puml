@@ -1,0 +1,502 @@
+@startuml K9X_Enterprise_Insurance_OperationsCenter
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 13
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' ─────────────────────────────────────────────
+' K9 Framework base classes (external)
+' ─────────────────────────────────────────────
+package "K9-AIF Framework (external)" #LightGray {
+    abstract class BaseAgent {
+        +layer: str
+        +config: dict
+        +execute(payload): dict
+    }
+
+    abstract class BaseOrchestrator {
+        +_initialize()
+        +execute_flow(payload): dict
+    }
+
+    abstract class BaseRouter {
+        +route(event_type, payload): dict
+        +supported_event_types(): list
+    }
+
+    abstract class BaseSquad {
+        +name: str
+        +agents: dict
+        +run(request, context): dict
+    }
+
+    abstract class K9ModelRouter {
+        +invoke(request): InferenceResponse
+        +route(request): RouteDecision
+    }
+
+    class K9EventBus
+    class InferenceRequest
+    class InferenceResponse
+    class RouteDecision
+}
+
+' ─────────────────────────────────────────────
+' Pydantic Models
+' ─────────────────────────────────────────────
+package "api / models" #FEFECE {
+    class EOCEvent {
+        +event_type: str
+        +event_id: str
+        +correlation_id: str
+    }
+
+    class ClaimSubmittedEvent {
+        +event_type = "claim_submitted"
+        +claim_id: str
+        +claimant_id: str
+        +policy_id: str
+        +claim_type: str
+        +amount_claimed: float
+        +notes: str
+        +is_repeat_claimant: bool
+    }
+
+    class DocumentReceivedEvent {
+        +event_type = "document_received"
+        +document_id: str
+        +claim_id: str
+        +claimant_id: str
+        +filename: str
+        +file_type: str
+        +raw_text: str
+        +file_path: str
+    }
+
+    class FraudSignalEvent {
+        +event_type = "fraud_signal_raised"
+        +alert_id: str
+        +alert_source: str
+        +claimant_id: str
+        +claim_id: str
+        +description: str
+        +amount_claimed: float
+        +severity: str
+    }
+
+    class PolicyChangeEvent {
+        +event_type = "policy_change_requested"
+        +policy_id: str
+        +claimant_id: str
+        +change_type: str
+        +change_description: str
+        +notes: str
+    }
+
+    class CatastropheAlertEvent {
+        +event_type = "catastrophe_alert_issued"
+        +alert_id: str
+        +alert_description: str
+        +estimated_exposure: float
+        +affected_regions: list
+        +severity: str
+    }
+
+    class CustomerInteractionEvent {
+        +event_type = "customer_interaction_logged"
+        +interaction_id: str
+        +customer_id: str
+        +policy_id: str
+        +interaction_type: str
+        +customer_message: str
+        +channel: str
+    }
+
+    class AuditQueryRequest {
+        +query_correlation_id: str
+        +query_event_id: str
+        +query_agent_name: str
+        +query_event_type: str
+        +limit: int
+    }
+
+    class EscalationResolveRequest {
+        +operator_id: str
+        +resolution: str
+        +resolution_notes: str
+    }
+
+    class EOCEventResponse {
+        +status: str
+        +event_id: str
+        +correlation_id: str
+        +squad_id: str
+        +final_decision: str
+        +confidence: float
+        +escalated: bool
+        +ticket_id: str
+        +audit_id: str
+        +details: dict
+    }
+
+    class TraceStep {
+        +step: int
+        +component: str
+        +layer: str
+        +status: str
+        +message: str
+        +final: bool
+        +agent_yaml: dict
+        +model_routing: dict
+        +governance_detail: dict
+        +latency_ms: float
+        +tools: list
+        +agent_result: dict
+    }
+
+    class ScenarioRunResponse {
+        +event_type: str
+        +event_id: str
+        +correlation_id: str
+        +squad_id: str
+        +trace: list[TraceStep]
+        +result: dict
+        +error: str
+    }
+}
+
+EOCEvent <|-- ClaimSubmittedEvent
+EOCEvent <|-- DocumentReceivedEvent
+EOCEvent <|-- FraudSignalEvent
+EOCEvent <|-- PolicyChangeEvent
+EOCEvent <|-- CatastropheAlertEvent
+EOCEvent <|-- CustomerInteractionEvent
+ScenarioRunResponse *-- TraceStep
+
+' ─────────────────────────────────────────────
+' Router layer
+' ─────────────────────────────────────────────
+package "router" #E8F4FD {
+    class EOCRouter {
+        -_broker
+        -_buses: dict[str, K9EventBus]
+        +route(event_type, payload): dict
+        +supported_event_types(): list
+        +close()
+    }
+
+    class EOCModelRouter {
+        +GUARDIAN_REQUIRED_TASKS: set
+        +COST_SENSITIVE_TASKS: set
+        -_sse_callback
+        +invoke(request): InferenceResponse
+        +route(request): RouteDecision
+    }
+}
+
+BaseRouter <|-- EOCRouter
+K9ModelRouter <|-- EOCModelRouter
+EOCRouter o-- K9EventBus
+
+' ─────────────────────────────────────────────
+' Orchestrators
+' ─────────────────────────────────────────────
+package "orchestrators" #EDF7ED {
+    class EOCOrchestrator {
+        -_handlers: dict[str, BaseOrchestrator]
+        +_initialize()
+        +execute_flow(payload): dict
+    }
+
+    class ClaimsProcessingOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class DocumentIntelligenceOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class RiskAssessmentOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class PolicyManagementOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class CatastropheResponseOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class CustomerServiceOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+
+    class AuditComplianceOrchestrator {
+        -_squad
+        -_agent_map: dict
+        -_event_bus: K9EventBus
+        +start(squads_yaml_path)
+        -_load_squad(squads_yaml_path)
+    }
+}
+
+BaseOrchestrator <|-- EOCOrchestrator
+BaseOrchestrator <|-- ClaimsProcessingOrchestrator
+BaseOrchestrator <|-- DocumentIntelligenceOrchestrator
+BaseOrchestrator <|-- RiskAssessmentOrchestrator
+BaseOrchestrator <|-- PolicyManagementOrchestrator
+BaseOrchestrator <|-- CatastropheResponseOrchestrator
+BaseOrchestrator <|-- CustomerServiceOrchestrator
+BaseOrchestrator <|-- AuditComplianceOrchestrator
+
+EOCOrchestrator *-- ClaimsProcessingOrchestrator
+EOCOrchestrator *-- DocumentIntelligenceOrchestrator
+EOCOrchestrator *-- RiskAssessmentOrchestrator
+EOCOrchestrator *-- PolicyManagementOrchestrator
+EOCOrchestrator *-- CatastropheResponseOrchestrator
+EOCOrchestrator *-- CustomerServiceOrchestrator
+EOCOrchestrator *-- AuditComplianceOrchestrator
+EOCOrchestrator --> EOCRouter : uses
+
+' ─────────────────────────────────────────────
+' Squads
+' ─────────────────────────────────────────────
+package "squads" #FDF0E8 {
+    class ClaimsProcessingSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class DocumentIntelligenceSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class RiskAssessmentSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class PolicyManagementSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class CatastropheResponseSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class CustomerServiceSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+
+    class AuditComplianceSquad {
+        +name: str
+        +agents: dict
+        +config: dict
+        +run(request, context): dict
+    }
+}
+
+BaseSquad <|-- ClaimsProcessingSquad
+BaseSquad <|-- DocumentIntelligenceSquad
+BaseSquad <|-- RiskAssessmentSquad
+BaseSquad <|-- PolicyManagementSquad
+BaseSquad <|-- CatastropheResponseSquad
+BaseSquad <|-- CustomerServiceSquad
+BaseSquad <|-- AuditComplianceSquad
+
+ClaimsProcessingOrchestrator *-- ClaimsProcessingSquad
+DocumentIntelligenceOrchestrator *-- DocumentIntelligenceSquad
+RiskAssessmentOrchestrator *-- RiskAssessmentSquad
+PolicyManagementOrchestrator *-- PolicyManagementSquad
+CatastropheResponseOrchestrator *-- CatastropheResponseSquad
+CustomerServiceOrchestrator *-- CustomerServiceSquad
+AuditComplianceOrchestrator *-- AuditComplianceSquad
+
+' ─────────────────────────────────────────────
+' Agents
+' ─────────────────────────────────────────────
+package "agents" #F5EEFB {
+    class ClaimsTriageAgent {
+        +layer = "EOC ClaimsTriage SBB"
+        +REQUIRED_CLAIM_FIELDS: list
+        +PRIORITY_THRESHOLDS: dict
+        +execute(payload): dict
+        -_score_priority(amount): str
+        -_check_coverage(payload): bool
+        -_upsert_claim(payload, result)
+    }
+
+    class AdjudicationAgent {
+        +layer = "EOC Adjudication SBB"
+        +execute(payload): dict
+        -_parse_response(raw): dict
+        -_persist_decision(payload, result)
+    }
+
+    class GuardAgent {
+        +layer = "EOC Guard SBB"
+        +PII_PATTERNS: list
+        +execute(payload): dict
+        -_extract_text(payload): str
+        -_pattern_scan(text): list
+        -_mask_pii(text, findings): str
+        -_parse_guardian_output(output, findings): dict
+    }
+
+    class FraudDetectionAgent {
+        +layer = "EOC FraudDetection SBB"
+        +FRAUD_SIGNAL_KEYWORDS: list
+        +RISK_SCORE_HIGH = 0.8
+        +RISK_SCORE_MEDIUM = 0.5
+        +execute(payload): dict
+        -_apply_rule_signals(payload): list
+        -_score_from_rules(signals): float
+        -_build_context(payload): str
+        -_parse_response(raw): dict
+    }
+
+    class DocumentExtractorAgent {
+        +layer = "EOC DocumentExtractor SBB"
+        -_tesseract_available: bool
+        +execute(payload): dict
+        -_check_tesseract(): bool
+        -_ocr_extract(file_path): str
+        -_parse_json_output(raw): dict
+    }
+
+    class GraphSyncAgent {
+        +layer = "EOC GraphSync SBB"
+        -_graph_enabled: bool
+        -_driver
+        +execute(payload): dict
+        -_connect_neo4j()
+        -_build_operations(payload, event_type): list
+        -_execute_operations(operations)
+    }
+
+    class AuditAgent {
+        +layer = "EOC Audit SBB"
+        -_pg_cfg: dict
+        +execute(payload): dict
+        -_write_audit(payload)
+        -_query_audit(payload): list
+        -_persist_entry(entry)
+        -_resolve_confidence(payload): float
+        -_resolve_disposition(payload): str
+        -_resolve_governance_checks(payload): dict
+    }
+
+    class EscalationAgent {
+        +layer = "EOC Escalation SBB"
+        +DEFAULT_CONFIDENCE_THRESHOLD = 0.75
+        -_threshold: float
+        +execute(payload): dict
+        -_build_reason(confidence, guard_failed, force): str
+        -_persist(ticket)
+        -_derive_priority(confidence, guard_failed): str
+        -_safe_context(payload): dict
+    }
+}
+
+BaseAgent <|-- ClaimsTriageAgent
+BaseAgent <|-- AdjudicationAgent
+BaseAgent <|-- GuardAgent
+BaseAgent <|-- FraudDetectionAgent
+BaseAgent <|-- DocumentExtractorAgent
+BaseAgent <|-- GraphSyncAgent
+BaseAgent <|-- AuditAgent
+BaseAgent <|-- EscalationAgent
+
+' Squad → Agent composition
+ClaimsProcessingSquad *-- ClaimsTriageAgent
+ClaimsProcessingSquad *-- AdjudicationAgent
+ClaimsProcessingSquad *-- GuardAgent
+ClaimsProcessingSquad *-- AuditAgent
+ClaimsProcessingSquad *-- EscalationAgent
+ClaimsProcessingSquad *-- GraphSyncAgent
+
+DocumentIntelligenceSquad *-- DocumentExtractorAgent
+DocumentIntelligenceSquad *-- GuardAgent
+DocumentIntelligenceSquad *-- AuditAgent
+DocumentIntelligenceSquad *-- GraphSyncAgent
+
+RiskAssessmentSquad *-- FraudDetectionAgent
+RiskAssessmentSquad *-- GuardAgent
+RiskAssessmentSquad *-- AuditAgent
+RiskAssessmentSquad *-- EscalationAgent
+RiskAssessmentSquad *-- GraphSyncAgent
+
+PolicyManagementSquad *-- GuardAgent
+PolicyManagementSquad *-- AuditAgent
+
+' ─────────────────────────────────────────────
+' Utilities
+' ─────────────────────────────────────────────
+package "utils" #F0F0F0 {
+    class AgentLoader {
+        +yaml_dir: str
+        -_by_class: dict
+        -_load_all()
+        +get_agent_yaml(class_name): dict
+        +merge_with_global(class_name, global_config): dict
+        +has_agent(class_name): bool
+        +list_classes(): list
+    }
+
+    class ConfigLoaderError {
+    }
+}
+
+Exception <|-- ConfigLoaderError
+ClaimsProcessingOrchestrator --> AgentLoader : uses
+DocumentIntelligenceOrchestrator --> AgentLoader : uses
+RiskAssessmentOrchestrator --> AgentLoader : uses
+PolicyManagementOrchestrator --> AgentLoader : uses
+CatastropheResponseOrchestrator --> AgentLoader : uses
+CustomerServiceOrchestrator --> AgentLoader : uses
+AuditComplianceOrchestrator --> AgentLoader : uses
+
+@enduml

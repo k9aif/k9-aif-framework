@@ -1,0 +1,274 @@
+@startuml K9-AIF_EOC_Class_Structure
+
+top to bottom direction
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 45
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+skinparam class {
+  BackgroundColor #FAFAFA
+  BorderColor #666666
+  HeaderBackgroundColor #E8E8F0
+  FontColor #1a1a2e
+  FontSize 11
+  AttributeFontSize 10
+  AttributeFontColor #333333
+  StereotypeFontSize 10
+  StereotypeFontColor #555555
+}
+
+skinparam package {
+  BackgroundColor #F5F5FA
+  BorderColor #9090C0
+  FontColor #1a1a2e
+  FontSize 12
+  FontStyle bold
+}
+
+title K9-AIF EOC — ABB / SBB Class Structure\n<size:10>Architecture Building Blocks → Solution Building Blocks</size>
+
+' ══════════════════════════════════════════
+' ABB LAYER
+' ══════════════════════════════════════════
+package "K9-AIF ABB Layer" <<Frame>> {
+
+  abstract class BaseRouter {
+    + route(event: K9Event): RoutingDecision
+    + register(orchestrator: BaseOrchestrator)
+    # apply_zero_trust(ctx: ExecutionContext)
+  }
+
+  abstract class BaseOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+    + apply_zero_trust(payload: dict)
+    # build_execution_context(): ExecutionContext
+  }
+
+  class BaseSquad {
+    + run(payload: dict): SquadResult
+    + get_agents(): List[BaseAgent]
+  }
+
+  abstract class BaseAgent {
+    + execute(context: ExecutionContext): AgentResult
+    # pre_execute(context): void
+    # post_execute(result): void
+  }
+
+  class K9ModelRouter {
+    + route(request: InferenceRequest): BaseLLM
+    + register_provider(name: str, llm: BaseLLM)
+    # evaluate_policy(request): RoutingPolicy
+  }
+
+  class ModelRouterFactory {
+    + {static} create(config: dict): K9ModelRouter
+  }
+
+  class LLMFactory {
+    + {static} create(model_type: str, config: dict): BaseLLM
+  }
+
+  class K9EventBus {
+    + publish(topic: str, event: K9Event)
+    + subscribe(topic: str, handler: Callable)
+  }
+
+  class ExecutionContext {
+    + request_id: str
+    + identity: str
+    + data_sensitivity: str
+    + destination: str
+    + payload: dict
+    + trust_decision: TrustDecision
+  }
+
+  enum TrustDecision {
+    ALLOW
+    ALLOW_WITH_OBLIGATIONS
+    DENY
+    REQUIRE_APPROVAL
+  }
+}
+
+' ══════════════════════════════════════════
+' EOC SBB — ROUTER
+' ══════════════════════════════════════════
+package "EOC SBB — Router" <<Frame>> {
+
+  class EOCRouter {
+    - event_bus: K9EventBus
+    + route(event: K9Event): RoutingDecision
+    + start(): void
+  }
+}
+
+' ══════════════════════════════════════════
+' EOC SBB — ORCHESTRATORS
+' ══════════════════════════════════════════
+package "EOC SBB — Orchestrators" <<Frame>> {
+
+  class EOCOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class ClaimsProcessingOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class RiskAssessmentOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class DocumentIntelligenceOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class PolicyManagementOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class CatastropheResponseOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+
+  class AuditComplianceOrchestrator {
+    + execute_flow(payload: dict): OrchestratorResult
+  }
+}
+
+' ══════════════════════════════════════════
+' EOC SBB — SQUADS
+' 2 ROWS INSIDE SINGLE BOX
+' ══════════════════════════════════════════
+package "EOC SBB — Squads" <<Frame>> {
+
+  together {
+    class ClaimsProcessingSquad
+    class RiskAssessmentSquad
+    class DocumentIntelligenceSquad
+    class PolicyManagementSquad
+  }
+
+  together {
+    class CustomerServiceSquad
+    class CatastropheResponseSquad
+    class AuditComplianceSquad
+  }
+
+  ClaimsProcessingSquad -[hidden]down- CustomerServiceSquad
+  RiskAssessmentSquad -[hidden]down- CatastropheResponseSquad
+  DocumentIntelligenceSquad -[hidden]down- AuditComplianceSquad
+}
+
+' ══════════════════════════════════════════
+' EOC SBB — AGENTS
+' 2 ROWS INSIDE SINGLE BOX
+' ══════════════════════════════════════════
+package "EOC SBB — Agents" <<Frame>> {
+
+  together {
+    class ClaimsTriageAgent {
+      + execute(context: ExecutionContext): AgentResult
+    }
+
+    class AdjudicationAgent {
+      + execute(context: ExecutionContext): AgentResult
+    }
+
+    class FraudDetectionAgent {
+      + execute(context: ExecutionContext): AgentResult
+    }
+
+    class DocumentExtractorAgent {
+      + execute(context: ExecutionContext): AgentResult
+    }
+  }
+
+  together {
+    class GuardAgent {
+      + execute(context: ExecutionContext): AgentResult
+      + inspect(payload: dict): GuardDecision
+    }
+
+    class AuditAgent {
+      + execute(context: ExecutionContext): AgentResult
+      + write_audit_trail(hash: str): void
+    }
+
+    class EscalationAgent {
+      + execute(context: ExecutionContext): AgentResult
+    }
+
+    class GraphSyncAgent {
+      + execute(context: ExecutionContext): AgentResult
+      + sync_to_neo4j(event: K9Event): void
+    }
+  }
+
+  class EOCModelRouter {
+    + route(request: InferenceRequest): BaseLLM
+  }
+
+  ClaimsTriageAgent -[hidden]down- GuardAgent
+  AdjudicationAgent -[hidden]down- AuditAgent
+  FraudDetectionAgent -[hidden]down- EscalationAgent
+  DocumentExtractorAgent -[hidden]down- GraphSyncAgent
+}
+
+' ══════════════════════════════════════════
+' INHERITANCE — ABB → SBB
+' ══════════════════════════════════════════
+BaseRouter <|-- EOCRouter
+
+BaseOrchestrator <|-- EOCOrchestrator
+BaseOrchestrator <|-- ClaimsProcessingOrchestrator
+BaseOrchestrator <|-- RiskAssessmentOrchestrator
+BaseOrchestrator <|-- DocumentIntelligenceOrchestrator
+BaseOrchestrator <|-- PolicyManagementOrchestrator
+BaseOrchestrator <|-- CatastropheResponseOrchestrator
+BaseOrchestrator <|-- AuditComplianceOrchestrator
+
+BaseSquad <|-- ClaimsProcessingSquad
+BaseSquad <|-- RiskAssessmentSquad
+BaseSquad <|-- DocumentIntelligenceSquad
+BaseSquad <|-- PolicyManagementSquad
+BaseSquad <|-- CustomerServiceSquad
+BaseSquad <|-- CatastropheResponseSquad
+BaseSquad <|-- AuditComplianceSquad
+
+BaseAgent <|-- ClaimsTriageAgent
+BaseAgent <|-- AdjudicationAgent
+BaseAgent <|-- FraudDetectionAgent
+BaseAgent <|-- DocumentExtractorAgent
+BaseAgent <|-- GuardAgent
+BaseAgent <|-- AuditAgent
+BaseAgent <|-- EscalationAgent
+BaseAgent <|-- GraphSyncAgent
+
+K9ModelRouter <|-- EOCModelRouter
+
+' ══════════════════════════════════════════
+' COMPOSITION & DEPENDENCIES
+' ══════════════════════════════════════════
+EOCRouter            "1" --> "1"     K9EventBus         : publishes events
+BaseOrchestrator     "1" --> "1..*"  BaseSquad          : dispatches to
+BaseSquad            "1" --> "1..*"  BaseAgent          : executes flow
+BaseAgent            "1" --> "1"     ModelRouterFactory : requests inference
+ModelRouterFactory   "1" --> "1"     K9ModelRouter      : resolves router
+K9ModelRouter        "1" --> "1"     LLMFactory         : invokes model backend
+BaseOrchestrator     "1" --> "1"     ExecutionContext   : builds
+ExecutionContext     "1" --> "1"     TrustDecision      : carries
+
+note bottom of BaseAgent
+Agent behavior, routing,
+governance, and model assignment
+are declaratively loaded from YAML.
+end note
+
+@enduml
