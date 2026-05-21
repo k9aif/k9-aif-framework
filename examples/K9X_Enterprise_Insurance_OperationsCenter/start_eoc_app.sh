@@ -28,15 +28,6 @@ else
   echo "[app_backend] WARNING: .venv not found at $REPO_ROOT — using system Python"
 fi
 
-# ── Load .env (without overriding existing shell exports) ────────────────────
-ENV_FILE="$SCRIPT_DIR/.env"
-if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  source "$ENV_FILE"
-  set +a
-  echo "[app_backend] .env loaded from $ENV_FILE"
-fi
-
 # ── Runtime env ───────────────────────────────────────────────────────────────
 export PYTHONPATH="$REPO_ROOT"
 export K9_ENV="${K9_ENV:-development}"
@@ -53,9 +44,18 @@ echo " URL        : http://localhost:8000/"
 echo "------------------------------------------------------------"
 
 cd "$REPO_ROOT"
-exec uvicorn \
-  "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app" \
-  --host 0.0.0.0 \
-  --port 8000 \
-  --reload \
-  --log-level info
+if [[ "${K9_ENV}" == "production" ]]; then
+  exec uvicorn \
+    "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app" \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 2 \
+    --log-level info
+else
+  exec uvicorn \
+    "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app" \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --reload \
+    --log-level info
+fi

@@ -27,15 +27,6 @@ else
   echo "[eoc_orchestrator] WARNING: .venv not found at $REPO_ROOT — using system Python"
 fi
 
-# ── Load .env ─────────────────────────────────────────────────────────────────
-ENV_FILE="$SCRIPT_DIR/.env"
-if [[ -f "$ENV_FILE" ]]; then
-  set -a
-  source "$ENV_FILE"
-  set +a
-  echo "[eoc_orchestrator] .env loaded from $ENV_FILE"
-fi
-
 # ── Runtime env ───────────────────────────────────────────────────────────────
 export PYTHONPATH="$REPO_ROOT"
 export K9_ENV="${K9_ENV:-development}"
