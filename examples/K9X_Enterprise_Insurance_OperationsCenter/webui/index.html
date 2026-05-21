@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF Enterprise Insurance Operations Center</title>
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  HEADER                                              ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<header class="site-header">
+  <div class="header-brand">
+    <a href="https://k9x.ai" target="_blank" rel="noopener" class="brand-logo" style="text-decoration:none;color:inherit;">K9X.ai</a>
+    <div>
+      <div class="brand-title">K9-AIF Enterprise Insurance Operations Center</div>
+      <div class="brand-subtitle">Canonical Reference Application — Governed Agentic AI</div>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="framework-pill">
+      <span>Router</span> → <span>Orchestrator</span> → <span>Squad</span> → <span>Agents</span> → <span>Guard</span> → <span>Audit</span>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-arch" onclick="setMode('arch')">ARCH</button>
+      <button class="mode-btn" id="mode-biz" onclick="setMode('biz')">BIZ</button>
+    </div>
+    <div class="health-badge" id="health-badge">
+      <div class="health-dot"></div>
+      <span id="health-label">Checking…</span>
+    </div>
+    <button class="btn-link" onclick="window.location.href='/webui/blueprint.html'">Architecture ↗</button>
+    <button class="btn-link" onclick="window.open('/docs','_blank')">API Docs ↗</button>
+    <button class="btn-link" onclick="window.open('/redoc','_blank')">ReDoc ↗</button>
+  </div>
+</header>
+
+<!-- Intro bar -->
+<div class="intro-bar">
+  <span>A runnable architecture reference showing K9-AIF router, orchestrators, squads, agents, governance, and runtime traceability in an insurance operations domain.</span>
+  <div class="intro-kv"><span class="k">LLM backend:</span><span class="v" id="cfg-backend">—</span></div>
+  <div class="intro-kv"><span class="k">Messaging:</span><span class="v" id="cfg-messaging">—</span></div>
+  <div class="intro-kv"><span class="k">Governance:</span><span class="v" id="cfg-governance">—</span></div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  MAIN 3-COLUMN LAYOUT                               ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="main-layout">
+
+  <!-- ── Left: scenario nav ─────────────────────────────── -->
+  <aside class="scenario-nav">
+    <div class="nav-section-label">Event Scenarios</div>
+    <div id="scenario-list">
+      <div class="trace-empty" style="margin-top:20px">Loading…</div>
+    </div>
+  </aside>
+
+  <!-- ── Center: pipeline canvas + execution ─────────────── -->
+  <section class="center-panel">
+
+    <!-- Pipeline canvas -->
+    <div class="pipeline-section">
+      <div class="section-label">K9-AIF Runtime Pipeline</div>
+      <div class="pipeline-canvas">
+        <div class="pipeline-flow" id="pipeline-flow">
+
+          <!-- Event input node -->
+          <div class="pnode" id="pnode-Event" data-node="Event">
+            <div class="pnode-icon">◉</div>
+            <div class="pnode-name">Event</div>
+            <div class="pnode-sub">Input</div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- Router -->
+          <div class="pnode" id="pnode-EOCRouter" data-node="EOCRouter">
+            <div class="pnode-icon">⇄</div>
+            <div class="pnode-name">EOCRouter</div>
+            <div class="pnode-sub">route by type</div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- Orchestrator -->
+          <div class="pnode" id="pnode-EOCOrchestrator" data-node="EOCOrchestrator">
+            <div class="pnode-icon">◈</div>
+            <div class="pnode-name">Orchestrator</div>
+            <div class="pnode-sub">dispatch</div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- SquadLoader -->
+          <div class="pnode" id="pnode-SquadLoader" data-node="SquadLoader">
+            <div class="pnode-icon">⊞</div>
+            <div class="pnode-name">SquadLoader</div>
+            <div class="pnode-sub">agent init</div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- Squad + agents box -->
+          <div class="squad-node" id="squad-node" data-node="squad">
+            <div class="squad-node-header">
+              <span style="font-size:12px">🤖</span>
+              <div class="squad-node-title" id="squad-node-title">Select a scenario</div>
+            </div>
+            <div class="agent-list" id="agent-list">
+              <!-- dynamic agent chips injected by app.js -->
+            </div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- Guard Layer node -->
+          <div class="pnode pnode-guard" id="pnode-guard" data-node="guard">
+            <div class="pnode-icon">🛡</div>
+            <div class="pnode-name">Guard Layer</div>
+            <div class="guard-checks">
+              <div class="guard-check-pill">PII scan</div>
+              <div class="guard-check-pill">confidence</div>
+              <div class="guard-check-pill">audit</div>
+            </div>
+          </div>
+          <div class="pconn"><div class="pconn-line"></div><div class="pconn-arrow">▶</div></div>
+
+          <!-- Result -->
+          <div class="pnode node-result" id="pnode-Pipeline" data-node="Pipeline">
+            <div class="pnode-icon">✓</div>
+            <div class="pnode-name">Result</div>
+            <div class="pnode-sub">audit + response</div>
+          </div>
+
+        </div><!-- /pipeline-flow -->
+      </div><!-- /pipeline-canvas -->
+    </div><!-- /pipeline-section -->
+
+    <!-- Replay controls bar (hidden until a run completes) -->
+    <div class="replay-bar" id="replay-bar" style="display:none">
+      <span class="replay-label">REPLAY</span>
+      <button class="replay-btn" id="replay-play-btn" onclick="replayPlay()" title="Play / Pause">▶</button>
+      <button class="replay-btn" id="replay-step-btn" onclick="replayStepForward()" title="Step forward">⏭</button>
+      <button class="replay-btn" id="replay-stop-btn" onclick="replayStop()" title="Reset to start">⏹</button>
+      <select class="replay-speed" id="replay-speed" onchange="replaySetSpeed(this.value)" title="Playback speed">
+        <option value="800">0.5×</option>
+        <option value="400" selected>1×</option>
+        <option value="200">2×</option>
+        <option value="100">4×</option>
+      </select>
+      <span class="replay-step-indicator">Step <span id="replay-pos">0</span> / <span id="replay-total">0</span></span>
+    </div>
+
+    <!-- Scenario execution panel -->
+    <div class="execution-section">
+      <div class="execution-header">
+        <div>
+          <div class="scenario-title-display" id="exec-title">Select a scenario to begin</div>
+          <div class="scenario-desc-display" id="exec-desc">
+            Choose an event type from the left panel to load its payload and run it through the K9-AIF pipeline.
+          </div>
+        </div>
+        <div class="meta-chips" id="meta-chips"></div>
+      </div>
+
+      <div>
+        <div class="editor-header">
+          <span class="editor-label">Event Payload</span>
+          <button class="btn-reset" onclick="resetPayload()">↺ Reset</button>
+        </div>
+        <textarea id="payload-editor" spellcheck="false" placeholder="Select a scenario to load its payload…"></textarea>
+      </div>
+
+      <button class="run-btn" id="run-btn" onclick="runScenario()" disabled>
+        <div class="spinner"></div>
+        <span class="run-icon">▶</span>
+        <span class="run-label">RUN SCENARIO</span>
+      </button>
+    </div>
+
+  </section>
+
+  <!-- ── Right: trace console + result ──────────────────── -->
+  <aside class="right-panel">
+
+    <!-- Runtime trace -->
+    <div class="trace-section">
+      <div class="panel-header">
+        <div class="panel-title">Runtime Trace</div>
+        <div class="panel-badge" id="trace-count">0 steps</div>
+      </div>
+      <div class="trace-console" id="trace-console">
+        <div class="trace-empty">Run a scenario to see the execution trace</div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-section">
+      <div class="panel-header">
+        <div class="panel-title">Pipeline Result</div>
+        <div class="panel-badge" id="result-status-badge"></div>
+      </div>
+      <div class="result-body" id="result-body">
+        <div class="result-empty">No result yet</div>
+      </div>
+    </div>
+
+  </aside>
+
+</div><!-- /main-layout -->
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  ARCHITECTURE INSPECTION TABS                       ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<section class="arch-section">
+  <div class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="router"     onclick="selectTab(this,'router')">Router</button>
+    <button class="tab-btn"        data-tab="squads"     onclick="selectTab(this,'squads')">Squads</button>
+    <button class="tab-btn"        data-tab="agents"     onclick="selectTab(this,'agents')">Agents</button>
+    <button class="tab-btn"        data-tab="governance" onclick="selectTab(this,'governance')">Governance</button>
+    <button class="tab-btn"        data-tab="models"     onclick="selectTab(this,'models')">Model Routing</button>
+    <button class="tab-btn"        data-tab="graph"      onclick="selectTab(this,'graph')">Runtime Graph</button>
+    <button class="tab-btn"        data-tab="config"     onclick="selectTab(this,'config')">YAML Config</button>
+    <button class="tab-btn"        data-tab="livefeed"   onclick="selectTab(this,'livefeed')">Live Feed <span id="live-count" style="color:var(--cyan);font-size:10px"></span></button>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:0 8px;border-left:1px solid var(--border)">
+      <span id="llm-call-dot" title="Flashes red on each LLM call"></span>
+      <span style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)">LLM access</span>
+    </span>
+  </div>
+  <div class="tab-content" id="tab-content">
+    <div class="trace-empty">Loading architecture data…</div>
+  </div>
+</section>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  AGENT DETAIL DRAWER  (slide-in from right)         ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div class="agent-drawer" id="agent-drawer">
+
+  <!-- Drawer header -->
+  <div class="drawer-header">
+    <div class="drawer-icon" id="drawer-icon">🤖</div>
+    <div style="flex:1;min-width:0">
+      <div class="drawer-title" id="drawer-title">Agent Detail</div>
+      <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="drawer-subtitle">—</div>
+    </div>
+    <div class="drawer-status ok" id="drawer-status-badge">ok</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+
+  <!-- Meta row -->
+  <div class="drawer-meta">
+    <div class="drawer-meta-item">
+      <div class="drawer-meta-label">Layer</div>
+      <div class="drawer-meta-val cyan" id="dm-layer">—</div>
+    </div>
+    <div class="drawer-meta-item">
+      <div class="drawer-meta-label">Latency</div>
+      <div class="drawer-meta-val" id="dm-latency">—</div>
+    </div>
+    <div class="drawer-meta-item">
+      <div class="drawer-meta-label">Model</div>
+      <div class="drawer-meta-val yellow" id="dm-model">—</div>
+    </div>
+    <div class="drawer-meta-item">
+      <div class="drawer-meta-label">Confidence</div>
+      <div class="drawer-meta-val green" id="dm-confidence">—</div>
+    </div>
+  </div>
+
+  <!-- Drawer tabs -->
+  <div class="drawer-tab-bar" id="drawer-tab-bar">
+    <button class="drawer-tab-btn active" data-dtab="overview"   onclick="selectDrawerTab(this,'overview')">Overview</button>
+    <button class="drawer-tab-btn"        data-dtab="yaml"       onclick="selectDrawerTab(this,'yaml')">Agent YAML</button>
+    <button class="drawer-tab-btn"        data-dtab="governance" onclick="selectDrawerTab(this,'governance')">Governance</button>
+    <button class="drawer-tab-btn"        data-dtab="result"     onclick="selectDrawerTab(this,'result')">Result</button>
+  </div>
+
+  <!-- Drawer body — populated by JS -->
+  <div class="drawer-body" id="drawer-body"></div>
+
+</div>
+
+<!-- Overlay backdrop -->
+<div id="drawer-overlay"
+     onclick="closeDrawer()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199;backdrop-filter:blur(1px);transition:opacity 320ms ease">
+</div>
+
+<script src="app.js?v=3"></script>
+</body>
+</html>

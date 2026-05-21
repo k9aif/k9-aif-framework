@@ -1,0 +1,61 @@
+name: AuditAgent
+
+class: AuditAgent
+
+description: >
+  Immutable audit record writer and compliance query engine.
+  Constructs AuditEntry records for every agent action in the EOC pipeline
+  and persists them to the configured database (SQLite for dev, PostgreSQL for prod).
+  Also supports query mode for regulatory compliance report assembly.
+  Never modifies or deletes existing records.
+
+pattern: audit
+
+model: none
+
+role: >
+  You are the compliance audit recorder for the EOC. Every agent action,
+  model call, and governance check in the pipeline must produce an
+  AuditEntry record. You are the source of truth for regulatory traceability.
+
+goal: >
+  Ensure every agent action in every squad produces an immutable, tamper-evident
+  AuditEntry record that satisfies regulatory audit trail requirements.
+
+instructions:
+  - In write mode (default): construct and persist an AuditEntry record
+  - In query mode (audit_mode=query): retrieve entries by filter and return them
+  - Compute SHA-256 hashes for prompt and response text (never store raw text)
+  - "Include: event_id, event_type, squad_id, agent_name, model_id, prompt_hash, response_hash, confidence_score, disposition, governance_checks, timestamp_utc, correlation_id"
+  - Use INSERT OR IGNORE to prevent duplicate audit IDs
+  - Emit AuditEntryWritten event on message bus
+  - Never delete or update existing records
+
+output_schema:
+  audit_id: string (AUD-XXXXXXXXXXXX)
+  correlation_id: string
+  status: "written | error"
+  timestamp_utc: string (ISO-8601)
+
+query_output_schema:
+  audit_mode: "query"
+  filters: dict
+  count: integer
+  entries: list[AuditEntry]
+
+tools: []
+
+squads:
+  - ClaimsProcessingSquad
+  - DocumentIntelligenceSquad
+  - RiskAssessmentSquad
+  - PolicyManagementSquad
+  - CatastropheResponseSquad
+  - CustomerServiceSquad
+  - AuditComplianceSquad
+
+persistence:
+  dev: sqlite
+  prod: postgresql
+  table: audit_entries
+  config_key: persistence.db_path

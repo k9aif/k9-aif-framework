@@ -1,0 +1,131 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF EOC — Event Flow Definitions
+
+flows:
+
+  claim_submitted:
+    description: "End-to-end flow for a new insurance claim"
+    trigger: ClaimSubmitted
+    squad: ClaimsProcessingSquad
+    steps:
+      - agent: ClaimsTriageAgent
+        description: "Completeness check, coverage match, priority scoring"
+        task_type: reasoning
+        on_success: AdjudicationAgent
+        on_failure: EscalationAgent
+
+      - agent: AdjudicationAgent
+        description: "Policy coverage reasoning, liability determination"
+        task_type: reasoning
+        on_success: GuardAgent
+        on_failure: EscalationAgent
+
+      - agent: GuardAgent
+        description: "PII detection, output validation, policy enforcement"
+        task_type: guardrails
+        on_success: AuditAgent
+        on_failure: EscalationAgent
+
+      - agent: AuditAgent
+        description: "Immutable audit record construction"
+        task_type: audit
+
+      - agent: EscalationAgent
+        description: "Confidence scoring and HITL queue submission"
+        task_type: escalation
+        condition: "confidence < threshold OR guard_flagged"
+
+  document_received:
+    description: "Document OCR, extraction, classification, and graph sync"
+    trigger: DocumentReceived
+    squad: DocumentIntelligenceSquad
+    steps:
+      - agent: DocumentExtractorAgent
+        description: "OCR ingestion, text extraction, structured output"
+        task_type: extraction
+
+      - agent: GuardAgent
+        description: "PII scan on extracted content"
+        task_type: guardrails
+
+      - agent: GraphSyncAgent
+        description: "Create Neo4j relationships for document entities"
+        task_type: graph_sync
+
+      - agent: AuditAgent
+        description: "Document processing audit record"
+        task_type: audit
+
+  fraud_signal_raised:
+    description: "Fraud signal correlation, anomaly detection, risk assessment"
+    trigger: FraudSignalRaised
+    squad: RiskAssessmentSquad
+    steps:
+      - agent: FraudDetectionAgent
+        description: "Risk signal correlation, watchlist matching, anomaly flagging"
+        task_type: reasoning
+
+      - agent: GuardAgent
+        description: "Validate fraud output before action"
+        task_type: guardrails
+
+      - agent: AuditAgent
+        description: "Risk assessment audit record"
+        task_type: audit
+
+      - agent: EscalationAgent
+        description: "Escalate high-risk signals to human review"
+        task_type: escalation
+        condition: "risk_score >= 0.8"
+
+  policy_change_requested:
+    description: "Policy modification validation and compliance"
+    trigger: PolicyChangeRequested
+    squad: PolicyManagementSquad
+    steps:
+      - agent: GuardAgent
+        description: "Pre-change policy compliance check"
+        task_type: guardrails
+
+      - agent: AuditAgent
+        description: "Policy change audit record"
+        task_type: audit
+
+  catastrophe_alert_issued:
+    description: "Multi-policy impact assessment for mass loss events"
+    trigger: CatastropheAlertIssued
+    squad: CatastropheResponseSquad
+    steps:
+      - agent: FraudDetectionAgent
+        description: "Initial risk exposure assessment"
+        task_type: reasoning
+
+      - agent: AuditAgent
+        description: "Catastrophe event audit record"
+        task_type: audit
+
+  customer_interaction_logged:
+    description: "Customer interaction intent detection and resolution"
+    trigger: CustomerInteractionLogged
+    squad: CustomerServiceSquad
+    steps:
+      - agent: ClaimsTriageAgent
+        description: "Intent classification for customer request"
+        task_type: general
+
+      - agent: GuardAgent
+        description: "Response guard and PII check"
+        task_type: guardrails
+
+      - agent: AuditAgent
+        description: "Customer interaction audit record"
+        task_type: audit
+
+  audit_query_received:
+    description: "Regulatory audit retrieval and compliance report"
+    trigger: AuditQueryReceived
+    squad: AuditComplianceSquad
+    steps:
+      - agent: AuditAgent
+        description: "Retrieve and assemble audit trail"
+        task_type: audit

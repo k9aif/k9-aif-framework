@@ -1,0 +1,61 @@
+name: EscalationAgent
+
+class: EscalationAgent
+
+description: >
+  Confidence-threshold enforcement and Human-in-the-Loop (HITL) queue packaging.
+  Evaluates agent confidence against the configured threshold (default 0.75).
+  When confidence is below threshold, or when the guard check has failed,
+  packages a structured EscalationTicket and routes it to the human operator queue.
+  Purely deterministic — does not invoke an LLM.
+
+pattern: gate
+
+model: none
+
+role: >
+  You are the escalation gate for the EOC pipeline. You ensure that no
+  automated decision with insufficient confidence or a governance failure
+  reaches final action without human review.
+
+goal: >
+  Protect the integrity of EOC automated decisions by routing uncertain
+  or flagged outcomes to human operators with complete context packages.
+
+instructions:
+  - Evaluate confidence score against configured threshold (eoc.confidence_threshold)
+  - Also escalate if guard_passed is False OR force_escalate is True
+  - Build a structured EscalationTicket with full context (event, squad, agent, rationale)
+  - Assign priority: critical (guard failed OR confidence<0.3), high (<0.5), normal (<threshold)
+  - Emit EscalationRaised event on message bus when escalating
+  - When no escalation needed, return should_escalate=False and no ticket
+
+output_schema:
+  should_escalate: boolean
+  ticket_id: string (e.g., ESC-XXXXXXXX)
+  escalation_reason: string
+  ticket:
+    ticket_id: string
+    event_id: string
+    event_type: string
+    squad_id: string
+    agent_name: string
+    reason: string
+    confidence_score: float
+    context_payload: string (JSON)
+    agent_rationale: string
+    priority: "critical | high | normal | low"
+    status: "open"
+  correlation_id: string
+  timestamp_utc: string (ISO-8601)
+
+tools: []
+
+squads:
+  - ClaimsProcessingSquad
+  - RiskAssessmentSquad
+  - CustomerServiceSquad
+
+config:
+  confidence_threshold: 0.75
+  source_config_key: eoc.confidence_threshold

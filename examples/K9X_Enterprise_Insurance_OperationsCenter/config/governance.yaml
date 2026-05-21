@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF EOC — Governance Policy Definitions
+
+governance:
+  version: "1.0"
+  domain: insurance_operations
+
+  policies:
+
+    pii_guard:
+      enabled: true
+      description: "Detect and mask PII before sending to external LLM endpoints"
+      model: guardian
+      pre_process: true
+      post_process: true
+      fields_to_scan:
+        - ssn
+        - date_of_birth
+        - bank_account
+        - credit_card
+        - phone_number
+        - email
+
+    output_validation:
+      enabled: true
+      description: "Validate LLM outputs against expected schema before action"
+      required_fields:
+        adjudication: [decision, confidence, rationale]
+        fraud_assessment: [risk_score, signals, recommendation]
+        triage: [priority, completeness_score, coverage_match]
+
+    confidence_threshold:
+      enabled: true
+      threshold: 0.75
+      description: "Escalate to HITL when agent confidence falls below threshold"
+      applies_to:
+        - AdjudicationAgent
+        - FraudDetectionAgent
+        - ClaimsTriageAgent
+
+    audit_all_actions:
+      enabled: true
+      description: "Every agent action produces an immutable AuditEntry record"
+      fields_required:
+        - event_id
+        - event_type
+        - squad_id
+        - agent_name
+        - model_id
+        - prompt_hash
+        - response_hash
+        - confidence_score
+        - disposition
+        - timestamp_utc
+        - correlation_id
+
+    no_fallback_for_compliance:
+      enabled: true
+      description: "Policy compliance checks must use Guardian — no fallback accepted"
+      hard_requirement_tasks:
+        - pii_detection
+        - policy_compliance
+        - output_validation
+
+    zero_trust:
+      enabled: true
+      description: "Apply K9 Zero Trust execution layer on all orchestrator flows"
+      deny_threshold: 0.85
+      approval_threshold: 0.75
+      obligation_threshold: 0.60

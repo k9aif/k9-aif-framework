@@ -1,0 +1,33 @@
+name: RiskAssessmentSquad
+
+description: >
+  Fraud risk assessment squad for the K9X EOC.
+  Handles FraudSignalRaised events: multi-signal fraud correlation,
+  governance validation, audit trail, and auto-escalation for
+  signals with risk score >= 0.8.
+
+orchestrator: RiskAssessmentOrchestrator
+
+agents:
+  - FraudDetectionAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+flow:
+  - FraudDetectionAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+entrypoint: FraudDetectionAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: FraudSignalRaised
+
+config:
+  escalation_risk_threshold: 0.8
+  escalation_on_guard_fail: true

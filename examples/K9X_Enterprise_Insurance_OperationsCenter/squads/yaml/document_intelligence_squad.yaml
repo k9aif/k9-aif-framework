@@ -1,0 +1,33 @@
+name: DocumentIntelligenceSquad
+
+description: >
+  Document ingestion and intelligence squad for the K9X EOC.
+  Handles document receipt events: OCR extraction, PII governance guard,
+  Neo4j entity graph synchronization, and immutable audit trail.
+
+orchestrator: DocumentIntelligenceOrchestrator
+
+agents:
+  - DocumentExtractorAgent
+  - GuardAgent
+  - GraphSyncAgent
+  - AuditAgent
+
+flow:
+  - DocumentExtractorAgent
+  - GuardAgent
+  - GraphSyncAgent
+  - AuditAgent
+
+entrypoint: DocumentExtractorAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: DocumentReceived
+
+config:
+  ocr_enabled: true
+  graph_sync_enabled: true
+  pii_check_required: true

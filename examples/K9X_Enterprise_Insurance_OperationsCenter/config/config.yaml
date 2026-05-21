@@ -1,0 +1,148 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF EOC — Enterprise Insurance Operations Center — Configuration
+
+inference:
+  llm_factory:
+    backend: ollama
+    provider: "ollama"
+    base_url: "http://localhost:11434"
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 2048
+      reasoning:
+        model: "granite3-dense:2b"
+        temperature: 0.2
+        max_tokens: 4096
+      guardian:
+        model: "granite3-guardian:latest"
+        temperature: 0.0
+        max_tokens: 1024
+      extraction:
+        model: "granite3-dense:2b"
+        temperature: 0.1
+        max_tokens: 2048
+      code:
+        model: "granite3-dense:2b"
+        temperature: 0.1
+        max_tokens: 4096
+
+  router:
+    type: k9_model_router
+    default_model: general
+    persistence:
+      enabled: true
+      provider: postgres
+
+  model_catalog:
+    default_model: general
+    models:
+      general:
+        provider: ollama
+        llm_ref: general
+        capabilities: [general, chat, summarization, customer_intent]
+        cost_profile: minimal
+        latency_budget: realtime
+
+      reasoning:
+        provider: ollama
+        llm_ref: reasoning
+        capabilities: [reasoning, adjudication, fraud, audit_report, policy_compliance]
+        cost_profile: standard
+        latency_budget: interactive
+
+      guardian:
+        provider: ollama
+        llm_ref: guardian
+        capabilities: [guardrails, policy, confidential, pii_detection]
+        cost_profile: standard
+        latency_budget: interactive
+
+      extraction:
+        provider: ollama
+        llm_ref: extraction
+        capabilities: [extraction, structured_output, ocr_post_processing]
+        cost_profile: standard
+        latency_budget: batch
+
+persistence:
+  provider: postgres
+
+postgres:
+  host: "192.168.1.98"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  database: "eoc"
+  schema: "eoc"
+  echo: false
+
+neo4j:
+  uri: "bolt://192.168.1.98:7687"
+  user: neo4j
+  password: neo4j!123
+  database: neo4j
+
+messaging:
+  backend: kafka
+  brokers:
+    - "192.168.1.98:9092"
+  bootstrap_servers: "192.168.1.98:9092"
+  topic: eoc-events
+  client_id: eoc-console
+  security_protocol: PLAINTEXT
+  topics:
+    claim_submitted: eoc-claims
+    document_received: eoc-documents
+    fraud_signal_raised: eoc-fraud
+    policy_change_requested: eoc-policy
+    catastrophe_alert_issued: eoc-catastrophe
+    customer_interaction_logged: eoc-customer
+    escalation_requested: eoc-escalation
+    audit_query_received: eoc-audit
+  orchestrator_topics:
+    claims_processing_orchestrator_in:  "eoc.claims.in"
+    claims_processing_orchestrator_out: "eoc.claims.out"
+    document_intelligence_orchestrator_in:  "eoc.documents.in"
+    document_intelligence_orchestrator_out: "eoc.documents.out"
+    risk_assessment_orchestrator_in:  "eoc.risk.in"
+    risk_assessment_orchestrator_out: "eoc.risk.out"
+    policy_management_orchestrator_in:  "eoc.policy.in"
+    policy_management_orchestrator_out: "eoc.policy.out"
+    catastrophe_response_orchestrator_in:  "eoc.catastrophe.in"
+    catastrophe_response_orchestrator_out: "eoc.catastrophe.out"
+    customer_service_orchestrator_in:  "eoc.customer.in"
+    customer_service_orchestrator_out: "eoc.customer.out"
+    audit_compliance_orchestrator_in:  "eoc.audit.in"
+    audit_compliance_orchestrator_out: "eoc.audit.out"
+    orchestrator_dead_letter: "eoc.orchestrator.dlq"
+    orchestrator_audit:       "eoc.orchestrator.audit"
+    orchestrator_metrics:     "eoc.orchestrator.metrics"
+
+monitoring:
+  console: true
+  log_level: INFO
+  otel:
+    enabled: false
+    endpoint: "http://localhost:4317"
+    service_name: k9-aif-eoc
+
+logging:
+  level: DEBUG
+  color: true
+  dir: logs/eoc
+
+governance:
+  enabled: true
+  policy_path: "examples/K9X_Enterprise_Insurance_OperationsCenter/config/governance.yaml"
+
+flows:
+  path: "examples/K9X_Enterprise_Insurance_OperationsCenter/config/flows.yaml"
+
+eoc:
+  confidence_threshold: 0.75
+  escalation_enabled: true
+  audit_all_actions: true
+  pii_guard_enabled: true
+  graph_sync_enabled: true

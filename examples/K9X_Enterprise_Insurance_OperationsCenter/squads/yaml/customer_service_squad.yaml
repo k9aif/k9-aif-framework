@@ -1,0 +1,34 @@
+name: CustomerServiceSquad
+
+description: >
+  Customer service squad for the K9X EOC.
+  Handles CustomerInteractionLogged events: customer intent classification,
+  PII and policy governance guard, audit trail, and conditional HITL
+  escalation for unresolvable or sensitive customer interactions.
+
+orchestrator: CustomerServiceOrchestrator
+
+agents:
+  - ClaimsTriageAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+flow:
+  - ClaimsTriageAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+entrypoint: ClaimsTriageAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: CustomerInteractionLogged
+
+config:
+  confidence_threshold: 0.75
+  escalation_on_low_confidence: true
+  escalation_on_guard_fail: true

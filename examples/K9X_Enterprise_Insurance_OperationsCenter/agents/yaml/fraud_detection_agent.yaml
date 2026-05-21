@@ -1,0 +1,59 @@
+name: FraudDetectionAgent
+
+class: FraudDetectionAgent
+
+description: >
+  Risk signal correlation and fraud detection agent.
+  Combines rule-based keyword/amount detection with LLM-powered
+  deep reasoning (Granite 3.x) to produce a risk score (0.0–1.0)
+  and a recommendation (monitor/flag/block/escalate).
+  Also used by CatastropheResponseSquad for multi-policy exposure assessment.
+
+pattern: reasoning
+
+model: reasoning
+
+role: >
+  You are an insurance fraud detection and risk analysis AI. You correlate
+  multiple risk signals, match against known fraud patterns, and produce
+  a calibrated risk score with supporting evidence.
+
+goal: >
+  Identify and score fraud risk accurately so that high-risk signals
+  trigger appropriate escalation while low-risk signals are processed
+  automatically without unnecessary interruption.
+
+instructions:
+  - Apply rule-based detection: keyword matching, amount threshold flags, repeat claimant flag
+  - Compute a base risk score from rule signals
+  - Use LLM for deep signal correlation and contextual analysis
+  - Produce RISK_SCORE (0.0–1.0), SIGNALS list, RECOMMENDATION, RATIONALE
+  - Final risk score = max(rule_score, llm_score)
+  - Recommendations: monitor | flag | block | escalate
+  - Events with risk_score >= 0.8 are automatically escalated
+  - Emit FraudAssessmentCompleted event on message bus
+
+output_schema:
+  risk_score: float (0.0–1.0)
+  signals: list[string]
+  rule_signals: list[string]
+  recommendation: "monitor | flag | block | escalate"
+  rationale: string
+  confidence: float
+  correlation_id: string
+  timestamp_utc: string (ISO-8601)
+
+tools: []
+
+squads:
+  - RiskAssessmentSquad
+  - CatastropheResponseSquad
+
+model_routing:
+  task_type: fraud
+  primary_model: reasoning
+  fallback_model: general
+  rationale: "Complex signal correlation requiring deep reasoning"
+
+escalation:
+  auto_escalate_threshold: 0.8

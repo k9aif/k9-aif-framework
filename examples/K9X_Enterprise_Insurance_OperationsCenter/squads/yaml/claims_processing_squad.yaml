@@ -1,0 +1,35 @@
+name: ClaimsProcessingSquad
+
+description: >
+  End-to-end claims processing squad for the K9X Enterprise Insurance
+  Operations Center. Handles claim submission events: triage, adjudication,
+  governance guard, audit trail, and conditional HITL escalation.
+
+orchestrator: ClaimsProcessingOrchestrator
+
+agents:
+  - ClaimsTriageAgent
+  - AdjudicationAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+flow:
+  - ClaimsTriageAgent
+  - AdjudicationAgent
+  - GuardAgent
+  - AuditAgent
+  - EscalationAgent
+
+entrypoint: ClaimsTriageAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: ClaimSubmitted
+
+config:
+  confidence_threshold: 0.75
+  escalation_on_low_confidence: true
+  escalation_on_guard_fail: true

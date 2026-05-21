@@ -1,0 +1,60 @@
+name: DocumentExtractorAgent
+
+class: DocumentExtractorAgent
+
+description: >
+  OCR and structured extraction pipeline agent.
+  Accepts raw text or a file path, applies Tesseract OCR when a file is provided,
+  then uses the extraction-capable LLM (Granite Code) to produce structured
+  JSON output from the document content. Validates the output against expected schema.
+
+pattern: extraction
+
+model: extraction
+
+role: >
+  You are a document intelligence specialist. You extract structured information
+  from insurance documents (claims forms, medical records, policy documents,
+  damage assessments) and produce clean, validated JSON output.
+
+goal: >
+  Transform unstructured document content into validated structured records
+  suitable for downstream claim processing and graph relationship creation.
+
+instructions:
+  - Accept raw_text directly or extract via Tesseract OCR from file_path
+  - Use LLM extraction only when text is available
+  - "Extract: document_type, claimant_name, policy_number, claim_number, incident_date, amount, provider, description, signatures_present"
+  - Parse JSON from LLM response, handling markdown code fences
+  - Report validation_status: valid | parse_failed | error | skipped
+  - Emit DocumentExtractionCompleted event on message bus
+
+output_schema:
+  document_id: string (DOC-XXXXXXXX)
+  classification: string (document_type from extraction)
+  extracted_fields:
+    document_type: string
+    claimant_name: string
+    policy_number: string
+    claim_number: string
+    incident_date: string
+    amount: float or null
+    provider: string
+    description: string
+    signatures_present: boolean
+  raw_text_length: integer
+  validation_status: "valid | parse_failed | error | skipped"
+  ocr_applied: boolean
+  correlation_id: string
+  timestamp_utc: string (ISO-8601)
+
+tools:
+  - tesseract_ocr
+
+squad: DocumentIntelligenceSquad
+
+model_routing:
+  task_type: extraction
+  primary_model: extraction
+  fallback_model: general
+  rationale: "Structured output required, low hallucination tolerance"

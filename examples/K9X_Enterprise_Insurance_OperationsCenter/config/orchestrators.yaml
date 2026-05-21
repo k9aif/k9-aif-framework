@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF EOC — Orchestrator Registry
+# Maps event types / intents to their orchestrator SBBs.
+
+orchestrators:
+  - intent: claim_submitted
+    name: ClaimsProcessingOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.claims_processing_orchestrator
+    description: "Orchestrates triage, adjudication, guard, audit, and escalation for new claims"
+
+  - intent: document_received
+    name: DocumentIntelligenceOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.document_intelligence_orchestrator
+    description: "Orchestrates OCR extraction, classification, validation, and graph sync for documents"
+
+  - intent: fraud_signal_raised
+    name: RiskAssessmentOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.risk_assessment_orchestrator
+    description: "Orchestrates fraud detection, anomaly analysis, guard checks, and risk assessment"
+
+  - intent: policy_change_requested
+    name: PolicyManagementOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.policy_management_orchestrator
+    description: "Orchestrates policy validation, compliance checks, guard, and audit for policy changes"
+
+  - intent: catastrophe_alert_issued
+    name: CatastropheResponseOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.catastrophe_response_orchestrator
+    description: "Orchestrates multi-policy impact assessment, exposure analysis, and communication"
+
+  - intent: customer_interaction_logged
+    name: CustomerServiceOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.customer_service_orchestrator
+    description: "Orchestrates intent detection, resolution, guard, and escalation for customer interactions"
+
+  - intent: audit_query_received
+    name: AuditComplianceOrchestrator
+    module: examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.audit_compliance_orchestrator
+    description: "Orchestrates audit retrieval, trace assembly, and compliance report generation"

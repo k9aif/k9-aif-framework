@@ -14,6 +14,7 @@ from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_core.logging.log_setup import setup_logging
 
 from examples.acme_support_center.utils.systems_check import run_system_checks
+from examples.acme_support_center.utils.agent_loader import AgentLoader
 from examples.acme_support_center.agents.src.triage_agent import TriageAgent
 from examples.acme_support_center.agents.src.knowledge_agent import KnowledgeAgent
 from examples.acme_support_center.agents.src.resolution_agent import ResolutionAgent
@@ -48,26 +49,37 @@ class ACMESupportBootstrap:
         if not ok:
             raise RuntimeError("System checks failed")
 
+        agents_yaml_dir = root_dir / "examples" / self.app_name / "agents" / "yaml"
+        agent_loader = AgentLoader(agents_yaml_dir)
+
         agent_registry = AgentRegistry()
 
         agent_registry.register(
             "TriageAgent",
-            lambda: TriageAgent(config=self.config)
+            lambda: TriageAgent(
+                config=agent_loader.merge_with_global("TriageAgent", self.config)
+            ),
         )
 
         agent_registry.register(
             "KnowledgeAgent",
-            lambda: KnowledgeAgent(config=self.config)
+            lambda: KnowledgeAgent(
+                config=agent_loader.merge_with_global("KnowledgeAgent", self.config)
+            ),
         )
 
         agent_registry.register(
             "ResolutionAgent",
-            lambda: ResolutionAgent(config=self.config)
+            lambda: ResolutionAgent(
+                config=agent_loader.merge_with_global("ResolutionAgent", self.config)
+            ),
         )
 
         agent_registry.register(
             "QualityAgent",
-            lambda: QualityAgent(config=self.config)
+            lambda: QualityAgent(
+                config=agent_loader.merge_with_global("QualityAgent", self.config)
+            ),
         )
 
         orchestrator_registry = OrchestratorRegistry()

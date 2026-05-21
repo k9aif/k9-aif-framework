@@ -3,10 +3,11 @@
 
 # File: k9_aif_abb/k9_core/messaging/k9_event_bus.py
 
+import asyncio
 import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 from kafka import KafkaProducer, KafkaConsumer
 
 
@@ -42,9 +43,11 @@ class K9EventBus:
         try:
             # --- Safe integer conversion for all numeric params ---
             retries = int(os.environ.get("K9_PRODUCER_RETRIES", 3))
-            linger_ms = int(os.environ.get("K9_PRODUCER_LINGER_MS", 5))
+            linger_ms = int(os.environ.get("K9_PRODUCER_LINGER_MS", 0))
             max_request_size = int(os.environ.get("K9_PRODUCER_MAX_REQUEST_SIZE", 2 * 1024 * 1024))
             request_timeout_ms = int(os.environ.get("K9_PRODUCER_TIMEOUT_MS", 30000))
+            # Stay under Redpanda's idle connection timeout (~5 min default)
+            connections_max_idle_ms = int(os.environ.get("K9_PRODUCER_IDLE_MS", 270000))
 
             self._producer = KafkaProducer(
                 bootstrap_servers=[self.broker_url],
@@ -54,7 +57,7 @@ class K9EventBus:
                 linger_ms=linger_ms,
                 max_request_size=max_request_size,
                 request_timeout_ms=request_timeout_ms,
-                api_version=(2, 6, 0),
+                connections_max_idle_ms=connections_max_idle_ms,
             )
 
             self.log.info(
@@ -131,6 +134,73 @@ class K9EventBus:
                     self.log.error(f"[K9EventBus] consumer callback failed: {e}")
         except Exception as e:
             self.log.error(f"[K9EventBus] subscribe failed: {e}", exc_info=False)
+
+    # ----------------------------------------------------------------------
+    # Async consumer (aiokafka) — awaits group join before yielding messages
+    # ----------------------------------------------------------------------
+    async def subscribe_async(
+        self,
+        callback,
+        topics: Optional[List[str]] = None,
+        session_timeout_ms: int = 30000,
+        heartbeat_interval_ms: int = 10000,
+        max_poll_interval_ms: int = 600000,
+    ) -> None:
+        """
+        Async consumer loop using aiokafka.
+
+        ``await consumer.start()`` blocks until the broker group join and
+        partition assignment are complete — no probe-poll hack needed.
+
+        Args:
+            callback:             async or sync callable receiving the decoded payload dict.
+            topics:               list of topic names to subscribe to; defaults to [self.topic].
+            session_timeout_ms:   broker-side session timeout.
+            heartbeat_interval_ms: heartbeat frequency (must be < session_timeout_ms / 3).
+            max_poll_interval_ms: max time between fetches (set high for slow LLM calls).
+        """
+        try:
+            from aiokafka import AIOKafkaConsumer
+        except ImportError:
+            self.log.error(
+                "[K9EventBus] aiokafka not installed — run: pip install aiokafka"
+            )
+            return
+
+        subscribe_topics = topics if topics is not None else [self.topic]
+
+        consumer = AIOKafkaConsumer(
+            *subscribe_topics,
+            bootstrap_servers=[self.broker_url],
+            group_id=self.group_id,
+            auto_offset_reset="earliest",
+            enable_auto_commit=True,
+            value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+            session_timeout_ms=session_timeout_ms,
+            heartbeat_interval_ms=heartbeat_interval_ms,
+            max_poll_interval_ms=max_poll_interval_ms,
+        )
+
+        await consumer.start()
+        self.log.info(
+            "[K9EventBus] Async consumer READY | topics=%s | group=%s",
+            subscribe_topics, self.group_id,
+        )
+
+        try:
+            async for msg in consumer:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(msg.value)
+                    else:
+                        callback(msg.value)
+                except Exception as e:
+                    self.log.error("[K9EventBus] async callback failed: %s", e, exc_info=True)
+        finally:
+            await consumer.stop()
+            self.log.info(
+                "[K9EventBus] Async consumer stopped | topics=%s", subscribe_topics
+            )
 
     # ----------------------------------------------------------------------
     # Shutdown

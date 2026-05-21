@@ -1,0 +1,218 @@
+# K9-AIF EOC — Podman Pod Spec (3-container production deployment)
+#
+# Pod: k9-eoc-pod
+# ├── app_backend      FastAPI API + web UI (port 8000)
+# ├── eoc_router       EOCRouter — consumes eoc-events, routes to domain topics
+# └── eoc_orchestrator EOCOrchestrator — consumes domain topics, runs squads
+#
+# External services (on RHEL host at 192.168.1.98):
+#   Ollama    → rhel-host:11434
+#   Kafka     → rhel-host:9092
+#   PostgreSQL → rhel-host:5432
+#   Neo4j     → rhel-host:7687
+#
+# SETUP (run once on RHEL):
+#   # 1. Build the image
+#   podman build -t k9-aif-eoc:latest \
+#     -f examples/K9X_Enterprise_Insurance_OperationsCenter/Containerfile .
+#
+#   # 2. Store Neo4j password as a Podman secret
+#   podman secret create neo4j-password \
+#     <(grep NEO4J_PASSWORD examples/K9X_Enterprise_Insurance_OperationsCenter/.env | cut -d= -f2-)
+#
+#   # 3. Store Postgres password as a Podman secret
+#   podman secret create pg-password \
+#     <(grep K9_PG_PASSWORD examples/K9X_Enterprise_Insurance_OperationsCenter/.env | cut -d= -f2-)
+#
+# DEPLOY:
+#   podman play kube deploy/eoc-pod.yaml --replace
+#
+# STOP:
+#   podman play kube deploy/eoc-pod.yaml --down
+#
+# LOGS:
+#   podman logs -f k9-eoc-pod-app-backend
+#   podman logs -f k9-eoc-pod-eoc-router
+#   podman logs -f k9-eoc-pod-eoc-orchestrator
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: k9-eoc-pod
+  labels:
+    app: k9-aif-eoc
+    component: operations-center
+    version: "0.1"
+  annotations:
+    description: "K9-AIF Enterprise Insurance Operations Center — 3-container pod"
+
+spec:
+  restartPolicy: OnFailure
+
+  hostAliases:
+  - ip: "192.168.1.98"
+    hostnames:
+    - "rhel-host"
+
+  containers:
+
+  # ── Container 1: app_backend ─────────────────────────────────────────────────
+  # FastAPI + web UI. Receives HTTP events, publishes to Kafka eoc-events.
+  # Exposes port 8000 on the host.
+  - name: app-backend
+    image: localhost/k9-aif-eoc:latest
+    imagePullPolicy: Never
+
+    ports:
+    - name: http
+      containerPort: 8000
+      hostPort: 8000
+      protocol: TCP
+
+    command: ["uvicorn"]
+    args:
+    - "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app"
+    - "--host"
+    - "0.0.0.0"
+    - "--port"
+    - "8000"
+    - "--workers"
+    - "2"
+    - "--log-level"
+    - "info"
+
+    env:
+    - name: K9_KAFKA_MODE
+      value: "1"
+    - name: K9_KAFKA_BROKERS
+      value: "rhel-host:9092"
+    - name: K9_INFERENCE_BASE_URL
+      value: "http://rhel-host:11434"
+    - name: K9_PG_HOST
+      value: "rhel-host"
+    - name: K9_PG_PORT
+      value: "5432"
+    - name: K9_PG_DB
+      value: "eoc"
+    - name: K9_PG_USER
+      value: "eoc_user"
+    - name: K9_PG_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: pg-password
+          key: pg-password
+    - name: NEO4J_URI
+      value: "bolt://rhel-host:7687"
+    - name: NEO4J_USER
+      value: "neo4j"
+    - name: NEO4J_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: neo4j-password
+          key: neo4j-password
+    - name: PYTHONPATH
+      value: "/app"
+    - name: K9_ENV
+      value: "production"
+
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "2"
+
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8000
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      failureThreshold: 3
+
+    readinessProbe:
+      httpGet:
+        path: /health
+        port: 8000
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      failureThreshold: 5
+
+
+  # ── Container 2: eoc_router ──────────────────────────────────────────────────
+  # EOCRouter process. Consumes eoc-events → routes to domain topics.
+  # No HTTP port — internal Kafka consumer only.
+  - name: eoc-router
+    image: localhost/k9-aif-eoc:latest
+    imagePullPolicy: Never
+
+    command: ["python", "-m",
+              "examples.K9X_Enterprise_Insurance_OperationsCenter.router.eoc_router_process"]
+
+    env:
+    - name: K9_KAFKA_BROKERS
+      value: "rhel-host:9092"
+    - name: PYTHONPATH
+      value: "/app"
+    - name: K9_ENV
+      value: "production"
+
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "1"
+
+
+  # ── Container 3: eoc_orchestrator ───────────────────────────────────────────
+  # EOCOrchestrator process. Consumes domain topics, runs squads/agents,
+  # publishes results to eoc-results.
+  - name: eoc-orchestrator
+    image: localhost/k9-aif-eoc:latest
+    imagePullPolicy: Never
+
+    command: ["python", "-m",
+              "examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.eoc_orchestrator_process"]
+
+    env:
+    - name: K9_KAFKA_BROKERS
+      value: "rhel-host:9092"
+    - name: K9_INFERENCE_BASE_URL
+      value: "http://rhel-host:11434"
+    - name: K9_PG_HOST
+      value: "rhel-host"
+    - name: K9_PG_PORT
+      value: "5432"
+    - name: K9_PG_DB
+      value: "eoc"
+    - name: K9_PG_USER
+      value: "eoc_user"
+    - name: K9_PG_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: pg-password
+          key: pg-password
+    - name: NEO4J_URI
+      value: "bolt://rhel-host:7687"
+    - name: NEO4J_USER
+      value: "neo4j"
+    - name: NEO4J_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: neo4j-password
+          key: neo4j-password
+    - name: PYTHONPATH
+      value: "/app"
+    - name: K9_ENV
+      value: "production"
+
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "4"

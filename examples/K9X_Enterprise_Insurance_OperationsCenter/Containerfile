@@ -1,0 +1,56 @@
+# K9-AIF Enterprise Insurance Operations Center
+# RHEL UBI 9 Python 3.11 container image
+#
+# Build:
+#   podman build -t k9-aif-eoc:latest \
+#     -f examples/K9X_Enterprise_Insurance_OperationsCenter/Containerfile .
+#
+# Run standalone (dev):
+#   podman run --rm -p 8000:8000 \
+#     --env-file examples/K9X_Enterprise_Insurance_OperationsCenter/.env \
+#     k9-aif-eoc:latest
+#
+# Run in pod (production):
+#   see deploy/eoc-pod.yaml
+
+FROM registry.access.redhat.com/ubi9/python-311:latest
+
+USER root
+
+# ── System packages ───────────────────────────────────────────
+RUN dnf install -y --nodocs \
+      gcc \
+      libpq-devel \
+    && dnf clean all
+
+# ── Python dependencies ───────────────────────────────────────
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+
+# ── Application source ────────────────────────────────────────
+COPY . .
+
+# ── Runtime environment ───────────────────────────────────────
+ENV PYTHONPATH=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    K9_ENV=production
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" \
+      || exit 1
+
+# Drop to non-root (UBI default non-root UID)
+USER 1001
+
+CMD ["uvicorn", \
+     "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--workers", "2", \
+     "--log-level", "info"]

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF Architecture Blueprint</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d1117;
+      --bg-card: #161b22;
+      --bg-lift: #1c2433;
+      --border:  #30363d;
+      --blue:    #4589ff;
+      --cyan:    #00b4d8;
+      --green:   #42be65;
+      --purple:  #a56eff;
+      --yellow:  #f1c21b;
+      --orange:  #ff832b;
+      --red:     #fa4d56;
+      --text:    #e6edf3;
+      --muted:   #8b949e;
+      --sans:    'IBM Plex Sans', system-ui, sans-serif;
+      --mono:    'IBM Plex Mono', 'Courier New', monospace;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; gap: 20px;
+      padding: 0 40px; height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .h-logo { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--blue); text-decoration: none; }
+    .h-sep  { color: var(--border); font-size: 20px; }
+    .h-title { font-size: 14px; color: var(--muted); }
+    .h-actions { margin-left: auto; display: flex; gap: 12px; }
+    .h-btn {
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 5px; padding: 6px 16px;
+      background: none; cursor: pointer; text-decoration: none; display: inline-block;
+      transition: 150ms;
+    }
+    .h-btn:hover { color: var(--text); border-color: var(--blue); }
+
+    /* ── Page ────────────────────────────────────────────── */
+    .page { max-width: 1200px; margin: 0 auto; padding: 56px 40px 100px; }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .eyebrow {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--blue);
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 36px; font-weight: 300; color: var(--text);
+      line-height: 1.25; margin-bottom: 16px;
+    }
+    h1 strong { font-weight: 700; }
+    .hero-sub {
+      font-size: 16px; color: var(--muted); line-height: 1.75;
+      max-width: 760px; margin-bottom: 64px;
+    }
+
+    /* ── Section title ───────────────────────────────────── */
+    .sec-title {
+      font-size: 11px; font-family: var(--mono); font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 28px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 1 — FLOW DIAGRAM
+    ═══════════════════════════════════════════════════════ */
+
+    .flow-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 36px;
+      margin-bottom: 80px;
+    }
+
+    /* ─── Layer label ─── */
+    .layer-row {
+      display: flex; align-items: stretch; gap: 0; margin-bottom: 10px;
+    }
+    .layer-label {
+      writing-mode: vertical-lr; transform: rotate(180deg);
+      font-family: var(--mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); padding-right: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; min-width: 30px;
+    }
+    .layer-content { flex: 1; }
+
+    /* ─── Kafka bus ─── */
+    .k-bus {
+      border: 1px dashed rgba(69,137,255,0.35);
+      border-radius: 8px;
+      background: rgba(69,137,255,0.03);
+      padding: 20px 24px;
+      display: flex; align-items: center; gap: 0;
+    }
+    .k-bus-label {
+      font-family: var(--mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--blue); margin-right: 16px; flex-shrink: 0;
+    }
+
+    /* ─── Node ─── */
+    .node {
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 130px;
+      background: var(--bg-lift);
+    }
+    .node-icon  { font-size: 20px; margin-bottom: 6px; }
+    .node-name  { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+    .node-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+    .node-badge {
+      display: inline-block; margin-top: 7px;
+      font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+      border-radius: 3px; letter-spacing: 0.03em;
+    }
+
+    .node.blue   { border-color: rgba(69,137,255,0.5);  background: rgba(69,137,255,0.07); }
+    .node.cyan   { border-color: rgba(0,180,216,0.5);   background: rgba(0,180,216,0.07); }
+    .node.purple { border-color: rgba(165,110,255,0.5); background: rgba(165,110,255,0.07); }
+    .node.yellow { border-color: rgba(241,194,27,0.5);  background: rgba(241,194,27,0.07); }
+    .node.green  { border-color: rgba(66,190,101,0.5);  background: rgba(66,190,101,0.07); }
+    .node.orange { border-color: rgba(255,131,43,0.5);  background: rgba(255,131,43,0.07); }
+    .node.red    { border-color: rgba(250,77,86,0.5);   background: rgba(250,77,86,0.07); }
+
+    /* topic node — slimmer */
+    .topic-node {
+      flex-shrink: 0; min-width: 110px;
+      padding: 10px 14px; text-align: center;
+      border: 1px dashed rgba(69,137,255,0.4);
+      border-radius: 6px; background: rgba(69,137,255,0.04);
+    }
+    .topic-name { font-family: var(--mono); font-size: 12px; color: var(--blue); font-weight: 500; }
+    .topic-sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* ─── Arrow ─── */
+    .arr { color: #4a5568; font-size: 18px; padding: 0 10px; flex-shrink: 0; align-self: center; }
+
+    /* ─── Vertical connector ─── */
+    .v-conn {
+      display: flex; justify-content: center; align-items: center;
+      flex-direction: column; padding: 8px 0; margin-left: 30px;
+    }
+    .v-line { width: 1px; height: 24px; background: var(--border); }
+    .v-arrow { color: #4a5568; font-size: 12px; }
+
+    /* ─── Squad box ─── */
+    .squad-box {
+      border: 1px solid rgba(165,110,255,0.45);
+      border-radius: 10px;
+      background: rgba(165,110,255,0.04);
+      padding: 24px 28px 28px;
+    }
+    .squad-hdr {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--purple); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .squad-hdr-note {
+      font-size: 11px; color: var(--muted); margin-left: auto;
+      text-transform: none; letter-spacing: 0; font-weight: 400;
+    }
+
+    .squad-agents {
+      display: flex; align-items: flex-start; gap: 0; overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .agent-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .mr-tag {
+      font-family: var(--mono); font-size: 10px; font-weight: 600;
+      padding: 3px 9px; border-radius: 3px;
+      background: rgba(165,110,255,0.14); color: var(--purple);
+      border: 1px solid rgba(165,110,255,0.3); white-space: nowrap;
+    }
+    .mr-note { font-size: 11px; color: var(--muted); text-align: center; max-width: 130px; line-height: 1.3; }
+
+    /* ─── ZT gate inline ─── */
+    .zt-inline {
+      border: 1px solid rgba(241,194,27,0.5); border-radius: 8px;
+      background: rgba(241,194,27,0.05); padding: 14px 20px;
+      display: flex; align-items: center; gap: 20px; margin: 10px 0;
+    }
+    .zt-inline-label {
+      font-family: var(--mono); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--yellow); white-space: nowrap; flex-shrink: 0;
+    }
+    .zt-inline-rules { display: flex; gap: 20px; flex-wrap: wrap; }
+    .zt-inline-rule {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; color: var(--muted);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 2 — MODEL ROUTER RULES  (big cards)
+    ═══════════════════════════════════════════════════════ */
+    .mr-cards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px; margin-bottom: 80px;
+    }
+    .mr-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px 24px;
+      position: relative; overflow: hidden;
+    }
+    .mr-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .mr-rule-num {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      color: var(--muted); letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .mr-rule-name { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .mr-rule-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+    .mr-divider { height: 1px; background: var(--border); margin-bottom: 16px; }
+    .mr-model-label { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    .mr-model-val { font-family: var(--mono); font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .mr-tasks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .mr-task-chip {
+      font-family: var(--mono); font-size: 11px; padding: 3px 9px;
+      border-radius: 4px; border: 1px solid var(--border); color: var(--muted);
+    }
+    .mr-rationale { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .no-fallback-badge {
+      display: inline-block; font-family: var(--mono); font-size: 11px;
+      font-weight: 700; color: var(--red); letter-spacing: 0.05em;
+      border: 1px solid rgba(250,77,86,0.4); border-radius: 4px;
+      padding: 3px 9px; margin-top: 6px;
+    }
+
+    /* ─── Agent assignment table ─── */
+    .agent-table-wrap {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden; margin-bottom: 80px;
+    }
+    .agent-table { width: 100%; border-collapse: collapse; }
+    .agent-table th {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+      padding: 14px 20px; text-align: left; background: var(--bg-lift);
+      border-bottom: 1px solid var(--border);
+    }
+    .agent-table td { padding: 14px 20px; border-bottom: 1px solid rgba(48,54,61,0.6); vertical-align: middle; }
+    .agent-table tr:last-child td { border-bottom: none; }
+    .agent-table tr:hover td { background: var(--bg-lift); }
+    .at-agent { font-family: var(--mono); font-size: 13px; color: var(--cyan); font-weight: 500; }
+    .at-squad  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .at-task   { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .at-model  {
+      display: inline-block; font-family: var(--mono); font-size: 12px;
+      font-weight: 600; padding: 3px 10px; border-radius: 4px;
+    }
+    .at-fallback { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+    .at-gov {
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 3px; white-space: nowrap;
+    }
+    .at-rationale { font-size: 13px; color: var(--muted); }
+
+    /* color helpers */
+    .c-yellow { color: var(--yellow); }
+    .c-green  { color: var(--green); }
+    .c-red    { color: var(--red); }
+    .c-blue   { color: var(--blue); }
+    .c-purple { color: var(--purple); }
+    .c-cyan   { color: var(--cyan); }
+    .bg-yellow { background: rgba(241,194,27,0.12); }
+    .bg-green  { background: rgba(66,190,101,0.12); }
+    .bg-red    { background: rgba(250,77,86,0.12); }
+    .bg-cyan   { background: rgba(0,180,216,0.12); }
+    .bg-muted  { background: rgba(139,148,158,0.1); }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 3 — ZERO TRUST
+    ═══════════════════════════════════════════════════════ */
+    .zt-section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 40px; margin-bottom: 80px;
+    }
+    .zt-section h2 { font-size: 22px; font-weight: 600; margin-bottom: 10px; }
+    .zt-section .desc { font-size: 15px; color: var(--muted); margin-bottom: 40px; line-height: 1.7; max-width: 720px; }
+
+    /* confidence bar */
+    .conf-bar-wrap { margin-bottom: 48px; }
+    .conf-bar-labels {
+      display: flex; justify-content: space-between;
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .conf-bar {
+      height: 16px; border-radius: 8px; position: relative;
+      background: linear-gradient(to right,
+        rgba(250,77,86,0.5) 0%,  rgba(250,77,86,0.5) 60%,
+        rgba(241,194,27,0.5) 60%, rgba(241,194,27,0.5) 75%,
+        rgba(66,190,101,0.5) 75%, rgba(66,190,101,0.5) 85%,
+        rgba(69,137,255,0.5) 85%, rgba(69,137,255,0.5) 100%
+      );
+    }
+    .conf-tick {
+      position: absolute; top: -6px; bottom: -6px;
+      width: 2px; background: var(--bg-card);
+    }
+    .conf-tick-label {
+      position: absolute; top: 28px; left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--mono); font-size: 11px; color: var(--muted);
+      white-space: nowrap;
+    }
+    .conf-zone-labels {
+      display: flex; margin-top: 48px; gap: 0;
+      font-family: var(--mono); font-size: 12px;
+    }
+    .conf-zone { flex: 1; text-align: center; }
+
+    /* zt cards */
+    .zt-cards {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px; margin-top: 40px;
+    }
+    .zt-card {
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 24px; background: var(--bg-lift);
+    }
+    .ztc-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .ztc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .ztc-label { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
+    .ztc-val { font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+    .ztc-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION 4 — GOVERNANCE
+    ═══════════════════════════════════════════════════════ */
+    .gov-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px; margin-bottom: 80px;
+    }
+    .gov-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 28px; position: relative; overflow: hidden;
+    }
+    .gov-top-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .gov-icon  { font-size: 24px; margin-bottom: 14px; }
+    .gov-name  { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+    .gov-src   { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+    .gov-desc  { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+    .gov-params { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .gov-param { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+    .gov-key { font-family: var(--mono); font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .gov-val { font-family: var(--mono); font-size: 12px; font-weight: 600; text-align: right; }
+
+    /* ─── Footer ─── */
+    .footer {
+      border-top: 1px solid var(--border); padding-top: 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    }
+    .footer-note { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/webui/landing.html" class="h-logo">K9X.ai</a>
+  <span class="h-sep">|</span>
+  <span class="h-title">Architecture Blueprint</span>
+  <div class="h-actions">
+    <a href="/webui/index.html" class="h-btn">← Dashboard</a>
+    <a href="/docs" class="h-btn" target="_blank">API Docs ↗</a>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="eyebrow">K9-AIF Framework · Architecture Blueprint</div>
+  <h1>From <strong>Run Scenario</strong> to Result —<br>the complete runtime story</h1>
+  <p class="hero-sub">
+    Every event flows through a governed, explainable pipeline. Kafka-routed, model-routed per task,
+    zero-trust gated, PII-guarded, and immutably audited. This page shows exactly how —
+    driven entirely from the framework's YAML configuration.
+  </p>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — END-TO-END FLOW
+  ═══════════════════════════════════════════════════════ -->
+  <div class="sec-title">End-to-End Runtime Flow</div>
+
+  <div class="flow-wrap">
+
+    <!-- ROW 1: Messaging layer -->
+    <div class="layer-row">
+      <div class="layer-label" style="color:var(--blue)">Messaging</div>
+      <div class="layer-content">
+        <div class="k-bus">
+          <span class="k-bus-label">Kafka</span>
+
+          <div class="node blue">
+            <div class="node-icon">🖥️</div>
+            <div class="node-name">UI / API</div>
+            <div class="node-sub">Run Scenario<br>click</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="node blue">
+            <div class="node-icon">⚡</div>
+            <div class="node-name">app_backend</div>
+            <div class="node-sub">FastAPI · port 8000</div>
+            <div class="node-badge" style="background:rgba(69,137,255,0.15);color:var(--blue)">publishes event</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="topic-node">
+            <div class="topic-name">eoc-events</div>
+            <div class="topic-sub">inbound topic</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="node blue">
+            <div class="node-icon">⇄</div>
+            <div class="node-name">EOCRouter</div>
+            <div class="node-sub">routes by event_type<br>deterministic table</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="topic-node">
+            <div class="topic-name">eoc-claims</div>
+            <div class="topic-sub">eoc-fraud · eoc-docs…</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="node cyan">
+            <div class="node-icon">◈</div>
+            <div class="node-name">EOCOrchestrator</div>
+            <div class="node-sub">7 domain squads<br>dispatched here</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- vertical down -->
+    <div class="v-conn">
+      <div class="v-line"></div>
+      <div class="v-arrow">▼</div>
+    </div>
+
+    <!-- ROW 2: Squad layer -->
+    <div class="layer-row">
+      <div class="layer-label" style="color:var(--purple)">Squad</div>
+      <div class="layer-content">
+        <div class="squad-box">
+          <div class="squad-hdr">
+            🤖 Squad — agent pipeline (e.g. ClaimsProcessingSquad)
+            <span class="squad-hdr-note">loaded from squads.yaml + agent YAML files</span>
+          </div>
+
+          <!-- ZT gate ABOVE agents -->
+          <div class="zt-inline" style="margin-bottom:20px">
+            <div class="zt-inline-label">⚖️ Zero Trust Gate</div>
+            <div class="zt-inline-rules">
+              <div class="zt-inline-rule"><div class="dot" style="background:var(--green)"></div>confidence ≥ 0.75 → approve, continue</div>
+              <div class="zt-inline-rule"><div class="dot" style="background:var(--yellow)"></div>confidence &lt; 0.75 → HITL escalation</div>
+              <div class="zt-inline-rule"><div class="dot" style="background:var(--red)"></div>score &gt; 0.85 → auto-deny</div>
+            </div>
+          </div>
+
+          <div class="squad-agents">
+
+            <div class="agent-col">
+              <div class="node purple">
+                <div class="node-icon">🧠</div>
+                <div class="node-name">Domain Agent</div>
+                <div class="node-sub">Triage · Adjudication<br>Fraud · Extraction</div>
+              </div>
+              <div class="mr-tag">⚡ Intelligent Model Router</div>
+              <div class="mr-note">task_type → model selection<br>cost + latency optimised</div>
+            </div>
+            <span class="arr" style="align-self:center">›</span>
+
+            <div class="agent-col">
+              <div class="node yellow">
+                <div class="node-icon">🤖</div>
+                <div class="node-name">LLM Call</div>
+                <div class="node-sub">Ollama · Granite 3<br>or llama3.2:1b</div>
+              </div>
+              <div class="mr-note" style="color:var(--yellow)">routed per task type</div>
+            </div>
+            <span class="arr" style="align-self:center">›</span>
+
+            <div class="agent-col">
+              <div class="node red" style="border-color:rgba(250,77,86,0.6)">
+                <div class="node-icon">🛡️</div>
+                <div class="node-name">GuardAgent</div>
+                <div class="node-sub">granite3-guardian<br>PII + compliance</div>
+              </div>
+              <div class="mr-note" style="color:var(--red);font-weight:600">HARD GATE — no fallback<br>no bypass possible</div>
+            </div>
+            <span class="arr" style="align-self:center">›</span>
+
+            <div class="agent-col">
+              <div class="node orange">
+                <div class="node-icon">📋</div>
+                <div class="node-name">AuditAgent</div>
+                <div class="node-sub">PostgreSQL<br>immutable trail</div>
+              </div>
+              <div class="mr-note">every action recorded<br>with prompt hash</div>
+            </div>
+            <span class="arr" style="align-self:center">›</span>
+
+            <div class="agent-col">
+              <div class="node green">
+                <div class="node-icon">🔗</div>
+                <div class="node-name">GraphSyncAgent</div>
+                <div class="node-sub">Neo4j · entities<br>relationships</div>
+              </div>
+              <div class="mr-note">knowledge graph<br>sync</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- vertical down -->
+    <div class="v-conn">
+      <div class="v-line"></div>
+      <div class="v-arrow">▼</div>
+    </div>
+
+    <!-- ROW 3: Result layer -->
+    <div class="layer-row">
+      <div class="layer-label" style="color:var(--green)">Result</div>
+      <div class="layer-content">
+        <div class="k-bus" style="border-color:rgba(66,190,101,0.35);background:rgba(66,190,101,0.03)">
+          <span class="k-bus-label" style="color:var(--green)">Kafka</span>
+
+          <div class="topic-node" style="border-color:rgba(66,190,101,0.4);background:rgba(66,190,101,0.04)">
+            <div class="topic-name" style="color:var(--green)">eoc-results</div>
+            <div class="topic-sub">results topic</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="node green">
+            <div class="node-icon">📡</div>
+            <div class="node-name">SSE Stream</div>
+            <div class="node-sub">/events/stream<br>real-time push</div>
+          </div>
+          <span class="arr">›</span>
+
+          <div class="node green">
+            <div class="node-icon">🖥️</div>
+            <div class="node-name">UI Dashboard</div>
+            <div class="node-sub">KafkaResult event<br>live trace display</div>
+          </div>
+
+          <div style="margin-left:auto;flex-shrink:0;padding:12px 20px;border:1px solid rgba(66,190,101,0.4);border-radius:8px;background:rgba(66,190,101,0.06)">
+            <div style="font-family:var(--mono);font-size:12px;color:var(--green);font-weight:700">✓ Governed end-to-end</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Audited · PII-guarded · Zero-trust gated</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flow-wrap -->
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — INTELLIGENT MODEL ROUTER
+  ═══════════════════════════════════════════════════════ -->
+  <div class="sec-title">Intelligent Model Router — 4 Decision Rules</div>
+
+  <div class="mr-cards">
+
+    <!-- Rule 1 -->
+    <div class="mr-card">
+      <div class="mr-card-accent" style="background:var(--red)"></div>
+      <div class="mr-rule-num">RULE 1 — checked first, always wins</div>
+      <div class="mr-rule-name c-red">Compliance Gate</div>
+      <div class="mr-rule-desc">When the task touches PII, policy, or compliance — Guardian is mandatory. No other model is acceptable, no fallback permitted.</div>
+      <div class="mr-divider"></div>
+      <div class="mr-model-label">Model selected</div>
+      <div class="mr-model-val c-red">granite3-guardian</div>
+      <div class="mr-tasks">
+        <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">pii_detection</span>
+        <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">policy</span>
+        <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">guardrails</span>
+        <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">confidential</span>
+      </div>
+      <div class="no-fallback-badge">NO FALLBACK — EVER</div>
+    </div>
+
+    <!-- Rule 2 -->
+    <div class="mr-card">
+      <div class="mr-card-accent" style="background:var(--green)"></div>
+      <div class="mr-rule-num">RULE 2 — high-volume commodity tasks</div>
+      <div class="mr-rule-name c-green">Cost-Optimised</div>
+      <div class="mr-rule-desc">Chat, summarization, and customer interactions are frequent and don't need heavy reasoning. Route to the smallest capable model.</div>
+      <div class="mr-divider"></div>
+      <div class="mr-model-label">Model selected</div>
+      <div class="mr-model-val c-green">llama3.2:1b</div>
+      <div class="mr-tasks">
+        <span class="mr-task-chip">chat</span>
+        <span class="mr-task-chip">summarization</span>
+        <span class="mr-task-chip">customer_intent</span>
+        <span class="mr-task-chip">general</span>
+      </div>
+      <div class="mr-rationale">Cost: minimal · Latency: realtime</div>
+    </div>
+
+    <!-- Rule 3 -->
+    <div class="mr-card">
+      <div class="mr-card-accent" style="background:var(--purple)"></div>
+      <div class="mr-rule-num">RULE 3 — domain-specific tasks</div>
+      <div class="mr-rule-name c-purple">Capability-Matched</div>
+      <div class="mr-rule-desc">Adjudication, fraud analysis, and extraction require a model with specific capabilities. The router looks up the catalog and selects the best match.</div>
+      <div class="mr-divider"></div>
+      <div class="mr-model-label">Model selected</div>
+      <div class="mr-model-val c-yellow">granite3-dense:2b</div>
+      <div class="mr-tasks">
+        <span class="mr-task-chip" style="border-color:rgba(165,110,255,0.4);color:var(--purple)">adjudication</span>
+        <span class="mr-task-chip" style="border-color:rgba(165,110,255,0.4);color:var(--purple)">reasoning</span>
+        <span class="mr-task-chip" style="border-color:rgba(165,110,255,0.4);color:var(--purple)">fraud</span>
+        <span class="mr-task-chip" style="border-color:rgba(0,180,216,0.4);color:var(--cyan)">extraction</span>
+        <span class="mr-task-chip" style="border-color:rgba(0,180,216,0.4);color:var(--cyan)">ocr</span>
+      </div>
+      <div class="mr-rationale">Fallback to llama3.2:1b if capability unavailable</div>
+    </div>
+
+    <!-- Rule 4 -->
+    <div class="mr-card">
+      <div class="mr-card-accent" style="background:var(--border)"></div>
+      <div class="mr-rule-num">RULE 4 — nothing matched above</div>
+      <div class="mr-rule-name" style="color:var(--muted)">Catalog Default</div>
+      <div class="mr-rule-desc">If no rule matched, fall back to the default model configured in config.yaml. The router always resolves — it never leaves a task unhandled.</div>
+      <div class="mr-divider"></div>
+      <div class="mr-model-label">Model selected</div>
+      <div class="mr-model-val c-green">llama3.2:1b</div>
+      <div class="mr-tasks">
+        <span class="mr-task-chip">any unmatched task</span>
+      </div>
+      <div class="mr-rationale">Safe fallback — always resolves</div>
+    </div>
+
+  </div>
+
+  <!-- Agent → Model table -->
+  <div class="sec-title">Agent → Model Assignment (from agent YAML files)</div>
+  <div class="agent-table-wrap">
+    <table class="agent-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Task Type</th>
+          <th>Model Chosen</th>
+          <th>Fallback</th>
+          <th>Guard Layer</th>
+          <th>Why this model?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="at-agent">ClaimsTriageAgent</div><div class="at-squad">ClaimsProcessingSquad</div></td>
+          <td><span class="at-task">reasoning</span></td>
+          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-fallback">general</span></td>
+          <td><span class="at-gov bg-cyan c-cyan">pre-guard</span></td>
+          <td><span class="at-rationale">Priority scoring + completeness check needs reasoning</span></td>
+        </tr>
+        <tr>
+          <td><div class="at-agent">AdjudicationAgent</div><div class="at-squad">ClaimsProcessingSquad</div></td>
+          <td><span class="at-task">adjudication</span></td>
+          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-fallback">general</span></td>
+          <td><span class="at-gov bg-cyan c-cyan">pre + post</span></td>
+          <td><span class="at-rationale">Domain-specific, high accuracy required</span></td>
+        </tr>
+        <tr>
+          <td><div class="at-agent">FraudDetectionAgent</div><div class="at-squad">RiskAssessmentSquad</div></td>
+          <td><span class="at-task">fraud / reasoning</span></td>
+          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-fallback">general</span></td>
+          <td><span class="at-gov bg-cyan c-cyan">pre + post</span></td>
+          <td><span class="at-rationale">Multi-signal correlation — complex reasoning required</span></td>
+        </tr>
+        <tr>
+          <td><div class="at-agent">DocumentExtractorAgent</div><div class="at-squad">DocumentIntelligenceSquad</div></td>
+          <td><span class="at-task">extraction</span></td>
+          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-fallback">general</span></td>
+          <td><span class="at-gov bg-muted" style="color:var(--muted)">none</span></td>
+          <td><span class="at-rationale">Structured JSON output — extraction capability required</span></td>
+        </tr>
+        <tr style="background:rgba(250,77,86,0.04)">
+          <td><div class="at-agent" style="color:var(--red)">GuardAgent</div><div class="at-squad">all squads</div></td>
+          <td><span class="at-task">guardrails · pii_detection</span></td>
+          <td><span class="at-model bg-red c-red">granite3-guardian</span></td>
+          <td><span class="at-fallback c-red" style="font-weight:700">NONE — hard requirement</span></td>
+          <td><span class="at-gov bg-red c-red">IS the guard</span></td>
+          <td><span class="at-rationale">Compliance gate — purpose-built safety model, no substitution</span></td>
+        </tr>
+        <tr>
+          <td><div class="at-agent">AuditAgent</div><div class="at-squad">all squads</div></td>
+          <td><span class="at-task">general / audit</span></td>
+          <td><span class="at-model bg-green c-green">llama3.2:1b</span></td>
+          <td><span class="at-fallback">—</span></td>
+          <td><span class="at-gov bg-muted" style="color:var(--muted)">none</span></td>
+          <td><span class="at-rationale">Structured record write — no LLM reasoning needed, minimal cost</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — ZERO TRUST
+  ═══════════════════════════════════════════════════════ -->
+  <div class="sec-title">Zero Trust Execution Layer</div>
+
+  <div class="zt-section">
+    <h2>K9 Zero Trust — Confidence-Based Control</h2>
+    <p class="desc">
+      Every agent decision is scored against three thresholds before any action is taken.
+      No agent output is implicitly trusted — this gate runs on every orchestrator flow,
+      for every event type, without exception.
+    </p>
+
+    <!-- Confidence bar -->
+    <div class="conf-bar-wrap">
+      <div class="conf-bar-labels">
+        <span>0.0</span><span>0.25</span><span>0.50</span>
+        <span>0.60</span><span>0.75</span><span>0.85</span><span>1.0</span>
+      </div>
+      <div class="conf-bar">
+        <div class="conf-tick" style="left:60%"><span class="conf-tick-label">obligation · 0.60</span></div>
+        <div class="conf-tick" style="left:75%"><span class="conf-tick-label">approve · 0.75</span></div>
+        <div class="conf-tick" style="left:85%"><span class="conf-tick-label">deny · 0.85</span></div>
+      </div>
+      <div class="conf-zone-labels">
+        <div class="conf-zone c-red" style="flex:0.60; text-align:left">deny / block</div>
+        <div class="conf-zone c-yellow" style="flex:0.15">obligation</div>
+        <div class="conf-zone c-green" style="flex:0.10">approve</div>
+        <div class="conf-zone c-blue" style="flex:0.15; text-align:right">high confidence</div>
+      </div>
+    </div>
+
+    <div class="zt-cards">
+      <div class="zt-card">
+        <div class="ztc-hdr"><div class="ztc-dot" style="background:var(--green)"></div><div class="ztc-label c-green">Approval Threshold</div></div>
+        <div class="ztc-val c-green">≥ 0.75</div>
+        <div class="ztc-desc">Agent confidence at or above this level — decision is approved and the pipeline continues to GuardAgent.</div>
+      </div>
+      <div class="zt-card">
+        <div class="ztc-hdr"><div class="ztc-dot" style="background:var(--yellow)"></div><div class="ztc-label c-yellow">HITL Escalation</div></div>
+        <div class="ztc-val c-yellow">&lt; 0.75</div>
+        <div class="ztc-desc">Confidence below threshold — EscalationAgent creates a HITL ticket. Pipeline pauses and waits for a human operator decision.</div>
+      </div>
+      <div class="zt-card">
+        <div class="ztc-hdr"><div class="ztc-dot" style="background:var(--red)"></div><div class="ztc-label c-red">Auto-Deny</div></div>
+        <div class="ztc-val c-red">≥ 0.85</div>
+        <div class="ztc-desc">Risk or fraud scores above 0.85 trigger automatic denial — no human review needed at this confidence level.</div>
+      </div>
+      <div class="zt-card" style="border-color:rgba(250,77,86,0.5);background:rgba(250,77,86,0.05)">
+        <div class="ztc-hdr"><div class="ztc-dot" style="background:var(--red)"></div><div class="ztc-label c-red">GuardAgent — Hard Gate</div></div>
+        <div class="ztc-val c-red" style="font-size:20px;font-weight:700;margin-bottom:10px">Always runs</div>
+        <div class="ztc-desc">GuardAgent (granite3-guardian) runs on every flow regardless of confidence score. It is not a threshold check — it is a mandatory compliance checkpoint. No bypass, no fallback, no exceptions.</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 — GOVERNANCE POLICIES
+  ═══════════════════════════════════════════════════════ -->
+  <div class="sec-title">Governance Policies — config/governance.yaml</div>
+
+  <div class="gov-grid">
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--cyan)"></div>
+      <div class="gov-icon">🔍</div>
+      <div class="gov-name">PII Guard</div>
+      <div class="gov-src">governance.yaml → policies.pii_guard</div>
+      <div class="gov-desc">Detect and mask personally identifiable information before any payload reaches an LLM endpoint. Runs at pre-process and post-process on every guarded agent.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">model</span><span class="gov-val c-yellow">granite3-guardian</span></div>
+        <div class="gov-param"><span class="gov-key">pre + post process</span><span class="gov-val c-green">enabled</span></div>
+        <div class="gov-param"><span class="gov-key">fields scanned</span><span class="gov-val" style="color:var(--muted)">ssn · dob · bank · cc · phone · email</span></div>
+      </div>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--green)"></div>
+      <div class="gov-icon">✅</div>
+      <div class="gov-name">Output Validation</div>
+      <div class="gov-src">governance.yaml → policies.output_validation</div>
+      <div class="gov-desc">All LLM outputs are validated against a required field schema before any downstream action. Malformed outputs are rejected — not silently passed through.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">adjudication requires</span><span class="gov-val" style="color:var(--muted)">decision · confidence · rationale</span></div>
+        <div class="gov-param"><span class="gov-key">fraud requires</span><span class="gov-val" style="color:var(--muted)">risk_score · signals · recommendation</span></div>
+        <div class="gov-param"><span class="gov-key">triage requires</span><span class="gov-val" style="color:var(--muted)">priority · completeness · coverage</span></div>
+      </div>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--yellow)"></div>
+      <div class="gov-icon">⚖️</div>
+      <div class="gov-name">Confidence Threshold</div>
+      <div class="gov-src">governance.yaml → policies.confidence_threshold</div>
+      <div class="gov-desc">When an agent's confidence score falls below 0.75, the decision is automatically escalated to a human operator via HITL ticket. The pipeline pauses and waits.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">threshold</span><span class="gov-val c-yellow">0.75</span></div>
+        <div class="gov-param"><span class="gov-key">applies to</span><span class="gov-val" style="color:var(--muted)">AdjudicationAgent · FraudDetectionAgent · ClaimsTriageAgent</span></div>
+      </div>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--orange)"></div>
+      <div class="gov-icon">📋</div>
+      <div class="gov-name">Audit All Actions</div>
+      <div class="gov-src">governance.yaml → policies.audit_all_actions</div>
+      <div class="gov-desc">Every agent action produces an immutable AuditEntry in PostgreSQL — including prompt hash, response hash, model ID, confidence, and timestamp. Full compliance replay is always possible.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">storage</span><span class="gov-val c-orange">PostgreSQL · immutable</span></div>
+        <div class="gov-param"><span class="gov-key">hashed fields</span><span class="gov-val" style="color:var(--muted)">prompt + response (SHA-256)</span></div>
+        <div class="gov-param"><span class="gov-key">scope</span><span class="gov-val" style="color:var(--muted)">every agent · every event</span></div>
+      </div>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--red)"></div>
+      <div class="gov-icon">🔒</div>
+      <div class="gov-name">No Fallback for Compliance</div>
+      <div class="gov-src">governance.yaml → policies.no_fallback_for_compliance</div>
+      <div class="gov-desc">PII detection, policy compliance, and output validation must use Guardian. If Guardian is unavailable the pipeline fails — a degraded model is not an acceptable substitute.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">hard tasks</span><span class="gov-val c-red">pii_detection · policy_compliance · output_validation</span></div>
+        <div class="gov-param"><span class="gov-key">on unavailability</span><span class="gov-val c-red">pipeline error — no degraded mode</span></div>
+      </div>
+    </div>
+
+    <div class="gov-card">
+      <div class="gov-top-bar" style="background:var(--blue)"></div>
+      <div class="gov-icon">🛡️</div>
+      <div class="gov-name">Zero Trust Execution</div>
+      <div class="gov-src">governance.yaml → policies.zero_trust</div>
+      <div class="gov-desc">The K9 Zero Trust layer applies on every orchestrator flow. All decisions are scored against three thresholds — no agent output is implicitly trusted.</div>
+      <div class="gov-params">
+        <div class="gov-param"><span class="gov-key">deny threshold</span><span class="gov-val c-red">0.85</span></div>
+        <div class="gov-param"><span class="gov-key">approval threshold</span><span class="gov-val c-green">0.75</span></div>
+        <div class="gov-param"><span class="gov-key">obligation threshold</span><span class="gov-val c-yellow">0.60</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-note">
+      K9-AIF · Enterprise Insurance Operations Center · v0.1<br>
+      All policies, model assignments, and routing rules are loaded from YAML — no hardcoded logic in application code.
+    </div>
+    <a href="/webui/index.html" class="h-btn">← Back to Dashboard</a>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>

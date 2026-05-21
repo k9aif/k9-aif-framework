@@ -116,7 +116,11 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
 
     bundle["agents"] = load_yaml_dir(agents_path) if os.path.isdir(agents_path) else {}
     bundle["squads"] = load_yaml_dir(squads_path) if os.path.isdir(squads_path) else {}
-    bundle["config"] = load_yaml_file(config_path) if os.path.exists(config_path) else {}
+
+    if not os.path.exists(config_path):
+        raise ConfigLoaderError(f"Required config file not found: {config_path}")
+    bundle["config"] = load_yaml_file(config_path)
+
     bundle["governance"] = load_yaml_file(governance_path) if os.path.exists(governance_path) else {}
 
     if not bundle["agents"]:

@@ -1,0 +1,29 @@
+name: CatastropheResponseSquad
+
+description: >
+  Catastrophe response squad for the K9X EOC.
+  Handles CatastropheAlertIssued events: multi-policy exposure/impact
+  assessment using the FraudDetectionAgent repurposed for risk signal
+  analysis, followed by immutable audit trail.
+
+orchestrator: CatastropheResponseOrchestrator
+
+agents:
+  - FraudDetectionAgent
+  - AuditAgent
+
+flow:
+  - FraudDetectionAgent
+  - AuditAgent
+
+entrypoint: FraudDetectionAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: CatastropheAlertIssued
+
+config:
+  impact_analysis_mode: exposure
+  auto_escalate: true

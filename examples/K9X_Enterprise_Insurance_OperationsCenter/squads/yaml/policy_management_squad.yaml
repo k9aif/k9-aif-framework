@@ -1,0 +1,29 @@
+name: PolicyManagementSquad
+
+description: >
+  Policy change management squad for the K9X EOC.
+  Handles PolicyChangeRequested events: governance compliance validation
+  via Granite Guardian and immutable audit trail for every policy mutation.
+
+orchestrator: PolicyManagementOrchestrator
+
+agents:
+  - GuardAgent
+  - AuditAgent
+
+flow:
+  - GuardAgent
+  - AuditAgent
+
+entrypoint: GuardAgent
+
+completion:
+  final_agent: AuditAgent
+  return_output_from: AuditAgent
+
+event_trigger: PolicyChangeRequested
+
+config:
+  guard_mode: full
+  block_on_pii: true
+  block_on_violations: true

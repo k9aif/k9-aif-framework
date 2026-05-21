@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9X Enterprise Insurance Operations Center</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:    #161616;
+      --bg-card:    #1e1e1e;
+      --bg-hover:   #262626;
+      --border:     #393939;
+      --blue:       #0f62fe;
+      --blue-lt:    #4589ff;
+      --cyan:       #00b0d0;
+      --green:      #24a148;
+      --green-lt:   #42be65;
+      --purple:     #8a3ffc;
+      --yellow:     #f1c21b;
+      --red:        #da1e28;
+      --text-primary:   #f4f4f4;
+      --text-secondary: #d4d4d4;
+      --text-muted:     #a8a8a8;
+      --font-sans:  'IBM Plex Sans', system-ui, sans-serif;
+      --font-mono:  'IBM Plex Mono', 'Courier New', monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-logo {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue-lt);
+      letter-spacing: 0.06em;
+    }
+    .header-sep { color: var(--border); font-size: 18px; }
+    .header-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+    .header-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text-muted);
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────────────── */
+    .hero {
+      padding: 72px 40px 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--blue-lt);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 36px;
+      font-weight: 300;
+      line-height: 1.2;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+    .hero h1 strong { font-weight: 600; color: #fff; }
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      max-width: 680px;
+      margin-bottom: 40px;
+    }
+
+    /* ── Pill tags ──────────────────────────────────────────────────────── */
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 56px;
+    }
+    .tag {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      padding: 3px 10px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .tag.blue   { border-color: rgba(69,137,255,0.4); color: var(--blue-lt);  background: rgba(69,137,255,0.06); }
+    .tag.green  { border-color: rgba(66,190,101,0.4); color: var(--green-lt); background: rgba(66,190,101,0.06); }
+    .tag.purple { border-color: rgba(138,63,252,0.4); color: var(--purple);   background: rgba(138,63,252,0.06); }
+    .tag.cyan   { border-color: rgba(0,176,208,0.4);  color: var(--cyan);     background: rgba(0,176,208,0.06); }
+    .tag.yellow { border-color: rgba(241,194,27,0.4); color: var(--yellow);   background: rgba(241,194,27,0.06); }
+
+    /* ── Cards grid ─────────────────────────────────────────────────────── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      max-width: 900px;
+      margin: 0 auto 64px;
+      width: 100%;
+    }
+    .card {
+      background: var(--bg-card);
+      padding: 28px 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: background 150ms;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { background: var(--bg-hover); }
+    .card-accent {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .card-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .card-cta {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .card:hover .card-cta { color: var(--text-secondary); }
+    .card-arrow { font-size: 14px; transition: transform 150ms; }
+    .card:hover .card-arrow { transform: translateX(3px); }
+
+    /* Card accent colors */
+    .card.primary   .card-accent { background: var(--blue-lt); }
+    .card.secondary .card-accent { background: var(--cyan); }
+    .card.tertiary  .card-accent { background: var(--purple); }
+    .card.neutral   .card-accent { background: var(--border); }
+
+    /* ── Architecture strip ─────────────────────────────────────────────── */
+    .arch-strip {
+      max-width: 900px;
+      margin: 0 auto 64px;
+      width: 100%;
+    }
+    .arch-strip h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .arch-node {
+      flex-shrink: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 10px 16px;
+      text-align: center;
+      min-width: 110px;
+    }
+    .arch-node-icon { font-size: 16px; margin-bottom: 4px; }
+    .arch-node-label {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .arch-node-sub {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .arch-node.router  { border-color: rgba(69,137,255,0.4); }
+    .arch-node.orch    { border-color: rgba(0,176,208,0.4); }
+    .arch-node.squad   { border-color: rgba(138,63,252,0.4); }
+    .arch-node.agent   { border-color: rgba(66,190,101,0.4); }
+    .arch-node.guard   { border-color: rgba(241,194,27,0.4); }
+    .arch-node.audit   { border-color: rgba(255,131,43,0.4); }
+    .arch-arrow {
+      color: var(--border);
+      font-size: 16px;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────────── */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-left {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .footer-right {
+      display: flex;
+      gap: 20px;
+    }
+    .footer-link {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-family: var(--font-mono);
+    }
+    .footer-link:hover { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <a href="https://k9x.ai" target="_blank" rel="noopener" class="header-logo" style="text-decoration:none;">K9X.ai</a>
+    <span class="header-sep">|</span>
+    <span class="header-sub">Enterprise Insurance Operations Center</span>
+    <span class="header-badge">SBB REFERENCE EXAMPLE</span>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">K9X · Insurance · Operations</div>
+    <h1>Welcome to the<br><strong>Enterprise Insurance Operations Center</strong></h1>
+    <p class="hero-desc">
+      A reference implementation of the K9-AIF framework — demonstrating multi-agent
+      AI orchestration for insurance operations: claims triage, fraud detection,
+      document intelligence, policy management, catastrophe response, and more.
+      Built on IBM Granite models with full transparency, governance, and audit trail.
+    </p>
+    <div class="tags">
+      <span class="tag blue">K9-AIF Framework</span>
+      <span class="tag green">IBM Granite</span>
+      <span class="tag purple">Multi-Agent</span>
+      <span class="tag cyan">Neo4j Graph</span>
+      <span class="tag yellow">Guard Layer</span>
+      <span class="tag blue">Kafka Streaming</span>
+      <span class="tag green">PostgreSQL Audit</span>
+      <span class="tag purple">FastAPI</span>
+    </div>
+  </section>
+
+  <!-- Navigation cards -->
+  <div class="cards" style="padding: 0 40px; max-width: calc(900px + 80px); margin: 0 auto 48px; background: transparent; border: none; border-radius: 0;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; width: 100%;">
+
+      <a href="/webui/index.html" class="card primary">
+        <div class="card-accent"></div>
+        <div class="card-icon">🖥️</div>
+        <div class="card-title">Operations Dashboard</div>
+        <div class="card-desc">Live event processing, agent trace explorer, runtime graph, and scenario runner.</div>
+        <div class="card-cta">Open dashboard <span class="card-arrow">→</span></div>
+      </a>
+
+      <a href="/docs" class="card secondary">
+        <div class="card-accent"></div>
+        <div class="card-icon">📄</div>
+        <div class="card-title">API Reference</div>
+        <div class="card-desc">Interactive OpenAPI specification — explore and test all REST endpoints.</div>
+        <div class="card-cta">Open Swagger UI <span class="card-arrow">→</span></div>
+      </a>
+
+      <a href="/redoc" class="card tertiary">
+        <div class="card-accent"></div>
+        <div class="card-icon">📘</div>
+        <div class="card-title">ReDoc</div>
+        <div class="card-desc">Clean, readable API documentation rendered from the OpenAPI schema.</div>
+        <div class="card-cta">Open ReDoc <span class="card-arrow">→</span></div>
+      </a>
+
+      <a href="/webui/blueprint.html" class="card" style="border-top:2px solid var(--purple);">
+        <div class="card-accent" style="background:var(--purple)"></div>
+        <div class="card-icon">🗺️</div>
+        <div class="card-title">Architecture Blueprint</div>
+        <div class="card-desc">Complete runtime flow, Intelligent Model Router decision matrix, Zero Trust, and all governance policies — one page.</div>
+        <div class="card-cta">View blueprint <span class="card-arrow">→</span></div>
+      </a>
+
+      <a href="/health" class="card neutral">
+        <div class="card-accent"></div>
+        <div class="card-icon">❤️</div>
+        <div class="card-title">Health Check</div>
+        <div class="card-desc">Service status, dependency connectivity, and runtime environment info.</div>
+        <div class="card-cta">Check health <span class="card-arrow">→</span></div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Architecture strip -->
+  <div class="arch-strip" style="padding: 0 40px; max-width: calc(900px + 80px); margin: 0 auto 64px;">
+    <h2>Agent Pipeline</h2>
+    <div class="arch-flow">
+      <div class="arch-node router">
+        <div class="arch-node-icon">🔀</div>
+        <div class="arch-node-label">EOC Router</div>
+        <div class="arch-node-sub">Event dispatcher</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node orch">
+        <div class="arch-node-icon">🎛</div>
+        <div class="arch-node-label">Orchestrator</div>
+        <div class="arch-node-sub">7 domain squads</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node squad">
+        <div class="arch-node-icon">👥</div>
+        <div class="arch-node-label">Squad</div>
+        <div class="arch-node-sub">Agent pipeline</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node agent">
+        <div class="arch-node-icon">🤖</div>
+        <div class="arch-node-label">Domain Agents</div>
+        <div class="arch-node-sub">Triage · Fraud · Docs</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node guard">
+        <div class="arch-node-icon">🛡</div>
+        <div class="arch-node-label">Guard Layer</div>
+        <div class="arch-node-sub">PII · Confidence</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node audit">
+        <div class="arch-node-icon">📋</div>
+        <div class="arch-node-label">Audit Agent</div>
+        <div class="arch-node-sub">PostgreSQL trail</div>
+      </div>
+      <span class="arch-arrow">›</span>
+      <div class="arch-node agent">
+        <div class="arch-node-icon">🔗</div>
+        <div class="arch-node-label">Graph Sync</div>
+        <div class="arch-node-sub">Neo4j entities</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-left">K9-AIF · K9X Enterprise Insurance Operations Center · v0.1</span>
+    <div class="footer-right">
+      <a href="/webui/index.html" class="footer-link">Dashboard</a>
+      <a href="/docs" class="footer-link">API Spec</a>
+      <a href="/health" class="footer-link">Health</a>
+    </div>
+  </footer>
+
+</body>
+</html>

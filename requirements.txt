@@ -110,6 +110,7 @@ posthog==5.4.0
 prometheus_client==0.24.1
 propcache==0.4.1
 protobuf==5.29.6
+neo4j>=5.14
 psycopg2-binary==2.9.11
 py2puml==0.11.0
 pyan3==2.2.0

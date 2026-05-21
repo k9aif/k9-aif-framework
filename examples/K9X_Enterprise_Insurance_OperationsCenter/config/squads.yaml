@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF EOC — Squad Definitions (for SquadLoader)
+#
+# Each squad's ``flow`` drives agent coordination inside BaseSquad.execute().
+# Steps are executed sequentially; each agent receives the full accumulated
+# context (original payload + all prior results) plus any ``context`` overrides
+# defined on the step.
+
+squads:
+  ClaimsProcessingSquad:
+    description: "Processes new insurance claims end-to-end"
+    orchestrator: ClaimsProcessingOrchestrator
+    agents:
+      - ClaimsTriageAgent
+      - AdjudicationAgent
+      - GuardAgent
+      - AuditAgent
+      - EscalationAgent
+      - GraphSyncAgent
+    flow:
+      - agent: ClaimsTriageAgent
+        result_key: triage
+      - agent: AdjudicationAgent
+        result_key: adjudication
+      - agent: GuardAgent
+        result_key: guard
+        context: {guard_mode: post}
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: claim_submitted
+          source_agent: AdjudicationAgent
+      - agent: GraphSyncAgent
+        result_key: graph_sync
+        context: {event_type: claim_submitted}
+      - agent: EscalationAgent
+        result_key: escalation
+        when:
+          any:
+            - {key: "adjudication.decision", eq: "escalate"}
+            - {key: "adjudication.confidence", lt: 0.75}
+            - {key: "guard.passed", eq: false}
+
+  DocumentIntelligenceSquad:
+    description: "Ingests, extracts, and classifies uploaded documents"
+    orchestrator: DocumentIntelligenceOrchestrator
+    agents:
+      - DocumentExtractorAgent
+      - GuardAgent
+      - GraphSyncAgent
+      - AuditAgent
+    flow:
+      - agent: DocumentExtractorAgent
+        result_key: extraction
+      - agent: GuardAgent
+        result_key: guard
+        context: {guard_mode: post}
+      - agent: GraphSyncAgent
+        result_key: graph_sync
+        context: {event_type: document_received}
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: document_received
+          source_agent: DocumentExtractorAgent
+
+  RiskAssessmentSquad:
+    description: "Correlates fraud signals and produces risk assessments"
+    orchestrator: RiskAssessmentOrchestrator
+    agents:
+      - FraudDetectionAgent
+      - GuardAgent
+      - AuditAgent
+      - EscalationAgent
+      - GraphSyncAgent
+    flow:
+      - agent: FraudDetectionAgent
+        result_key: fraud_assessment
+      - agent: GuardAgent
+        result_key: guard
+        context: {guard_mode: post}
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: fraud_signal_raised
+          source_agent: FraudDetectionAgent
+      - agent: GraphSyncAgent
+        result_key: graph_sync
+        context: {event_type: fraud_signal_raised}
+      - agent: EscalationAgent
+        result_key: escalation
+        when:
+          any:
+            - {key: "fraud_assessment.risk_score", gte: 0.8}
+            - {key: "guard.passed", eq: false}
+
+  PolicyManagementSquad:
+    description: "Validates and processes policy change requests"
+    orchestrator: PolicyManagementOrchestrator
+    agents:
+      - GuardAgent
+      - AuditAgent
+    flow:
+      - agent: GuardAgent
+        result_key: guard
+        context: {guard_mode: full}
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: policy_change_requested
+          source_agent: PolicyManagementOrchestrator
+
+  CatastropheResponseSquad:
+    description: "Coordinates mass loss event response across multiple policies"
+    orchestrator: CatastropheResponseOrchestrator
+    agents:
+      - FraudDetectionAgent
+      - AuditAgent
+    flow:
+      - agent: FraudDetectionAgent
+        result_key: impact_assessment
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: catastrophe_alert_issued
+          source_agent: CatastropheResponseOrchestrator
+
+  CustomerServiceSquad:
+    description: "Handles inbound customer interactions with intent detection"
+    orchestrator: CustomerServiceOrchestrator
+    agents:
+      - ClaimsTriageAgent
+      - GuardAgent
+      - AuditAgent
+      - EscalationAgent
+    flow:
+      - agent: ClaimsTriageAgent
+        result_key: intent
+      - agent: GuardAgent
+        result_key: guard
+        context: {guard_mode: pre}
+      - agent: AuditAgent
+        result_key: audit
+        context:
+          event_type: customer_interaction_logged
+          source_agent: CustomerServiceOrchestrator
+      - agent: EscalationAgent
+        result_key: escalation
+        when:
+          any:
+            - {key: "intent.confidence", lt: 0.75}
+            - {key: "guard.passed", eq: false}
+
+  AuditComplianceSquad:
+    description: "Retrieves and assembles audit trails for regulatory queries"
+    orchestrator: AuditComplianceOrchestrator
+    agents:
+      - AuditAgent
+    flow:
+      - agent: AuditAgent
+        result_key: query_result
+        context: {audit_mode: query}

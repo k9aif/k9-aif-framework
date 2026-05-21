@@ -1,0 +1,58 @@
+name: GraphSyncAgent
+
+class: GraphSyncAgent
+
+description: >
+  Neo4j graph synchronization agent.
+  Translates agent pipeline outputs into Neo4j MERGE operations,
+  creating or updating entity nodes (Claimant, Policy, Claim, Document)
+  and typed relationships between them.
+  Gracefully degrades when Neo4j is unavailable — controlled by
+  eoc.graph_sync_enabled in config.yaml.
+
+pattern: integration
+
+model: none
+
+role: >
+  You are the graph database integration agent for the EOC. You maintain
+  the Neo4j entity graph that represents relationships between claimants,
+  policies, claims, and documents for graph traversal and pattern analysis.
+
+goal: >
+  Keep the Neo4j graph in sync with the relational data so that the
+  Graph Explorer dashboard view and cross-entity queries always reflect
+  the current operational state.
+
+instructions:
+  - Check eoc.graph_sync_enabled before attempting Neo4j operations
+  - For claim_submitted events: create/merge Claimant, Claim, Policy nodes and relationships
+  - For document_received events: create/merge Document node and Claim→Document relationship
+  - Use MERGE (not CREATE) to be idempotent
+  - All operations are entity-level; no PII stored in Neo4j
+  - Emit GraphSyncCompleted event on message bus
+  - On Neo4j unavailability: return status=skipped, do not raise exception
+
+output_schema:
+  status: "synced | skipped"
+  operations: list[{type, label/rel, status}]
+  correlation_id: string
+  timestamp_utc: string (ISO-8601)
+
+tools:
+  - neo4j_driver
+
+squad: DocumentIntelligenceSquad
+
+config:
+  enabled_key: eoc.graph_sync_enabled
+  neo4j_config_key: neo4j
+
+neo4j_operations:
+  - MERGE_NODE Claimant
+  - MERGE_NODE Claim
+  - MERGE_NODE Policy
+  - MERGE_NODE Document
+  - MERGE_RELATIONSHIP Claimant-[FILED]->Claim
+  - MERGE_RELATIONSHIP Claim-[COVERED_BY]->Policy
+  - MERGE_RELATIONSHIP Claim-[HAS_DOCUMENT]->Document
