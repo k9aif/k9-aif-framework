@@ -41,6 +41,7 @@ squads:
             - {key: "adjudication.confidence", lt: 0.75}
             - {key: "guard.passed", eq: false}
             - {key: "triage.is_resubmission", eq: true}
+            - {key: "triage.anomaly_detected", eq: true}
 
   DocumentIntelligenceSquad:
     description: "Ingests, extracts, and classifies uploaded documents"

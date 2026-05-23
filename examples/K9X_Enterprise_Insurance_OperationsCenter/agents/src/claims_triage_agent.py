@@ -25,6 +25,10 @@ PRIORITY_THRESHOLDS = {
     "normal": 5_000,
 }
 
+# Amounts above this are statistically implausible for a single retail insurance claim
+# and are flagged as anomalies regardless of claim type, forcing escalation.
+MAX_PLAUSIBLE_AMOUNT = 10_000_000  # $10M
+
 
 class ClaimsTriageAgent(BaseAgent):
     """
@@ -49,8 +53,15 @@ class ClaimsTriageAgent(BaseAgent):
         completeness_score = round(1.0 - len(missing) / len(REQUIRED_CLAIM_FIELDS), 2)
 
         amount = float(payload.get("amount_claimed", 0))
+        anomaly_detected = amount > MAX_PLAUSIBLE_AMOUNT
         priority = self._score_priority(amount)
         coverage_match = self._check_coverage(payload)
+
+        if anomaly_detected:
+            self.logger.warning(
+                f"[{self.layer}] Amount anomaly: claim={payload.get('claim_id')} "
+                f"amount=${amount:,.2f} exceeds MAX_PLAUSIBLE_AMOUNT=${MAX_PLAUSIBLE_AMOUNT:,}"
+            )
 
         reasoning = ""
         if completeness_score == 1.0:
@@ -84,6 +95,11 @@ class ClaimsTriageAgent(BaseAgent):
             "triage_reasoning": reasoning,
             "confidence": completeness_score * (0.9 if coverage_match else 0.5),
             "is_resubmission": False,
+            "anomaly_detected": anomaly_detected,
+            "anomaly_reason": (
+                f"amount_claimed ${amount:,.2f} exceeds plausibility threshold ${MAX_PLAUSIBLE_AMOUNT:,}"
+                if anomaly_detected else None
+            ),
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         }
 
@@ -94,6 +110,9 @@ class ClaimsTriageAgent(BaseAgent):
             self.logger.warning(
                 f"[{self.layer}] Resubmission detected: claim={payload.get('claim_id')} — forcing priority=critical"
             )
+        if anomaly_detected:
+            result["priority"] = "critical"
+            result["confidence"] = 0.0
 
         self.publish_event({
             "type": "ClaimsTriageCompleted",

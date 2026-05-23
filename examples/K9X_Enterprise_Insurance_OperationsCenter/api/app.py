@@ -460,24 +460,62 @@ async def query_audit(
 # ============================================================
 # Escalation Queue
 # ============================================================
-@app.get("/escalation/queue", tags=["Escalation"])
-async def get_escalation_queue():
-    """
-    Return all open HITL escalation tickets ordered by priority.
+def _db_get_escalation_tickets(status: str = "open") -> List[Dict[str, Any]]:
+    """Query eoc.escalation_tickets from PostgreSQL, falling back to SSE log on failure."""
+    import psycopg2.extras as _extras
+    try:
+        import psycopg2 as _pg
+        from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.pg import pg_cfg
+        conn = _pg.connect(**pg_cfg(_config))
+        with conn:
+            with conn.cursor(cursor_factory=_extras.RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT * FROM eoc.escalation_tickets WHERE status = %s "
+                    "ORDER BY priority DESC, ticket_id DESC LIMIT 100",
+                    (status,),
+                )
+                rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+    except Exception as exc:
+        log.warning("[EOC API] DB escalation query failed, falling back to SSE log: %s", exc)
+        return []
 
-    Reads from the ``escalation_tickets`` table in the EOC database.
-    In Phase 1 this returns from the in-memory SSE event log as a stub;
-    Phase 2 wires it to the actual database.
+
+def _db_resolve_ticket(ticket_id: str, resolution: str, operator_id: str) -> bool:
+    """UPDATE eoc.escalation_tickets status. Returns True on success."""
+    try:
+        import psycopg2 as _pg
+        from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.pg import pg_cfg
+        conn = _pg.connect(**pg_cfg(_config))
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE eoc.escalation_tickets SET status = %s, agent_rationale = %s "
+                    "WHERE ticket_id = %s",
+                    (resolution, f"resolved by {operator_id}", ticket_id),
+                )
+        conn.close()
+        return True
+    except Exception as exc:
+        log.warning("[EOC API] DB ticket update failed: %s", exc)
+        return False
+
+
+@app.get("/escalation/queue", tags=["Escalation"])
+async def get_escalation_queue(status: str = "open"):
     """
-    open_escalations = [
-        e for e in _sse_events
-        if e.get("type") == "EventProcessed" and e.get("escalated")
-    ]
-    return {
-        "count": len(open_escalations),
-        "tickets": open_escalations,
-        "note": "Phase 1: sourced from SSE event log. Phase 2 wires to escalation_tickets table.",
-    }
+    Return HITL escalation tickets from the eoc.escalation_tickets table.
+    Falls back to SSE event log if DB is unavailable.
+    """
+    tickets = _db_get_escalation_tickets(status)
+    if not tickets:
+        # SSE fallback
+        tickets = [
+            e for e in _sse_events
+            if e.get("type") == "EventProcessed" and e.get("escalated")
+        ]
+    return {"count": len(tickets), "tickets": tickets}
 
 
 @app.post("/escalation/{ticket_id}/resolve", tags=["Escalation"])
@@ -490,6 +528,8 @@ async def resolve_escalation(ticket_id: str, body: EscalationResolveRequest):
     """
     if not _audit_agent:
         raise HTTPException(status_code=503, detail="Audit agent not initialized")
+
+    _db_resolve_ticket(ticket_id, body.resolution, body.operator_id)
 
     audit_result = _audit_agent.execute({
         "event_id": ticket_id,

@@ -780,6 +780,7 @@ function renderTab(tab) {
     case 'config':     el.innerHTML = renderConfigTab(); break;
     case 'livefeed':   el.innerHTML = renderLiveFeed(); break;
     case 'llmcalls':   el.innerHTML = renderLlmCallsTab(); break;
+    case 'hitl':       renderHitlTab(); break;
     case 'demo':       el.innerHTML = renderDemoTab(); break;
     default:           el.innerHTML = '<div class="trace-empty">Unknown tab</div>';
   }
@@ -1195,6 +1196,167 @@ function renderLlmCallsTab() {
     </table>`;
 }
 
+// ─── HITL Queue tab ────────────────────────────────────────────────────────────
+let hitlOperatorId = 'OPS-001';
+
+async function renderHitlTab() {
+  const el = document.getElementById('tab-content');
+  el.innerHTML = `<div class="trace-empty">Loading HITL queue…</div>`;
+
+  let data;
+  try {
+    data = await apiFetch('/escalation/queue');
+  } catch (e) {
+    el.innerHTML = `<div class="trace-empty">Could not load queue: ${esc(e.message)}</div>`;
+    return;
+  }
+
+  const tickets = data.tickets || [];
+
+  // Update tab badge
+  const badge = document.getElementById('hitl-count');
+  if (badge) {
+    badge.textContent = tickets.length ? `(${tickets.length})` : '';
+    badge.style.color = tickets.length ? 'var(--orange)' : '';
+  }
+
+  const PRIORITY_COLOR = { critical: 'var(--red,#e06c75)', high: 'var(--orange)', normal: 'var(--cyan)', low: 'var(--text-muted)' };
+
+  const operatorBar = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap">Operator ID</span>
+      <input id="hitl-operator-id" value="${esc(hitlOperatorId)}"
+        oninput="hitlOperatorId=this.value"
+        style="font-family:var(--font-mono);font-size:12px;background:var(--bg-base);border:1px solid var(--border);border-radius:3px;color:var(--cyan);padding:4px 8px;width:160px;outline:none"
+        placeholder="OPS-001" />
+      <span style="font-size:11px;color:var(--text-muted)">Applied to all resolution actions below</span>
+      <button onclick="renderHitlTab()" style="margin-left:auto;font-size:11px;padding:4px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:3px;color:var(--text-secondary);cursor:pointer">↻ Refresh</button>
+    </div>`;
+
+  if (!tickets.length) {
+    el.innerHTML = operatorBar + `
+      <div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px">
+        <div style="font-size:32px;margin-bottom:12px">✓</div>
+        No open escalation tickets — queue is clear.
+      </div>`;
+    return;
+  }
+
+  const cards = tickets.map(t => {
+    const ctx = (() => { try { return typeof t.context_payload === 'string' ? JSON.parse(t.context_payload) : (t.context_payload || {}); } catch { return {}; } })();
+    const priority = (t.priority || 'normal').toLowerCase();
+    const pColor = PRIORITY_COLOR[priority] || 'var(--text-muted)';
+    const ticketId = t.ticket_id || t.correlation_id || '—';
+    const reason = t.reason || t.escalation_reason || '—';
+    const claimId = ctx.claim_id || t.event_id || '—';
+    const amount = ctx.amount_claimed != null ? `$${Number(ctx.amount_claimed).toLocaleString()}` : '—';
+    const confidence = ctx.confidence != null ? `${(ctx.confidence * 100).toFixed(0)}%` : '—';
+    const claimType = ctx.claim_type || ctx.event_type || '—';
+    const safeId = ticketId.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    return `
+      <div id="card-${safeId}" style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid ${pColor};border-radius:var(--radius);margin-bottom:12px;overflow:hidden">
+
+        <!-- Card header -->
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-elevated);border-bottom:1px solid var(--border)">
+          <span style="font-size:10px;font-weight:700;font-family:var(--font-mono);color:${pColor};text-transform:uppercase;padding:1px 6px;border:1px solid ${pColor};border-radius:2px">${esc(priority)}</span>
+          <span style="font-size:12px;font-weight:600;font-family:var(--font-mono);color:var(--text-primary)">${esc(ticketId)}</span>
+          <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin-left:auto">${esc(t.event_type || t.squad_id || '')}</span>
+        </div>
+
+        <!-- Key facts -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0;padding:10px 14px 6px">
+          ${[
+            ['Claim ID',    claimId],
+            ['Amount',      amount],
+            ['Claim Type',  claimType],
+            ['Confidence',  confidence],
+          ].map(([k,v]) => `
+            <div style="padding:3px 8px 3px 0">
+              <div style="font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted)">${esc(k)}</div>
+              <div style="font-size:12px;font-family:var(--font-mono);color:var(--text-primary)">${esc(String(v))}</div>
+            </div>`
+          ).join('')}
+        </div>
+
+        <!-- Reason -->
+        <div style="padding:4px 14px 10px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Escalation Reason</div>
+          <div style="font-size:11px;color:var(--text-secondary);font-family:var(--font-mono);line-height:1.5">${esc(reason)}</div>
+        </div>
+
+        <!-- Rationale (if any) -->
+        ${t.agent_rationale ? `
+        <div style="padding:0 14px 10px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">Agent Rationale</div>
+          <div style="font-size:11px;color:var(--text-secondary);line-height:1.5;font-style:italic">${esc(t.agent_rationale)}</div>
+        </div>` : ''}
+
+        <!-- Notes input + action buttons -->
+        <div style="padding:8px 14px 12px;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:8px">
+          <textarea id="notes-${safeId}" placeholder="Resolution notes (optional)…"
+            style="font-family:var(--font-mono);font-size:11px;background:var(--bg-base);border:1px solid var(--border);border-radius:3px;color:var(--text-secondary);padding:6px 8px;width:100%;height:48px;resize:none;outline:none"></textarea>
+          <div style="display:flex;gap:8px">
+            <button onclick="hitlResolve('${esc(ticketId)}','${safeId}','approve')"
+              style="flex:1;padding:6px 0;font-size:12px;font-weight:600;background:rgba(36,161,72,0.15);border:1px solid var(--green);border-radius:var(--radius);color:var(--green-lt);cursor:pointer;transition:all 150ms">
+              ✓ Approve
+            </button>
+            <button onclick="hitlResolve('${esc(ticketId)}','${safeId}','deny')"
+              style="flex:1;padding:6px 0;font-size:12px;font-weight:600;background:rgba(218,30,40,0.12);border:1px solid var(--red);border-radius:var(--radius);color:var(--red);cursor:pointer;transition:all 150ms">
+              ✕ Deny
+            </button>
+            <button onclick="hitlResolve('${esc(ticketId)}','${safeId}','defer')"
+              style="flex:1;padding:6px 0;font-size:12px;font-weight:600;background:rgba(241,194,27,0.10);border:1px solid var(--yellow);border-radius:var(--radius);color:var(--yellow);cursor:pointer;transition:all 150ms">
+              ⏸ Defer
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = operatorBar + cards;
+}
+
+async function hitlResolve(ticketId, safeId, resolution) {
+  const notesEl = document.getElementById(`notes-${safeId}`);
+  const notes = notesEl ? notesEl.value.trim() : '';
+  const opId = (document.getElementById('hitl-operator-id') || {}).value || hitlOperatorId || 'OPS-001';
+
+  const card = document.getElementById(`card-${safeId}`);
+  if (card) card.style.opacity = '0.5';
+
+  try {
+    await apiFetch(`/escalation/${encodeURIComponent(ticketId)}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operator_id: opId, resolution, resolution_notes: notes }),
+    });
+    if (card) {
+      card.style.opacity = '1';
+      card.style.borderLeftColor = resolution === 'approve' ? 'var(--green)' : resolution === 'deny' ? 'var(--red)' : 'var(--yellow)';
+      card.innerHTML = `
+        <div style="padding:16px 14px;text-align:center;font-family:var(--font-mono);color:var(--text-secondary)">
+          <span style="font-size:18px">${resolution === 'approve' ? '✓' : resolution === 'deny' ? '✕' : '⏸'}</span>
+          <div style="margin-top:6px;font-size:12px">
+            Ticket <strong style="color:var(--text-primary)">${esc(ticketId)}</strong>
+            resolved as <strong style="color:${resolution==='approve'?'var(--green-lt)':resolution==='deny'?'var(--red)':'var(--yellow)'}">${esc(resolution.toUpperCase())}</strong>
+            by ${esc(opId)}
+          </div>
+        </div>`;
+    }
+    // Update badge count
+    const badge = document.getElementById('hitl-count');
+    if (badge) {
+      const n = parseInt(badge.textContent.replace(/\D/g,'')) - 1;
+      badge.textContent = n > 0 ? `(${n})` : '';
+      badge.style.color = n > 0 ? 'var(--orange)' : '';
+    }
+  } catch (e) {
+    if (card) card.style.opacity = '1';
+    alert(`Resolution failed: ${e.message}`);
+  }
+}
+
 // ─── How to Demo tab ───────────────────────────────────────────────────────────
 function renderDemoTab() {
   const card = (icon, title, body) => `
@@ -1438,6 +1600,17 @@ function connectSSE() {
       setText('live-count', `(${state.liveEvents.length})`);
       if (state.activeTab === 'livefeed') renderTab('livefeed');
 
+      if (evt.type === 'EscalationRaised') {
+        state.hitlCount = (state.hitlCount || 0) + 1;
+        const b = document.getElementById('hitl-count');
+        if (b) { b.textContent = `(${state.hitlCount})`; b.style.color = 'var(--orange)'; }
+        if (state.activeTab === 'hitl') renderHitlTab();
+      }
+      if (evt.type === 'EscalationResolved') {
+        state.hitlCount = Math.max(0, (state.hitlCount || 1) - 1);
+        const b = document.getElementById('hitl-count');
+        if (b) { b.textContent = state.hitlCount ? `(${state.hitlCount})` : ''; b.style.color = state.hitlCount ? 'var(--orange)' : ''; }
+      }
       if (evt.type === 'LLMCall') {
         state.llmCalls.push(evt);
         if (state.llmCalls.length > 100) state.llmCalls.shift();

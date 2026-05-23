@@ -191,8 +191,8 @@ a:hover { text-decoration: underline; }
 .main-layout {
   display: grid;
   grid-template-columns: 220px 1fr 320px;
-  height: calc(100vh - 60px - 36px - 280px);
-  min-height: 480px;
+  height: calc(100vh - 60px - 36px - 300px);
+  min-height: 540px;
   overflow: hidden;
 }
 
@@ -548,9 +548,17 @@ a:hover { text-decoration: underline; }
 }
 .btn-reset:hover { color: var(--text-primary); }
 
+.payload-editor-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 #payload-editor {
   width: 100%;
-  height: 100px;
+  flex: 1;
+  min-height: 200px;
   background: var(--bg-base);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -558,7 +566,7 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-mono);
   font-size: 12px;
   padding: 10px 12px;
-  resize: vertical;
+  resize: none;
   outline: none;
   transition: border-color var(--transition);
   line-height: 1.6;
@@ -811,7 +819,7 @@ a:hover { text-decoration: underline; }
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
-  height: 280px;
+  height: 300px;
   flex-shrink: 0;
 }
 

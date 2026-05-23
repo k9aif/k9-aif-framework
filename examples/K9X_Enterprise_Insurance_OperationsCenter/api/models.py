@@ -49,7 +49,7 @@ class ClaimSubmittedEvent(EOCEvent):
     claimant_id: str = Field(..., description="Claimant identifier")
     policy_id: str = Field(..., description="Active policy identifier")
     claim_type: str = Field(..., description="Type of claim (property_damage, bodily_injury, etc.)")
-    amount_claimed: float = Field(..., ge=0, description="Amount claimed in USD")
+    amount_claimed: float = Field(..., ge=0, le=1_000_000_000, description="Amount claimed in USD (max $1B — amounts above this are rejected at the API boundary and require manual submission)")
     notes: Optional[str] = Field(None, description="Free-text claim description")
     is_repeat_claimant: Optional[bool] = Field(False, description="True if claimant has prior claims")
 
