@@ -83,10 +83,17 @@ class ClaimsTriageAgent(BaseAgent):
             "amount_claimed": amount,
             "triage_reasoning": reasoning,
             "confidence": completeness_score * (0.9 if coverage_match else 0.5),
+            "is_resubmission": False,
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         }
 
-        self._persist(payload, result)
+        is_resubmission = self._persist(payload, result)
+        result["is_resubmission"] = is_resubmission
+        if is_resubmission:
+            result["priority"] = "critical"
+            self.logger.warning(
+                f"[{self.layer}] Resubmission detected: claim={payload.get('claim_id')} — forcing priority=critical"
+            )
 
         self.publish_event({
             "type": "ClaimsTriageCompleted",
@@ -112,9 +119,18 @@ class ClaimsTriageAgent(BaseAgent):
             return "normal"
         return "low"
 
-    def _persist(self, payload: Dict[str, Any], result: Dict[str, Any]) -> None:
+    def _persist(self, payload: Dict[str, Any], result: Dict[str, Any]) -> bool:
+        """Persist claim data. Returns True if this claim_id already existed (resubmission)."""
+        is_resubmission = False
         try:
             with pg_connect(self.config) as conn:
+                # Detect resubmission before overwriting
+                claim_id = payload.get("claim_id")
+                if claim_id:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT 1 FROM eoc.claims WHERE claim_id = %s", (claim_id,))
+                        is_resubmission = cur.fetchone() is not None
+
                 # Upsert claimant (name unknown from payload — store ID only)
                 if payload.get("claimant_id"):
                     pg_upsert(conn, "eoc.claimants", {
@@ -134,16 +150,16 @@ class ClaimsTriageAgent(BaseAgent):
                     }, "policy_id")
 
                 # Upsert claim
-                if payload.get("claim_id"):
+                if claim_id:
                     pg_upsert(conn, "eoc.claims", {
-                        "claim_id":          payload["claim_id"],
+                        "claim_id":          claim_id,
                         "claimant_id":       payload.get("claimant_id"),
                         "policy_id":         payload.get("policy_id"),
                         "event_id":          payload.get("event_id"),
                         "claim_type":        payload.get("claim_type"),
                         "amount_claimed":    payload.get("amount_claimed", 0),
                         "priority":          result.get("priority", "normal"),
-                        "status":            payload.get("status", "submitted"),
+                        "status":            "resubmitted" if is_resubmission else payload.get("status", "submitted"),
                         "completeness_score": result.get("completeness_score"),
                         "coverage_match":    result.get("coverage_match"),
                         "notes":             payload.get("notes"),
@@ -153,6 +169,7 @@ class ClaimsTriageAgent(BaseAgent):
                 conn.commit()
         except Exception as exc:
             self.logger.warning(f"[{self.layer}] PG persist failed: {exc}")
+        return is_resubmission
 
     def _check_coverage(self, payload: Dict[str, Any]) -> bool:
         # Stub: in production this queries the policies table.

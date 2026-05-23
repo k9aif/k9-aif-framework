@@ -676,7 +676,7 @@ _RESULT_KEY_META: Dict[str, tuple] = {
     "impact_assessment": ("FraudDetectionAgent",    "agent",      lambda r: f"Risk score: {r.get('risk_score',0):.2f} | Rec: {r.get('recommendation','?')}"),
     "intent":            ("ClaimsTriageAgent",      "agent",      lambda r: f"Priority: {r.get('priority','?').upper()} | Confidence: {r.get('confidence',0):.0%}"),
     "graph_sync":        ("GraphSyncAgent",         "agent",      lambda r: f"Nodes: {r.get('nodes_created',0)} | Edges: {r.get('relationships_created',0)}"),
-    "guard":             ("GuardAgent",             "governance", lambda r: f"Guard {'PASSED ✓' if r.get('passed') else 'FAILED ✗'} | PII detected: {r.get('pii_detected', False)}"),
+    "guard":             ("GuardAgent",             "governance", lambda r: f"Guard {'PASSED ✓' if r.get('passed') else 'FAILED ✗'} | PII: {r.get('pii_detected', False)} | Tokens issued: {len(r.get('token_vault') or [])}"),
     "audit":             ("AuditAgent",             "audit",      lambda r: f"Audit record: {r.get('audit_id','N/A')}"),
     "escalation":        ("EscalationAgent",        "escalation", lambda r: f"HITL ticket: {r.get('ticket_id','N/A')}"),
 }

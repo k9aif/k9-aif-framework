@@ -37,17 +37,19 @@ class AdjudicationAgent(BaseAgent):
         correlation_id = payload.get("correlation_id") or str(uuid.uuid4())
         event_id = payload.get("event_id") or str(uuid.uuid4())
 
-        triage = payload.get("triage_result", {})
+        triage = payload.get("triage", {})
         claim_id = payload.get("claim_id") or triage.get("claim_id")
         amount = float(payload.get("amount_claimed", triage.get("amount_claimed", 0)))
         claim_type = payload.get("claim_type", "")
         priority = triage.get("priority", "normal")
+        is_resubmission = triage.get("is_resubmission", False)
 
         decision = "pending"
         rationale = ""
         confidence = 0.5
         recommendation = ""
 
+        resubmit_note = "\n⚠ WARNING: This claim has been submitted before. Flag for duplicate review." if is_resubmission else ""
         prompt = (
             f"You are an insurance adjudication AI. Evaluate this claim:\n\n"
             f"Claim ID: {claim_id}\n"
@@ -55,7 +57,9 @@ class AdjudicationAgent(BaseAgent):
             f"Amount Claimed: ${amount:,.2f}\n"
             f"Priority: {priority}\n"
             f"Coverage Match: {triage.get('coverage_match', 'unknown')}\n"
-            f"Notes: {payload.get('notes', 'none')}\n\n"
+            f"Notes: {payload.get('notes', 'none')}\n"
+            f"Resubmission: {'YES — previously submitted' if is_resubmission else 'No'}"
+            f"{resubmit_note}\n\n"
             f"Respond with:\n"
             f"DECISION: <approve|deny|partial|escalate>\n"
             f"CONFIDENCE: <0.0-1.0>\n"
@@ -88,6 +92,7 @@ class AdjudicationAgent(BaseAgent):
             "confidence": confidence,
             "rationale": rationale,
             "recommendation": recommendation,
+            "is_resubmission": is_resubmission,
             "prompt_hash": prompt_hash,
             "response_hash": response_hash,
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),

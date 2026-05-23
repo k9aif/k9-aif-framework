@@ -780,6 +780,7 @@ function renderTab(tab) {
     case 'config':     el.innerHTML = renderConfigTab(); break;
     case 'livefeed':   el.innerHTML = renderLiveFeed(); break;
     case 'llmcalls':   el.innerHTML = renderLlmCallsTab(); break;
+    case 'demo':       el.innerHTML = renderDemoTab(); break;
     default:           el.innerHTML = '<div class="trace-empty">Unknown tab</div>';
   }
 }
@@ -1192,6 +1193,184 @@ function renderLlmCallsTab() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+// ─── How to Demo tab ───────────────────────────────────────────────────────────
+function renderDemoTab() {
+  const card = (icon, title, body) => `
+    <div class="arch-card" style="margin-bottom:16px">
+      <div class="arch-card-header">
+        <div class="arch-card-icon">${icon}</div>
+        <div class="arch-card-name">${title}</div>
+      </div>
+      <div class="arch-card-body">${body}</div>
+    </div>`;
+
+  const kv = (k, v, color='') => `
+    <div class="arch-row">
+      <div class="arch-row-key">${k}</div>
+      <div class="arch-row-val ${color}">${v}</div>
+    </div>`;
+
+  const tip = (label, text, color='var(--cyan)') => `
+    <div style="display:flex;gap:10px;align-items:flex-start;margin:6px 0;padding:8px 10px;background:var(--bg-hover);border-radius:4px;border-left:3px solid ${color}">
+      <span style="font-size:11px;font-weight:700;color:${color};white-space:nowrap;min-width:90px">${label}</span>
+      <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">${text}</span>
+    </div>`;
+
+  const code = s => `<code style="font-family:var(--font-mono);font-size:11px;background:var(--bg-hover);padding:1px 5px;border-radius:3px;color:var(--cyan)">${esc(s)}</code>`;
+
+  const scenarios = [
+    {
+      icon: '📋', id: 'claim_submitted', label: 'Claim Submitted',
+      desc: 'The core claims pipeline: triage → adjudication → guard → audit → (optional) escalation.',
+      fields: [
+        ['amount_claimed', 'Try $5,000 (normal), $50,000 (high), $150,000 (critical). Amounts ≥ $100,000 force critical priority.'],
+        ['is_repeat_claimant', 'Set to true — not yet wired to escalation, but run it twice with the same claim_id to trigger resubmission detection.'],
+        ['notes', 'Add text like "My SSN is 123-45-6789" to test the PII guard. The guard will catch it and block downstream.'],
+        ['claim_type', 'Try "unknown" to fail the coverage match and lower adjudication confidence below 0.75, triggering escalation.'],
+      ],
+      escalates: 'adjudication.confidence < 0.75  OR  adjudication.decision = escalate  OR  guard.passed = false  OR  resubmission detected',
+    },
+    {
+      icon: '📄', id: 'document_received', label: 'Document Received',
+      desc: 'OCR extraction → PII guard → Neo4j graph sync → audit.',
+      fields: [
+        ['raw_text', 'This is the full document text. Paste any text here — the Guard scans it for SSN (###-##-####), credit cards (16 digits), email, phone.'],
+        ['raw_text (PII test)', 'Add "My SSN is 890-99-9999" anywhere in raw_text — Guard should now catch it and set pii_detected: true, passed: false.'],
+        ['filename', 'Cosmetic only — used for logging and DB record. Try different extensions.'],
+      ],
+      escalates: 'No EscalationAgent in this flow. Guard failure is recorded in audit only.',
+    },
+    {
+      icon: '🚨', id: 'fraud_signal_raised', label: 'Fraud Signal Raised',
+      desc: 'Fraud detection → guard → audit → escalation (if risk_score ≥ 0.8).',
+      fields: [
+        ['severity', 'Use "high" or "critical" — the LLM uses this to score risk. "low" typically stays below 0.8 threshold.'],
+        ['amount_claimed', 'Large amounts (> $100k) combined with high severity usually produce risk_score ≥ 0.8, triggering escalation.'],
+        ['description', 'Mention "third claim", "duplicate invoice", "same vendor" — fraud keywords the LLM weights heavily.'],
+      ],
+      escalates: 'fraud_assessment.risk_score ≥ 0.8  OR  guard.passed = false',
+    },
+    {
+      icon: '📝', id: 'policy_change_requested', label: 'Policy Change Requested',
+      desc: 'Guard pre-screens the request, audit records outcome. Minimal pipeline — good for testing the guard alone.',
+      fields: [
+        ['change_description', 'Add PII here (SSN, email) to test the Guard in isolation without the full claims pipeline.'],
+        ['notes', 'Any free text is scanned. Try "Contact claimant at user@example.com" to trigger EMAIL PII detection.'],
+      ],
+      escalates: 'No EscalationAgent. Only the guard gate applies here.',
+    },
+    {
+      icon: '⚠️', id: 'catastrophe_alert_issued', label: 'Catastrophe Alert Issued',
+      desc: 'Mass-loss exposure assessment via FraudDetectionAgent acting as a risk scorer, then audit.',
+      fields: [
+        ['estimated_exposure', 'Dollar value of total exposure. Try $500M, $2B, $10B — influences LLM risk assessment.'],
+        ['severity', '"critical" will prompt the LLM for the most aggressive risk response.'],
+        ['affected_regions', 'List of US states or regions. More regions = higher exposure signals.'],
+      ],
+      escalates: 'No EscalationAgent in this flow.',
+    },
+    {
+      icon: '💬', id: 'customer_interaction_logged', label: 'Customer Interaction',
+      desc: 'Intent detection via ClaimsTriageAgent → guard → audit → escalation (if confidence < 0.75).',
+      fields: [
+        ['customer_message', 'The free-text message from the customer. Vague messages lower confidence and can trigger escalation.'],
+        ['customer_message (PII)', 'Include "call me at 555-867-5309" or an email to test phone/email PII detection.'],
+        ['interaction_type', 'Try "complaint", "claim_status", "coverage_question" — signals the intent classification.'],
+      ],
+      escalates: 'intent.confidence < 0.75  OR  guard.passed = false',
+    },
+    {
+      icon: '🔍', id: 'audit_query_received', label: 'Audit Query',
+      desc: 'Query the immutable audit trail. No LLM involved.',
+      fields: [
+        ['limit', 'Number of records to return (default 10). Try higher values after running multiple scenarios.'],
+        ['correlation_id', 'Copy a correlation_id from a previous run result to retrieve just that run\'s audit trail.'],
+      ],
+      escalates: 'No escalation — read-only compliance query.',
+    },
+  ];
+
+  const scenarioCards = scenarios.map(s => {
+    const fieldRows = s.fields.map(([f, desc]) =>
+      `<div style="margin:5px 0 5px 0">
+        <div style="font-size:10px;font-weight:700;color:var(--yellow);font-family:var(--font-mono);margin-bottom:2px">${esc(f)}</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;padding-left:4px">${esc(desc)}</div>
+      </div>`
+    ).join('<div style="height:1px;background:var(--border);margin:6px 0"></div>');
+
+    return `
+      <div class="arch-card" style="margin-bottom:14px">
+        <div class="arch-card-header" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+          <div class="arch-card-icon">${s.icon}</div>
+          <div style="flex:1">
+            <div class="arch-card-name">${esc(s.label)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(s.id)}</div>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono)">click to expand ▼</div>
+        </div>
+        <div class="arch-card-body" style="display:none">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6">${esc(s.desc)}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Fields to experiment with</div>
+          ${fieldRows}
+          <div style="margin-top:12px;padding:7px 10px;background:var(--bg-hover);border-radius:4px;border-left:3px solid var(--green-lt)">
+            <span style="font-size:10px;font-weight:700;color:var(--green-lt)">ESCALATES WHEN  </span>
+            <span style="font-size:11px;color:var(--text-secondary);font-family:var(--font-mono)">${esc(s.escalates)}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const quickRef = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+      ${[
+        ['Force escalation', 'Set amount_claimed to 0 and claim_type to "unknown" — completeness × coverage = 0.0 confidence, always escalates', 'var(--red,#e06c75)'],
+        ['Trigger PII guard', 'Add "SSN: 123-45-6789" in any notes/raw_text/description field — regex catches it before LLM sees it', 'var(--yellow)'],
+        ['Resubmission test', 'Run Claim Submitted twice with the same claim_id — 2nd run sets is_resubmission=true and forces critical priority + escalation', 'var(--magenta,#c678dd)'],
+        ['High-risk fraud', 'Fraud scenario: set severity=critical, amount=200000, description mentioning "duplicate invoice" — risk_score ≥ 0.8', 'var(--red,#e06c75)'],
+        ['Low confidence path', 'Set claim_type="unknown" in claim_submitted — coverage_match=false, confidence drops to 0.5, adjudication likely escalates', 'var(--cyan)'],
+        ['Happy path', 'claim_submitted with amount 10000–50000, valid claim_type, no PII in notes — typically approve with confidence ≥ 0.75', 'var(--green-lt)'],
+      ].map(([title, desc, color]) => `
+        <div style="padding:10px;background:var(--bg-hover);border-radius:4px;border-left:3px solid ${color}">
+          <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px">${esc(title)}</div>
+          <div style="font-size:11px;color:var(--text-secondary);line-height:1.5">${esc(desc)}</div>
+        </div>`
+      ).join('')}
+    </div>`;
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:flex-start">
+
+      <!-- LEFT: overview + quick ref -->
+      <div>
+        ${card('✦', 'How This Demo Works',
+          `<div style="font-size:12px;color:var(--text-secondary);line-height:1.7">
+            <p style="margin:0 0 10px">Select a scenario in the left panel. The payload editor pre-loads a working example JSON. Edit the JSON freely and click <strong style="color:var(--cyan)">RUN SCENARIO</strong> to push it through the full K9-AIF pipeline.</p>
+            <p style="margin:0 0 10px">Every run goes through: <strong style="color:var(--text-primary)">Router → Orchestrator → SquadLoader → Squad → Agents → GuardAgent → AuditAgent → (EscalationAgent)</strong>. The Runtime Trace panel on the right shows each step with real outputs.</p>
+            <p style="margin:0">Click any step in the Runtime Trace to open the Agent Detail drawer — it shows the YAML config, model routing decision, governance checks, and the actual agent output for that step.</p>
+          </div>`
+        )}
+        ${card('🔑', 'Key JSON Fields Across All Scenarios',
+          [
+            kv('event_type', 'Set automatically — matches the scenario you selected', 'cyan'),
+            kv('correlation_id', 'Auto-generated UUID. You can supply your own to trace across runs', ''),
+            kv('event_id', 'Auto-generated per run. Used to link audit trail entries', ''),
+            kv('claim_id', 'Stable across runs. Same ID on 2nd run = resubmission detected', 'yellow'),
+            kv('claimant_id', 'Links claims, documents, and fraud signals to one claimant in Neo4j', ''),
+            kv('policy_id', 'Must exist (or will be stub-created). Links claim to coverage', ''),
+          ].join('')
+        )}
+        ${card('⚡', 'Quick-Reference: Interesting Scenarios to Try', quickRef)}
+      </div>
+
+      <!-- RIGHT: per-scenario breakdown -->
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">Scenarios — click to expand</div>
+        ${scenarioCards}
+      </div>
+
+    </div>`;
 }
 
 // ─── Live feed V2 ──────────────────────────────────────────────────────────────
