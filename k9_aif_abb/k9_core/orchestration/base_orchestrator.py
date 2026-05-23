@@ -9,7 +9,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance
+from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
 
 # Optional Zero Trust runtime enforcement layer
 try:
@@ -70,7 +70,7 @@ class BaseOrchestrator(ABC):
         self.config = config or {}
         self.monitor = monitor
         self.message_bus = message_bus
-        self.governance = governance or NoopGovernance()
+        self.governance = require_governance(governance, self.config.get("k9_env"))
 
         self.enable_zero_trust = (
             enable_zero_trust

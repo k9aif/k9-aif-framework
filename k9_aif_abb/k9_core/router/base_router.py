@@ -7,7 +7,7 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance
+from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
 
 try:
     from k9_aif_abb.k9_security.zero_trust.context import (
@@ -55,7 +55,7 @@ class BaseRouter(ABC):
         self.config = config or {}
         self.monitor = monitor
         self.message_bus = message_bus
-        self.governance = governance or NoopGovernance()
+        self.governance = require_governance(governance, self.config.get("k9_env"))
         self.registry: Dict[str, Any] = {}
 
         self.enable_zero_trust = (

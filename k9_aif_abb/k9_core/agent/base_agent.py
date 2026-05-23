@@ -6,9 +6,13 @@
 
 import inspect
 import logging
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance
+from k9_aif_abb.k9_core.governance.pipeline import (
+    NoopGovernance,
+    require_governance,
+)
 
 
 class BaseAgent(ABC):
@@ -31,7 +35,9 @@ class BaseAgent(ABC):
         self.config = config or {}
         self.monitor = monitor
         self.message_bus = message_bus
-        self.governance = governance or NoopGovernance()
+        self.governance = require_governance(
+            governance, self.config.get("k9_env")
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"[{self.layer}] Initialized with config: {self.config}")
 
@@ -77,6 +83,41 @@ class BaseAgent(ABC):
         if inspect.isawaitable(result):
             result = await result
         return result
+
+    # ------------------------------------------------------------------
+    def enforce_governance(self) -> None:
+        """
+        Assert that a real governance pipeline is wired up.
+
+        Call this at the top of ``execute()`` in any agent that requires
+        governed operation.  The check is environment-aware:
+
+        - **development / test** — logs a WARNING and continues; NoopGovernance
+          is tolerated so local development is not blocked.
+        - **all other environments** — raises :class:`PermissionError` if the
+          active governance is :class:`NoopGovernance`, preventing ungoverned
+          execution from reaching production workloads.
+
+        Raises:
+            PermissionError: if governance is NoopGovernance outside dev/test.
+        """
+        if not isinstance(self.governance, NoopGovernance):
+            return  # real governance is configured — nothing to do
+
+        resolved_env = os.getenv("K9_ENV", "production").lower()
+        if resolved_env in ("development", "dev", "test"):
+            self.logger.warning(
+                "[%s] enforce_governance(): NoopGovernance active in %s environment — "
+                "proceeding without enforcement.",
+                self.layer,
+                resolved_env,
+            )
+            return
+
+        raise PermissionError(
+            f"[{self.layer}] enforce_governance() failed: NoopGovernance is active in "
+            f"{resolved_env!r} environment. Provide a real governance pipeline."
+        )
 
     # ------------------------------------------------------------------
     def _governance_context(self) -> Dict[str, Any]:

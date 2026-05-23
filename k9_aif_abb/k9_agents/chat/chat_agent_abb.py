@@ -14,71 +14,61 @@ class ChatAgentABB(BaseAgent):
     ----------------------------------------------------
     Provides the core orchestration and governance for all ChatAgents.
     Ensures:
-      - Router enforcement via GovernanceFactory
+      - Governance enforcement via BaseAgent.enforce_governance()
       - Logging and audit events to MessageBus
       - Optional retrieval or LLM delegation handled by SBB subclass
     """
 
     layer = "Chat Agent ABB"
 
-    async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Executes governed ABB-level chat flow."""
-        self.log(" ChatAgentABB execution started")
+        self.logger.info("[%s] execution started", self.layer)
 
         # ---------------- Governance Enforcement ----------------
         try:
             self.enforce_governance()
-            self.log("[OK] Router enforcement passed")
+            self.logger.info("[%s] governance enforcement passed", self.layer)
         except PermissionError as e:
-            self.log(str(e), level="ERROR")
-            return {"reply": "[WARN] Governance enforcement failed - Router missing."}
+            self.logger.error("[%s] %s", self.layer, e)
+            return {"reply": "[WARN] Governance enforcement failed — no governance pipeline configured."}
 
         # ---------------- Input Validation ----------------
         if not payload or "message" not in payload:
-            self.log("[WARN] Missing 'message' in payload", level="ERROR")
+            self.logger.error("[%s] Missing 'message' in payload", self.layer)
             return {"reply": "[WARN] No message provided."}
 
         query = payload["message"]
 
         # ---------------- Core Processing ----------------
         try:
-            # ABB-level routing audit event
-            if getattr(self, "messaging", None):
-                event = {
-                    "event_type": "chat_request_received",
-                    "layer": self.layer,
-                    "agent": self.__class__.__name__,
-                    "query": query,
-                    "status": "received",
-                }
-                try:
-                    self.messaging.publish(event)
-                except Exception:
-                    pass
+            self._publish({"event_type": "chat_request_received", "query": query, "status": "received"})
 
-            # ABB baseline reply (SBB will override this)
+            # ABB baseline reply — SBB subclasses override execute() to replace this.
             base_reply = (
                 f"[{self.layer}] Your message has been received and is "
                 f"routed through K9-AIF governance.\nMessage: {query}"
             )
 
-            # ---------------- Publish Completion ----------------
-            if getattr(self, "messaging", None):
-                completion = {
-                    "event_type": "chat_cycle_complete",
-                    "layer": self.layer,
-                    "agent": self.__class__.__name__,
-                    "status": "completed",
-                }
-                try:
-                    self.messaging.publish(completion)
-                except Exception:
-                    pass
-
-            self.log("[OK] ChatAgentABB cycle completed")
+            self._publish({"event_type": "chat_cycle_complete", "status": "completed"})
+            self.logger.info("[%s] cycle completed", self.layer)
             return {"reply": base_reply}
 
         except Exception as e:
-            self.log(f"[ERROR] ChatAgentABB runtime error: {e}", level="ERROR")
+            self.logger.error("[%s] runtime error: %s", self.layer, e)
             traceback.print_exc()
             return {"reply": "[WARN] Internal chat processing error."}
+
+    # ------------------------------------------------------------------
+    def _publish(self, event: Dict[str, Any]) -> None:
+        """Publish an audit event to the message bus if one is wired up."""
+        if not self.message_bus:
+            return
+        try:
+            self.message_bus.publish({
+                "layer": self.layer,
+                "agent": self.__class__.__name__,
+                **event,
+            })
+        except Exception:
+            pass
