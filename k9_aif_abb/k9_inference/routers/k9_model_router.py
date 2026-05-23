@@ -17,24 +17,34 @@ from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
 
 
+_COMPLEXITY_SCORE: dict[str, float] = {
+    "reasoning": 0.8,
+    "extraction": 0.6,
+    "analysis": 0.7,
+    "general": 0.3,
+    "chat": 0.2,
+    "summarization": 0.4,
+}
+
+_LATENCY_TIERS = ("realtime", "interactive", "batch")
+_COST_TIERS = ("minimal", "standard", "premium")
+
+
 class K9ModelRouter(BaseModelRouter):
     """
     OOB K9 Model Router
     -------------------
-    Catalog-based routing with session-aware persistence support.
+    Weighted-scoring router with session-aware persistence.
 
-    Current capabilities:
-    - catalog-based model selection
-    - session persistence
-    - user turn persistence
-    - routing decision persistence
-    - model affinity persistence
+    Scoring (higher wins):
+      +3  capability match on task_type
+      +2  sensitivity=="confidential" and "confidential" in capabilities
+      +2  latency_budget matches model's latency_tier
+      +2  cost_profile matches model's cost_tier
 
-    Future enhancements can add:
-    - complexity scoring
-    - governance scoring / DPL overrides
-    - prefix hash tracking
-    - summarization / context compression
+    Falls back to default_model when no candidate scores > 0.
+    All new InferenceRequest fields are Optional — omitting them degrades
+    gracefully to pure capability routing (backwards compatible).
     """
 
     def __init__(
@@ -90,18 +100,23 @@ class K9ModelRouter(BaseModelRouter):
         session_id: str,
         turn_id: int,
         decision: RouteDecision,
+        request: InferenceRequest,
     ) -> None:
+        complexity = _COMPLEXITY_SCORE.get(request.task_type or "general", 0.5)
+        governance = 1.0 if getattr(request, "sensitivity", None) == "confidential" else 0.0
+
         self.state_store.record_routing_decision(
             session_id=session_id,
             turn_id=turn_id,
             selected_model=decision.model_alias,
             routing_reason=decision.rationale,
-            complexity_score=None,
-            governance_score=None,
+            complexity_score=complexity,
+            governance_score=governance,
             prompt_hash=None,
             metadata={
                 "provider": decision.provider,
                 "router": "K9ModelRouter",
+                "score": decision.score,
             },
         )
 
@@ -113,30 +128,58 @@ class K9ModelRouter(BaseModelRouter):
     # ------------------------------------------------------------------
     # Routing
     # ------------------------------------------------------------------
+    def _score_candidate(self, alias: str, meta: dict, request: InferenceRequest) -> float:
+        score = 0.0
+        caps = meta.get("capabilities", [])
+
+        if request.task_type and request.task_type in caps:
+            score += 3.0
+
+        if getattr(request, "sensitivity", None) == "confidential" and "confidential" in caps:
+            score += 2.0
+
+        if request.latency_budget and request.latency_budget == meta.get("latency_tier"):
+            score += 2.0
+
+        if request.cost_profile and request.cost_profile == meta.get("cost_tier"):
+            score += 2.0
+
+        return score
+
     def route(self, request: InferenceRequest) -> RouteDecision:
-        alias = None
+        best_alias: Optional[str] = None
+        best_score = -1.0
 
-        # Capability routing
-        if request.task_type:
-            alias = self.catalog.find_by_capability(request.task_type)
+        for alias, meta in self.catalog.models.items():
+            score = self._score_candidate(alias, meta, request)
+            if score > best_score:
+                best_score = score
+                best_alias = alias
 
-        # Sensitivity routing
-        if not alias and getattr(request, "sensitivity", None) == "confidential":
-            alias = self.catalog.find_by_capability("confidential")
+        # Fall back to default when nothing matched (best_score == 0 means
+        # no capability/sensitivity/latency/cost signals fired at all)
+        if best_alias is None or best_score == 0.0:
+            best_alias = self.catalog.get_default_model()
+            best_score = 0.0
 
-        # Fallback
-        if not alias:
-            alias = self.catalog.get_default_model()
-
-        if not alias:
+        if not best_alias:
             raise RuntimeError("ModelRouter: no model alias resolved")
 
-        model_info = self.catalog.get_model(alias)
+        model_info = self.catalog.get_model(best_alias)
+
+        rationale_parts = ["K9 weighted-score routing"]
+        if best_score > 0:
+            rationale_parts.append(f"score={best_score:.1f}")
+        if request.latency_budget:
+            rationale_parts.append(f"latency={request.latency_budget}")
+        if request.cost_profile:
+            rationale_parts.append(f"cost={request.cost_profile}")
 
         return RouteDecision(
-            model_alias=alias,
+            model_alias=best_alias,
             provider=model_info.get("provider"),
-            rationale="K9 catalog-based routing",
+            score=best_score if best_score > 0 else None,
+            rationale="; ".join(rationale_parts),
         )
 
     # ------------------------------------------------------------------
@@ -146,7 +189,7 @@ class K9ModelRouter(BaseModelRouter):
         session_id, user_id, turn_id = self._persist_request_context(request)
 
         decision = self.route(request)
-        self._persist_route_decision(session_id, turn_id, decision)
+        self._persist_route_decision(session_id, turn_id, decision, request)
 
         model_info = self.catalog.get_model(decision.model_alias)
         llm_ref = model_info.get("llm_ref")
@@ -180,7 +223,7 @@ class K9ModelRouter(BaseModelRouter):
         session_id, user_id, turn_id = self._persist_request_context(request)
 
         decision = self.route(request)
-        self._persist_route_decision(session_id, turn_id, decision)
+        self._persist_route_decision(session_id, turn_id, decision, request)
 
         model_info = self.catalog.get_model(decision.model_alias)
         llm_ref = model_info.get("llm_ref")

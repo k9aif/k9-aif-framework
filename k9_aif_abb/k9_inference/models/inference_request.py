@@ -15,4 +15,10 @@ class InferenceRequest(BaseModel):
 
     sensitivity: Optional[str] = None
 
+    # Routing hints — used by K9ModelRouter scoring.
+    # When omitted (None) the router falls back to capability-only matching,
+    # preserving backwards compatibility with all existing callers.
+    latency_budget: Optional[str] = None   # "realtime" | "interactive" | "batch"
+    cost_profile:   Optional[str] = None   # "minimal" | "standard" | "premium"
+
     metadata: Optional[Dict[str, Any]] = None
