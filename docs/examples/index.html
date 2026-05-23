@@ -29,7 +29,7 @@
         <h1>Examples built with K9-AIF</h1>
         <p class="hero-subtitle">
           Practical demos showing how K9-AIF structures routing, orchestration, squads, agents,
-          model abstraction, and domain workflows in real AI applications.
+          model abstraction, governance, and domain workflows in real AI applications.
         </p>
         <div class="hero-actions">
           <a class="btn-primary" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples" target="_blank" rel="noopener noreferrer">View Examples on GitHub</a>
@@ -46,39 +46,77 @@
       <p>
         Together, they demonstrate how K9-AIF uses stable <strong>Architecture Building Blocks (ABB)</strong>
         to host configurable <strong>Solution Building Blocks (SBB)</strong>, including routing,
-        orchestration, squads, agent behaviors, model abstraction, and domain workflows.
+        orchestration, squads, agent behaviors, intelligent model selection, and domain workflows.
       </p>
     </section>
 
     <section class="examples-grid">
+
+      <!-- EOC — Flagship -->
       <article class="example-card">
         <div class="example-card-header">
-          <div class="example-card-tag">Featured Example</div>
+          <div class="example-card-tag">Flagship Example</div>
+          <h2>K9X Enterprise Insurance Operations Center</h2>
+        </div>
+
+        <p>
+          The <strong>EOC is the K9-AIF equivalent of the J2EE PetStore</strong> — a comprehensive,
+          end-to-end reference application that demonstrates every major capability of the framework
+          working together in a realistic enterprise domain. If you want to understand what a
+          complete K9-AIF application looks like, start here.
+        </p>
+
+        <p>
+          A production-grade, runnable multi-agent application built on the <strong>K9-AIF Framework</strong>.
+          The EOC models a realistic enterprise insurance operations domain end-to-end — from event ingestion
+          to governed agent execution to immutable audit trails.
+        </p>
+
+        <p>
+          Generated using <strong>Claude Code</strong> from a project spec document, demonstrating
+          how K9-AIF's architecture-first approach enables consistent, governed application generation.
+        </p>
+
+        <ul class="feature-list">
+          <li><strong>Kafka-driven</strong> event routing — <code>eoc-events</code> fan-out to domain topics</li>
+          <li><strong>Router → Orchestrator → Squad → Agent</strong> full execution hierarchy</li>
+          <li><strong>Intelligent Model Router</strong> — weighted scoring across capability, latency, cost, and sensitivity signals</li>
+          <li><strong>Zero Trust execution</strong> — governance enforced at every agent boundary</li>
+          <li>PII inspection, fraud detection, adjudication, and policy compliance agents</li>
+          <li><strong>HITL escalation</strong> — human-in-the-loop queue with real-time Web UI</li>
+          <li><strong>Immutable audit trails</strong> and Neo4j graph synchronization</li>
+          <li>Deployed as a <strong>3-container Podman pod</strong> on RHEL with PostgreSQL persistence</li>
+          <li>Fully YAML-driven — routing rules, governance policies, squad flows, model assignments</li>
+        </ul>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/K9X_Enterprise_Insurance_OperationsCenter" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+
+      <!-- ACME Support Center -->
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Enterprise Workflow</div>
           <h2>ACME Support Center</h2>
         </div>
 
         <p>
           An enterprise-style support workflow example built on the <strong>K9-AIF Framework</strong>.
-        </p>
-
-        <p>
-          ACME Support Center demonstrates how K9-AIF can structure a customer-facing support system
-          using specialized agents, configurable reasoning behaviors, and stable framework architecture.
+          Demonstrates how K9-AIF structures a customer-facing support system using specialized agents,
+          configurable reasoning behaviors, and stable framework architecture.
         </p>
 
         <ul class="feature-list">
           <li><strong>Router → Orchestrator → Squad → Agent</strong> execution flow</li>
           <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
-          <li>Configurable reasoning patterns such as <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and <strong>multi-agent collaboration</strong></li>
-          <li>Clear separation between <strong>Architecture Building Blocks (ABB)</strong> and <strong>Solution Building Blocks (SBB)</strong></li>
+          <li>Configurable reasoning patterns — <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and multi-agent collaboration</li>
+          <li>Clear separation between <strong>ABB</strong> and <strong>SBB</strong></li>
           <li>Squad-based specialization across support roles</li>
-          <li>Runtime logging and observability through K9-AIF framework logging</li>
+          <li>Runtime logging and observability through K9-AIF framework hooks</li>
         </ul>
-
-        <p>
-          This example is a strong reference implementation of how K9-AIF can support modular,
-          enterprise-oriented multi-agent service architectures.
-        </p>
 
         <div class="card-actions">
           <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
@@ -87,6 +125,7 @@
         </div>
       </article>
 
+      <!-- K9Chat -->
       <article class="example-card">
         <div class="example-card-header">
           <div class="example-card-tag">Lightweight Demo</div>
@@ -95,11 +134,8 @@
 
         <p>
           A lightweight browser-based chat example built on the <strong>K9-AIF Framework</strong>.
-        </p>
-
-        <p>
-          K9Chat demonstrates how a simple chat experience can be implemented using K9-AIF building
-          blocks while remaining configuration-driven and model-provider agnostic.
+          A clean starting point for understanding how K9-AIF separates agent logic, routing,
+          inference configuration, persistence, and UI integration.
         </p>
 
         <ul class="feature-list">
@@ -111,11 +147,6 @@
           <li>Browser-based interaction with runtime metadata display</li>
         </ul>
 
-        <p>
-          This example serves as a clean starting point for understanding how K9-AIF separates agent
-          logic, routing, inference configuration, persistence, and UI integration.
-        </p>
-
         <div class="card-actions">
           <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
             View Code &amp; Documentation →
@@ -123,6 +154,7 @@
         </div>
       </article>
 
+      <!-- ACME Health Insurance -->
       <article class="example-card">
         <div class="example-card-header">
           <div class="example-card-tag">Domain Workflow</div>
@@ -130,8 +162,9 @@
         </div>
 
         <p>
-          A domain-oriented example showing how K9-AIF can support structured, document-heavy,
-          workflow-driven enterprise scenarios.
+          A domain-oriented example showing how K9-AIF supports structured, document-heavy,
+          workflow-driven enterprise scenarios — where architecture, modularity, and workflow
+          structure matter more than a single prompt-response interaction.
         </p>
 
         <ul class="feature-list">
@@ -142,17 +175,69 @@
           <li>Modular AI solution composition using K9-AIF concepts</li>
         </ul>
 
-        <p>
-          This example reflects how K9-AIF can be applied in business domains where architecture,
-          modularity, and workflow structure matter more than a single prompt-response interaction.
-        </p>
-
         <div class="card-actions">
           <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
             View Code &amp; Documentation →
           </a>
         </div>
       </article>
+
+      <!-- Zero Trust Execution Demo -->
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Security Pattern</div>
+          <h2>Zero Trust Execution Demo</h2>
+        </div>
+
+        <p>
+          Demonstrates the <strong>K9 Zero Trust Execution Layer</strong> — a vendor-neutral
+          runtime security pattern integrated into K9-AIF. Traditional Zero Trust focuses on
+          access. K9-AIF extends it to execution: every agent action is verified before it runs.
+        </p>
+
+        <ul class="feature-list">
+          <li>Runtime evaluation of <strong>identity, data sensitivity, destination, and contextual risk</strong></li>
+          <li>Execution control across <strong>Router → Orchestrator → Agents → Tools</strong></li>
+          <li>Policy-driven allow / conditional / deny decisions at agent boundaries</li>
+          <li>Potential compromise signal detection and data loss risk evaluation</li>
+          <li>Governance policies enforced declaratively — no hardcoded logic in agent code</li>
+        </ul>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/zero_trust_execution_demo" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+
+      <!-- Weather Assist -->
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Architecture Comparison</div>
+          <h2>Weather Assist — CrewAI + K9-AIF</h2>
+        </div>
+
+        <p>
+          A side-by-side architecture demonstration showing the same application built two ways:
+          as a <strong>pure CrewAI application</strong>, and as a <strong>K9-AIF governed version</strong>
+          of the same application. Illustrates what K9-AIF's architecture layer adds on top of
+          a CrewAI runtime.
+        </p>
+
+        <ul class="feature-list">
+          <li>Side-by-side <strong>CrewAI vs K9-AIF</strong> implementation of identical functionality</li>
+          <li>K9-AIF <strong>CrewAI adapter pattern</strong> — CrewAI as an orchestration SBB</li>
+          <li>Governance, routing, and observability layered over an existing agent runtime</li>
+          <li>Demonstrates K9-AIF as an <strong>architectural wrapper</strong>, not a replacement</li>
+        </ul>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/weather_assist" target="_blank" rel="noopener noreferrer">
+            View Code &amp; Documentation →
+          </a>
+        </div>
+      </article>
+
     </section>
 
     <section class="run-box">
@@ -163,8 +248,13 @@
       </p>
 
       <pre><code>./run_k9chat.sh
-./run_model_router.sh
 ./run_acme_support_center.sh</code></pre>
+
+      <p>
+        For the <strong>EOC</strong> (RHEL / Podman deployment):
+      </p>
+
+      <pre><code>bash run_eoc_pod.sh</code></pre>
 
       <p>
         For deeper implementation details, class diagrams, and example-specific documentation,
