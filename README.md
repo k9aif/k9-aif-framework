@@ -30,6 +30,35 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 ---
 
+## Table of Contents
+
+- [A Simple Way to Think About It](#a-simple-way-to-think-about-it)
+- [Understanding K9-AIF](#understanding-k9-aif)
+- [Zero Trust Execution Layer](#zero-trust-execution-layer)
+- [Core Architectural Concepts](#core-architectural-concepts)
+  - [Architecture Building Blocks (ABB)](#architecture-building-blocks-abb)
+  - [Solution Building Blocks (SBB)](#solution-building-blocks-sbb)
+  - [Architectural Layers](#architectural-layers)
+  - [Agent Squads](#agent-squads)
+- [Prototype Implementations](#prototype-implementations)
+- [Design Goals](#design-goals)
+- [Framework Comparison](#framework-comparison)
+- [Architectural Patterns](#architectural-patterns)
+- [Intelligent Model Routing](#intelligent-model-routing)
+- [Using Claude Code with K9-AIF](#using-claude-code-with-k9-aif)
+- [Stub Generator](#stub-generator)
+- [K9-AIF Developer Journey](#k9-aif-developer-journey)
+- [Framework Implementation](#framework-implementation)
+- [Quick Start](#quick-start-linux--ubuntu)
+- [Project Status](#project-status)
+- [License](#license)
+- [Contributions](#contributions)
+- [Architectural Foundations](#architectural-foundations)
+- [Architecture Notes & Blog](#architecture-notes--blog)
+- [Author](#author)
+
+---
+
 ## A Simple Way to Think About It
 
 - Frameworks like CrewAI define how agents collaborate.
