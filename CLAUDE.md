@@ -115,7 +115,9 @@ from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 resp = llm_invoke(self.config, InferenceRequest(prompt=..., task_type=...))
 ```
 
-`llm_invoke` → `ModelRouterFactory.get_router()` → `K9ModelRouter.route()` → `LLMFactory.get(llm_ref)` → `OllamaLLM.invoke()`
+`llm_invoke` → `ModelRouterFactory.get_router()` → `BaseModelRouter.route()` → `LLMFactory.get(llm_ref)` → `OllamaLLM.invoke()`
+
+`K9ModelRouter` is the OOB default implementation of `BaseModelRouter`. Solutions can substitute their own router by implementing `BaseModelRouter` (`k9_inference/routers/base_model_router.py`) and registering it via `ModelRouterFactory`.
 
 `K9ModelRouter` selects the model via weighted scoring:
 - `+3` task_type matches a model's `capabilities[]`

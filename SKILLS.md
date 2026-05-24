@@ -97,9 +97,9 @@ class MyAgent(BaseAgent):
         return result
 ```
 
-### Step 3: Register in the orchestrator
+### Step 3: Register in `_load_squad()`
 
-In the domain orchestrator's `_load_squad()`:
+Agents are not registered with the orchestrator — they are registered into `AgentRegistry` inside `_load_squad()` so `SquadLoader` can wire them into the Squad. The orchestrator only holds the assembled Squad.
 
 ```python
 from examples.<App>.agents.src.my_agent import MyAgent
@@ -116,16 +116,24 @@ for name, cls in [
 
 ### Step 4: Add to the squad YAML flow
 
-```yaml
-# squads/yaml/my_squad.yaml
-agents:
-  - ...
-  - MyAgent
+Each `flow:` step must be a dict with an `agent:` key — plain strings will raise `ValueError` at runtime.
 
-flow:
-  - ...
-  - MyAgent
+```yaml
+# config/squads.yaml  (note the squads: wrapper and squad ID key)
+squads:
+  MySquad:
+    description: "What this squad does."
+    orchestrator: MyOrchestrator
+    agents:
+      - ...
+      - MyAgent
+    flow:
+      - ...
+      - agent: MyAgent
+        result_key: my_agent        # key under which result is stored in context
 ```
+
+Optional flow step fields: `result_key` (defaults to agent name), `context` (static overrides merged into step input), `when` (condition — step skipped if false).
 
 ---
 
@@ -168,7 +176,7 @@ llm_invoke(config, req)
   → catalog.get_model(best_alias)              # looks up llm_ref
   → LLMFactory.get(llm_ref)                   # cached OllamaLLM instance
   → OllamaLLM.invoke(prompt)                  # hits Ollama at 192.168.1.98:11434
-  → RouteDecision + complexity/governance scores persisted to PostgreSQL
+  → RouteDecision + complexity/governance scores persisted to routing state store (SQLite or PostgreSQL)
 ```
 
 **If the LLM is unreachable**, `llm_invoke` raises `RuntimeError` — it never silently returns empty output. Handle it:
@@ -184,6 +192,8 @@ except RuntimeError as exc:
 ---
 
 ## Skill 3 — Add a new model to the Router
+
+`K9ModelRouter` is the OOB default router. A solution can substitute its own router by implementing `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`) and registering it via `ModelRouterFactory`. The steps below apply to the default `K9ModelRouter`.
 
 **Two places to update in `config.yaml`:**
 
@@ -217,40 +227,30 @@ The router scores this model automatically. No code changes needed.
 ### Squad YAML
 
 ```
-examples/<App>/squads/yaml/my_squad.yaml
+examples/<App>/config/squads.yaml
 ```
+
+`SquadLoader` reads `data["squads"]` — the squad ID is a key under `squads:`, not a `name:` field. Flow steps **must** be dicts with an `agent:` key.
 
 ```yaml
-name: MySquad
-description: >
-  What this squad does.
-
-orchestrator: MyOrchestrator
-
-agents:
-  - AgentOne
-  - AgentTwo
-  - AuditAgent
-
-flow:
-  - AgentOne
-  - AgentTwo
-  - AuditAgent
-
-entrypoint: AgentOne
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
-
-event_trigger: MyEventType
-
-config:
-  confidence_threshold: 0.75
-  escalation_on_low_confidence: true
+squads:
+  MySquad:
+    description: "What this squad does."
+    orchestrator: MyOrchestrator
+    agents:
+      - AgentOne
+      - AgentTwo
+      - AuditAgent
+    flow:
+      - agent: AgentOne
+        result_key: agent_one
+      - agent: AgentTwo
+        result_key: agent_two
+      - agent: AuditAgent
+        result_key: audit
 ```
 
-### Wire it in the orchestrator
+### Wire it in `_load_squad()`
 
 ```python
 loader = SquadLoader(agent_registry, orchestrator_registry)
@@ -311,9 +311,15 @@ from examples.<App>.agents.src.my_agent import MyAgent
 from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 
 
+class _TestGovernance:
+    """Minimal concrete governance for tests — define inline, not imported."""
+    def pre_process(self, payload: dict, ctx=None) -> dict:
+        return payload
+    def post_process(self, payload: dict, ctx=None) -> dict:
+        return payload
+
 def _make_agent(config=None):
-    from k9_aif_abb.k9_core.governance.pipeline import RealGovernance  # or your governance class
-    return MyAgent(config=config or {}, governance=RealGovernance())
+    return MyAgent(config=config or {}, governance=_TestGovernance())
 
 
 def test_execute_returns_output():
@@ -370,6 +376,8 @@ app_backend → eoc-events → Router (publishes) → eoc-claims / eoc-fraud / �
 
 ## Skill 8 — Add a new scoring signal to the Router
 
+This applies to `K9ModelRouter` (the OOB default). If a solution has implemented a custom `BaseModelRouter`, extend that instead.
+
 The scoring logic lives in `k9_aif_abb/k9_inference/routers/k9_model_router.py` — `_score_candidate()`.
 
 To add a new signal (e.g. `+2` for environment match):
@@ -410,7 +418,7 @@ And add `environment_tier` to catalog entries in `config.yaml`.
 
 ## Skill 9 — Agent config: what comes from YAML vs global config
 
-When an orchestrator registers an agent it calls:
+When `_load_squad()` constructs an agent it calls:
 
 ```python
 agent_loader.merge_with_global("MyAgent", self.config)
