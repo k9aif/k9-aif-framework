@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "docling": {
+      "type": "http",
+      "url": "http://192.168.1.98:5001",
+      "description": "Docling OCR MCP server — converts PDF, DOCX, and images to structured Markdown. Used by DocumentExtractorAgent in the EOC DocumentIntelligenceSquad. Endpoint: /v1/parse"
+    }
+  }
+}

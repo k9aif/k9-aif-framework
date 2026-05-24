@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "type": "command",
+        "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-python.sh",
+        "timeout": 30,
+        "statusMessage": "Checking Python syntax..."
+      },
+      {
+        "matcher": "Write|Edit",
+        "type": "command",
+        "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-yaml.sh",
+        "timeout": 30,
+        "statusMessage": "Validating YAML..."
+      },
+      {
+        "matcher": "Write|Edit",
+        "type": "command",
+        "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/run-abb-tests.sh",
+        "timeout": 90,
+        "statusMessage": "Running ABB tests..."
+      },
+      {
+        "matcher": "Write|Edit",
+        "type": "command",
+        "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-governance.sh",
+        "timeout": 10,
+        "statusMessage": "Checking governance..."
+      },
+      {
+        "matcher": "Write|Edit",
+        "type": "command",
+        "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-init-docstring.sh",
+        "timeout": 10,
+        "statusMessage": "Checking __init__.py docstring..."
+      }
+    ]
+  }
+}

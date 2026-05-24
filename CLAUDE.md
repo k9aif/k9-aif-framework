@@ -4,6 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Hooks
+
+Five PostToolUse hooks fire automatically after every Write or Edit (configured in `.claude/settings.json`):
+
+| Hook | Triggers on | What it checks |
+|---|---|---|
+| `check-python.sh` | Any `*.py` file | Python syntax (`py_compile`) — exits 2 (blocks) on error |
+| `check-yaml.sh` | Any `*.yaml` / `*.yml` | YAML parse validity — exits 2 (blocks) on error |
+| `run-abb-tests.sh` | Files under `k9_aif_abb/` | Runs `test_framework.py` + `test_intelligent_model_router.py` |
+| `check-governance.sh` | `*.py` under `examples/` | Warns if `NoopGovernance` appears in example code |
+| `check-init-docstring.sh` | Any `__init__.py` | Warns if module docstring is missing (required for pydoc generation) |
+
+Hook scripts live in `.claude/hooks/`. Exit code 2 = block the action; exit 0 = continue.
+
+---
+
 ## Commands
 
 ### Setup
