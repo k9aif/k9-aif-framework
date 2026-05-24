@@ -41,15 +41,9 @@ output_schema:
 
 tools: []
 
-squad: MySquad
-
 governance:
   pre_process: true
   post_process: false
-
-routing:
-  next_on_success: NextAgent
-  next_on_failure: EscalationAgent
 ```
 
 ### Step 2: Create the Python class
@@ -349,18 +343,28 @@ def test_execute_handles_llm_unavailable():
 
 ## Skill 7 — Publish an event from an Agent
 
-Events go to the message bus (Kafka) and the monitor. Use `publish_event()` — never call Kafka directly from agent code.
+`publish_event()` sends to the **monitor and logger only** — agents are never wired with a `message_bus`, so nothing goes to Kafka. Use it for internal audit/observability signals.
 
 ```python
 self.publish_event({
-    "type": "MyAgentCompleted",       # event type — used by router for fan-out
+    "type": "MyAgentCompleted",       # event type — recorded by monitor/logger
     "agent": "MyAgent",
     "correlation_id": correlation_id,
     "result_summary": "...",          # lightweight summary only — no PII
 })
 ```
 
-The message bus publishes to the configured Kafka topic. The orchestrator router picks up `type` to decide which downstream topic receives the event.
+**Kafka is not involved at the agent level.** The Kafka topology in EOC is:
+
+```
+app_backend → eoc-events → Router (publishes) → eoc-claims / eoc-fraud / …
+                                                          ↓
+                                        Orchestrator process (consumes, runs squads) → eoc-results
+```
+
+- **Router only**: publishes events to domain Kafka topics
+- **Orchestrator only**: consumes from domain Kafka topics
+- **Agents**: never touch Kafka — `publish_event()` reaches the monitor/logger, not the bus
 
 ---
 

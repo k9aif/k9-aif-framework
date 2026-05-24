@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root{
   --bg:#f7f7f7;
   --panel:#ffffff;
@@ -15,7 +17,9 @@ html{scroll-behavior:smooth}
 
 body{
   margin:0;
-  font-family:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  font-family:'Inter',"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
   background:var(--bg);
   color:var(--text);
   line-height:1.7;
@@ -100,6 +104,21 @@ a:hover{
   border-top:1px solid var(--line);
   color:var(--muted);
   font-size:.88rem;
+}
+
+.sidebar-home-link{
+  display:inline-block;
+  margin-top:10px;
+  font-size:.88rem;
+  font-weight:600;
+  color:var(--accent);
+  text-decoration:none;
+  transition:color 0.15s ease;
+}
+
+.sidebar-home-link:hover{
+  color:var(--accent2);
+  text-decoration:underline;
 }
 
 .mobile-topbar{

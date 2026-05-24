@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@SKILLS.md
+
 ---
 
 ## Hooks
@@ -168,8 +170,13 @@ Key config sections: `inference.llm_factory.models` (maps alias → Ollama model
 
 Three processes (one container each in the pod):
 1. `start_eoc_app.sh` — FastAPI backend + Web UI (port 8000)
-2. `start_eoc_orchestrator.sh` — Kafka consumer → squads/agents → `eoc-results` topic
-3. `start_eoc_router.sh` — Kafka router: `eoc-events` → domain topics by `event_type`
+2. `start_eoc_orchestrator.sh` — Kafka consumer → squads/agents → publishes results to `eoc-results` topic
+3. `start_eoc_router.sh` — Kafka router: consumes `eoc-events`, **publishes** to domain topics (`eoc-claims`, `eoc-fraud`, …) by `event_type`
+
+**Kafka publish/subscribe ownership** — only the Router and the Orchestrator process touch Kafka:
+- **Router** is the only Kafka publisher for domain topics
+- **Orchestrator process** consumes domain topics and publishes to `eoc-results`
+- **Agents never publish to Kafka** — `publish_event()` inside an agent only reaches the monitor and logger; agents are constructed without a `message_bus`
 
 Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version number when changing `app.js` or `styles.css` and rebuild the container.
 
