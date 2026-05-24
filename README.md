@@ -349,6 +349,47 @@ supporting framework components used to construct K9-AIF applications.
 
 ---
 
+## Using Claude Code with K9-AIF
+
+K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assistant. The repository includes context files that give Claude Code an immediate, accurate understanding of the framework so you can build new applications without re-explaining the architecture every session.
+
+### Context files included
+
+| File | Purpose |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | Framework architecture, execution hierarchy, commands, and infrastructure — loaded automatically by Claude Code on repo open |
+| [`SKILLS.md`](SKILLS.md) | Step-by-step recipes: how to add an agent, invoke the LLM, wire a squad, enforce governance, write tests |
+| [`examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | Complete agent reference for the EOC — model assignments, squad composition, governance coverage |
+
+### Generating a new example with Claude Code
+
+Open the repository in VS Code with Claude Code and run this prompt:
+
+```
+You are building a new application example on top of the K9-AIF framework located at k9_aif_abb/.
+
+Project details:
+- Application name: [e.g., K9X_Healthcare_ClaimsProcessor]
+- Create all files under: examples/K9X_Healthcare_ClaimsProcessor/
+- Spec doc location: examples/K9X_Healthcare_ClaimsProcessor/docs/your-spec.docx
+
+Before writing any code, read CLAUDE.md and SKILLS.md, then read the canonical reference example:
+  examples/K9X_Enterprise_Insurance_OperationsCenter/
+
+Then implement the new example following the same structure and conventions. Rules:
+- Every agent must extend BaseAgent and implement execute()
+- Every squad must be defined in a squad YAML with a flow
+- The router must route by event_type
+- Governance must be explicit — do not use NoopGovernance in production code
+- Folder structure, naming, and config patterns must match the reference example
+```
+
+The combination of `CLAUDE.md`, `SKILLS.md`, and the reference example gives Claude Code enough context to generate architecturally consistent, governed, runnable K9-AIF applications from a spec document alone.
+
+> Read more: [Build a K9-AIF Example App in Minutes Using Claude Code](https://blog.k9x.ai/build-k9-aif-example-with-claude-code/)
+
+---
+
 ## Quick Start (Linux / Ubuntu)
 
 Clone the framework and create a Python virtual environment:
