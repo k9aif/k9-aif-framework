@@ -355,11 +355,11 @@ K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assist
 
 ### Context files included
 
-| File | Purpose |
+| File | How it helps Claude Code |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Framework architecture, execution hierarchy, commands, and infrastructure — loaded automatically by Claude Code on repo open |
-| [`SKILLS.md`](SKILLS.md) | Step-by-step recipes: how to add an agent, invoke the LLM, wire a squad, enforce governance, write tests |
-| [`examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | Complete agent reference for the EOC — model assignments, squad composition, governance coverage |
+| [`CLAUDE.md`](CLAUDE.md) | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files |
+| [`SKILLS.md`](SKILLS.md) | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full `llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
+| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline |
 
 ### Generating a new example with Claude Code
 
