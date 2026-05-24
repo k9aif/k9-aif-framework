@@ -190,3 +190,16 @@ All major components are provisioned through factories — never instantiated di
 | Docling OCR | `http://192.168.1.98:5001/v1/parse` |
 
 `K9_ENV` environment variable controls governance enforcement: `development` / `test` permit NoopGovernance; `production` / `staging` cause `enforce_governance()` to raise.
+
+### MCP (Model Context Protocol) layer
+
+K9-AIF includes a full MCP client ABB stack for calling external tool servers:
+
+| Component | Path | Role |
+|---|---|---|
+| `MCPHttpConnector` | `k9_core/integration/mcp_http_connector.py` | HTTP/HTTPS MCP client |
+| `MCPStdioConnector` | `k9_core/integration/mcp_stdio_connector.py` | stdio MCP client |
+| `BaseMCPAgent` | `k9_core/agent/base_mcp_agent.py` | Abstract base for MCP-aware agents |
+| `MCPClientAgent` | `k9_agents/integration/mcp_client_agent.py` | Concrete MCP agent SBB |
+
+The **Docling OCR MCP server** at `http://192.168.1.98:5001/v1/parse` is the live tool server for document intelligence. It converts PDF, DOCX, and images to clean Markdown (tables, layout preserved), which agents consume as prompt context. `DocumentExtractorAgent` in the EOC connects to Docling via `MCPHttpConnector` — the connector type is config-driven, so any MCP-compatible tool server can be substituted without touching squad or orchestrator code.

@@ -62,9 +62,11 @@ Two-stage fraud detection: rule-based keyword/amount signals first, then LLM dee
 ---
 
 ### DocumentExtractorAgent
-OCR and structured extraction pipeline. Accepts raw text or file path (Tesseract OCR). Uses extraction-capable model (Granite) to produce validated JSON. Low hallucination tolerance required.
+OCR and structured extraction pipeline. Accepts raw text, file path (Tesseract OCR), or a document payload routed to the Docling MCP server. Uses extraction-capable model (Granite) to produce validated JSON. Low hallucination tolerance required.
 
-- **Tools:** Tesseract OCR (when file_path provided)
+- **Phase 1 OCR:** Tesseract subprocess (when `file_path` provided and Tesseract is installed)
+- **Phase 2 OCR (MCP):** `MCPHttpConnector` (ABB) → POST to Docling at `http://192.168.1.98:5001/v1/parse` → returns clean Markdown (PDFs, DOCX, images, tables)
+- **MCP ABB:** `k9_core/integration/mcp_http_connector.py` — swap connector type in config without touching squad or orchestrator code
 - **Extracts:** document_type, claimant_name, policy_number, claim_number, incident_date, amount, provider, description, signatures_present
 - **Output:** extracted_fields (JSON), validation_status, ocr_applied, document_id
 
