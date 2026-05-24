@@ -56,7 +56,7 @@ examples/<App>/agents/src/my_agent.py
 from typing import Any, Dict, Optional
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from examples.<App>.utils.llm_invoke import llm_invoke
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 
 
 class MyAgent(BaseAgent):
@@ -143,9 +143,7 @@ This is the complete chain every agent must follow. Never call `OllamaLLM` or `L
 
 ```python
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from examples.<App>.utils.llm_invoke import llm_invoke   # SBB-level wrapper
-# OR for framework-level agents:
-# from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke   # ABB — use this by default
 
 # 1. Build the request
 req = InferenceRequest(
