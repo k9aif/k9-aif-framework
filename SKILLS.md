@@ -191,13 +191,14 @@ except RuntimeError as exc:
 
 ## Skill 3 — Add a new model to the Router
 
-`K9ModelRouter` is the OOB default router. A solution can substitute its own router by implementing `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`) and registering it via `ModelRouterFactory`. The steps below apply to the default `K9ModelRouter`.
+`K9ModelRouter` is the OOB default router. To substitute a custom router, change `inference.router.type` in `config.yaml` to your implementation's registered type name and implement `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`).
 
-**Two places to update in `config.yaml`:**
+**Three places to update in `config.yaml`:**
 
 ```yaml
-# 1. LLMFactory — the actual Ollama model name and parameters
 inference:
+
+  # 1. LLMFactory — the actual Ollama model name and parameters
   llm_factory:
     models:
       my_model:
@@ -205,7 +206,16 @@ inference:
         temperature: 0.2
         max_tokens: 4096
 
-# 2. Model catalog — capabilities and routing tiers
+  # 2. Router — declares which router to use and persistence config
+  #    This is where you substitute a custom router
+  router:
+    type: k9_model_router             # change this to use a custom BaseModelRouter implementation
+    default_model: general
+    persistence:
+      enabled: true
+      provider: postgres              # sqlite | postgres | memory
+
+  # 3. Model catalog — capabilities and routing tiers used by the router for scoring
   model_catalog:
     models:
       my_model:
@@ -216,7 +226,7 @@ inference:
         cost_tier: standard           # minimal | standard | premium
 ```
 
-The router scores this model automatically. No code changes needed.
+The router scores this model automatically. No code changes needed for `K9ModelRouter`.
 
 ---
 

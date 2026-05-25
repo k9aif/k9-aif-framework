@@ -1,13 +1,24 @@
-# K9-AIF Architecture Building Blocks (ABB)
+# K9-AIF Framework
 
-This package contains the **core framework implementation** of the  
-**K9-AIF (K9 Agentic Integration Framework)** architecture.
+**pip package:** `k9_aif_framework` — **import namespace:** `k9_aif_abb`
+
+The pip package is named `k9_aif_framework` to communicate what it is — a framework.  
+The framework code lives in the `k9_aif_abb` module — ABB stands for **Architecture Building Blocks**,  
+reflecting that this is the architectural foundation other solutions are built upon, not an application itself.
+
+```bash
+pip install k9_aif_framework        # install the framework
+```
+
+```python
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent   # import from k9_aif_abb
+```
 
 K9-AIF provides a modular, governed architecture for building  
 **agentic AI applications using composable architectural building blocks.**
 
 The framework separates **architectural abstractions (ABB)** from  
-**implementation components (SBB)**, enabling flexible and extensible  
+**solution implementations (SBB)**, enabling flexible and extensible  
 multi-agent AI systems.
 
 ---
@@ -125,9 +136,40 @@ The K9-AIF framework is built around the following architectural principles:
 
 ## Installation
 
-Install the framework dependencies:
+### From PyPI (once published)
 
 ```bash
-pip install -r requirements.txt
+pip install k9_aif_framework
+```
 
+### Local install (development)
+
+```bash
+# Standard install from local source
+pip install /path/to/k9-aif-framework/k9_aif_abb
+
+# Editable install — changes to the ABB are reflected immediately (recommended for development)
+pip install -e /path/to/k9-aif-framework/k9_aif_abb
+```
+
+### Verify installation
+
+```python
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+print("k9_aif_framework installed successfully")
+```
+
+> **Note:** The pip package name is `k9_aif_framework`. The Python import namespace remains `k9_aif_abb`.
+> ```python
+> # pip install k9_aif_framework
+> from k9_aif_abb.k9_core.agent.base_agent import BaseAgent   # import path unchanged
+> ```
+
+### Inspect your solution
+
+Once installed, run the inspector against your solution folder to validate ABB compliance:
+
+```bash
+python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
 ```
