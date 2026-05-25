@@ -396,26 +396,27 @@ def test_execute_handles_llm_unavailable():
 
 `publish_event()` is defined on `BaseAgent` and will publish to Kafka if a `message_bus` is passed at construction. By convention in K9-AIF solutions, **only the Router and Orchestrator are wired with a message bus** — agents are constructed without one.
 
-Agents within a Squad share data sequentially through the flow — each agent's output becomes the next agent's input via the execution context. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
+Agents within a Squad share data sequentially through the flow — each agent's output enriches the shared execution context, which is passed as the input to the next agent. The context grows progressively richer as it moves through the flow. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
 
 A2A via Kafka is architecturally possible — wire an agent with a `message_bus` at construction and `publish_event()` will publish to a Kafka topic. This is not used in standard K9-AIF solutions but is a valid extension for rare scenarios requiring loosely coupled or async agent handoffs across squads.
 
 ### Kafka event topology
 
 ```
-app_backend → eoc-events → Router (publishes) → eoc-claims / eoc-fraud / …
-                                                          ↓
-                                        Orchestrator (consumes, runs squads)
-                                                          ↓
-                                        Orchestrator (publishes) → another Orchestrator (if chained)
-                                                          ↓
-                                                      eoc-results
+app_backend → eoc-events → [IntentAgent] → Router (publishes) → eoc-claims / eoc-fraud / …
+                                                                          ↓
+                                                          Orchestrator (consumes, runs squads)
+                                                                          ↓
+                                                          Orchestrator (publishes) → another Orchestrator (if chained)
+                                                                          ↓
+                                                                      eoc-results
 ```
 
 | Component | Kafka role |
 |---|---|
 | **app_backend** | Publishes inbound events to the entry topic |
-| **Router** | Publishes to domain topics by `event_type` |
+| **IntentAgent** _(optional)_ | Pre-routing LLM-based intent classification for non-deterministic inputs — stamps `intent` on the payload before the Router receives it. Supported in the ABB (`k9_aif_abb/k9_agents/router/router_agent.py`) |
+| **Router** | Resolves the target domain topic dynamically — deterministic (`event_type` → topic) or intent-driven (`intent` → orchestrator). The topic it publishes to varies per event |
 | **Orchestrator** | Consumes from domain topics; publishes results — or triggers another Orchestrator via a downstream topic |
 | **Agents** | No Kafka access — observability via `self.logger` only |
 
