@@ -46,15 +46,9 @@ output_schema:
 
 tools: []
 
-squad: ClaimsProcessingSquad
-
 governance:
   pre_process: true
   post_process: true
-
-routing:
-  next_on_success: GuardAgent
-  next_on_failure: EscalationAgent
 
 model_routing:
   task_type: adjudication

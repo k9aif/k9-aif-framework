@@ -5,8 +5,6 @@ description: >
   Handles document receipt events: OCR extraction, PII governance guard,
   Neo4j entity graph synchronization, and immutable audit trail.
 
-orchestrator: DocumentIntelligenceOrchestrator
-
 agents:
   - DocumentExtractorAgent
   - GuardAgent
@@ -14,16 +12,16 @@ agents:
   - AuditAgent
 
 flow:
-  - DocumentExtractorAgent
-  - GuardAgent
-  - GraphSyncAgent
-  - AuditAgent
-
-entrypoint: DocumentExtractorAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: DocumentExtractorAgent
+    result_key: extraction
+  - agent: GuardAgent
+    result_key: guard
+    context: {guard_mode: post}
+  - agent: GraphSyncAgent
+    result_key: graph_sync
+    context: {event_type: document_received}
+  - agent: AuditAgent
+    result_key: audit
 
 event_trigger: DocumentReceived
 

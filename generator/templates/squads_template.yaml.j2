@@ -7,7 +7,6 @@
 squads:
   {{ app_name }}Squad:
     description: "{{ app_name }} agent pipeline"
-    orchestrator: {{ orchestrator_class }}
     agents:
 {% for agent in agents %}
       - {{ agent.class }}

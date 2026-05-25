@@ -14,19 +14,29 @@ class SquadLoader:
     """
     Loads K9-AIF squad definitions from YAML and builds BaseSquad objects.
 
+    Squads are decoupled from orchestrators — squad YAML lists only agents
+    and flow steps. The orchestrator that calls ``_load_squad()`` owns the
+    association; it is never stored in the squad YAML.
+
     Expected YAML shape:
 
     squads:
       claims_intake:
         description: Example claims intake squad
-        orchestrator: framework
         agents:
           - IntakeAgent
           - ExtractionAgent
           - ValidationAgent
+        flow:
+          - agent: IntakeAgent
+            result_key: intake
+          - agent: ExtractionAgent
+            result_key: extraction
+          - agent: ValidationAgent
+            result_key: validation
     """
 
-    def __init__(self, agent_registry, orchestrator_registry, monitor_cls=DefaultSquadMonitor):
+    def __init__(self, agent_registry, orchestrator_registry=None, monitor_cls=DefaultSquadMonitor):
         """
         Args:
             agent_registry:
@@ -34,13 +44,13 @@ class SquadLoader:
                   - create(name)
                   - get(name) -> class
             orchestrator_registry:
-                OrchestratorRegistry instance supporting:
-                  - create(name)
+                Ignored — retained for backwards compatibility only.
+                Orchestrator association is managed by the calling orchestrator,
+                not stored in squad YAML.
             monitor_cls:
                 Monitor class to attach by default to each squad.
         """
         self.agent_registry = agent_registry
-        self.orchestrator_registry = orchestrator_registry
         self.monitor_cls = monitor_cls
 
     def load(self, path: str | Path) -> Dict[str, BaseSquad]:
@@ -87,26 +97,19 @@ class SquadLoader:
         if not isinstance(cfg, dict):
             raise ValueError(f"Squad '{squad_id}' configuration must be a mapping/dictionary.")
 
-        orchestrator_name = cfg.get("orchestrator")
-        if not orchestrator_name:
-            raise ValueError(f"Squad '{squad_id}' is missing required field: 'orchestrator'")
-
         agent_names = cfg.get("agents", [])
         if not agent_names:
             raise ValueError(f"Squad '{squad_id}' must define at least one agent")
 
         agents = [self._create_agent(agent_name, squad_id) for agent_name in agent_names]
-        orchestrator = self.orchestrator_registry.create(orchestrator_name)
         monitor = self.monitor_cls() if self.monitor_cls else None
 
         squad = BaseSquad(
             squad_id=squad_id,
             agents=agents,
-            orchestrator=orchestrator,
             monitor=monitor,
         )
 
-        # Optional metadata attachment if you want it later
         squad.description = cfg.get("description", "")
         squad.flow = cfg.get("flow", [])
         squad.metadata = cfg

@@ -42,8 +42,6 @@ output_schema:
 tools:
   - neo4j_driver
 
-squad: DocumentIntelligenceSquad
-
 config:
   enabled_key: eoc.graph_sync_enabled
   neo4j_config_key: neo4j

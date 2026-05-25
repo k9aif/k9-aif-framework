@@ -9,7 +9,6 @@
 squads:
   ClaimsProcessingSquad:
     description: "Processes new insurance claims end-to-end"
-    orchestrator: ClaimsProcessingOrchestrator
     agents:
       - ClaimsTriageAgent
       - AdjudicationAgent
@@ -45,7 +44,6 @@ squads:
 
   DocumentIntelligenceSquad:
     description: "Ingests, extracts, and classifies uploaded documents"
-    orchestrator: DocumentIntelligenceOrchestrator
     agents:
       - DocumentExtractorAgent
       - GuardAgent
@@ -68,7 +66,6 @@ squads:
 
   RiskAssessmentSquad:
     description: "Correlates fraud signals and produces risk assessments"
-    orchestrator: RiskAssessmentOrchestrator
     agents:
       - FraudDetectionAgent
       - GuardAgent
@@ -98,7 +95,6 @@ squads:
 
   PolicyManagementSquad:
     description: "Validates and processes policy change requests"
-    orchestrator: PolicyManagementOrchestrator
     agents:
       - GuardAgent
       - AuditAgent
@@ -114,7 +110,6 @@ squads:
 
   CatastropheResponseSquad:
     description: "Coordinates mass loss event response across multiple policies"
-    orchestrator: CatastropheResponseOrchestrator
     agents:
       - FraudDetectionAgent
       - AuditAgent
@@ -129,7 +124,6 @@ squads:
 
   CustomerServiceSquad:
     description: "Handles inbound customer interactions with intent detection"
-    orchestrator: CustomerServiceOrchestrator
     agents:
       - ClaimsTriageAgent
       - GuardAgent
@@ -155,7 +149,6 @@ squads:
 
   AuditComplianceSquad:
     description: "Retrieves and assembles audit trails for regulatory queries"
-    orchestrator: AuditComplianceOrchestrator
     agents:
       - AuditAgent
     flow:

@@ -6,21 +6,15 @@ description: >
   assessment using the FraudDetectionAgent repurposed for risk signal
   analysis, followed by immutable audit trail.
 
-orchestrator: CatastropheResponseOrchestrator
-
 agents:
   - FraudDetectionAgent
   - AuditAgent
 
 flow:
-  - FraudDetectionAgent
-  - AuditAgent
-
-entrypoint: FraudDetectionAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: FraudDetectionAgent
+    result_key: impact_assessment
+  - agent: AuditAgent
+    result_key: audit
 
 event_trigger: CatastropheAlertIssued
 

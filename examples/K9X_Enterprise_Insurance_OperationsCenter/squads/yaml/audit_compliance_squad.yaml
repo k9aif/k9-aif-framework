@@ -6,19 +6,13 @@ description: >
   and assembles structured compliance reports for regulatory queries.
   Supports filtering by correlation_id, event_id, agent_name, event_type.
 
-orchestrator: AuditComplianceOrchestrator
-
 agents:
   - AuditAgent
 
 flow:
-  - AuditAgent
-
-entrypoint: AuditAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: AuditAgent
+    result_key: query_result
+    context: {audit_mode: query}
 
 event_trigger: AuditQueryReceived
 

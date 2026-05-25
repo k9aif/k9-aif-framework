@@ -6,8 +6,6 @@ description: >
   governance validation, audit trail, and auto-escalation for
   signals with risk score >= 0.8.
 
-orchestrator: RiskAssessmentOrchestrator
-
 agents:
   - FraudDetectionAgent
   - GuardAgent
@@ -15,16 +13,19 @@ agents:
   - EscalationAgent
 
 flow:
-  - FraudDetectionAgent
-  - GuardAgent
-  - AuditAgent
-  - EscalationAgent
-
-entrypoint: FraudDetectionAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: FraudDetectionAgent
+    result_key: fraud_assessment
+  - agent: GuardAgent
+    result_key: guard
+    context: {guard_mode: post}
+  - agent: AuditAgent
+    result_key: audit
+  - agent: EscalationAgent
+    result_key: escalation
+    when:
+      any:
+        - {key: "fraud_assessment.risk_score", gte: 0.8}
+        - {key: "guard.passed", eq: false}
 
 event_trigger: FraudSignalRaised
 

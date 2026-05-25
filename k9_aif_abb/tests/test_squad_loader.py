@@ -20,11 +20,6 @@ class DummyAgentB:
         return context
 
 
-class DummyOrchestrator:
-    def execute(self, squad, context):
-        return context
-
-
 class DummyAgentRegistry:
     def __init__(self):
         self._registry = {
@@ -35,18 +30,6 @@ class DummyAgentRegistry:
     def create(self, name):
         if name not in self._registry:
             raise KeyError(f"Agent '{name}' not registered")
-        return self._registry[name]()
-
-
-class DummyOrchestratorRegistry:
-    def __init__(self):
-        self._registry = {
-            "dummy": DummyOrchestrator,
-        }
-
-    def create(self, name):
-        if name not in self._registry:
-            raise KeyError(f"Orchestrator '{name}' not registered")
         return self._registry[name]()
 
 
@@ -63,17 +46,17 @@ def test_load_single_squad(tmp_path):
             "squads": {
                 "claims_intake": {
                     "description": "Test squad",
-                    "orchestrator": "dummy",
                     "agents": ["DummyAgentA", "DummyAgentB"],
+                    "flow": [
+                        {"agent": "DummyAgentA", "result_key": "a"},
+                        {"agent": "DummyAgentB", "result_key": "b"},
+                    ],
                 }
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     squads = loader.load(yaml_path)
 
@@ -85,8 +68,9 @@ def test_load_single_squad(tmp_path):
     assert len(squad.agents) == 2
     assert isinstance(squad.agents[0], DummyAgentA)
     assert isinstance(squad.agents[1], DummyAgentB)
-    assert isinstance(squad.orchestrator, DummyOrchestrator)
     assert squad.description == "Test squad"
+    # Squads do not carry an orchestrator reference — decoupled by design
+    assert not hasattr(squad, "orchestrator") or squad.orchestrator is None
 
 
 def test_load_multiple_squads(tmp_path):
@@ -95,21 +79,18 @@ def test_load_multiple_squads(tmp_path):
         {
             "squads": {
                 "squad_one": {
-                    "orchestrator": "dummy",
                     "agents": ["DummyAgentA"],
+                    "flow": [{"agent": "DummyAgentA", "result_key": "a"}],
                 },
                 "squad_two": {
-                    "orchestrator": "dummy",
                     "agents": ["DummyAgentB"],
+                    "flow": [{"agent": "DummyAgentB", "result_key": "b"}],
                 },
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     squads = loader.load(yaml_path)
 
@@ -124,17 +105,14 @@ def test_load_one_squad_by_id(tmp_path):
         {
             "squads": {
                 "claims_intake": {
-                    "orchestrator": "dummy",
                     "agents": ["DummyAgentA"],
+                    "flow": [{"agent": "DummyAgentA", "result_key": "a"}],
                 }
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     squad = loader.load_one(yaml_path, "claims_intake")
 
@@ -146,34 +124,29 @@ def test_load_one_squad_by_id(tmp_path):
 def test_missing_squads_section_raises_error(tmp_path):
     yaml_path = write_yaml(tmp_path, {"not_squads": {}})
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     with pytest.raises(ValueError, match="No 'squads' section found"):
         loader.load(yaml_path)
 
 
-def test_missing_orchestrator_raises_error(tmp_path):
+def test_squad_without_orchestrator_field_loads_fine(tmp_path):
+    """Squads must NOT have an orchestrator: field — decoupled by design."""
     yaml_path = write_yaml(
         tmp_path,
         {
             "squads": {
-                "bad_squad": {
+                "decoupled_squad": {
                     "agents": ["DummyAgentA"],
+                    "flow": [{"agent": "DummyAgentA", "result_key": "a"}],
                 }
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
-
-    with pytest.raises(ValueError, match="missing required field: 'orchestrator'"):
-        loader.load(yaml_path)
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
+    squad = loader.load_one(yaml_path, "decoupled_squad")
+    assert squad.squad_id == "decoupled_squad"
 
 
 def test_missing_agents_raises_error(tmp_path):
@@ -182,17 +155,14 @@ def test_missing_agents_raises_error(tmp_path):
         {
             "squads": {
                 "bad_squad": {
-                    "orchestrator": "dummy",
                     "agents": [],
+                    "flow": [],
                 }
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     with pytest.raises(ValueError, match="must define at least one agent"):
         loader.load(yaml_path)
@@ -204,30 +174,28 @@ def test_unknown_agent_raises_error(tmp_path):
         {
             "squads": {
                 "bad_squad": {
-                    "orchestrator": "dummy",
                     "agents": ["UnknownAgent"],
+                    "flow": [{"agent": "UnknownAgent", "result_key": "x"}],
                 }
             }
         },
     )
 
-    loader = SquadLoader(
-        agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
-    )
+    loader = SquadLoader(agent_registry=DummyAgentRegistry())
 
     with pytest.raises(ValueError, match="Failed to create agent 'UnknownAgent'"):
         loader.load(yaml_path)
 
 
-def test_unknown_orchestrator_raises_error(tmp_path):
+def test_backwards_compat_orchestrator_registry_ignored(tmp_path):
+    """orchestrator_registry kwarg is accepted for backwards compat but ignored."""
     yaml_path = write_yaml(
         tmp_path,
         {
             "squads": {
-                "bad_squad": {
-                    "orchestrator": "unknown",
+                "squad_one": {
                     "agents": ["DummyAgentA"],
+                    "flow": [{"agent": "DummyAgentA", "result_key": "a"}],
                 }
             }
         },
@@ -235,8 +203,8 @@ def test_unknown_orchestrator_raises_error(tmp_path):
 
     loader = SquadLoader(
         agent_registry=DummyAgentRegistry(),
-        orchestrator_registry=DummyOrchestratorRegistry(),
+        orchestrator_registry=object(),  # anything — must be ignored
     )
 
-    with pytest.raises(KeyError, match="Orchestrator 'unknown' not registered"):
-        loader.load(yaml_path)
+    squad = loader.load_one(yaml_path, "squad_one")
+    assert squad.squad_id == "squad_one"

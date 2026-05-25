@@ -58,10 +58,9 @@ class BaseSquad:
     and any static context overrides to merge before the call.
     """
 
-    def __init__(self, squad_id, agents, orchestrator, monitor=None):
+    def __init__(self, squad_id, agents, orchestrator=None, monitor=None):
         self.squad_id = squad_id
         self.agents = agents or []
-        self.orchestrator = orchestrator
         self.monitor = monitor
         self.description = ""
         self.flow = []

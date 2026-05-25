@@ -93,7 +93,9 @@ bash test_squads.sh              # squad execution flow
 
 **Architecture Building Blocks (ABB)** — abstract contracts in `k9_aif_abb/`. Define interfaces, lifecycle, governance hooks. Never contain domain logic.
 
-**Solution Building Blocks (SBB)** — concrete implementations under `examples/<AppName>/`. Extend ABBs with domain-specific behavior without modifying the core.
+**Solution Building Blocks (SBB)** — concrete implementations that extend ABBs with domain-specific behavior without modifying the core. Two locations:
+- `examples/<AppName>/` — hand-crafted reference SBBs (EOC is the canonical example)
+- `k9_projects/<AppName>/` — stub SBBs scaffolded by `k9_generator.sh`; flesh out from the reference examples
 
 ### Execution hierarchy
 
@@ -135,23 +137,45 @@ Every agent receives a governance pipeline via `require_governance()` at init ti
 
 Agents that must enforce governance call `self.enforce_governance()` at the top of `execute()`. Agents that skip this call will silently use NoopGovernance even in production.
 
+### Three-level decoupling
+
+Each layer knows only what is **below** it in the hierarchy:
+
+| Layer | Knows about | Does NOT know about |
+|---|---|---|
+| **Orchestrator** | Its squad ID — loaded via `_load_squad()` | Routers, other orchestrators |
+| **Squad** | Its agents and their execution flow | Orchestrators |
+| **Agent** | Its own behavior (role, goal, model) | Squads, routing, next agent |
+
+**Squad YAML has no `orchestrator:` field.** The orchestrator is the caller — the squad must not reference its caller.
+
+**Agent YAML has no `squad:` or `routing:` fields.** Agents are squad-agnostic and can be reused across different squads.
+
 ### Squad definition (YAML)
 
-Each squad lives in its own YAML file under `squads/yaml/`:
+Each squad lives in its own YAML file under `squads/yaml/`. Flow steps **must** be dicts with an `agent:` key — plain strings will raise `ValueError` at runtime.
 
 ```yaml
-name: ClaimsProcessingSquad
-orchestrator: ClaimsProcessingOrchestrator
-agents: [ClaimsTriageAgent, AdjudicationAgent, GuardAgent, AuditAgent]
-flow: [ClaimsTriageAgent, AdjudicationAgent, GuardAgent, AuditAgent]
-entrypoint: ClaimsTriageAgent
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
-event_trigger: ClaimSubmitted
+squads:
+  ClaimsProcessingSquad:
+    description: "Triage, adjudication and audit for claims."
+    agents:
+      - ClaimsTriageAgent
+      - AdjudicationAgent
+      - GuardAgent
+      - AuditAgent
+    flow:
+      - agent: ClaimsTriageAgent
+        result_key: triage
+      - agent: AdjudicationAgent
+        result_key: adjudication
+      - agent: GuardAgent
+        result_key: guard
+      - agent: AuditAgent
+        result_key: audit
 ```
 
-`SquadLoader` reads this YAML and wires agents from `AgentRegistry` + orchestrators from `OrchestratorRegistry` at startup.
+`SquadLoader` reads this YAML and wires agents from `AgentRegistry` at startup. The orchestrator that calls `_load_squad()` determines which squad runs — that association lives in orchestrator code, not in the squad YAML.
 
 ### Config structure (`config.yaml`)
 

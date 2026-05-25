@@ -11,7 +11,6 @@ from pathlib import Path
 
 from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from k9_aif_abb.k9_orchestrators.registry.orchestrator_registry import OrchestratorRegistry
 from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_core.messaging.k9_event_bus import K9EventBus
 
@@ -26,7 +25,6 @@ log = logging.getLogger(__name__)
 
 _SQUAD_ID = "RiskAssessmentSquad"
 _TOPIC    = "eoc-fraud"
-
 
 class RiskAssessmentOrchestrator(BaseOrchestrator):
     """
@@ -76,10 +74,7 @@ class RiskAssessmentOrchestrator(BaseOrchestrator):
                 lambda c=cls, n=name: c(config=agent_loader.merge_with_global(n, self.config)),
             )
 
-        orchestrator_registry = OrchestratorRegistry()
-        orchestrator_registry.register("RiskAssessmentOrchestrator", RiskAssessmentOrchestrator)
-
-        loader = SquadLoader(agent_registry, orchestrator_registry)
+        loader = SquadLoader(agent_registry)
         squad = loader.load_one(squads_yaml_path, _SQUAD_ID)
         log.info("[RiskAssessmentOrchestrator] Squad loaded: squad_id=%s agents=%d flow_steps=%d",
                  _SQUAD_ID, len(squad.agents), len(squad.flow))

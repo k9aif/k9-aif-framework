@@ -5,8 +5,6 @@ description: >
   Operations Center. Handles claim submission events: triage, adjudication,
   governance guard, audit trail, and conditional HITL escalation.
 
-orchestrator: ClaimsProcessingOrchestrator
-
 agents:
   - ClaimsTriageAgent
   - AdjudicationAgent
@@ -15,17 +13,22 @@ agents:
   - EscalationAgent
 
 flow:
-  - ClaimsTriageAgent
-  - AdjudicationAgent
-  - GuardAgent
-  - AuditAgent
-  - EscalationAgent
-
-entrypoint: ClaimsTriageAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: ClaimsTriageAgent
+    result_key: triage
+  - agent: AdjudicationAgent
+    result_key: adjudication
+  - agent: GuardAgent
+    result_key: guard
+    context: {guard_mode: post}
+  - agent: AuditAgent
+    result_key: audit
+  - agent: EscalationAgent
+    result_key: escalation
+    when:
+      any:
+        - {key: "adjudication.decision", eq: "escalate"}
+        - {key: "adjudication.confidence", lt: 0.75}
+        - {key: "guard.passed", eq: false}
 
 event_trigger: ClaimSubmitted
 

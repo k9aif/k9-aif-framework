@@ -6,8 +6,6 @@ description: >
   PII and policy governance guard, audit trail, and conditional HITL
   escalation for unresolvable or sensitive customer interactions.
 
-orchestrator: CustomerServiceOrchestrator
-
 agents:
   - ClaimsTriageAgent
   - GuardAgent
@@ -15,16 +13,19 @@ agents:
   - EscalationAgent
 
 flow:
-  - ClaimsTriageAgent
-  - GuardAgent
-  - AuditAgent
-  - EscalationAgent
-
-entrypoint: ClaimsTriageAgent
-
-completion:
-  final_agent: AuditAgent
-  return_output_from: AuditAgent
+  - agent: ClaimsTriageAgent
+    result_key: intent
+  - agent: GuardAgent
+    result_key: guard
+    context: {guard_mode: pre}
+  - agent: AuditAgent
+    result_key: audit
+  - agent: EscalationAgent
+    result_key: escalation
+    when:
+      any:
+        - {key: "intent.confidence", lt: 0.75}
+        - {key: "guard.passed", eq: false}
 
 event_trigger: CustomerInteractionLogged
 

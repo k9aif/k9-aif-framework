@@ -118,12 +118,13 @@ for name, cls in [
 
 Each `flow:` step must be a dict with an `agent:` key — plain strings will raise `ValueError` at runtime.
 
+**Decoupling rule:** Squad YAML knows only its own agents and flow. It does NOT reference orchestrators — the orchestrator is the caller; the squad must not know its caller.
+
 ```yaml
 # config/squads.yaml  (note the squads: wrapper and squad ID key)
 squads:
   MySquad:
     description: "What this squad does."
-    orchestrator: MyOrchestrator
     agents:
       - ...
       - MyAgent
@@ -269,19 +270,32 @@ If `K9ModelRouter` is sufficient — keep `type: k9_model_router` in config and 
 
 ## Skill 4 — Add a new Squad
 
+### Decoupling principle — three independent layers
+
+Each layer in the execution hierarchy knows only what is **below** it. Nothing references its caller.
+
+| Layer | Knows about | Does NOT know about |
+|---|---|---|
+| **Orchestrator** | Its squad ID (loads it via `_load_squad()`) | Routers, other orchestrators |
+| **Squad** | Its agents and flow steps | Orchestrators |
+| **Agent** | Its own behavior (role, goal, model) | Squads, routing, next agent |
+
+This means:
+- Squad YAML has **no** `orchestrator:` field — the orchestrator is the caller, not a peer
+- Agent YAML has **no** `squad:` or `routing:` fields — agents are squad-agnostic, reusable across squads
+
 ### Squad YAML
 
 ```
 examples/<App>/config/squads.yaml
 ```
 
-`SquadLoader` reads `data["squads"]` — the squad ID is a key under `squads:`, not a `name:` field. Flow steps **must** be dicts with an `agent:` key.
+`SquadLoader` reads `data["squads"]` — the squad ID is a key under `squads:`, not a `name:` field. Flow steps **must** be dicts with an `agent:` key. Plain strings will raise `ValueError`.
 
 ```yaml
 squads:
   MySquad:
     description: "What this squad does."
-    orchestrator: MyOrchestrator
     agents:
       - AgentOne
       - AgentTwo
@@ -295,10 +309,42 @@ squads:
         result_key: audit
 ```
 
+### Agent YAML
+
+Agent YAML describes behavior only — no squad references, no routing fields.
+
+```yaml
+name: AgentOne
+class: AgentOne
+
+description: >
+  What this agent does.
+
+pattern: reasoning
+model: reasoning
+
+role: >
+  You are a ...
+
+goal: >
+  Your goal is to ...
+
+instructions:
+  - Instruction one
+
+output_schema:
+  result: string
+  confidence: float
+
+governance:
+  pre_process: true
+  post_process: false
+```
+
 ### Wire it in `_load_squad()`
 
 ```python
-loader = SquadLoader(agent_registry, orchestrator_registry)
+loader = SquadLoader(agent_registry)
 squad = loader.load_one(squads_yaml_path, "MySquad")
 ```
 

@@ -51,8 +51,6 @@ output_schema:
 tools:
   - tesseract_ocr
 
-squad: DocumentIntelligenceSquad
-
 model_routing:
   task_type: extraction
   primary_model: extraction
