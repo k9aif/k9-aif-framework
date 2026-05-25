@@ -660,3 +660,63 @@ finalize_on_max_iterations: true   # true → finalize; false → escalate on ti
 `loop_started` · `hypothesis_generated` · `validation_tool_invoked` · `observation_evaluated` · `loop_continued` · `loop_finalized` · `loop_escalated` · `loop_failed`
 
 All go through `publish_event()` — wired to monitor + message_bus if configured.
+
+### OOB implementation — K9ValidationLoopAgent
+
+`K9ValidationLoopAgent` is the ready-to-run OOB implementation, analogous to `K9ModelRouter` for routing. The LLM is the validation tool — no custom code required for the common case.
+
+```python
+from k9_aif_abb.k9_agents.validation import K9ValidationLoopAgent, ValidationDisposition
+
+# Use OOB as-is — wire via agent YAML (class: K9ValidationLoopAgent)
+
+# Or extend and override only what differs:
+class FraudValidationAgent(K9ValidationLoopAgent):
+    layer = "FraudValidationAgent SBB"
+
+    def run_validation(self, hypothesis, loop_ctx):
+        return fraud_rule_engine.evaluate(loop_ctx.payload)   # swap in domain tool
+
+    def should_continue(self, observation, loop_ctx):
+        if observation["confidence"] >= 0.9:
+            return ValidationDisposition.FINALIZE
+        if observation["confidence"] < 0.2:
+            return ValidationDisposition.FAIL
+        return ValidationDisposition.CONTINUE
+```
+
+Inheritance hierarchy:
+```
+BaseAgent
+  └── BaseValidationLoopAgent   (loop skeleton — ABB)
+        └── K9ValidationLoopAgent   (LLM-driven OOB)
+              └── FraudValidationAgent   (domain SBB — overrides only what differs)
+```
+
+### Solutions Architect decision — BaseAgent vs K9ValidationLoopAgent
+
+> **The generator, intake, and Claude Code scaffold all agents extending `BaseAgent` by default.** This is correct for most agents. The SA must explicitly decide at design time which agents need the validation loop.
+
+Ask this question for every agent during design:
+
+> *"Does this agent need to test something, observe the result, and decide whether to try again — or does it produce its answer in one pass?"*
+
+| Answer | Extend |
+|---|---|
+| One-pass — classify, route, audit, guard, sync | `BaseAgent` |
+| Iterative convergence — fraud, evidence, compliance, document confidence | `K9ValidationLoopAgent` |
+
+When changing a generated agent from one-shot to iterative, replace the parent class and swap `execute()` for the five loop methods:
+
+| Remove | Add |
+|---|---|
+| `class MyAgent(BaseAgent)` | `class MyAgent(K9ValidationLoopAgent)` |
+| `def execute(self, payload)` | `def generate_hypothesis(self, loop_ctx)` |
+| | `def run_validation(self, hypothesis, loop_ctx)` |
+| | `def evaluate_observation(self, tool_result, loop_ctx)` |
+| | `def should_continue(self, observation, loop_ctx)` |
+| | `def finalize(self, loop_ctx) -> ValidationLoopResult` |
+
+**EOC reference agents requiring this migration:**
+- `FraudDetectionAgent` — fraud signal correlation across multiple passes is the canonical iterative use case
+- `DocumentExtractorAgent` — extraction confidence check + re-extraction on parse failure benefits from iterative refinement

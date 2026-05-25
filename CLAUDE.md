@@ -216,6 +216,21 @@ Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version
 | `k9_squad/base_squad.py` | `run(context)` — executes `flow` steps in order |
 | `k9_inference/routers/base_model_router.py` | `route(request)` → `RouteDecision`; `invoke(request)` → `InferenceResponse` |
 | `k9_core/governance/pipeline.py` | `require_governance()` factory; `NoopGovernance`; `GovernanceConfigError` |
+| `k9_agents/validation/base_validation_loop_agent.py` | Iterative loop ABB — `generate_hypothesis` · `run_validation` · `evaluate_observation` · `should_continue` · `finalize` |
+| `k9_agents/validation/k9_validation_loop_agent.py` | OOB LLM-driven loop — extend and override only what differs (analogous to `K9ModelRouter`) |
+
+### Solutions Architect — BaseAgent vs K9ValidationLoopAgent
+
+The generator, intake, and Claude Code scaffold all agents extending `BaseAgent` (one-shot) by default. The SA must decide at design time which agents need the validation loop.
+
+**Decision rule — ask per agent:**
+> *"Does this agent need to test something, observe the result, and decide whether to try again — or does it produce its answer in one pass?"*
+
+| One-pass → `BaseAgent` | Iterative convergence → `K9ValidationLoopAgent` |
+|---|---|
+| Triage, routing, audit, guard, graph sync | Fraud signal correlation, claims evidence, compliance gap, document confidence |
+
+When changing a generated agent to iterative: replace `class MyAgent(BaseAgent)` with `class MyAgent(K9ValidationLoopAgent)` and replace `execute()` with the five loop methods (`generate_hypothesis`, `run_validation`, `evaluate_observation`, `should_continue`, `finalize`). See Skill 10 in SKILLS.md.
 
 ### Factory pattern
 
