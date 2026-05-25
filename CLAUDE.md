@@ -218,6 +218,8 @@ Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version
 | `k9_core/governance/pipeline.py` | `require_governance()` factory; `NoopGovernance`; `GovernanceConfigError` |
 | `k9_agents/validation/base_validation_loop_agent.py` | Iterative loop ABB — `generate_hypothesis` · `run_validation` · `evaluate_observation` · `should_continue` · `finalize` |
 | `k9_agents/validation/k9_validation_loop_agent.py` | OOB LLM-driven loop — extend and override only what differs (analogous to `K9ModelRouter`) |
+| `k9_agents/critic_actor/base_critic_actor_agent.py` | Actor-Critic refinement ABB — `generate` · `critique` · `refine` · `should_accept` · `finalize` |
+| `k9_agents/critic_actor/k9_critic_actor_agent.py` | OOB LLM-driven Actor-Critic — override `critique()` to plug in a real external validator |
 
 ### Solutions Architect — BaseAgent vs K9ValidationLoopAgent
 

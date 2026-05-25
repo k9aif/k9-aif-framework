@@ -4,7 +4,7 @@
 """
 BaseValidationLoopAgent — iterative hypothesis-validate-reason ABB.
 
-Generalises the pattern made prominent by Aardvark-style systems:
+Generalises the iterative convergence pattern:
 
     Hypothesis → Tool/Test → Observation → Re-reason → Continue or Finalize
 
