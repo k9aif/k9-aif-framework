@@ -173,3 +173,59 @@ Once installed, run the inspector against your solution folder to validate ABB c
 ```bash
 python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
 ```
+
+---
+
+## Author's Recommendation
+
+### 1. Know the Framework
+
+Before building, understand the architecture. K9-AIF is built on a strict **ABB/SBB separation** —
+Architecture Building Blocks define the contracts, Solution Building Blocks implement the domain.
+Read `CLAUDE.md` for architecture and `SKILLS.md` for step-by-step recipes. These are the two
+documents that will make you productive fast.
+
+### 2. Use Claude Code with VS Code — the Recommended Path
+
+The most effective way to build with K9-AIF is **Claude Code** inside **VS Code**.
+
+K9-AIF ships with `CLAUDE.md` and `SKILLS.md` — these are loaded automatically by Claude Code,
+giving it a deep understanding of the framework's architecture, conventions, and code generation
+rules. Claude Code will generate agents, squads, orchestrators, and config that comply with the
+framework out of the box, without you having to explain the patterns each time.
+
+Download and install Claude Code from:
+**https://claude.ai/code**
+
+It is available as a VS Code extension, a desktop app, and a CLI.
+Once installed, open your solution folder in VS Code and Claude Code is ready to use.
+
+Claude Code understands:
+- ABB contracts and how to extend them correctly
+- Squad YAML format, agent registration, flow structure
+- Kafka ownership (Router publishes, Orchestrator consumes)
+- Governance enforcement patterns
+- The full inference pipeline through `llm_invoke`
+
+### 3. No Claude Code? Use the Generator
+
+If you are not using Claude Code, use the scaffold generator to create a compliant solution stub:
+
+```bash
+./k9_generator.sh preview <AppName>   # preview what will be generated
+./k9_generator.sh run <AppName>       # generate the solution scaffold
+```
+
+Then validate your solution at any time with:
+
+```bash
+python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
+```
+
+---
+
+**Happy Coding!**
+
+Building Architecture-First Agentic Applications — done right, that really works.
+
+*— Ravi Natarajan, k9x.ai*

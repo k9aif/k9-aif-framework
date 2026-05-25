@@ -34,12 +34,12 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 - [A Simple Way to Think About It](#a-simple-way-to-think-about-it)
 - [Understanding K9-AIF](#understanding-k9-aif)
-- [Zero Trust Execution Layer](#zero-trust-execution-layer)
 - [Core Architectural Concepts](#core-architectural-concepts)
   - [Architecture Building Blocks (ABB)](#architecture-building-blocks-abb)
   - [Solution Building Blocks (SBB)](#solution-building-blocks-sbb)
   - [Architectural Layers](#architectural-layers)
   - [Agent Squads](#agent-squads)
+  - [Zero Trust Execution Layer](#zero-trust-execution-layer)
 - [Prototype Implementations](#prototype-implementations)
 - [Design Goals](#design-goals)
 - [Framework Comparison](#framework-comparison)
@@ -55,6 +55,7 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 - [Contributions](#contributions)
 - [Architectural Foundations](#architectural-foundations)
 - [Architecture Notes & Blog](#architecture-notes--blog)
+- [Author's Recommendation](#authors-recommendation)
 - [Author](#author)
 
 ---
@@ -80,32 +81,6 @@ Start here for a structured explanation of K9-AIF:
 - [FAQ](docs/understanding-k9-aif/06-faq.md)
 
 ---
-
-## Zero Trust Execution Layer
-
-K9-AIF extends its architecture-first approach with a **Zero Trust Execution Layer**.
-
-Traditional Zero Trust focuses on access — who can reach a system.
-
-K9-AIF applies Zero Trust to **execution**:
-
-- Every action is verified before execution  
-- Contextual risk is evaluated (identity, data sensitivity, destination)  
-- Policies are enforced at runtime (allow, conditional, deny)  
-
-This layer is integrated across the architecture:
-
-- **Router** — pre-routing enforcement  
-- **Orchestrator** — pre-execution enforcement  
-
-Architecture principle:
-
-> Zero Trust is not a checkpoint — it is a layer applied across the system.
-
-![Zero Trust Execution Layer](docs/diagrams/k9-security_class_diagram.png)
-
----
-
 
 # Core Architectural Concepts
 
@@ -198,6 +173,28 @@ Core squad framework components include:
 - `SquadLoader`
 - `SquadContext`
 - `DefaultSquadMonitor`
+
+---
+
+## Zero Trust Execution Layer
+
+Once you understand the execution hierarchy (Router → Orchestrator → Squads → Agents), Zero Trust is the cross-cutting layer that governs every step of it.
+
+Traditional Zero Trust focuses on access — who can reach a system.  
+K9-AIF applies Zero Trust to **execution** — every action is verified before it runs.
+
+- Every action is verified before execution
+- Contextual risk is evaluated (identity, data sensitivity, destination)
+- Policies are enforced at runtime (allow, conditional, deny)
+
+This is not a checkpoint at the edge — it is enforced at every layer:
+
+- **Router** — pre-routing enforcement
+- **Orchestrator** — pre-execution enforcement before the Squad runs
+
+> Zero Trust is not a checkpoint — it is a layer applied across the system.
+
+![Zero Trust Execution Layer](docs/diagrams/k9-security_class_diagram.png)
 
 ---
 
@@ -503,6 +500,60 @@ https://blog.k9x.ai/k9-aif-architectural-evaluation-claude/
 
 More posts can be found at:
 https://blog.k9x.ai
+
+---
+
+## Author's Recommendation
+
+### 1. Know the Framework
+
+Before building, understand the architecture. K9-AIF is built on a strict **ABB/SBB separation** —
+Architecture Building Blocks define the contracts, Solution Building Blocks implement the domain.
+Read `CLAUDE.md` for architecture and `SKILLS.md` for step-by-step recipes. These are the two
+documents that will make you productive fast.
+
+### 2. Use Claude Code with VS Code — the Recommended Path
+
+The most effective way to build with K9-AIF is **Claude Code** inside **VS Code**.
+
+K9-AIF ships with `CLAUDE.md` and `SKILLS.md` — these are loaded automatically by Claude Code,
+giving it a deep understanding of the framework's architecture, conventions, and code generation
+rules. Claude Code will generate agents, squads, orchestrators, and config that comply with the
+framework out of the box, without you having to explain the patterns each time.
+
+Download and install Claude Code from:
+**https://claude.ai/code**
+
+It is available as a VS Code extension, a desktop app, and a CLI.
+Once installed, open your solution folder in VS Code and Claude Code is ready to use.
+
+Claude Code understands:
+- ABB contracts and how to extend them correctly
+- Squad YAML format, agent registration, flow structure
+- Kafka ownership (Router publishes, Orchestrator consumes)
+- Governance enforcement patterns
+- The full inference pipeline through `llm_invoke`
+
+### 3. No Claude Code? Use the Generator
+
+If you are not using Claude Code, use the scaffold generator to create a compliant solution stub:
+
+```bash
+./k9_generator.sh preview <AppName>   # preview what will be generated
+./k9_generator.sh run <AppName>       # generate the solution scaffold
+```
+
+Then validate your solution at any time with:
+
+```bash
+python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
+```
+
+---
+
+**Happy Coding!**
+
+Building Architecture-First Agentic Applications — done right, that really works.
 
 ---
 
