@@ -40,11 +40,17 @@
 
             </li>
             <li>
-                    <a class="class" href="#DummyOrchestrator">DummyOrchestrator</a>
+                    <a class="class" href="#SecondDummyAgent">SecondDummyAgent</a>
                             <ul class="memberlist">
                         <li>
-                                <a class="function" href="#DummyOrchestrator.execute">execute</a>
+                                <a class="function" href="#SecondDummyAgent.execute">execute</a>
                         </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#DummyOrchestrator">DummyOrchestrator</a>
+                            <ul class="memberlist">
                 </ul>
 
             </li>
@@ -67,13 +73,31 @@
 
             </li>
             <li>
-                    <a class="function" href="#test_base_squad_run_returns_context">test_base_squad_run_returns_context</a>
-            </li>
-            <li>
-                    <a class="function" href="#test_base_squad_monitor_hooks_are_called">test_base_squad_monitor_hooks_are_called</a>
-            </li>
-            <li>
-                    <a class="function" href="#test_base_squad_defaults">test_base_squad_defaults</a>
+                    <a class="class" href="#TestBaseSquad">TestBaseSquad</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_run_returns_result_dict">test_base_squad_run_returns_result_dict</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents">test_base_squad_accumulates_context_between_agents</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_context_overrides_are_applied">test_base_squad_context_overrides_are_applied</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called">test_base_squad_monitor_hooks_are_called</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_defaults">test_base_squad_defaults</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_raises_when_flow_missing">test_base_squad_raises_when_flow_missing</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing">test_base_squad_raises_when_required_agent_missing</a>
+                        </li>
+                </ul>
+
             </li>
     </ul>
 
@@ -96,80 +120,163 @@
 
                         <label class="view-source-button" for="mod-test_base_squad-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_squad.base_squad</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSquad</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_squad.squad_context</span><span class="w"> </span><span class="kn">import</span> <span class="n">SquadContext</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyAgent</span><span class="p">:</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>        <span class="n">context</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>        <span class="k">return</span> <span class="n">context</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyOrchestrator</span><span class="p">:</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>            <span class="n">context</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>        <span class="k">return</span> <span class="n">context</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyMonitor</span><span class="p">:</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_run_returns_context</span><span class="p">():</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="p">)</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">SquadContext</span><span class="p">)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;value&quot;</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_monitor_hooks_are_called</span><span class="p">():</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>    <span class="n">monitor</span> <span class="o">=</span> <span class="n">DummyMonitor</span><span class="p">()</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>        <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">,</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>    <span class="p">)</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>    <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>    <span class="k">assert</span> <span class="n">monitor</span><span class="o">.</span><span class="n">started</span> <span class="ow">is</span> <span class="kc">True</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="k">assert</span> <span class="n">monitor</span><span class="o">.</span><span class="n">ended</span> <span class="ow">is</span> <span class="kc">True</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_defaults</span><span class="p">():</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>    <span class="p">)</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">squad_id</span> <span class="o">==</span> <span class="s2">&quot;test_squad&quot;</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">agents</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">metadata</span> <span class="o">==</span> <span class="p">{}</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">unittest</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_squad.base_squad</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSquad</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyAgent</span><span class="p">:</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a>            <span class="s2">&quot;agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a>            <span class="s2">&quot;input_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">),</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>            <span class="s2">&quot;squad_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;squad_id&quot;</span><span class="p">),</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a>        <span class="p">}</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="k">class</span><span class="w"> </span><span class="nc">SecondDummyAgent</span><span class="p">:</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>            <span class="s2">&quot;second_agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a>            <span class="s2">&quot;previous_result_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">),</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>        <span class="p">}</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyOrchestrator</span><span class="p">:</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>    <span class="k">pass</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyMonitor</span><span class="p">:</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="k">class</span><span class="w"> </span><span class="nc">TestBaseSquad</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_run_returns_result_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>        <span class="p">)</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="p">]</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span> <span class="s2">&quot;completed&quot;</span><span class="p">)</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;squad_id&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;squad_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_accumulates_context_between_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">(),</span> <span class="n">SecondDummyAgent</span><span class="p">()],</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="p">)</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">},</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;SecondDummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;second&quot;</span><span class="p">},</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="p">]</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;second_agent_ran&quot;</span><span class="p">])</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;previous_result_seen&quot;</span><span class="p">])</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_context_overrides_are_applied</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>        <span class="p">)</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>            <span class="p">{</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>                <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>                <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>                <span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;override_value&quot;</span><span class="p">},</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>            <span class="p">}</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="p">]</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;original_value&quot;</span><span class="p">})</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;override_value&quot;</span><span class="p">)</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_monitor_hooks_are_called</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>        <span class="n">monitor</span> <span class="o">=</span> <span class="n">DummyMonitor</span><span class="p">()</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>            <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">,</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="p">)</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>        <span class="p">]</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended</span><span class="p">)</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>        <span class="p">)</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_flow_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>        <span class="p">)</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_required_agent_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>        <span class="p">)</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>        <span class="p">]</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
 </span></pre></div>
 
 
@@ -185,10 +292,13 @@
 
     </div>
     <a class="headerlink" href="#DummyAgent"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyAgent-9"><a href="#DummyAgent-9"><span class="linenos"> 9</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyAgent</span><span class="p">:</span>
-</span><span id="DummyAgent-10"><a href="#DummyAgent-10"><span class="linenos">10</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="DummyAgent-11"><a href="#DummyAgent-11"><span class="linenos">11</span></a>        <span class="n">context</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-</span><span id="DummyAgent-12"><a href="#DummyAgent-12"><span class="linenos">12</span></a>        <span class="k">return</span> <span class="n">context</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyAgent-10"><a href="#DummyAgent-10"><span class="linenos">10</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyAgent</span><span class="p">:</span>
+</span><span id="DummyAgent-11"><a href="#DummyAgent-11"><span class="linenos">11</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="DummyAgent-12"><a href="#DummyAgent-12"><span class="linenos">12</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="DummyAgent-13"><a href="#DummyAgent-13"><span class="linenos">13</span></a>            <span class="s2">&quot;agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="DummyAgent-14"><a href="#DummyAgent-14"><span class="linenos">14</span></a>            <span class="s2">&quot;input_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">),</span>
+</span><span id="DummyAgent-15"><a href="#DummyAgent-15"><span class="linenos">15</span></a>            <span class="s2">&quot;squad_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;squad_id&quot;</span><span class="p">),</span>
+</span><span id="DummyAgent-16"><a href="#DummyAgent-16"><span class="linenos">16</span></a>        <span class="p">}</span>
 </span></pre></div>
 
 
@@ -205,9 +315,57 @@
 
     </div>
     <a class="headerlink" href="#DummyAgent.execute"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyAgent.execute-10"><a href="#DummyAgent.execute-10"><span class="linenos">10</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="DummyAgent.execute-11"><a href="#DummyAgent.execute-11"><span class="linenos">11</span></a>        <span class="n">context</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-</span><span id="DummyAgent.execute-12"><a href="#DummyAgent.execute-12"><span class="linenos">12</span></a>        <span class="k">return</span> <span class="n">context</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyAgent.execute-11"><a href="#DummyAgent.execute-11"><span class="linenos">11</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="DummyAgent.execute-12"><a href="#DummyAgent.execute-12"><span class="linenos">12</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="DummyAgent.execute-13"><a href="#DummyAgent.execute-13"><span class="linenos">13</span></a>            <span class="s2">&quot;agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="DummyAgent.execute-14"><a href="#DummyAgent.execute-14"><span class="linenos">14</span></a>            <span class="s2">&quot;input_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">),</span>
+</span><span id="DummyAgent.execute-15"><a href="#DummyAgent.execute-15"><span class="linenos">15</span></a>            <span class="s2">&quot;squad_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;squad_id&quot;</span><span class="p">),</span>
+</span><span id="DummyAgent.execute-16"><a href="#DummyAgent.execute-16"><span class="linenos">16</span></a>        <span class="p">}</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                </section>
+                <section id="SecondDummyAgent">
+                            <input id="SecondDummyAgent-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">SecondDummyAgent</span>:
+
+                <label class="view-source-button" for="SecondDummyAgent-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#SecondDummyAgent"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SecondDummyAgent-19"><a href="#SecondDummyAgent-19"><span class="linenos">19</span></a><span class="k">class</span><span class="w"> </span><span class="nc">SecondDummyAgent</span><span class="p">:</span>
+</span><span id="SecondDummyAgent-20"><a href="#SecondDummyAgent-20"><span class="linenos">20</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="SecondDummyAgent-21"><a href="#SecondDummyAgent-21"><span class="linenos">21</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="SecondDummyAgent-22"><a href="#SecondDummyAgent-22"><span class="linenos">22</span></a>            <span class="s2">&quot;second_agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="SecondDummyAgent-23"><a href="#SecondDummyAgent-23"><span class="linenos">23</span></a>            <span class="s2">&quot;previous_result_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">),</span>
+</span><span id="SecondDummyAgent-24"><a href="#SecondDummyAgent-24"><span class="linenos">24</span></a>        <span class="p">}</span>
+</span></pre></div>
+
+
+    
+
+                            <div id="SecondDummyAgent.execute" class="classattr">
+                                        <input id="SecondDummyAgent.execute-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">execute</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">context</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="SecondDummyAgent.execute-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#SecondDummyAgent.execute"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SecondDummyAgent.execute-20"><a href="#SecondDummyAgent.execute-20"><span class="linenos">20</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="SecondDummyAgent.execute-21"><a href="#SecondDummyAgent.execute-21"><span class="linenos">21</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="SecondDummyAgent.execute-22"><a href="#SecondDummyAgent.execute-22"><span class="linenos">22</span></a>            <span class="s2">&quot;second_agent_ran&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="SecondDummyAgent.execute-23"><a href="#SecondDummyAgent.execute-23"><span class="linenos">23</span></a>            <span class="s2">&quot;previous_result_seen&quot;</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dummy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">),</span>
+</span><span id="SecondDummyAgent.execute-24"><a href="#SecondDummyAgent.execute-24"><span class="linenos">24</span></a>        <span class="p">}</span>
 </span></pre></div>
 
 
@@ -226,37 +384,13 @@
 
     </div>
     <a class="headerlink" href="#DummyOrchestrator"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyOrchestrator-15"><a href="#DummyOrchestrator-15"><span class="linenos">15</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyOrchestrator</span><span class="p">:</span>
-</span><span id="DummyOrchestrator-16"><a href="#DummyOrchestrator-16"><span class="linenos">16</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="DummyOrchestrator-17"><a href="#DummyOrchestrator-17"><span class="linenos">17</span></a>        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
-</span><span id="DummyOrchestrator-18"><a href="#DummyOrchestrator-18"><span class="linenos">18</span></a>            <span class="n">context</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span id="DummyOrchestrator-19"><a href="#DummyOrchestrator-19"><span class="linenos">19</span></a>        <span class="k">return</span> <span class="n">context</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyOrchestrator-27"><a href="#DummyOrchestrator-27"><span class="linenos">27</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyOrchestrator</span><span class="p">:</span>
+</span><span id="DummyOrchestrator-28"><a href="#DummyOrchestrator-28"><span class="linenos">28</span></a>    <span class="k">pass</span>
 </span></pre></div>
 
 
     
 
-                            <div id="DummyOrchestrator.execute" class="classattr">
-                                        <input id="DummyOrchestrator.execute-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-            
-        <span class="def">def</span>
-        <span class="name">execute</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">squad</span>, </span><span class="param"><span class="n">context</span></span><span class="return-annotation">):</span></span>
-
-                <label class="view-source-button" for="DummyOrchestrator.execute-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#DummyOrchestrator.execute"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyOrchestrator.execute-16"><a href="#DummyOrchestrator.execute-16"><span class="linenos">16</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-</span><span id="DummyOrchestrator.execute-17"><a href="#DummyOrchestrator.execute-17"><span class="linenos">17</span></a>        <span class="k">for</span> <span class="n">agent</span> <span class="ow">in</span> <span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">:</span>
-</span><span id="DummyOrchestrator.execute-18"><a href="#DummyOrchestrator.execute-18"><span class="linenos">18</span></a>            <span class="n">context</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span id="DummyOrchestrator.execute-19"><a href="#DummyOrchestrator.execute-19"><span class="linenos">19</span></a>        <span class="k">return</span> <span class="n">context</span>
-</span></pre></div>
-
-
-    
-
-                            </div>
                 </section>
                 <section id="DummyMonitor">
                             <input id="DummyMonitor-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -269,16 +403,18 @@
 
     </div>
     <a class="headerlink" href="#DummyMonitor"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor-22"><a href="#DummyMonitor-22"><span class="linenos">22</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyMonitor</span><span class="p">:</span>
-</span><span id="DummyMonitor-23"><a href="#DummyMonitor-23"><span class="linenos">23</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="DummyMonitor-24"><a href="#DummyMonitor-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="DummyMonitor-25"><a href="#DummyMonitor-25"><span class="linenos">25</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="DummyMonitor-26"><a href="#DummyMonitor-26"><span class="linenos">26</span></a>
-</span><span id="DummyMonitor-27"><a href="#DummyMonitor-27"><span class="linenos">27</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="DummyMonitor-28"><a href="#DummyMonitor-28"><span class="linenos">28</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="DummyMonitor-29"><a href="#DummyMonitor-29"><span class="linenos">29</span></a>
-</span><span id="DummyMonitor-30"><a href="#DummyMonitor-30"><span class="linenos">30</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="DummyMonitor-31"><a href="#DummyMonitor-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor-31"><a href="#DummyMonitor-31"><span class="linenos">31</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DummyMonitor</span><span class="p">:</span>
+</span><span id="DummyMonitor-32"><a href="#DummyMonitor-32"><span class="linenos">32</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="DummyMonitor-33"><a href="#DummyMonitor-33"><span class="linenos">33</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="DummyMonitor-34"><a href="#DummyMonitor-34"><span class="linenos">34</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="DummyMonitor-35"><a href="#DummyMonitor-35"><span class="linenos">35</span></a>
+</span><span id="DummyMonitor-36"><a href="#DummyMonitor-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="DummyMonitor-37"><a href="#DummyMonitor-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="DummyMonitor-38"><a href="#DummyMonitor-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
+</span><span id="DummyMonitor-39"><a href="#DummyMonitor-39"><span class="linenos">39</span></a>
+</span><span id="DummyMonitor-40"><a href="#DummyMonitor-40"><span class="linenos">40</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="DummyMonitor-41"><a href="#DummyMonitor-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="DummyMonitor-42"><a href="#DummyMonitor-42"><span class="linenos">42</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
 </span></pre></div>
 
 
@@ -317,8 +453,9 @@
 
     </div>
     <a class="headerlink" href="#DummyMonitor.on_squad_start"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor.on_squad_start-27"><a href="#DummyMonitor.on_squad_start-27"><span class="linenos">27</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="DummyMonitor.on_squad_start-28"><a href="#DummyMonitor.on_squad_start-28"><span class="linenos">28</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor.on_squad_start-36"><a href="#DummyMonitor.on_squad_start-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="DummyMonitor.on_squad_start-37"><a href="#DummyMonitor.on_squad_start-37"><span class="linenos">37</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="DummyMonitor.on_squad_start-38"><a href="#DummyMonitor.on_squad_start-38"><span class="linenos">38</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">started_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
 </span></pre></div>
 
 
@@ -336,8 +473,9 @@
 
     </div>
     <a class="headerlink" href="#DummyMonitor.on_squad_end"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor.on_squad_end-30"><a href="#DummyMonitor.on_squad_end-30"><span class="linenos">30</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
-</span><span id="DummyMonitor.on_squad_end-31"><a href="#DummyMonitor.on_squad_end-31"><span class="linenos">31</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DummyMonitor.on_squad_end-40"><a href="#DummyMonitor.on_squad_end-40"><span class="linenos">40</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_squad_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squad_id</span><span class="p">):</span>
+</span><span id="DummyMonitor.on_squad_end-41"><a href="#DummyMonitor.on_squad_end-41"><span class="linenos">41</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="DummyMonitor.on_squad_end-42"><a href="#DummyMonitor.on_squad_end-42"><span class="linenos">42</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ended_squad_id</span> <span class="o">=</span> <span class="n">squad_id</span>
 </span></pre></div>
 
 
@@ -345,94 +483,387 @@
 
                             </div>
                 </section>
-                <section id="test_base_squad_run_returns_context">
-                            <input id="test_base_squad_run_returns_context-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="TestBaseSquad">
+                            <input id="TestBaseSquad-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">TestBaseSquad</span><wbr>(<span class="base">unittest.case.TestCase</span>):
+
+                <label class="view-source-button" for="TestBaseSquad-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#TestBaseSquad"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad-45"><a href="#TestBaseSquad-45"><span class="linenos"> 45</span></a><span class="k">class</span><span class="w"> </span><span class="nc">TestBaseSquad</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+</span><span id="TestBaseSquad-46"><a href="#TestBaseSquad-46"><span class="linenos"> 46</span></a>
+</span><span id="TestBaseSquad-47"><a href="#TestBaseSquad-47"><span class="linenos"> 47</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_run_returns_result_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-48"><a href="#TestBaseSquad-48"><span class="linenos"> 48</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-49"><a href="#TestBaseSquad-49"><span class="linenos"> 49</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-50"><a href="#TestBaseSquad-50"><span class="linenos"> 50</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad-51"><a href="#TestBaseSquad-51"><span class="linenos"> 51</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-52"><a href="#TestBaseSquad-52"><span class="linenos"> 52</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-53"><a href="#TestBaseSquad-53"><span class="linenos"> 53</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad-54"><a href="#TestBaseSquad-54"><span class="linenos"> 54</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad-55"><a href="#TestBaseSquad-55"><span class="linenos"> 55</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad-56"><a href="#TestBaseSquad-56"><span class="linenos"> 56</span></a>
+</span><span id="TestBaseSquad-57"><a href="#TestBaseSquad-57"><span class="linenos"> 57</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad-58"><a href="#TestBaseSquad-58"><span class="linenos"> 58</span></a>
+</span><span id="TestBaseSquad-59"><a href="#TestBaseSquad-59"><span class="linenos"> 59</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span> <span class="s2">&quot;completed&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-60"><a href="#TestBaseSquad-60"><span class="linenos"> 60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;squad_id&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-61"><a href="#TestBaseSquad-61"><span class="linenos"> 61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad-62"><a href="#TestBaseSquad-62"><span class="linenos"> 62</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-63"><a href="#TestBaseSquad-63"><span class="linenos"> 63</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;squad_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-64"><a href="#TestBaseSquad-64"><span class="linenos"> 64</span></a>
+</span><span id="TestBaseSquad-65"><a href="#TestBaseSquad-65"><span class="linenos"> 65</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_accumulates_context_between_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-66"><a href="#TestBaseSquad-66"><span class="linenos"> 66</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-67"><a href="#TestBaseSquad-67"><span class="linenos"> 67</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-68"><a href="#TestBaseSquad-68"><span class="linenos"> 68</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">(),</span> <span class="n">SecondDummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad-69"><a href="#TestBaseSquad-69"><span class="linenos"> 69</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-70"><a href="#TestBaseSquad-70"><span class="linenos"> 70</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-71"><a href="#TestBaseSquad-71"><span class="linenos"> 71</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad-72"><a href="#TestBaseSquad-72"><span class="linenos"> 72</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad-73"><a href="#TestBaseSquad-73"><span class="linenos"> 73</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;SecondDummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;second&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad-74"><a href="#TestBaseSquad-74"><span class="linenos"> 74</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad-75"><a href="#TestBaseSquad-75"><span class="linenos"> 75</span></a>
+</span><span id="TestBaseSquad-76"><a href="#TestBaseSquad-76"><span class="linenos"> 76</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad-77"><a href="#TestBaseSquad-77"><span class="linenos"> 77</span></a>
+</span><span id="TestBaseSquad-78"><a href="#TestBaseSquad-78"><span class="linenos"> 78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad-79"><a href="#TestBaseSquad-79"><span class="linenos"> 79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;second_agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad-80"><a href="#TestBaseSquad-80"><span class="linenos"> 80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;previous_result_seen&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad-81"><a href="#TestBaseSquad-81"><span class="linenos"> 81</span></a>
+</span><span id="TestBaseSquad-82"><a href="#TestBaseSquad-82"><span class="linenos"> 82</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_context_overrides_are_applied</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-83"><a href="#TestBaseSquad-83"><span class="linenos"> 83</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-84"><a href="#TestBaseSquad-84"><span class="linenos"> 84</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-85"><a href="#TestBaseSquad-85"><span class="linenos"> 85</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad-86"><a href="#TestBaseSquad-86"><span class="linenos"> 86</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-87"><a href="#TestBaseSquad-87"><span class="linenos"> 87</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-88"><a href="#TestBaseSquad-88"><span class="linenos"> 88</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad-89"><a href="#TestBaseSquad-89"><span class="linenos"> 89</span></a>            <span class="p">{</span>
+</span><span id="TestBaseSquad-90"><a href="#TestBaseSquad-90"><span class="linenos"> 90</span></a>                <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-91"><a href="#TestBaseSquad-91"><span class="linenos"> 91</span></a>                <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-92"><a href="#TestBaseSquad-92"><span class="linenos"> 92</span></a>                <span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;override_value&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad-93"><a href="#TestBaseSquad-93"><span class="linenos"> 93</span></a>            <span class="p">}</span>
+</span><span id="TestBaseSquad-94"><a href="#TestBaseSquad-94"><span class="linenos"> 94</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad-95"><a href="#TestBaseSquad-95"><span class="linenos"> 95</span></a>
+</span><span id="TestBaseSquad-96"><a href="#TestBaseSquad-96"><span class="linenos"> 96</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;original_value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad-97"><a href="#TestBaseSquad-97"><span class="linenos"> 97</span></a>
+</span><span id="TestBaseSquad-98"><a href="#TestBaseSquad-98"><span class="linenos"> 98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;override_value&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-99"><a href="#TestBaseSquad-99"><span class="linenos"> 99</span></a>
+</span><span id="TestBaseSquad-100"><a href="#TestBaseSquad-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_monitor_hooks_are_called</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-101"><a href="#TestBaseSquad-101"><span class="linenos">101</span></a>        <span class="n">monitor</span> <span class="o">=</span> <span class="n">DummyMonitor</span><span class="p">()</span>
+</span><span id="TestBaseSquad-102"><a href="#TestBaseSquad-102"><span class="linenos">102</span></a>
+</span><span id="TestBaseSquad-103"><a href="#TestBaseSquad-103"><span class="linenos">103</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-104"><a href="#TestBaseSquad-104"><span class="linenos">104</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-105"><a href="#TestBaseSquad-105"><span class="linenos">105</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad-106"><a href="#TestBaseSquad-106"><span class="linenos">106</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-107"><a href="#TestBaseSquad-107"><span class="linenos">107</span></a>            <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">,</span>
+</span><span id="TestBaseSquad-108"><a href="#TestBaseSquad-108"><span class="linenos">108</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-109"><a href="#TestBaseSquad-109"><span class="linenos">109</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad-110"><a href="#TestBaseSquad-110"><span class="linenos">110</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad-111"><a href="#TestBaseSquad-111"><span class="linenos">111</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad-112"><a href="#TestBaseSquad-112"><span class="linenos">112</span></a>
+</span><span id="TestBaseSquad-113"><a href="#TestBaseSquad-113"><span class="linenos">113</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad-114"><a href="#TestBaseSquad-114"><span class="linenos">114</span></a>
+</span><span id="TestBaseSquad-115"><a href="#TestBaseSquad-115"><span class="linenos">115</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+</span><span id="TestBaseSquad-116"><a href="#TestBaseSquad-116"><span class="linenos">116</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended</span><span class="p">)</span>
+</span><span id="TestBaseSquad-117"><a href="#TestBaseSquad-117"><span class="linenos">117</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-118"><a href="#TestBaseSquad-118"><span class="linenos">118</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-119"><a href="#TestBaseSquad-119"><span class="linenos">119</span></a>
+</span><span id="TestBaseSquad-120"><a href="#TestBaseSquad-120"><span class="linenos">120</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-121"><a href="#TestBaseSquad-121"><span class="linenos">121</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-122"><a href="#TestBaseSquad-122"><span class="linenos">122</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-123"><a href="#TestBaseSquad-123"><span class="linenos">123</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="TestBaseSquad-124"><a href="#TestBaseSquad-124"><span class="linenos">124</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-125"><a href="#TestBaseSquad-125"><span class="linenos">125</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-126"><a href="#TestBaseSquad-126"><span class="linenos">126</span></a>
+</span><span id="TestBaseSquad-127"><a href="#TestBaseSquad-127"><span class="linenos">127</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-128"><a href="#TestBaseSquad-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="TestBaseSquad-129"><a href="#TestBaseSquad-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad-130"><a href="#TestBaseSquad-130"><span class="linenos">130</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="TestBaseSquad-131"><a href="#TestBaseSquad-131"><span class="linenos">131</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="TestBaseSquad-132"><a href="#TestBaseSquad-132"><span class="linenos">132</span></a>
+</span><span id="TestBaseSquad-133"><a href="#TestBaseSquad-133"><span class="linenos">133</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_flow_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-134"><a href="#TestBaseSquad-134"><span class="linenos">134</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-135"><a href="#TestBaseSquad-135"><span class="linenos">135</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-136"><a href="#TestBaseSquad-136"><span class="linenos">136</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad-137"><a href="#TestBaseSquad-137"><span class="linenos">137</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-138"><a href="#TestBaseSquad-138"><span class="linenos">138</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-139"><a href="#TestBaseSquad-139"><span class="linenos">139</span></a>
+</span><span id="TestBaseSquad-140"><a href="#TestBaseSquad-140"><span class="linenos">140</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="TestBaseSquad-141"><a href="#TestBaseSquad-141"><span class="linenos">141</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad-142"><a href="#TestBaseSquad-142"><span class="linenos">142</span></a>
+</span><span id="TestBaseSquad-143"><a href="#TestBaseSquad-143"><span class="linenos">143</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_required_agent_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad-144"><a href="#TestBaseSquad-144"><span class="linenos">144</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad-145"><a href="#TestBaseSquad-145"><span class="linenos">145</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad-146"><a href="#TestBaseSquad-146"><span class="linenos">146</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="TestBaseSquad-147"><a href="#TestBaseSquad-147"><span class="linenos">147</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad-148"><a href="#TestBaseSquad-148"><span class="linenos">148</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad-149"><a href="#TestBaseSquad-149"><span class="linenos">149</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad-150"><a href="#TestBaseSquad-150"><span class="linenos">150</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad-151"><a href="#TestBaseSquad-151"><span class="linenos">151</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad-152"><a href="#TestBaseSquad-152"><span class="linenos">152</span></a>
+</span><span id="TestBaseSquad-153"><a href="#TestBaseSquad-153"><span class="linenos">153</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="TestBaseSquad-154"><a href="#TestBaseSquad-154"><span class="linenos">154</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>A class whose instances are single test cases.</p>
+
+<p>By default, the test code itself should be placed in a method named
+'runTest'.</p>
+
+<p>If the fixture may be used for many test cases, create as
+many test methods as are needed. When instantiating such a TestCase
+subclass, specify in the constructor arguments the name of the test method
+that the instance is to execute.</p>
+
+<p>Test authors should subclass TestCase for their own tests. Construction
+and deconstruction of the test's environment ('fixture') can be
+implemented by overriding the 'setUp' and 'tearDown' methods respectively.</p>
+
+<p>If it is necessary to override the __init__ method, the base class
+__init__ method must always be called. It is important that subclasses
+should not change the signature of their __init__ method, since instances
+of the classes are instantiated automatically by parts of the framework
+in order to be run.</p>
+
+<p>When subclassing TestCase, you can set these attributes:</p>
+
+<ul>
+<li>failureException: determines which exception will be raised when
+the instance's assertion methods fail; test methods raising this
+exception will be deemed to have 'failed' rather than 'errored'.</li>
+<li>longMessage: determines whether long messages (including repr of
+objects used in assert methods) will be printed on failure in <em>addition</em>
+to any explicit message passed.</li>
+<li>maxDiff: sets the maximum length of a diff in failure messages
+by assert methods using difflib. It is looked up as an instance
+attribute so can be configured by individual tests if required.</li>
+</ul>
+</div>
+
+
+                            <div id="TestBaseSquad.test_base_squad_run_returns_result_dict" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_run_returns_result_dict-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">test_base_squad_run_returns_context</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+        <span class="name">test_base_squad_run_returns_result_dict</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
 
-                <label class="view-source-button" for="test_base_squad_run_returns_context-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_run_returns_result_dict-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#test_base_squad_run_returns_context"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_base_squad_run_returns_context-34"><a href="#test_base_squad_run_returns_context-34"><span class="linenos">34</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_run_returns_context</span><span class="p">():</span>
-</span><span id="test_base_squad_run_returns_context-35"><a href="#test_base_squad_run_returns_context-35"><span class="linenos">35</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="test_base_squad_run_returns_context-36"><a href="#test_base_squad_run_returns_context-36"><span class="linenos">36</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="test_base_squad_run_returns_context-37"><a href="#test_base_squad_run_returns_context-37"><span class="linenos">37</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
-</span><span id="test_base_squad_run_returns_context-38"><a href="#test_base_squad_run_returns_context-38"><span class="linenos">38</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="test_base_squad_run_returns_context-39"><a href="#test_base_squad_run_returns_context-39"><span class="linenos">39</span></a>    <span class="p">)</span>
-</span><span id="test_base_squad_run_returns_context-40"><a href="#test_base_squad_run_returns_context-40"><span class="linenos">40</span></a>
-</span><span id="test_base_squad_run_returns_context-41"><a href="#test_base_squad_run_returns_context-41"><span class="linenos">41</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
-</span><span id="test_base_squad_run_returns_context-42"><a href="#test_base_squad_run_returns_context-42"><span class="linenos">42</span></a>
-</span><span id="test_base_squad_run_returns_context-43"><a href="#test_base_squad_run_returns_context-43"><span class="linenos">43</span></a>    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">SquadContext</span><span class="p">)</span>
-</span><span id="test_base_squad_run_returns_context-44"><a href="#test_base_squad_run_returns_context-44"><span class="linenos">44</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;value&quot;</span>
-</span><span id="test_base_squad_run_returns_context-45"><a href="#test_base_squad_run_returns_context-45"><span class="linenos">45</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_run_returns_result_dict"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-47"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-47"><span class="linenos">47</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_run_returns_result_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-48"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-48"><span class="linenos">48</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-49"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-49"><span class="linenos">49</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-50"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-50"><span class="linenos">50</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-51"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-51"><span class="linenos">51</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-52"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-52"><span class="linenos">52</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-53"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-53"><span class="linenos">53</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-54"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-54"><span class="linenos">54</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-55"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-55"><span class="linenos">55</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-56"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-56"><span class="linenos">56</span></a>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-57"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-57"><span class="linenos">57</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-58"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-58"><span class="linenos">58</span></a>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-59"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-59"><span class="linenos">59</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span> <span class="s2">&quot;completed&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-60"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-60"><span class="linenos">60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;squad_id&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-61"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-61"><span class="linenos">61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-62"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-62"><span class="linenos">62</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_run_returns_result_dict-63"><a href="#TestBaseSquad.test_base_squad_run_returns_result_dict-63"><span class="linenos">63</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;squad_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
     
 
-                </section>
-                <section id="test_base_squad_monitor_hooks_are_called">
-                            <input id="test_base_squad_monitor_hooks_are_called-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_accumulates_context_between_agents" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">test_base_squad_monitor_hooks_are_called</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+        <span class="name">test_base_squad_accumulates_context_between_agents</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
 
-                <label class="view-source-button" for="test_base_squad_monitor_hooks_are_called-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_accumulates_context_between_agents-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#test_base_squad_monitor_hooks_are_called"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_base_squad_monitor_hooks_are_called-48"><a href="#test_base_squad_monitor_hooks_are_called-48"><span class="linenos">48</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_monitor_hooks_are_called</span><span class="p">():</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-49"><a href="#test_base_squad_monitor_hooks_are_called-49"><span class="linenos">49</span></a>    <span class="n">monitor</span> <span class="o">=</span> <span class="n">DummyMonitor</span><span class="p">()</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-50"><a href="#test_base_squad_monitor_hooks_are_called-50"><span class="linenos">50</span></a>
-</span><span id="test_base_squad_monitor_hooks_are_called-51"><a href="#test_base_squad_monitor_hooks_are_called-51"><span class="linenos">51</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-52"><a href="#test_base_squad_monitor_hooks_are_called-52"><span class="linenos">52</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-53"><a href="#test_base_squad_monitor_hooks_are_called-53"><span class="linenos">53</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-54"><a href="#test_base_squad_monitor_hooks_are_called-54"><span class="linenos">54</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-55"><a href="#test_base_squad_monitor_hooks_are_called-55"><span class="linenos">55</span></a>        <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">,</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-56"><a href="#test_base_squad_monitor_hooks_are_called-56"><span class="linenos">56</span></a>    <span class="p">)</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-57"><a href="#test_base_squad_monitor_hooks_are_called-57"><span class="linenos">57</span></a>
-</span><span id="test_base_squad_monitor_hooks_are_called-58"><a href="#test_base_squad_monitor_hooks_are_called-58"><span class="linenos">58</span></a>    <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-59"><a href="#test_base_squad_monitor_hooks_are_called-59"><span class="linenos">59</span></a>
-</span><span id="test_base_squad_monitor_hooks_are_called-60"><a href="#test_base_squad_monitor_hooks_are_called-60"><span class="linenos">60</span></a>    <span class="k">assert</span> <span class="n">monitor</span><span class="o">.</span><span class="n">started</span> <span class="ow">is</span> <span class="kc">True</span>
-</span><span id="test_base_squad_monitor_hooks_are_called-61"><a href="#test_base_squad_monitor_hooks_are_called-61"><span class="linenos">61</span></a>    <span class="k">assert</span> <span class="n">monitor</span><span class="o">.</span><span class="n">ended</span> <span class="ow">is</span> <span class="kc">True</span>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-65"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-65"><span class="linenos">65</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_accumulates_context_between_agents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-66"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-66"><span class="linenos">66</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-67"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-67"><span class="linenos">67</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-68"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-68"><span class="linenos">68</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">(),</span> <span class="n">SecondDummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-69"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-69"><span class="linenos">69</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-70"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-70"><span class="linenos">70</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-71"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-71"><span class="linenos">71</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-72"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-72"><span class="linenos">72</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-73"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-73"><span class="linenos">73</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;SecondDummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;second&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-74"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-74"><span class="linenos">74</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-75"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-75"><span class="linenos">75</span></a>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-76"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-76"><span class="linenos">76</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-77"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-77"><span class="linenos">77</span></a>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-78"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-78"><span class="linenos">78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-79"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-79"><span class="linenos">79</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;second_agent_ran&quot;</span><span class="p">])</span>
+</span><span id="TestBaseSquad.test_base_squad_accumulates_context_between_agents-80"><a href="#TestBaseSquad.test_base_squad_accumulates_context_between_agents-80"><span class="linenos">80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;second&quot;</span><span class="p">][</span><span class="s2">&quot;previous_result_seen&quot;</span><span class="p">])</span>
 </span></pre></div>
 
 
     
 
-                </section>
-                <section id="test_base_squad_defaults">
-                            <input id="test_base_squad_defaults-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_context_overrides_are_applied" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_context_overrides_are_applied-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">test_base_squad_defaults</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+        <span class="name">test_base_squad_context_overrides_are_applied</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
 
-                <label class="view-source-button" for="test_base_squad_defaults-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_context_overrides_are_applied-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#test_base_squad_defaults"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_base_squad_defaults-64"><a href="#test_base_squad_defaults-64"><span class="linenos">64</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_defaults</span><span class="p">():</span>
-</span><span id="test_base_squad_defaults-65"><a href="#test_base_squad_defaults-65"><span class="linenos">65</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
-</span><span id="test_base_squad_defaults-66"><a href="#test_base_squad_defaults-66"><span class="linenos">66</span></a>        <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
-</span><span id="test_base_squad_defaults-67"><a href="#test_base_squad_defaults-67"><span class="linenos">67</span></a>        <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
-</span><span id="test_base_squad_defaults-68"><a href="#test_base_squad_defaults-68"><span class="linenos">68</span></a>        <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
-</span><span id="test_base_squad_defaults-69"><a href="#test_base_squad_defaults-69"><span class="linenos">69</span></a>    <span class="p">)</span>
-</span><span id="test_base_squad_defaults-70"><a href="#test_base_squad_defaults-70"><span class="linenos">70</span></a>
-</span><span id="test_base_squad_defaults-71"><a href="#test_base_squad_defaults-71"><span class="linenos">71</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">squad_id</span> <span class="o">==</span> <span class="s2">&quot;test_squad&quot;</span>
-</span><span id="test_base_squad_defaults-72"><a href="#test_base_squad_defaults-72"><span class="linenos">72</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">agents</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span id="test_base_squad_defaults-73"><a href="#test_base_squad_defaults-73"><span class="linenos">73</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">description</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
-</span><span id="test_base_squad_defaults-74"><a href="#test_base_squad_defaults-74"><span class="linenos">74</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span id="test_base_squad_defaults-75"><a href="#test_base_squad_defaults-75"><span class="linenos">75</span></a>    <span class="k">assert</span> <span class="n">squad</span><span class="o">.</span><span class="n">metadata</span> <span class="o">==</span> <span class="p">{}</span>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_context_overrides_are_applied"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-82"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-82"><span class="linenos">82</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_context_overrides_are_applied</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-83"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-83"><span class="linenos">83</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-84"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-84"><span class="linenos">84</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-85"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-85"><span class="linenos">85</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-86"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-86"><span class="linenos">86</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-87"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-87"><span class="linenos">87</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-88"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-88"><span class="linenos">88</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-89"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-89"><span class="linenos">89</span></a>            <span class="p">{</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-90"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-90"><span class="linenos">90</span></a>                <span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-91"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-91"><span class="linenos">91</span></a>                <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-92"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-92"><span class="linenos">92</span></a>                <span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;override_value&quot;</span><span class="p">},</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-93"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-93"><span class="linenos">93</span></a>            <span class="p">}</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-94"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-94"><span class="linenos">94</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-95"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-95"><span class="linenos">95</span></a>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-96"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-96"><span class="linenos">96</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;original_value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-97"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-97"><span class="linenos">97</span></a>
+</span><span id="TestBaseSquad.test_base_squad_context_overrides_are_applied-98"><a href="#TestBaseSquad.test_base_squad_context_overrides_are_applied-98"><span class="linenos">98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;dummy&quot;</span><span class="p">][</span><span class="s2">&quot;input_seen&quot;</span><span class="p">],</span> <span class="s2">&quot;override_value&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
     
 
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_monitor_hooks_are_called" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_base_squad_monitor_hooks_are_called</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_monitor_hooks_are_called-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-100"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_monitor_hooks_are_called</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-101"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-101"><span class="linenos">101</span></a>        <span class="n">monitor</span> <span class="o">=</span> <span class="n">DummyMonitor</span><span class="p">()</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-102"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-102"><span class="linenos">102</span></a>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-103"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-103"><span class="linenos">103</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-104"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-104"><span class="linenos">104</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-105"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-105"><span class="linenos">105</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-106"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-106"><span class="linenos">106</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-107"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-107"><span class="linenos">107</span></a>            <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-108"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-108"><span class="linenos">108</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-109"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-109"><span class="linenos">109</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-110"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-110"><span class="linenos">110</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-111"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-111"><span class="linenos">111</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-112"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-112"><span class="linenos">112</span></a>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-113"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-113"><span class="linenos">113</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-114"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-114"><span class="linenos">114</span></a>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-115"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-115"><span class="linenos">115</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-116"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-116"><span class="linenos">116</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-117"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-117"><span class="linenos">117</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">started_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_monitor_hooks_are_called-118"><a href="#TestBaseSquad.test_base_squad_monitor_hooks_are_called-118"><span class="linenos">118</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">monitor</span><span class="o">.</span><span class="n">ended_squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_defaults" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_defaults-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_base_squad_defaults</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_defaults-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_defaults"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_defaults-120"><a href="#TestBaseSquad.test_base_squad_defaults-120"><span class="linenos">120</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_defaults</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-121"><a href="#TestBaseSquad.test_base_squad_defaults-121"><span class="linenos">121</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-122"><a href="#TestBaseSquad.test_base_squad_defaults-122"><span class="linenos">122</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-123"><a href="#TestBaseSquad.test_base_squad_defaults-123"><span class="linenos">123</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-124"><a href="#TestBaseSquad.test_base_squad_defaults-124"><span class="linenos">124</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-125"><a href="#TestBaseSquad.test_base_squad_defaults-125"><span class="linenos">125</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-126"><a href="#TestBaseSquad.test_base_squad_defaults-126"><span class="linenos">126</span></a>
+</span><span id="TestBaseSquad.test_base_squad_defaults-127"><a href="#TestBaseSquad.test_base_squad_defaults-127"><span class="linenos">127</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">squad_id</span><span class="p">,</span> <span class="s2">&quot;test_squad&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-128"><a href="#TestBaseSquad.test_base_squad_defaults-128"><span class="linenos">128</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">agents</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-129"><a href="#TestBaseSquad.test_base_squad_defaults-129"><span class="linenos">129</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-130"><a href="#TestBaseSquad.test_base_squad_defaults-130"><span class="linenos">130</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="TestBaseSquad.test_base_squad_defaults-131"><a href="#TestBaseSquad.test_base_squad_defaults-131"><span class="linenos">131</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">squad</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="p">{})</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_raises_when_flow_missing" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_raises_when_flow_missing-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_base_squad_raises_when_flow_missing</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_raises_when_flow_missing-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_raises_when_flow_missing"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-133"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-133"><span class="linenos">133</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_flow_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-134"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-134"><span class="linenos">134</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-135"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-135"><span class="linenos">135</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-136"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-136"><span class="linenos">136</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">DummyAgent</span><span class="p">()],</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-137"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-137"><span class="linenos">137</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-138"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-138"><span class="linenos">138</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-139"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-139"><span class="linenos">139</span></a>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-140"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-140"><span class="linenos">140</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_flow_missing-141"><a href="#TestBaseSquad.test_base_squad_raises_when_flow_missing-141"><span class="linenos">141</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing" class="classattr">
+                                        <input id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_base_squad_raises_when_required_agent_missing</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-143"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-143"><span class="linenos">143</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">test_base_squad_raises_when_required_agent_missing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-144"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-144"><span class="linenos">144</span></a>        <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-145"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-145"><span class="linenos">145</span></a>            <span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;test_squad&quot;</span><span class="p">,</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-146"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-146"><span class="linenos">146</span></a>            <span class="n">agents</span><span class="o">=</span><span class="p">[],</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-147"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-147"><span class="linenos">147</span></a>            <span class="n">orchestrator</span><span class="o">=</span><span class="n">DummyOrchestrator</span><span class="p">(),</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-148"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-148"><span class="linenos">148</span></a>        <span class="p">)</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-149"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-149"><span class="linenos">149</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-150"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-150"><span class="linenos">150</span></a>            <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;DummyAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">}</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-151"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-151"><span class="linenos">151</span></a>        <span class="p">]</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-152"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-152"><span class="linenos">152</span></a>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-153"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-153"><span class="linenos">153</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="TestBaseSquad.test_base_squad_raises_when_required_agent_missing-154"><a href="#TestBaseSquad.test_base_squad_raises_when_required_agent_missing-154"><span class="linenos">154</span></a>            <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({</span><span class="s2">&quot;input&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
                 </section>
     </main>
 <script>

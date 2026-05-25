@@ -52,6 +52,12 @@
                                 <a class="variable" href="#InferenceRequest.sensitivity">sensitivity</a>
                         </li>
                         <li>
+                                <a class="variable" href="#InferenceRequest.latency_budget">latency_budget</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#InferenceRequest.cost_profile">cost_profile</a>
+                        </li>
+                        <li>
                                 <a class="variable" href="#InferenceRequest.metadata">metadata</a>
                         </li>
                 </ul>
@@ -95,7 +101,13 @@
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="n">sensitivity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="c1"># Routing hints — used by K9ModelRouter scoring.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="c1"># When omitted (None) the router falls back to capability-only matching,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="c1"># preserving backwards compatibility with all existing callers.</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="n">latency_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;realtime&quot; | &quot;interactive&quot; | &quot;batch&quot;</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="n">cost_profile</span><span class="p">:</span>   <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;minimal&quot; | &quot;standard&quot; | &quot;premium&quot;</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -121,7 +133,13 @@
 </span><span id="InferenceRequest-16"><a href="#InferenceRequest-16"><span class="linenos">16</span></a>
 </span><span id="InferenceRequest-17"><a href="#InferenceRequest-17"><span class="linenos">17</span></a>    <span class="n">sensitivity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="InferenceRequest-18"><a href="#InferenceRequest-18"><span class="linenos">18</span></a>
-</span><span id="InferenceRequest-19"><a href="#InferenceRequest-19"><span class="linenos">19</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="InferenceRequest-19"><a href="#InferenceRequest-19"><span class="linenos">19</span></a>    <span class="c1"># Routing hints — used by K9ModelRouter scoring.</span>
+</span><span id="InferenceRequest-20"><a href="#InferenceRequest-20"><span class="linenos">20</span></a>    <span class="c1"># When omitted (None) the router falls back to capability-only matching,</span>
+</span><span id="InferenceRequest-21"><a href="#InferenceRequest-21"><span class="linenos">21</span></a>    <span class="c1"># preserving backwards compatibility with all existing callers.</span>
+</span><span id="InferenceRequest-22"><a href="#InferenceRequest-22"><span class="linenos">22</span></a>    <span class="n">latency_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;realtime&quot; | &quot;interactive&quot; | &quot;batch&quot;</span>
+</span><span id="InferenceRequest-23"><a href="#InferenceRequest-23"><span class="linenos">23</span></a>    <span class="n">cost_profile</span><span class="p">:</span>   <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;minimal&quot; | &quot;standard&quot; | &quot;premium&quot;</span>
+</span><span id="InferenceRequest-24"><a href="#InferenceRequest-24"><span class="linenos">24</span></a>
+</span><span id="InferenceRequest-25"><a href="#InferenceRequest-25"><span class="linenos">25</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -227,6 +245,30 @@ __pydantic_private__: Values of private attributes set on the model instance.
         
     </div>
     <a class="headerlink" href="#InferenceRequest.sensitivity"></a>
+    
+    
+
+                            </div>
+                            <div id="InferenceRequest.latency_budget" class="classattr">
+                                <div class="attr variable">
+            <span class="name">latency_budget</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#InferenceRequest.latency_budget"></a>
+    
+    
+
+                            </div>
+                            <div id="InferenceRequest.cost_profile" class="classattr">
+                                <div class="attr variable">
+            <span class="name">cost_profile</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#InferenceRequest.cost_profile"></a>
     
     
 
