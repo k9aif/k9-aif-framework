@@ -49,6 +49,7 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 - [Stub Generator](#stub-generator)
 - [K9-AIF Developer Journey](#k9-aif-developer-journey)
 - [Framework Implementation](#framework-implementation)
+- [Developer Guide](#developer-guide)
 - [Quick Start](#quick-start-linux--ubuntu)
 - [Project Status](#project-status)
 - [License](#license)
@@ -393,6 +394,19 @@ This package contains the **Architecture Building Blocks (ABB)** and
 supporting framework components used to construct K9-AIF applications.
 
 **Location:** `k9_aif_abb`
+
+---
+
+## Developer Guide
+
+A comprehensive developer guide for contributors and solution developers building on K9-AIF is available in the `docs/developers/` folder.
+
+| Format | Location |
+|---|---|
+| Markdown | [docs/developers/Developer-guide.md](docs/developers/Developer-guide.md) |
+| PDF | [docs/developers/Developer-guide.pdf](docs/developers/Developer-guide.pdf) |
+
+The guide covers all 21 chapters — from core architecture and ABB/SBB development model through agent, orchestrator, and router development; the Validation Loop and Critic-Actor iterative reasoning patterns; model routing, governance, testing standards, and developer workflow. It includes accurate class signatures, config examples, and code drawn directly from the `k9_aif_abb` source.
 
 ---
 
