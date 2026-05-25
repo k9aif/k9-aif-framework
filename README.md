@@ -504,7 +504,13 @@ The K9-AIF blog contains architecture discussions, design evaluations, and evolv
 
 Recent posts:
 
-• From Agents to Architecture: Integration CrewAI into K9-AIF
+• Build a K9-AIF Example App in Minutes Using Claude Code
+https://blog.k9x.ai/build-k9-aif-example-with-claude-code/
+
+• EOC — K9X Enterprise Insurance Operations Center
+https://blog.k9x.ai/eoc-enterprise-insurance-operations-center/
+
+• From Agents to Architecture: Integrating CrewAI into K9-AIF
 https://blog.k9x.ai/crewai-application-and-k9-aif/
 
 • Architectural Evaluation of K9-AIF

@@ -60,27 +60,24 @@ def generator_preview(app_name: str, squad_name: str = "default_squad"):
     print(f"[PREVIEW] Target folder: {app_dir}")
     print("[PREVIEW] Will create:")
 
-    print(f"  {app_dir}/agents/")
-    print(f"  {app_dir}/squads/")
+    print(f"  {app_dir}/agents/src/")
+    print(f"  {app_dir}/agents/src/retrieval_agent.py")
+    print(f"  {app_dir}/agents/src/enrichment_agent.py")
+    print(f"  {app_dir}/agents/src/summarizer_agent.py")
+    print(f"  {app_dir}/agents/yaml/")
+    print(f"  {app_dir}/agents/yaml/retrieval_agent.yaml")
+    print(f"  {app_dir}/agents/yaml/enrichment_agent.yaml")
+    print(f"  {app_dir}/agents/yaml/summarizer_agent.yaml")
     print(f"  {app_dir}/orchestrators/")
-    print(f"  {app_dir}/config/")
-    print(f"  {app_dir}/tests/")
-    print(f"  {app_dir}/main.py")
-
-    print(f"  {app_dir}/agents/retrieval_agent.py")
-    print(f"  {app_dir}/agents/enrichment_agent.py")
-    print(f"  {app_dir}/agents/summarizer_agent.py")
-
-    print(f"  {app_dir}/squads/default_squad.py")
-
     print(f"  {app_dir}/orchestrators/default_orchestrator.py")
-
+    print(f"  {app_dir}/config/")
     print(f"  {app_dir}/config/config.yaml")
     print(f"  {app_dir}/config/squads.yaml")
-    print(f"  {app_dir}/config/agents.yaml")
-
+    print(f"  {app_dir}/utils/")
+    print(f"  {app_dir}/tests/")
     print(f"  {app_dir}/tests/test_{app_folder}.py")
     print(f"  {app_dir}/tests/conftest.py")
+    print(f"  {app_dir}/main.py")
 
     print(f"\n --- Done! ---")
 
@@ -97,16 +94,17 @@ def generator_run(
     app_class_prefix = to_pascal_case(app_name)
 
     app_dir = PROJECTS_DIR / app_folder
-    agents_dir = app_dir / "agents"
-    squads_dir = app_dir / "squads"
-    orch_dir = app_dir / "orchestrators"
+    agents_src_dir  = app_dir / "agents" / "src"
+    agents_yaml_dir = app_dir / "agents" / "yaml"
+    orch_dir   = app_dir / "orchestrators"
     config_dir = app_dir / "config"
-    tests_dir = app_dir / "tests"
+    utils_dir  = app_dir / "utils"
+    tests_dir  = app_dir / "tests"
 
     print("\n[INFO] Working...")
     time.sleep(0.5)
 
-    for d in (agents_dir, squads_dir, orch_dir, config_dir, tests_dir):
+    for d in (agents_src_dir, agents_yaml_dir, orch_dir, config_dir, utils_dir, tests_dir):
         print(f"[INFO] Creating folder: {d}")
         d.mkdir(parents=True, exist_ok=True)
         time.sleep(0.2)
@@ -122,39 +120,41 @@ def generator_run(
 
     print("[INFO] Generating agents...")
     for agent in agents:
+        # Python class → agents/src/
         code = render_template(
             "agent_template.py.j2",
             {
                 "class_name": agent["class"],
+                "app_name": app_class_prefix,
                 "timestamp": timestamp,
             }
         )
-        path = agents_dir / f"{agent['file']}.py"
+        path = agents_src_dir / f"{agent['file']}.py"
         print(f"[INFO] Writing file: {path}")
         path.write_text(code + "\n", encoding="utf-8")
-        time.sleep(0.1)
 
-    print("[INFO] Generating squad...")
-    squad_code = render_template(
-        "squad_template.py.j2",
-        {
-            "app_name": app_class_prefix,
-            "squad_name": squad_name,
-            "agents": agents,
-            "timestamp": timestamp,
-        }
-    )
-    squad_path = squads_dir / "default_squad.py"
-    print(f"[INFO] Writing file: {squad_path}")
-    squad_path.write_text(squad_code + "\n", encoding="utf-8")
+        # Agent YAML → agents/yaml/
+        yaml_code = render_template(
+            "agents_template.yaml.j2",
+            {
+                "agent": agent,
+                "app_name": app_class_prefix,
+                "timestamp": timestamp,
+            }
+        )
+        yaml_path = agents_yaml_dir / f"{agent['file']}.yaml"
+        print(f"[INFO] Writing file: {yaml_path}")
+        yaml_path.write_text(yaml_code + "\n", encoding="utf-8")
+        time.sleep(0.1)
 
     print("[INFO] Generating orchestrator...")
     orch_code = render_template(
         "orchestrator_template.py.j2",
         {
             "app_name": app_class_prefix,
+            "app_folder": app_folder,
             "orchestrator_class": orchestrator_class,
-            "flow_name": squad_name,
+            "agents": agents,
             "timestamp": timestamp,
         }
     )
@@ -162,7 +162,7 @@ def generator_run(
     print(f"[INFO] Writing file: {orch_path}")
     orch_path.write_text(orch_code + "\n", encoding="utf-8")
 
-    print("[INFO] Generating config.yaml, squads.yaml, and agents.yaml...")
+    print("[INFO] Generating config.yaml and squads.yaml...")
 
     config_yaml = render_template(
         "config_template.yaml.j2",
@@ -189,17 +189,6 @@ def generator_run(
         }
     )
     (config_dir / "squads.yaml").write_text(squads_yaml + "\n", encoding="utf-8")
-
-    agents_yaml = render_template(
-        "agents_template.yaml.j2",
-        {
-            "app_name": app_class_prefix,
-            "app_folder": app_folder,
-            "agents": agents,
-            "timestamp": timestamp,
-        }
-    )
-    (config_dir / "agents.yaml").write_text(agents_yaml + "\n", encoding="utf-8")
 
     print("[INFO] Generating main.py...")
     main_code = render_template(
@@ -234,7 +223,7 @@ def generator_run(
     )
     (tests_dir / "conftest.py").write_text(conftest_code + "\n", encoding="utf-8")
 
-    for d in (app_dir, agents_dir, squads_dir, orch_dir, config_dir, tests_dir):
+    for d in (app_dir, agents_src_dir, agents_yaml_dir, orch_dir, config_dir, utils_dir, tests_dir):
         init_file = d / "__init__.py"
         if not init_file.exists():
             init_code = render_template(
