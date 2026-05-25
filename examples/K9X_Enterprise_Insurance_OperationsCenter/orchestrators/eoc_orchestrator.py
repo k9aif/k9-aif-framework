@@ -52,6 +52,18 @@ _ROUTING: Dict[str, type] = {
     "audit_query_received":        AuditComplianceOrchestrator,
 }
 
+# Maps orchestrator class name → squad ID in squads.yaml.
+# Defined here (not in squad YAML) — squads do not reference their callers.
+_SQUAD_MAP: Dict[str, str] = {
+    "ClaimsProcessingOrchestrator":     "ClaimsProcessingSquad",
+    "DocumentIntelligenceOrchestrator": "DocumentIntelligenceSquad",
+    "RiskAssessmentOrchestrator":       "RiskAssessmentSquad",
+    "PolicyManagementOrchestrator":     "PolicyManagementSquad",
+    "CatastropheResponseOrchestrator":  "CatastropheResponseSquad",
+    "CustomerServiceOrchestrator":      "CustomerServiceSquad",
+    "AuditComplianceOrchestrator":      "AuditComplianceSquad",
+}
+
 
 class EOCOrchestrator(BaseOrchestrator):
     """
@@ -86,13 +98,6 @@ class EOCOrchestrator(BaseOrchestrator):
             all_squads_data = _yaml.safe_load(f) or {}
         all_squads = all_squads_data.get("squads", {})
 
-        # Reverse-map: orchestrator class name → (squad_id, squad_cfg)
-        orch_to_squad: Dict[str, tuple] = {
-            cfg.get("orchestrator"): (sid, cfg)
-            for sid, cfg in all_squads.items()
-            if cfg.get("orchestrator")
-        }
-
         log.info("[EOCOrchestrator] Startup: %d event types to load", len(_ROUTING))
         for event_type, cls in _ROUTING.items():
             tmp_path: Optional[str] = None
@@ -100,8 +105,9 @@ class EOCOrchestrator(BaseOrchestrator):
                 orch = cls(config=self.config)
                 log.info("[EOCOrchestrator] Orchestrator ready: %s → event_type=%s", cls.__name__, event_type)
 
-                squad_id, squad_cfg = orch_to_squad.get(cls.__name__, (None, None))
-                if not squad_id:
+                squad_id = _SQUAD_MAP.get(cls.__name__)
+                squad_cfg = all_squads.get(squad_id) if squad_id else None
+                if not squad_id or squad_cfg is None:
                     raise ValueError(f"No squad found in squads.yaml for {cls.__name__}")
 
                 # Write a single-squad YAML so SquadLoader only builds this squad
