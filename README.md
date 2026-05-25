@@ -266,6 +266,7 @@ The table below highlights how the framework differs from several popular agenti
 | Enterprise architecture alignment      | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
 | Governance & observability hooks       | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
 | Runtime execution control (Zero Trust) | ✅ Yes (Router + Orchestrator enforcement)    | ❌ No        | ❌ No                | ❌ No                   |
+| Iterative validation loop pattern      | ✅ Built-in (`BaseValidationLoopAgent`)       | ❌ No        | ⚠️ Manual graph    | ❌ No                   |
 
 K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
 
@@ -287,6 +288,14 @@ The pattern catalog includes topics such as:
 The full set of patterns is available in the **K9-AIF Architecture Patterns repository**:
 
 ➡️ https://github.com/k9aif/k9aif-patterns
+
+### Validation Loop Pattern
+
+An in-framework pattern for iterative hypothesis-validate-reason workflows — applicable across security, fraud, claims, compliance, and document extraction domains.
+
+![K9-AIF Validation Loop Pattern](docs/diagrams/k9x-framework-validation-loop-pattern.png)
+
+Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. See [Skill 10 in SKILLS.md](SKILLS.md) for usage.
 
 ---
 

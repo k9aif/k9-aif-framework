@@ -37,19 +37,30 @@ class MCPHttpConnector(BaseConnector):
             return resp.json()
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Call a tool via REST. Example: /get_weather?city=Boston"""
-        if tool_name == "get_weather":
-            url = f"{self.base_url}/get_weather"
-            headers = {}
-            if self.api_key:
-                headers["Authorization"] = f"Bearer {self.api_key}"
+        """
+        Call a named tool on the MCP server.
 
-            async with httpx.AsyncClient() as client:
-                resp = await client.get(url, params=arguments, headers=headers, timeout=10.0)
-                resp.raise_for_status()
-                return resp.json()
+        Sends a POST to ``{base_url}/tools/call`` with the standard MCP envelope::
 
-        raise RuntimeError(f"Unknown tool: {tool_name}")
+            {"name": tool_name, "arguments": {...}}
+
+        Any MCP-compatible server (Brave Search, Tavily, Docling, custom) can
+        be targeted by setting ``base_url`` in config — no code changes needed.
+        """
+        url = f"{self.base_url}/tools/call"
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                url,
+                json={"name": tool_name, "arguments": arguments},
+                headers=headers,
+                timeout=10.0,
+            )
+            resp.raise_for_status()
+            return resp.json()
 
     async def close(self):
         self.log("Closing MCP HTTP connector (no persistent session)")

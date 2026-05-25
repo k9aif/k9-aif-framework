@@ -561,3 +561,102 @@ self.config.get("postgres")       # from global config.yaml — DB connection
 ```
 
 This is why agents never hardcode prompts or model names — all behavior is in YAML, all infrastructure is in the global config.
+
+---
+
+## Skill 10 — Build an iterative validation agent using BaseValidationLoopAgent
+
+`BaseValidationLoopAgent` (`k9_aif_abb/k9_agents/validation/`) is an ABB that provides a reusable **hypothesis → tool/test → observation → re-reason → continue or finalize** loop skeleton.
+
+It generalises the pattern used by Aardvark-style systems across any domain — security, fraud, claims, compliance, document extraction — without containing domain logic itself.
+
+### Why it exists
+
+A standard `BaseAgent.execute()` is one-shot: payload in, result out. Some problems require iterative convergence — the agent must test a hypothesis, observe the outcome, update its understanding, and decide whether to try again. `BaseValidationLoopAgent` provides that skeleton so every solution team does not reinvent it.
+
+### Loop lifecycle
+
+```
+execute(payload)
+  → generate_hypothesis()        form the next thing to test
+  → run_validation()             invoke tool / function / rule engine / LLM
+  → evaluate_observation()       interpret raw result; return dict with confidence
+  → should_continue()            return CONTINUE | FINALIZE | ESCALATE | FAIL
+  → record ValidationLoopStep
+  → repeat or terminate
+```
+
+### Step 1: Extend BaseValidationLoopAgent
+
+```python
+from k9_aif_abb.k9_agents.validation import (
+    BaseValidationLoopAgent,
+    ValidationDisposition,
+    ValidationLoopContext,
+    ValidationLoopResult,
+)
+
+
+class ClaimsEvidenceAgent(BaseValidationLoopAgent):
+
+    layer = "ClaimsEvidenceAgent SBB"
+
+    def generate_hypothesis(self, loop_ctx: ValidationLoopContext):
+        # Use prior steps + payload to form the next evidence query
+        return {"query": "policy_coverage", "claim_id": loop_ctx.payload["claim_id"]}
+
+    def run_validation(self, hypothesis, loop_ctx: ValidationLoopContext):
+        # Call your rule engine, database, or LLM here
+        return my_policy_engine.check(hypothesis)
+
+    def evaluate_observation(self, tool_result, loop_ctx: ValidationLoopContext):
+        confidence = tool_result.get("match_score", 0.0)
+        return {"covered": tool_result.get("covered"), "confidence": confidence}
+
+    def should_continue(self, observation, loop_ctx: ValidationLoopContext):
+        threshold = self.config.get("confidence_threshold", 0.8)
+        if observation["confidence"] >= threshold:
+            return ValidationDisposition.FINALIZE
+        if loop_ctx.iteration >= 3 and observation["confidence"] < 0.4:
+            return ValidationDisposition.ESCALATE
+        return ValidationDisposition.CONTINUE
+
+    def finalize(self, loop_ctx: ValidationLoopContext) -> ValidationLoopResult:
+        last = loop_ctx.steps[-1]
+        return ValidationLoopResult(
+            disposition      = ValidationDisposition.FINALIZE,
+            output           = {"decision": "approved", "confidence": last.confidence},
+            steps            = loop_ctx.steps,
+            iterations       = loop_ctx.iteration,
+            final_confidence = last.confidence,
+            evidence         = [str(s.observation) for s in loop_ctx.steps],
+        )
+```
+
+### Step 2: Config YAML
+
+```yaml
+# In agent YAML or merged via config.yaml
+max_iterations:             5      # hard cap on loop iterations
+confidence_threshold:       0.8    # available to should_continue() via self.config
+finalize_on_max_iterations: true   # true → finalize; false → escalate on timeout
+```
+
+### Dispositions
+
+| Disposition | Meaning | Default handler |
+|---|---|---|
+| `CONTINUE` | Run another iteration | _(loop continues)_ |
+| `FINALIZE` | Confidence sufficient — produce output | `finalize()` — **must override** |
+| `ESCALATE` | Unresolvable — route to HIL | `escalate()` — override for domain HIL |
+| `FAIL` | Definitive negative | `fail()` — override for domain failure output |
+
+### What `models/` contains
+
+`k9_agents/validation/models/validation_loop.py` holds the **state contracts** only — `ValidationLoopContext`, `ValidationLoopStep`, `ValidationLoopResult`, `ValidationDisposition`. No execution logic. This separation means loop state can be persisted, inspected by the orchestrator, fed into telemetry, or written to a Neo4j lineage graph without touching the agent implementation.
+
+### Telemetry hooks emitted
+
+`loop_started` · `hypothesis_generated` · `validation_tool_invoked` · `observation_evaluated` · `loop_continued` · `loop_finalized` · `loop_escalated` · `loop_failed`
+
+All go through `publish_event()` — wired to monitor + message_bus if configured.
