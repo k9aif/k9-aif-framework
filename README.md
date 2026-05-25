@@ -54,8 +54,8 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 - [License](#license)
 - [Contributions](#contributions)
 - [Architectural Foundations](#architectural-foundations)
-- [Architecture Notes & Blog](#architecture-notes--blog)
-- [Author's Recommendation](#authors-recommendation)
+- [Architecture Notes &amp; Blog](#architecture-notes--blog)
+- [Author&#39;s Recommendation](#authors-recommendation)
 - [Author](#author)
 
 ---
@@ -180,8 +180,7 @@ Core squad framework components include:
 
 Once you understand the execution hierarchy (Router → Orchestrator → Squads → Agents), Zero Trust is the cross-cutting layer that governs every step of it.
 
-Traditional Zero Trust focuses on access — who can reach a system.  
-K9-AIF applies Zero Trust to **execution** — every action is verified before it runs.
+Traditional Zero Trust focuses on access — who can reach a system.K9-AIF applies Zero Trust to **execution** — every action is verified before it runs.
 
 - Every action is verified before execution
 - Contextual risk is evaluated (identity, data sensitivity, destination)
@@ -203,19 +202,32 @@ This is not a checkpoint at the edge — it is enforced at every layer:
 Prototype systems based on K9-AIF demonstrate how the framework can support
 governed multi-agent architectures across multiple domains.
 
-Example demonstration systems include:
+### Featured Example
 
-- **ACME Health Insurance Claims Assistant**Multi-agent insurance workflow demo including eligibility checks,
-  provider lookup, and claims support.→ [examples/acme_health_insurance](examples/acme_health_insurance)
-- **K9Chat** – Minimal chat application demonstrating K9-AIF squads, agents, and model routing.
-  [examples/k9chat](examples/k9chat)
+**K9X Enterprise Insurance Operations Center (EOC)**
+→ [examples/K9X_Enterprise_Insurance_OperationsCenter](examples/K9X_Enterprise_Insurance_OperationsCenter)
+
+The EOC is the canonical reference implementation of K9-AIF — the most complete, production-aligned example in the framework. It demonstrates every architectural concept end-to-end:
+
+- Full Kafka-based event pipeline (Router → domain topics → Orchestrator → `eoc-results`)
+- Seven domain orchestrators, each owning a Squad and its agents
+- Agent pipeline with sequential flow, conditional steps (`when:`), and accumulated context
+- Zero Trust enforcement at the Orchestrator layer
+- Governance pre/post processing across all agents
+- Neo4j graph sync, PostgreSQL persistence, Docling OCR via MCP
+- FastAPI backend + Web UI with real-time SSE event streaming
+- Containerised deployment (Podman pod, three containers)
+
+**Use the EOC as your reference when building any new K9-AIF solution.**
+
+### Additional Examples
+
+- **ACME Health Insurance Claims Assistant** — Multi-agent insurance workflow demo including eligibility checks, provider lookup, and claims support.
+  → [examples/acme_health_insurance](examples/acme_health_insurance)
+- **K9Chat** — Minimal chat application demonstrating K9-AIF squads, agents, and model routing.
+  → [examples/k9chat](examples/k9chat)
 - **WeatherAssist Decision Support System**
-- **Sports Car Experience Center**
-- **Department of War (DoW) Systems Engineering Pipeline**
-  Demonstrates how K9-AIF architectural patterns can automate multi-stage
-  systems engineering workflows aligned with the **DoDAF 2.0 architecture
-  framework**, exploring agent orchestration across multiple architectural
-  stages using K9-AIF patterns together with the CrewAI orchestration framework.
+- **Department of War (DoW) Systems Engineering Pipeline** — Demonstrates how K9-AIF architectural patterns can automate multi-stage systems engineering workflows aligned with the DoDAF 2.0 architecture framework, exploring agent orchestration across multiple architectural stages using K9-AIF patterns together with the CrewAI orchestration framework.
 
 ---
 
@@ -244,16 +256,16 @@ with emerging **agentic AI system design**.
 K9-AIF focuses on architectural structure and governed orchestration of multi-agent systems.
 The table below highlights how the framework differs from several popular agentic AI frameworks.
 
-| Capability                        | K9-AIF                                        | CrewAI       | LangGraph            | AgentStack              |
-| --------------------------------- | --------------------------------------------- | ------------ | -------------------- | ----------------------- |
-| Architecture-first framework      | ✅ Yes                                        | ⚠️ Limited | ⚠️ Partial         | ⚠️ Platform-centric   |
-| ABB/SBB architectural separation  | ✅ Yes                                        | ❌ No        | ❌ No                | ❌ No                   |
-| Explicit orchestration hierarchy  | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews   | ⚠️ Graph workflows | ⚠️ Agent services     |
-| Team abstraction                  | ✅ Squads                                     | ✅ Crews     | ❌ None              | ⚠️ Agent groups       |
-| Declarative configuration         | ✅ YAML-driven                                | ⚠️ Partial | ⚠️ Code-centric    | ⚠️ Platform config    |
-| Enterprise architecture alignment | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
-| Governance & observability hooks  | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
-| Runtime execution control (Zero Trust) | ✅ Yes (Router + Orchestrator enforcement) | ❌ No | ❌ No | ❌ No |
+| Capability                             | K9-AIF                                        | CrewAI       | LangGraph            | AgentStack              |
+| -------------------------------------- | --------------------------------------------- | ------------ | -------------------- | ----------------------- |
+| Architecture-first framework           | ✅ Yes                                        | ⚠️ Limited | ⚠️ Partial         | ⚠️ Platform-centric   |
+| ABB/SBB architectural separation       | ✅ Yes                                        | ❌ No        | ❌ No                | ❌ No                   |
+| Explicit orchestration hierarchy       | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews   | ⚠️ Graph workflows | ⚠️ Agent services     |
+| Team abstraction                       | ✅ Squads                                     | ✅ Crews     | ❌ None              | ⚠️ Agent groups       |
+| Declarative configuration              | ✅ YAML-driven                                | ⚠️ Partial | ⚠️ Code-centric    | ⚠️ Platform config    |
+| Enterprise architecture alignment      | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
+| Governance & observability hooks       | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
+| Runtime execution control (Zero Trust) | ✅ Yes (Router + Orchestrator enforcement)    | ❌ No        | ❌ No                | ❌ No                   |
 
 K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
 
@@ -381,11 +393,11 @@ K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assist
 
 ### Context files included
 
-| File | How it helps Claude Code |
-|---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files |
-| [`SKILLS.md`](SKILLS.md) | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full `llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
-| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline |
+| File                                                                       | How it helps Claude Code                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`CLAUDE.md`](CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                             |
+| [`SKILLS.md`](SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full `llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
+| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                                     |
 
 ### Generating a new example with Claude Code
 
@@ -528,6 +540,7 @@ It is available as a VS Code extension, a desktop app, and a CLI.
 Once installed, open your solution folder in VS Code and Claude Code is ready to use.
 
 Claude Code understands:
+
 - ABB contracts and how to extend them correctly
 - Squad YAML format, agent registration, flow structure
 - Kafka ownership (Router publishes, Orchestrator consumes)
