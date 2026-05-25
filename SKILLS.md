@@ -189,44 +189,81 @@ except RuntimeError as exc:
 
 ---
 
-## Skill 3 — Add a new model to the Router
+## Skill 3 — How to add a custom Model Router by extending BaseModelRouter
 
-`K9ModelRouter` is the OOB default router. To substitute a custom router, change `inference.router.type` in `config.yaml` to your implementation's registered type name and implement `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`).
+The ABB contract is `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`).
+`K9ModelRouter` is the **OOB default SBB** — a ready-to-use extension that scores models from the catalog using weighted signals. It is not mandatory.
 
-**Three places to update in `config.yaml`:**
+If a solution needs different routing logic (cost optimization, compliance routing, A/B testing, provider switching), extend `BaseModelRouter` and register it via config. The rest of the framework — agents, squads, orchestrators — is unaffected.
+
+### Step 1: Extend `BaseModelRouter`
+
+```python
+# examples/<App>/routers/my_router.py
+
+from k9_aif_abb.k9_inference.routers.base_model_router import BaseModelRouter
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_inference.models.route_decision import RouteDecision
+
+
+class MyRouter(BaseModelRouter):
+
+    def route(self, request: InferenceRequest) -> RouteDecision:
+        # Your routing logic here — pick a model alias from the catalog
+        alias = "reasoning" if request.task_type == "reasoning" else "general"
+        return RouteDecision(model_alias=alias)
+
+    def invoke(self, request: InferenceRequest):
+        decision = self.route(request)
+        llm = self._get_llm(decision.model_alias)   # inherited helper
+        return llm.invoke(request.prompt)
+```
+
+### Step 2: Register in `config.yaml`
 
 ```yaml
 inference:
 
-  # 1. LLMFactory — the actual Ollama model name and parameters
-  llm_factory:
-    models:
-      my_model:
-        model: "granite3-dense:2b"    # Ollama model name
-        temperature: 0.2
-        max_tokens: 4096
-
-  # 2. Router — declares which router to use and persistence config
-  #    This is where you substitute a custom router
+  # Declare your router — replaces K9ModelRouter
   router:
-    type: k9_model_router             # change this to use a custom BaseModelRouter implementation
+    type: my_router                   # registered name of your BaseModelRouter implementation
     default_model: general
     persistence:
       enabled: true
-      provider: postgres              # sqlite | postgres | memory
+      provider: sqlite                # sqlite | postgres | memory
 
-  # 3. Model catalog — capabilities and routing tiers used by the router for scoring
+  # LLMFactory — Ollama model name and parameters
+  llm_factory:
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 2048
+      reasoning:
+        model: "granite3-dense:2b"
+        temperature: 0.2
+        max_tokens: 4096
+
+  # Model catalog — available to any router for alias → capability mapping
   model_catalog:
     models:
-      my_model:
+      general:
         provider: ollama
-        llm_ref: my_model             # must match llm_factory.models key above
-        capabilities: [reasoning, analysis]
-        latency_tier: interactive     # realtime | interactive | batch
-        cost_tier: standard           # minimal | standard | premium
+        llm_ref: general
+        capabilities: [general, chat, summarization]
+        latency_tier: realtime
+        cost_tier: minimal
+      reasoning:
+        provider: ollama
+        llm_ref: reasoning
+        capabilities: [reasoning, analysis, extraction]
+        latency_tier: interactive
+        cost_tier: standard
 ```
 
-The router scores this model automatically. No code changes needed for `K9ModelRouter`.
+### Using the OOB K9ModelRouter (no code needed)
+
+If `K9ModelRouter` is sufficient — keep `type: k9_model_router` in config and only define the catalog entries. The router scores models automatically using `InferenceRequest` signals (`task_type`, `sensitivity`, `latency_budget`, `cost_profile`). No Python code required.
 
 ---
 
@@ -355,30 +392,58 @@ def test_execute_handles_llm_unavailable():
 
 ---
 
-## Skill 7 — Publish an event from an Agent
+## Skill 7 — Event publishing — Router and Orchestrator only
 
-`publish_event()` sends to the **monitor and logger only** — agents are never wired with a `message_bus`, so nothing goes to Kafka. Use it for internal audit/observability signals.
+`publish_event()` is defined on `BaseAgent` and will publish to Kafka if a `message_bus` is passed at construction. By convention in K9-AIF solutions, **only the Router and Orchestrator are wired with a message bus** — agents are constructed without one.
 
-```python
-self.publish_event({
-    "type": "MyAgentCompleted",       # event type — recorded by monitor/logger
-    "agent": "MyAgent",
-    "correlation_id": correlation_id,
-    "result_summary": "...",          # lightweight summary only — no PII
-})
-```
+Agents within a Squad share data sequentially through the flow — each agent's output becomes the next agent's input via the execution context. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
 
-**Kafka is not involved at the agent level.** The Kafka topology in EOC is:
+A2A via Kafka is architecturally possible — wire an agent with a `message_bus` at construction and `publish_event()` will publish to a Kafka topic. This is not used in standard K9-AIF solutions but is a valid extension for rare scenarios requiring loosely coupled or async agent handoffs across squads.
+
+### Kafka event topology
 
 ```
 app_backend → eoc-events → Router (publishes) → eoc-claims / eoc-fraud / …
                                                           ↓
-                                        Orchestrator process (consumes, runs squads) → eoc-results
+                                        Orchestrator (consumes, runs squads)
+                                                          ↓
+                                        Orchestrator (publishes) → another Orchestrator (if chained)
+                                                          ↓
+                                                      eoc-results
 ```
 
-- **Router only**: publishes events to domain Kafka topics
-- **Orchestrator only**: consumes from domain Kafka topics
-- **Agents**: never touch Kafka — `publish_event()` reaches the monitor/logger, not the bus
+| Component | Kafka role |
+|---|---|
+| **app_backend** | Publishes inbound events to the entry topic |
+| **Router** | Publishes to domain topics by `event_type` |
+| **Orchestrator** | Consumes from domain topics; publishes results — or triggers another Orchestrator via a downstream topic |
+| **Agents** | No Kafka access — observability via `self.logger` only |
+
+### Router — publishing a domain event
+
+`publish_event()` is called on the Router after routing decision is made:
+
+```python
+# Inside a Router subclass (extends BaseRouter)
+self.publish_event({
+    "type": "ClaimRouted",
+    "event_type": event.get("event_type"),
+    "topic": resolved_topic,
+    "correlation_id": event.get("correlation_id"),
+})
+```
+
+### Orchestrator — publishing a result event
+
+```python
+# Inside an Orchestrator subclass (extends BaseOrchestrator)
+self.publish_event({
+    "type": "FlowCompleted",
+    "squad_id": _SQUAD_ID,
+    "correlation_id": payload.get("correlation_id"),
+    "result_summary": result.get("status"),
+})
+```
 
 ---
 

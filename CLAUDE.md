@@ -175,10 +175,10 @@ Three processes (one container each in the pod):
 2. `start_eoc_orchestrator.sh` — Kafka consumer → squads/agents → publishes results to `eoc-results` topic
 3. `start_eoc_router.sh` — Kafka router: consumes `eoc-events`, **publishes** to domain topics (`eoc-claims`, `eoc-fraud`, …) by `event_type`
 
-**Kafka publish/subscribe ownership** — only the Router and the Orchestrator process touch Kafka:
+**Kafka publish/subscribe ownership** — by convention, only the Router and Orchestrator process touch Kafka:
 - **Router** is the only Kafka publisher for domain topics
 - **Orchestrator process** consumes domain topics and publishes to `eoc-results`
-- **Agents never publish to Kafka** — `publish_event()` inside an agent only reaches the monitor and logger; agents are constructed without a `message_bus`
+- **Agents** are constructed without a `message_bus` in standard K9-AIF solutions — `publish_event()` reaches the monitor and logger only. A2A via Kafka is architecturally possible (wire an agent with a `message_bus`) but is not used in standard solutions — agents share data sequentially through the Squad flow instead
 
 Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version number when changing `app.js` or `styles.css` and rebuild the container.
 
