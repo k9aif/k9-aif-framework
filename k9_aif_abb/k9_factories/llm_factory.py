@@ -4,9 +4,9 @@
 # File: k9_aif_abb/k9_factories/llm_factory.py
 
 import logging
-import yaml
 import os
 import traceback
+import yaml
 from typing import Dict, Any, Optional
 from k9_aif_abb.k9_core.inference.ollama_llm import OllamaLLM
 
@@ -150,12 +150,30 @@ class LLMFactory:
                 f"LLM model alias '{alias}' must be a string or dict, got {type(model_cfg).__name__}"
             )
 
-        # TODO: add provider-based dispatch here when non-Ollama backends are supported.
-        inst = OllamaLLM(
-            host=base_url,
-            model=model_name,
-            **extra_kwargs,
-        )
+        backend = fcfg.get("backend", "ollama").lower()
+
+        if backend == "openai":
+            from k9_aif_abb.k9_core.inference.openai_llm import OpenAILLM
+            raw_key = fcfg.get("api_key", "")
+            api_key = os.path.expandvars(raw_key) if raw_key else os.environ.get("OPENAI_API_KEY", "")
+            if not api_key:
+                raise ValueError(
+                    "OpenAI backend requires api_key in config or OPENAI_API_KEY env var."
+                )
+            raw_url = fcfg.get("base_url", "")
+            resolved_url = os.path.expandvars(raw_url) if raw_url else None
+            inst = OpenAILLM(
+                api_key=api_key,
+                model=model_name,
+                base_url=resolved_url or None,
+                **extra_kwargs,
+            )
+        else:
+            inst = OllamaLLM(
+                host=base_url,
+                model=model_name,
+                **extra_kwargs,
+            )
         cls._instances[alias] = inst
         log.info(f"LLM instance ready [{alias} -> {model_name}] (cached).")
 
