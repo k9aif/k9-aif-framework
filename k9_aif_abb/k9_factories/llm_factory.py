@@ -150,30 +150,12 @@ class LLMFactory:
                 f"LLM model alias '{alias}' must be a string or dict, got {type(model_cfg).__name__}"
             )
 
-        backend = fcfg.get("backend", "ollama").lower()
+        # Resolve backend — support both 'backend' and legacy 'provider' keys
+        backend = (fcfg.get("backend") or fcfg.get("provider") or "ollama").lower()
 
-        if backend == "openai":
-            from k9_aif_abb.k9_core.inference.openai_llm import OpenAILLM
-            raw_key = fcfg.get("api_key", "")
-            api_key = os.path.expandvars(raw_key) if raw_key else os.environ.get("OPENAI_API_KEY", "")
-            if not api_key:
-                raise ValueError(
-                    "OpenAI backend requires api_key in config or OPENAI_API_KEY env var."
-                )
-            raw_url = fcfg.get("base_url", "")
-            resolved_url = os.path.expandvars(raw_url) if raw_url else None
-            inst = OpenAILLM(
-                api_key=api_key,
-                model=model_name,
-                base_url=resolved_url or None,
-                **extra_kwargs,
-            )
-        else:
-            inst = OllamaLLM(
-                host=base_url,
-                model=model_name,
-                **extra_kwargs,
-            )
+        from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegistry
+        adapter = ProviderAdapterRegistry.resolve(backend)
+        inst = adapter.create_llm(model_name, fcfg, extra_kwargs)
         cls._instances[alias] = inst
         log.info(f"LLM instance ready [{alias} -> {model_name}] (cached).")
 
