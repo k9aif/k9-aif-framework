@@ -21,7 +21,9 @@ class OllamaProviderAdapter(BaseProviderAdapter):
         base_url  — Ollama server URL (default: http://localhost:11434)
     """
 
-    provider_name = "ollama"
+    @property
+    def provider_name(self) -> str:
+        return "ollama"
 
     def create_llm(
         self,

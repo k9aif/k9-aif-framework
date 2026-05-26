@@ -30,7 +30,9 @@ class OpenAIProviderAdapter(BaseProviderAdapter):
     If the required env var is not set, fail clearly with an actionable error.
     """
 
-    provider_name = "openai-compatible"
+    @property
+    def provider_name(self) -> str:
+        return "openai-compatible"
 
     def create_llm(
         self,

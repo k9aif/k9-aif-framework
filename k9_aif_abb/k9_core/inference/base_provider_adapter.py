@@ -17,10 +17,17 @@ class BaseProviderAdapter(ABC):
     LLMFactory resolves an adapter from ProviderAdapterRegistry and calls
     create_llm() — it never constructs provider-specific objects directly.
 
-    To add a new provider: extend BaseProviderAdapter, implement create_llm(),
-    and register it with ProviderAdapterRegistry.register(). No changes to
-    LLMFactory, agents, squads, or orchestrators are needed.
+    To add a new provider: extend BaseProviderAdapter, implement both
+    provider_name and create_llm(), then register with:
+        ProviderAdapterRegistry.register("myprovider", MyProviderAdapter)
+    No changes to LLMFactory, agents, squads, or orchestrators are needed.
     """
+
+    @property
+    @abstractmethod
+    def provider_name(self) -> str:
+        """Registry key for this adapter (e.g. 'ollama', 'openai')."""
+        raise NotImplementedError
 
     @abstractmethod
     def create_llm(
@@ -38,3 +45,4 @@ class BaseProviderAdapter(ABC):
             extra_kwargs: Optional kwargs forwarded from the model config
                           (e.g. temperature, max_tokens).
         """
+        raise NotImplementedError
