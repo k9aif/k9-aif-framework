@@ -45,8 +45,9 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 - [Framework Comparison](#framework-comparison)
 - [Architectural Patterns](#architectural-patterns)
 - [Intelligent Model Routing](#intelligent-model-routing)
+- [Multi-Provider LLM Support](#multi-provider-llm-support)
 - [Using Claude Code with K9-AIF](#using-claude-code-with-k9-aif)
-- [Stub Generator](#stub-generator)
+- [Scaffold Generation](#scaffold-generation)
 - [K9-AIF Developer Journey](#k9-aif-developer-journey)
 - [Framework Implementation](#framework-implementation)
 - [Developer Guide](#developer-guide)
@@ -320,6 +321,87 @@ See the full documentation for the inference layer in
 
 ---
 
+## Multi-Provider LLM Support
+
+K9-AIF uses a **Provider Adapter** pattern to support multiple LLM backends without coupling any framework component to a specific provider.
+
+`LLMFactory` remains provider-agnostic — it resolves the correct adapter from `ProviderAdapterRegistry` and asks it to construct the `BaseLLM`. Agents, squads, orchestrators, and the model router require no changes when switching providers.
+
+[![LLM Provider Class Diagram](docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)](docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)
+
+*Click to view full resolution.*
+
+### Supported out of the box
+
+| Provider | `backend` config value | API key env var |
+|---|---|---|
+| Ollama (local) | `ollama` | — |
+| OpenAI | `openai` | `OPENAI_API_KEY` |
+| Grok / xAI | `openai-compatible` | `GROK_API_KEY` |
+| Any OpenAI-compatible endpoint | `openai-compatible` | your choice |
+
+### Switching provider — config only, no code changes
+
+**Ollama (default):**
+```yaml
+inference:
+  llm_factory:
+    backend: ollama
+    base_url: "http://localhost:11434"
+    models:
+      general:
+        model: "llama3.2:1b"
+```
+
+**OpenAI:**
+```yaml
+inference:
+  llm_factory:
+    backend: openai
+    api_key_env: OPENAI_API_KEY    # resolved from environment — never hardcode
+    models:
+      general:
+        model: "gpt-4o-mini"
+```
+
+**Grok / xAI:**
+```yaml
+inference:
+  llm_factory:
+    backend: openai-compatible
+    base_url: "https://api.x.ai/v1"
+    api_key_env: GROK_API_KEY
+    models:
+      general:
+        model: "grok-3-mini"
+```
+
+### Adding a new provider — no framework changes required
+
+Extend `BaseProviderAdapter`, implement two methods, register once:
+
+```python
+from k9_aif_abb.k9_core.inference.base_provider_adapter import BaseProviderAdapter
+from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegistry
+
+class WatsonxProviderAdapter(BaseProviderAdapter):
+
+    @property
+    def provider_name(self) -> str:
+        return "watsonx"
+
+    def create_llm(self, model_name, factory_cfg, extra_kwargs):
+        return WatsonxLLM(api_key=..., model=model_name, **extra_kwargs)
+
+ProviderAdapterRegistry.register("watsonx", WatsonxProviderAdapter)
+```
+
+Then set `backend: watsonx` in `config.yaml`. Nothing else changes.
+
+API keys are always resolved from environment variables (`api_key_env: MY_KEY`) — never stored in config files.
+
+---
+
 ## Example Use Cases
 
 K9-AIF can be applied to enterprise AI systems that require governed orchestration of multiple AI capabilities.
@@ -334,36 +416,44 @@ Examples include:
 
 ---
 
-# Stub Generator
+# Scaffold Generation
 
-K9-AIF includes a lightweight **project stub generator** that bootstraps new agentic applications following the framework architecture.
+K9-AIF provides two ways to generate a production-ready project scaffold.
 
-The generator creates a ready-to-run project structure including:
+## K9X Studio — Visual Builder (Recommended)
 
-- squads
-- agents
-- orchestrators
-- configuration files (`agents.yaml`. `squads.yaml`)
-- application entry point (`main.py`)
-- test scaffolding
+**[K9X Studio](https://github.com/k9aif/k9x-ecosystem)** is a browser-based drag-and-drop architecture builder for K9-AIF systems.
 
-Example usage:
+Design your architecture visually → generate a production-ready scaffold → implement in VS Code + Claude Code.
 
 ```bash
+podman run -d \
+  --name k9x_studio \
+  -p 8080:8080 \
+  -e K9X_PROJECTS_ROOT="/k9x/projects" \
+  -v ~/k9x-studio-working:/k9x/projects:Z \
+  ghcr.io/k9aif/k9x-studio:latest
+```
 
-=== K9-AIF Generator v0.1.0 ===
+Open **http://localhost:8080** — no setup required.
 
-K9-AIF Generator CLI
+- Drag Router → Orchestrator → Squad → Agents onto the canvas
+- Configure each node in the inspector
+- Click **Generate Scaffold** — a ready-to-run project lands in `~/k9x-studio-working/k9_projects/<your-project>/`
+- Supports Ollama, OpenAI, and Grok backends out of the box
 
-Usage:
-  ./k9_generator.sh preview <AppName>
-  ./k9_generator.sh run <AppName>
-  ./k9_generator.sh recycle <AppName>
+➡️ **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem)**
 
-Examples:
-  ./k9_generator.sh preview WeatherAssist
-  ./k9_generator.sh run ACMEInsurance
-  ./k9_generator.sh recycle PetStore
+---
+
+## K9-AIF Generator — CLI
+
+For terminal-based workflows, K9-AIF includes a lightweight CLI generator:
+
+```bash
+./k9_generator.sh preview <AppName>   # preview what will be generated
+./k9_generator.sh run <AppName>       # generate the scaffold
+./k9_generator.sh recycle <AppName>   # regenerate from scratch
 ```
 
 Refer to: [K9-AIF Generator](generator/README.md)
@@ -376,12 +466,18 @@ Refer to: [K9-AIF Generator](generator/README.md)
 
 The diagram illustrates how applications are built using K9-AIF:
 
-• **Architects** define reusable Architectural Building Blocks (ABB).
-• **Application developers** extend these ABBs into Solution Building Blocks (SBB).
-• **Business analysts** configure workflows and governance policies using YAML configuration without modifying code.
+• **Architects** design the system visually in **K9X Studio** or define ABBs directly in code.
+• **Application developers** extend ABBs into Solution Building Blocks (SBB) and implement agent logic in VS Code + Claude Code.
+• **Business analysts** configure workflows and governance policies using YAML without modifying code.
 
-This layered approach separates architecture, implementation, and configuration,
-allowing applications to evolve with minimal code changes.
+Two paths to a running scaffold:
+
+| Path | Tool | How |
+|---|---|---|
+| Visual | K9X Studio | Drag-and-drop canvas → Generate Scaffold |
+| CLI | k9_generator.sh | `./k9_generator.sh run <AppName>` |
+
+Both paths produce the same scaffold structure — runnable out of the box with Ollama.
 
 ---
 
