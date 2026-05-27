@@ -27,11 +27,34 @@
                    pattern=".+" required>
 
 
-            <h2>Submodules</h2>
-            <ul>
-                    <li><a href="integration/base_connector.html">base_connector</a></li>
-                    <li><a href="integration/mcp_client_agent.html">mcp_client_agent</a></li>
-            </ul>
+
+            <h2>API Documentation</h2>
+                <ul class="memberlist">
+            <li>
+                    <a class="class" href="#WebSearchAgent">WebSearchAgent</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#WebSearchAgent.__init__">WebSearchAgent</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#WebSearchAgent.layer">layer</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#WebSearchAgent.execute">execute</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#WebSearchAgent.connect">connect</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#WebSearchAgent.send_request">send_request</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#WebSearchAgent.close">close</a>
+                        </li>
+                </ul>
+
+            </li>
+    </ul>
 
 
 
@@ -54,10 +77,302 @@
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos">2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.web_search_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">WebSearchAgent</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">6</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;WebSearchAgent&quot;</span><span class="p">]</span>
 </span></pre></div>
 
 
             </section>
+                <section id="WebSearchAgent">
+                            <input id="WebSearchAgent-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">WebSearchAgent</span><wbr>(<span class="base"><a href="../k9_core/agent/base_mcp_agent.html#BaseMCPAgent">k9_aif_abb.k9_core.agent.base_mcp_agent.BaseMCPAgent</a></span>):
+
+                <label class="view-source-button" for="WebSearchAgent-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent-39"><a href="#WebSearchAgent-39"><span class="linenos"> 39</span></a><span class="k">class</span><span class="w"> </span><span class="nc">WebSearchAgent</span><span class="p">(</span><span class="n">BaseMCPAgent</span><span class="p">):</span>
+</span><span id="WebSearchAgent-40"><a href="#WebSearchAgent-40"><span class="linenos"> 40</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="WebSearchAgent-41"><a href="#WebSearchAgent-41"><span class="linenos"> 41</span></a><span class="sd">    ABB: agent that performs web search via an MCP-compatible search server.</span>
+</span><span id="WebSearchAgent-42"><a href="#WebSearchAgent-42"><span class="linenos"> 42</span></a>
+</span><span id="WebSearchAgent-43"><a href="#WebSearchAgent-43"><span class="linenos"> 43</span></a><span class="sd">    Extends BaseMCPAgent — the MCP contract (connect / send_request / close)</span>
+</span><span id="WebSearchAgent-44"><a href="#WebSearchAgent-44"><span class="linenos"> 44</span></a><span class="sd">    is satisfied by the internally managed MCPHttpConnector instance.</span>
+</span><span id="WebSearchAgent-45"><a href="#WebSearchAgent-45"><span class="linenos"> 45</span></a><span class="sd">    Callers use the standard BaseAgent interface: ``execute(payload) -&gt; dict``.</span>
+</span><span id="WebSearchAgent-46"><a href="#WebSearchAgent-46"><span class="linenos"> 46</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="WebSearchAgent-47"><a href="#WebSearchAgent-47"><span class="linenos"> 47</span></a>
+</span><span id="WebSearchAgent-48"><a href="#WebSearchAgent-48"><span class="linenos"> 48</span></a>    <span class="n">layer</span> <span class="o">=</span> <span class="s2">&quot;WebSearchAgent ABB&quot;</span>
+</span><span id="WebSearchAgent-49"><a href="#WebSearchAgent-49"><span class="linenos"> 49</span></a>
+</span><span id="WebSearchAgent-50"><a href="#WebSearchAgent-50"><span class="linenos"> 50</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="WebSearchAgent-51"><a href="#WebSearchAgent-51"><span class="linenos"> 51</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
+</span><span id="WebSearchAgent-52"><a href="#WebSearchAgent-52"><span class="linenos"> 52</span></a>        <span class="n">mcp_cfg</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;web_search&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="WebSearchAgent-53"><a href="#WebSearchAgent-53"><span class="linenos"> 53</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="n">MCPHttpConnector</span><span class="p">({</span>
+</span><span id="WebSearchAgent-54"><a href="#WebSearchAgent-54"><span class="linenos"> 54</span></a>            <span class="s2">&quot;name&quot;</span><span class="p">:</span>   <span class="s2">&quot;mcp-web-search&quot;</span><span class="p">,</span>
+</span><span id="WebSearchAgent-55"><a href="#WebSearchAgent-55"><span class="linenos"> 55</span></a>            <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="WebSearchAgent-56"><a href="#WebSearchAgent-56"><span class="linenos"> 56</span></a>                <span class="s2">&quot;base_url&quot;</span><span class="p">:</span> <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_url&quot;</span><span class="p">,</span> <span class="s2">&quot;http://localhost:3000&quot;</span><span class="p">),</span>
+</span><span id="WebSearchAgent-57"><a href="#WebSearchAgent-57"><span class="linenos"> 57</span></a>                <span class="s2">&quot;api_key&quot;</span><span class="p">:</span>  <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;api_key&quot;</span><span class="p">),</span>
+</span><span id="WebSearchAgent-58"><a href="#WebSearchAgent-58"><span class="linenos"> 58</span></a>            <span class="p">},</span>
+</span><span id="WebSearchAgent-59"><a href="#WebSearchAgent-59"><span class="linenos"> 59</span></a>        <span class="p">})</span>
+</span><span id="WebSearchAgent-60"><a href="#WebSearchAgent-60"><span class="linenos"> 60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_tool_name</span>   <span class="o">=</span> <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_name&quot;</span><span class="p">,</span> <span class="s2">&quot;web_search&quot;</span><span class="p">)</span>
+</span><span id="WebSearchAgent-61"><a href="#WebSearchAgent-61"><span class="linenos"> 61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_max_results</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_results&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</span><span id="WebSearchAgent-62"><a href="#WebSearchAgent-62"><span class="linenos"> 62</span></a>
+</span><span id="WebSearchAgent-63"><a href="#WebSearchAgent-63"><span class="linenos"> 63</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-64"><a href="#WebSearchAgent-64"><span class="linenos"> 64</span></a>    <span class="c1"># BaseAgent contract</span>
+</span><span id="WebSearchAgent-65"><a href="#WebSearchAgent-65"><span class="linenos"> 65</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-66"><a href="#WebSearchAgent-66"><span class="linenos"> 66</span></a>
+</span><span id="WebSearchAgent-67"><a href="#WebSearchAgent-67"><span class="linenos"> 67</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="WebSearchAgent-68"><a href="#WebSearchAgent-68"><span class="linenos"> 68</span></a>        <span class="n">query</span> <span class="o">=</span> <span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="WebSearchAgent-69"><a href="#WebSearchAgent-69"><span class="linenos"> 69</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="p">:</span>
+</span><span id="WebSearchAgent-70"><a href="#WebSearchAgent-70"><span class="linenos"> 70</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] No query in payload&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span>
+</span><span id="WebSearchAgent-71"><a href="#WebSearchAgent-71"><span class="linenos"> 71</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;missing query&quot;</span><span class="p">}</span>
+</span><span id="WebSearchAgent-72"><a href="#WebSearchAgent-72"><span class="linenos"> 72</span></a>
+</span><span id="WebSearchAgent-73"><a href="#WebSearchAgent-73"><span class="linenos"> 73</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] Searching: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</span><span id="WebSearchAgent-74"><a href="#WebSearchAgent-74"><span class="linenos"> 74</span></a>
+</span><span id="WebSearchAgent-75"><a href="#WebSearchAgent-75"><span class="linenos"> 75</span></a>        <span class="n">raw</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+</span><span id="WebSearchAgent-76"><a href="#WebSearchAgent-76"><span class="linenos"> 76</span></a>        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="WebSearchAgent-77"><a href="#WebSearchAgent-77"><span class="linenos"> 77</span></a>
+</span><span id="WebSearchAgent-78"><a href="#WebSearchAgent-78"><span class="linenos"> 78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">publish_event</span><span class="p">({</span>
+</span><span id="WebSearchAgent-79"><a href="#WebSearchAgent-79"><span class="linenos"> 79</span></a>            <span class="s2">&quot;type&quot;</span><span class="p">:</span>         <span class="s2">&quot;WebSearchCompleted&quot;</span><span class="p">,</span>
+</span><span id="WebSearchAgent-80"><a href="#WebSearchAgent-80"><span class="linenos"> 80</span></a>            <span class="s2">&quot;agent&quot;</span><span class="p">:</span>        <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="WebSearchAgent-81"><a href="#WebSearchAgent-81"><span class="linenos"> 81</span></a>            <span class="s2">&quot;query&quot;</span><span class="p">:</span>        <span class="n">query</span><span class="p">,</span>
+</span><span id="WebSearchAgent-82"><a href="#WebSearchAgent-82"><span class="linenos"> 82</span></a>            <span class="s2">&quot;result_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">),</span>
+</span><span id="WebSearchAgent-83"><a href="#WebSearchAgent-83"><span class="linenos"> 83</span></a>        <span class="p">})</span>
+</span><span id="WebSearchAgent-84"><a href="#WebSearchAgent-84"><span class="linenos"> 84</span></a>
+</span><span id="WebSearchAgent-85"><a href="#WebSearchAgent-85"><span class="linenos"> 85</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="WebSearchAgent-86"><a href="#WebSearchAgent-86"><span class="linenos"> 86</span></a>            <span class="s2">&quot;agent&quot;</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="WebSearchAgent-87"><a href="#WebSearchAgent-87"><span class="linenos"> 87</span></a>            <span class="s2">&quot;query&quot;</span><span class="p">:</span>   <span class="n">query</span><span class="p">,</span>
+</span><span id="WebSearchAgent-88"><a href="#WebSearchAgent-88"><span class="linenos"> 88</span></a>            <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+</span><span id="WebSearchAgent-89"><a href="#WebSearchAgent-89"><span class="linenos"> 89</span></a>        <span class="p">}</span>
+</span><span id="WebSearchAgent-90"><a href="#WebSearchAgent-90"><span class="linenos"> 90</span></a>
+</span><span id="WebSearchAgent-91"><a href="#WebSearchAgent-91"><span class="linenos"> 91</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-92"><a href="#WebSearchAgent-92"><span class="linenos"> 92</span></a>    <span class="c1"># BaseMCPAgent contract — delegated to MCPHttpConnector</span>
+</span><span id="WebSearchAgent-93"><a href="#WebSearchAgent-93"><span class="linenos"> 93</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-94"><a href="#WebSearchAgent-94"><span class="linenos"> 94</span></a>
+</span><span id="WebSearchAgent-95"><a href="#WebSearchAgent-95"><span class="linenos"> 95</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="WebSearchAgent-96"><a href="#WebSearchAgent-96"><span class="linenos"> 96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">connect</span><span class="p">())</span>
+</span><span id="WebSearchAgent-97"><a href="#WebSearchAgent-97"><span class="linenos"> 97</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="WebSearchAgent-98"><a href="#WebSearchAgent-98"><span class="linenos"> 98</span></a>
+</span><span id="WebSearchAgent-99"><a href="#WebSearchAgent-99"><span class="linenos"> 99</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">send_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="WebSearchAgent-100"><a href="#WebSearchAgent-100"><span class="linenos">100</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">call_tool</span><span class="p">(</span>
+</span><span id="WebSearchAgent-101"><a href="#WebSearchAgent-101"><span class="linenos">101</span></a>            <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tool_name</span><span class="p">),</span>
+</span><span id="WebSearchAgent-102"><a href="#WebSearchAgent-102"><span class="linenos">102</span></a>            <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arguments&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+</span><span id="WebSearchAgent-103"><a href="#WebSearchAgent-103"><span class="linenos">103</span></a>        <span class="p">))</span>
+</span><span id="WebSearchAgent-104"><a href="#WebSearchAgent-104"><span class="linenos">104</span></a>
+</span><span id="WebSearchAgent-105"><a href="#WebSearchAgent-105"><span class="linenos">105</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="WebSearchAgent-106"><a href="#WebSearchAgent-106"><span class="linenos">106</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">close</span><span class="p">())</span>
+</span><span id="WebSearchAgent-107"><a href="#WebSearchAgent-107"><span class="linenos">107</span></a>
+</span><span id="WebSearchAgent-108"><a href="#WebSearchAgent-108"><span class="linenos">108</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-109"><a href="#WebSearchAgent-109"><span class="linenos">109</span></a>    <span class="c1"># Internal helpers</span>
+</span><span id="WebSearchAgent-110"><a href="#WebSearchAgent-110"><span class="linenos">110</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="WebSearchAgent-111"><a href="#WebSearchAgent-111"><span class="linenos">111</span></a>
+</span><span id="WebSearchAgent-112"><a href="#WebSearchAgent-112"><span class="linenos">112</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_search</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="WebSearchAgent-113"><a href="#WebSearchAgent-113"><span class="linenos">113</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span id="WebSearchAgent-114"><a href="#WebSearchAgent-114"><span class="linenos">114</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="WebSearchAgent-115"><a href="#WebSearchAgent-115"><span class="linenos">115</span></a>            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">call_tool</span><span class="p">(</span>
+</span><span id="WebSearchAgent-116"><a href="#WebSearchAgent-116"><span class="linenos">116</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_tool_name</span><span class="p">,</span>
+</span><span id="WebSearchAgent-117"><a href="#WebSearchAgent-117"><span class="linenos">117</span></a>                <span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">,</span> <span class="s2">&quot;max_results&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_results</span><span class="p">},</span>
+</span><span id="WebSearchAgent-118"><a href="#WebSearchAgent-118"><span class="linenos">118</span></a>            <span class="p">)</span>
+</span><span id="WebSearchAgent-119"><a href="#WebSearchAgent-119"><span class="linenos">119</span></a>        <span class="k">finally</span><span class="p">:</span>
+</span><span id="WebSearchAgent-120"><a href="#WebSearchAgent-120"><span class="linenos">120</span></a>            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span id="WebSearchAgent-121"><a href="#WebSearchAgent-121"><span class="linenos">121</span></a>
+</span><span id="WebSearchAgent-122"><a href="#WebSearchAgent-122"><span class="linenos">122</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="WebSearchAgent-123"><a href="#WebSearchAgent-123"><span class="linenos">123</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalise MCP server response to a flat list of result dicts.&quot;&quot;&quot;</span>
+</span><span id="WebSearchAgent-124"><a href="#WebSearchAgent-124"><span class="linenos">124</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+</span><span id="WebSearchAgent-125"><a href="#WebSearchAgent-125"><span class="linenos">125</span></a>            <span class="k">return</span> <span class="n">raw</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_results</span><span class="p">]</span>
+</span><span id="WebSearchAgent-126"><a href="#WebSearchAgent-126"><span class="linenos">126</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="WebSearchAgent-127"><a href="#WebSearchAgent-127"><span class="linenos">127</span></a>            <span class="k">return</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">raw</span><span class="p">])[:</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_results</span><span class="p">]</span>
+</span><span id="WebSearchAgent-128"><a href="#WebSearchAgent-128"><span class="linenos">128</span></a>        <span class="k">return</span> <span class="p">[]</span>
+</span><span id="WebSearchAgent-129"><a href="#WebSearchAgent-129"><span class="linenos">129</span></a>
+</span><span id="WebSearchAgent-130"><a href="#WebSearchAgent-130"><span class="linenos">130</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="WebSearchAgent-131"><a href="#WebSearchAgent-131"><span class="linenos">131</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_run_async</span><span class="p">(</span><span class="n">coro</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="WebSearchAgent-132"><a href="#WebSearchAgent-132"><span class="linenos">132</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Run a coroutine from a synchronous context.&quot;&quot;&quot;</span>
+</span><span id="WebSearchAgent-133"><a href="#WebSearchAgent-133"><span class="linenos">133</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="WebSearchAgent-134"><a href="#WebSearchAgent-134"><span class="linenos">134</span></a>            <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
+</span><span id="WebSearchAgent-135"><a href="#WebSearchAgent-135"><span class="linenos">135</span></a>            <span class="c1"># Already inside a running loop (e.g. FastAPI) — run in a thread</span>
+</span><span id="WebSearchAgent-136"><a href="#WebSearchAgent-136"><span class="linenos">136</span></a>            <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+</span><span id="WebSearchAgent-137"><a href="#WebSearchAgent-137"><span class="linenos">137</span></a>                <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">,</span> <span class="n">coro</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</span><span id="WebSearchAgent-138"><a href="#WebSearchAgent-138"><span class="linenos">138</span></a>        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+</span><span id="WebSearchAgent-139"><a href="#WebSearchAgent-139"><span class="linenos">139</span></a>            <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">coro</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>ABB: agent that performs web search via an MCP-compatible search server.</p>
+
+<p>Extends BaseMCPAgent — the MCP contract (connect / send_request / close)
+is satisfied by the internally managed MCPHttpConnector instance.
+Callers use the standard BaseAgent interface: <code>execute(payload) -&gt; dict</code>.</p>
+</div>
+
+
+                            <div id="WebSearchAgent.__init__" class="classattr">
+                                        <input id="WebSearchAgent.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">WebSearchAgent</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>, </span><span class="param"><span class="n">monitor</span><span class="o">=</span><span class="kc">None</span>, </span><span class="param"><span class="o">**</span><span class="n">kwargs</span></span>)</span>
+
+                <label class="view-source-button" for="WebSearchAgent.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent.__init__-50"><a href="#WebSearchAgent.__init__-50"><span class="linenos">50</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="WebSearchAgent.__init__-51"><a href="#WebSearchAgent.__init__-51"><span class="linenos">51</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
+</span><span id="WebSearchAgent.__init__-52"><a href="#WebSearchAgent.__init__-52"><span class="linenos">52</span></a>        <span class="n">mcp_cfg</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mcp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;web_search&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="WebSearchAgent.__init__-53"><a href="#WebSearchAgent.__init__-53"><span class="linenos">53</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="n">MCPHttpConnector</span><span class="p">({</span>
+</span><span id="WebSearchAgent.__init__-54"><a href="#WebSearchAgent.__init__-54"><span class="linenos">54</span></a>            <span class="s2">&quot;name&quot;</span><span class="p">:</span>   <span class="s2">&quot;mcp-web-search&quot;</span><span class="p">,</span>
+</span><span id="WebSearchAgent.__init__-55"><a href="#WebSearchAgent.__init__-55"><span class="linenos">55</span></a>            <span class="s2">&quot;kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="WebSearchAgent.__init__-56"><a href="#WebSearchAgent.__init__-56"><span class="linenos">56</span></a>                <span class="s2">&quot;base_url&quot;</span><span class="p">:</span> <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_url&quot;</span><span class="p">,</span> <span class="s2">&quot;http://localhost:3000&quot;</span><span class="p">),</span>
+</span><span id="WebSearchAgent.__init__-57"><a href="#WebSearchAgent.__init__-57"><span class="linenos">57</span></a>                <span class="s2">&quot;api_key&quot;</span><span class="p">:</span>  <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;api_key&quot;</span><span class="p">),</span>
+</span><span id="WebSearchAgent.__init__-58"><a href="#WebSearchAgent.__init__-58"><span class="linenos">58</span></a>            <span class="p">},</span>
+</span><span id="WebSearchAgent.__init__-59"><a href="#WebSearchAgent.__init__-59"><span class="linenos">59</span></a>        <span class="p">})</span>
+</span><span id="WebSearchAgent.__init__-60"><a href="#WebSearchAgent.__init__-60"><span class="linenos">60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_tool_name</span>   <span class="o">=</span> <span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_name&quot;</span><span class="p">,</span> <span class="s2">&quot;web_search&quot;</span><span class="p">)</span>
+</span><span id="WebSearchAgent.__init__-61"><a href="#WebSearchAgent.__init__-61"><span class="linenos">61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_max_results</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mcp_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_results&quot;</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="WebSearchAgent.layer" class="classattr">
+                                <div class="attr variable">
+            <span class="name">layer</span>        =
+<span class="default_value">&#39;WebSearchAgent ABB&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.layer"></a>
+    
+    
+
+                            </div>
+                            <div id="WebSearchAgent.execute" class="classattr">
+                                        <input id="WebSearchAgent.execute-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">execute</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="WebSearchAgent.execute-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.execute"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent.execute-67"><a href="#WebSearchAgent.execute-67"><span class="linenos">67</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="WebSearchAgent.execute-68"><a href="#WebSearchAgent.execute-68"><span class="linenos">68</span></a>        <span class="n">query</span> <span class="o">=</span> <span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="WebSearchAgent.execute-69"><a href="#WebSearchAgent.execute-69"><span class="linenos">69</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">query</span><span class="p">:</span>
+</span><span id="WebSearchAgent.execute-70"><a href="#WebSearchAgent.execute-70"><span class="linenos">70</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] No query in payload&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">)</span>
+</span><span id="WebSearchAgent.execute-71"><a href="#WebSearchAgent.execute-71"><span class="linenos">71</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;missing query&quot;</span><span class="p">}</span>
+</span><span id="WebSearchAgent.execute-72"><a href="#WebSearchAgent.execute-72"><span class="linenos">72</span></a>
+</span><span id="WebSearchAgent.execute-73"><a href="#WebSearchAgent.execute-73"><span class="linenos">73</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] Searching: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</span><span id="WebSearchAgent.execute-74"><a href="#WebSearchAgent.execute-74"><span class="linenos">74</span></a>
+</span><span id="WebSearchAgent.execute-75"><a href="#WebSearchAgent.execute-75"><span class="linenos">75</span></a>        <span class="n">raw</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_search</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+</span><span id="WebSearchAgent.execute-76"><a href="#WebSearchAgent.execute-76"><span class="linenos">76</span></a>        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="WebSearchAgent.execute-77"><a href="#WebSearchAgent.execute-77"><span class="linenos">77</span></a>
+</span><span id="WebSearchAgent.execute-78"><a href="#WebSearchAgent.execute-78"><span class="linenos">78</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">publish_event</span><span class="p">({</span>
+</span><span id="WebSearchAgent.execute-79"><a href="#WebSearchAgent.execute-79"><span class="linenos">79</span></a>            <span class="s2">&quot;type&quot;</span><span class="p">:</span>         <span class="s2">&quot;WebSearchCompleted&quot;</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-80"><a href="#WebSearchAgent.execute-80"><span class="linenos">80</span></a>            <span class="s2">&quot;agent&quot;</span><span class="p">:</span>        <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-81"><a href="#WebSearchAgent.execute-81"><span class="linenos">81</span></a>            <span class="s2">&quot;query&quot;</span><span class="p">:</span>        <span class="n">query</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-82"><a href="#WebSearchAgent.execute-82"><span class="linenos">82</span></a>            <span class="s2">&quot;result_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">),</span>
+</span><span id="WebSearchAgent.execute-83"><a href="#WebSearchAgent.execute-83"><span class="linenos">83</span></a>        <span class="p">})</span>
+</span><span id="WebSearchAgent.execute-84"><a href="#WebSearchAgent.execute-84"><span class="linenos">84</span></a>
+</span><span id="WebSearchAgent.execute-85"><a href="#WebSearchAgent.execute-85"><span class="linenos">85</span></a>        <span class="k">return</span> <span class="p">{</span>
+</span><span id="WebSearchAgent.execute-86"><a href="#WebSearchAgent.execute-86"><span class="linenos">86</span></a>            <span class="s2">&quot;agent&quot;</span><span class="p">:</span>   <span class="bp">self</span><span class="o">.</span><span class="n">layer</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-87"><a href="#WebSearchAgent.execute-87"><span class="linenos">87</span></a>            <span class="s2">&quot;query&quot;</span><span class="p">:</span>   <span class="n">query</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-88"><a href="#WebSearchAgent.execute-88"><span class="linenos">88</span></a>            <span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="n">results</span><span class="p">,</span>
+</span><span id="WebSearchAgent.execute-89"><a href="#WebSearchAgent.execute-89"><span class="linenos">89</span></a>        <span class="p">}</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="WebSearchAgent.connect" class="classattr">
+                                        <input id="WebSearchAgent.connect-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">connect</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="WebSearchAgent.connect-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.connect"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent.connect-95"><a href="#WebSearchAgent.connect-95"><span class="linenos">95</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="WebSearchAgent.connect-96"><a href="#WebSearchAgent.connect-96"><span class="linenos">96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">connect</span><span class="p">())</span>
+</span><span id="WebSearchAgent.connect-97"><a href="#WebSearchAgent.connect-97"><span class="linenos">97</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Establish connection to the MCP server.</p>
+</div>
+
+
+                            </div>
+                            <div id="WebSearchAgent.send_request" class="classattr">
+                                        <input id="WebSearchAgent.send_request-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">send_request</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">request</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="WebSearchAgent.send_request-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.send_request"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent.send_request-99"><a href="#WebSearchAgent.send_request-99"><span class="linenos"> 99</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">send_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="WebSearchAgent.send_request-100"><a href="#WebSearchAgent.send_request-100"><span class="linenos">100</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">call_tool</span><span class="p">(</span>
+</span><span id="WebSearchAgent.send_request-101"><a href="#WebSearchAgent.send_request-101"><span class="linenos">101</span></a>            <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tool_name</span><span class="p">),</span>
+</span><span id="WebSearchAgent.send_request-102"><a href="#WebSearchAgent.send_request-102"><span class="linenos">102</span></a>            <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arguments&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+</span><span id="WebSearchAgent.send_request-103"><a href="#WebSearchAgent.send_request-103"><span class="linenos">103</span></a>        <span class="p">))</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Send a request to the MCP server.</p>
+</div>
+
+
+                            </div>
+                            <div id="WebSearchAgent.close" class="classattr">
+                                        <input id="WebSearchAgent.close-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">close</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+
+                <label class="view-source-button" for="WebSearchAgent.close-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#WebSearchAgent.close"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="WebSearchAgent.close-105"><a href="#WebSearchAgent.close-105"><span class="linenos">105</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="WebSearchAgent.close-106"><a href="#WebSearchAgent.close-106"><span class="linenos">106</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_run_async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">close</span><span class="p">())</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Close connection to MCP server.</p>
+</div>
+
+
+                            </div>
+                            <div class="inherited">
+                                <h5>Inherited Members</h5>
+                                <dl>
+                                    <div><dt><a href="../k9_core/agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></dt>
+                                <dd id="WebSearchAgent.config" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.config">config</a></dd>
+                <dd id="WebSearchAgent.monitor" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.monitor">monitor</a></dd>
+                <dd id="WebSearchAgent.message_bus" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.message_bus">message_bus</a></dd>
+                <dd id="WebSearchAgent.governance" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.governance">governance</a></dd>
+                <dd id="WebSearchAgent.logger" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.logger">logger</a></dd>
+                <dd id="WebSearchAgent.publish_event" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.publish_event">publish_event</a></dd>
+                <dd id="WebSearchAgent.apply_pre_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.apply_pre_governance">apply_pre_governance</a></dd>
+                <dd id="WebSearchAgent.apply_post_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.apply_post_governance">apply_post_governance</a></dd>
+                <dd id="WebSearchAgent.enforce_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.enforce_governance">enforce_governance</a></dd>
+
+            </div>
+                                </dl>
+                            </div>
+                </section>
     </main>
 <script>
     function escapeHTML(html) {
