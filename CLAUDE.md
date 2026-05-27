@@ -100,13 +100,29 @@ bash test_squads.sh              # squad execution flow
 ### Execution hierarchy
 
 ```
-Event → K9EventRouter → Orchestrator → Squads → Agents → LLM
+Event → [IntentSquad] → K9EventRouter → Orchestrator → Squads → Agents → LLM
+          (optional)
 ```
 
-- **Router** (`k9_core/router/base_router.py`) — routes events by `event_type` to the right orchestrator
+- **IntentSquad** (`k9_squad/intent_squad.py`) — optional pre-router squad that stamps `intent` onto the payload for non-deterministic routing; contains one or more `BaseIntentAgent` implementations
+- **Router** (`k9_core/router/base_router.py`) — routes events by `event_type` (or `intent`) to the right orchestrator
 - **Orchestrator** (`k9_core/orchestration/base_orchestrator.py`) — coordinates squads for a domain workflow
 - **Squad** (`k9_squad/base_squad.py`) — executes a defined `flow` of agents in sequence
 - **Agent** (`k9_core/agent/base_agent.py`) — implements `execute(payload) -> dict`; must extend `BaseAgent`
+
+### Intent classification ABBs
+
+Use when routing is non-deterministic (free-text input, ambiguous events):
+
+| Class | Kind | Path |
+|---|---|---|
+| `BaseIntentAgent` | ABB abstract | `k9_agents/intent/base_intent_agent.py` |
+| `K9IntentAgent` | OOB LLM-driven | `k9_agents/intent/k9_intent_agent.py` |
+| `IntentSquad` | Pre-router squad | `k9_squad/intent_squad.py` |
+
+`K9IntentAgent` classification order: (1) `intent_map` dict rule lookup — zero latency; (2) LLM via `llm_invoke`; (3) `fallback_intent()` — `event_type` verbatim or `"unknown"`.
+
+`IntentSquad` override surface: `select_agent(payload)`, `merge_intent(payload, result)`, `on_low_confidence(payload, intent, confidence)`. The `confidence_threshold` config key (default 0.5) triggers `on_low_confidence` when below.
 
 ### Inference pipeline
 
@@ -242,6 +258,25 @@ All major components are provisioned through factories — never instantiated di
 - `ModelRouterFactory.get_router(config)` — returns cached `K9ModelRouter`
 - `AgentRegistry.register(name, cls)` / `create(name)` — instantiates agents by name
 - `OrchestratorRegistry` — same pattern for orchestrators
+- `SecretManagerFactory.create(config)` — provisions secret manager from `config["secrets"]["provider"]` (default: `"env"`)
+- `CacheFactory.create(config)` — provisions cache from `config["cache"]["provider"]` (default: `"in_memory"`)
+
+### Provider Adapter Pattern
+
+The multi-provider LLM pattern is applied consistently across infrastructure concerns. Each area follows the same three-layer structure: `BaseXxx` ABB contract → provider `XxxAdapter` implementations → `XxxFactory` with config-driven default. All changes are additive — existing solutions using concrete classes directly are unaffected.
+
+**Phase 1 — completed:**
+
+| Concern | Contract | Adapters | Factory | Config key |
+|---|---|---|---|---|
+| Secret Management | `BaseSecretManager` | `EnvSecretAdapter` (default), `VaultSecretAdapter`, `AwsSecretAdapter`, `IbmSecretAdapter` | `SecretManagerFactory` | `secrets.provider` |
+| Cache | `BaseCache` | `InMemoryAdapter` (default), `RedisAdapter` | `CacheFactory` | `cache.provider` |
+
+**Design constraints (must be preserved in all adapter work):**
+- API keys and secrets NEVER in `config.yaml` — credentials come from environment variables only
+- Adapters that require optional packages use lazy imports and raise `RuntimeError` with install hint on first use
+- Factory `create(config)` always has a zero-config default (env adapter, in_memory cache) — no config key required for the common case
+- All new ABB code is purely additive — no modification to existing classes
 
 ---
 

@@ -720,3 +720,172 @@ When changing a generated agent from one-shot to iterative, replace the parent c
 **EOC reference agents requiring this migration:**
 - `FraudDetectionAgent` — fraud signal correlation across multiple passes is the canonical iterative use case
 - `DocumentExtractorAgent` — extraction confidence check + re-extraction on parse failure benefits from iterative refinement
+
+---
+
+## Skill 11 — Provider Adapter Pattern (Secret Management, Cache, and future areas)
+
+The multi-provider LLM pattern is applied consistently to all infrastructure concerns. Every area follows the same three-layer structure: **ABB contract** → **provider adapters** → **static factory**.
+
+### Structure
+
+```
+k9_core/<concern>/base_<concern>.py     ← ABB abstract contract (EXTENDS nothing)
+k9_<concern>/adapters/<name>_adapter.py ← Concrete implementations (EXTENDS contract)
+k9_factories/<concern>_factory.py       ← Static factory (register / get / create)
+```
+
+### Step 1: Define the ABB contract
+
+```python
+# k9_core/<concern>/base_<concern>.py
+from abc import ABC, abstractmethod
+
+class BaseMyThing(ABC):
+    @abstractmethod
+    def do_thing(self, key: str) -> str:
+        raise NotImplementedError
+
+    # Optional override with default implementation
+    def exists(self, key: str) -> bool:
+        try:
+            self.do_thing(key)
+            return True
+        except KeyError:
+            return False
+```
+
+### Step 2: Implement adapters
+
+Default adapter (zero dependencies, always works):
+
+```python
+# k9_<concern>/adapters/default_adapter.py
+from k9_aif_abb.k9_core.<concern>.base_<concern> import BaseMyThing
+
+class DefaultMyThingAdapter(BaseMyThing):
+    def __init__(self, config=None):
+        self._config = config or {}
+
+    def do_thing(self, key: str) -> str:
+        ...
+```
+
+Optional-dependency adapter (lazy import pattern — mandatory for all heavy adapters):
+
+```python
+# k9_<concern>/adapters/heavy_adapter.py
+class HeavyMyThingAdapter(BaseMyThing):
+    def __init__(self, config=None):
+        self._config = config or {}
+        self._client = None   # lazy — do NOT import at module level
+
+    def _ensure_client(self):
+        if self._client is not None:
+            return
+        try:
+            import heavy_package  # type: ignore
+            self._client = heavy_package.Client(...)
+        except ImportError as exc:
+            raise RuntimeError("pip install heavy_package required") from exc
+
+    def do_thing(self, key: str) -> str:
+        self._ensure_client()
+        ...
+```
+
+### Step 3: Write the factory
+
+Follow `PersistenceFactory` / `CacheFactory` exactly:
+
+```python
+# k9_factories/<concern>_factory.py
+from threading import Lock
+from typing import Any, Dict, Type
+import logging
+
+log = logging.getLogger("MyThingFactory")
+
+class MyThingFactory:
+    _registry: Dict[str, Type[Any]] = {}
+    _lock = Lock()
+    _bootstrapped = False
+
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("MyThingFactory is static")
+
+    @staticmethod
+    def _ensure_defaults() -> None:
+        if MyThingFactory._bootstrapped:
+            return
+        with MyThingFactory._lock:
+            if MyThingFactory._bootstrapped:
+                return
+            from k9_aif_abb.k9_<concern>.adapters.default_adapter import DefaultMyThingAdapter
+            from k9_aif_abb.k9_<concern>.adapters.heavy_adapter   import HeavyMyThingAdapter
+            MyThingFactory._registry.update({
+                "default": DefaultMyThingAdapter,
+                "heavy":   HeavyMyThingAdapter,
+            })
+            MyThingFactory._bootstrapped = True
+
+    @staticmethod
+    def register(name: str, cls: Type[Any]) -> None:
+        MyThingFactory._ensure_defaults()
+        with MyThingFactory._lock:
+            MyThingFactory._registry[name.lower()] = cls
+
+    @staticmethod
+    def get(name: str, config: Dict[str, Any] = None):
+        MyThingFactory._ensure_defaults()
+        cls = MyThingFactory._registry.get(name.lower())
+        if not cls:
+            raise ValueError(f"Unknown provider: {name}")
+        return cls(config=config or {})
+
+    @staticmethod
+    def create(config: Dict[str, Any] = None):
+        MyThingFactory._ensure_defaults()
+        provider = (config or {}).get("<concern>", {}).get("provider", "default").lower()
+        log.info("[Factory] Creating %s provider: %s", "<concern>", provider)
+        return MyThingFactory.get(provider, config=config)
+```
+
+### Step 4: YAML config
+
+```yaml
+# No new required keys — default adapter works with zero config.
+# To switch provider:
+<concern>:
+  provider: heavy      # default | heavy | custom
+  # provider-specific keys here
+  # credentials NEVER here — use environment variables
+```
+
+### Constraints (must hold for every adapter area)
+
+- Credentials NEVER in `config.yaml` — use `os.environ.get("MY_KEY")` in the adapter
+- Optional packages: lazy import in `_ensure_client()`, raise `RuntimeError` with install hint
+- Factory `create(config)` always has a zero-config default — no config key required
+- All new code is purely additive — no modification to existing classes
+- Adapters accept `config=None` in `__init__` — factory always passes `config=cfg`
+
+### Already-implemented adapter areas (Phase 1)
+
+| Concern | Contract | Default | Other adapters | Factory |
+|---|---|---|---|---|
+| Secret Management | `BaseSecretManager` | `EnvSecretAdapter` | Vault, AWS, IBM | `SecretManagerFactory` |
+| Cache | `BaseCache` | `InMemoryAdapter` | `RedisAdapter` | `CacheFactory` |
+
+Usage in agent or service code:
+
+```python
+from k9_aif_abb.k9_factories.security_factory import SecretManagerFactory
+from k9_aif_abb.k9_factories.cache_factory import CacheFactory
+
+sm    = SecretManagerFactory.create(self.config)   # default: env adapter
+cache = CacheFactory.create(self.config)           # default: in_memory adapter
+
+api_key = sm.get("MY_API_KEY")                     # raises KeyError if absent
+cache.set("result:001", payload, ttl=300)
+```
