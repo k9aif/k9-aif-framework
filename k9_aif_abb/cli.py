@@ -952,6 +952,7 @@ MORE COMMANDS:
   k9aif --generate hello-world       Generate hello_world.py in current folder
   k9aif --generate agent             Generate agent.py template
   k9aif --generate router            Generate router.py template
+  k9aif --generate complete          Generate full project: router+orchestrator+squad+agent+config (mock LLM)
   k9aif new agent                    Scaffold a new agent (coming soon)
   k9aif new squad                    Scaffold a new squad  (coming soon)
 """
