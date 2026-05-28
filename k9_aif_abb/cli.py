@@ -454,7 +454,7 @@ class MyRouter(BaseRouter):
 
 
 COMPLETE_FILES = {
-    "config.yaml": """\
+    "config/config.yaml": """\
 # K9-AIF config.yaml — uses mock LLM (no Ollama needed)
 inference:
   router:
@@ -483,8 +483,19 @@ inference:
       capabilities: [reasoning, analysis]
 """,
 
-    "my_agent.py": '''\
-# my_agent.py — K9-AIF Agent SBB
+    "squads/my_squad.yaml": """\
+squads:
+  MySquad:
+    description: "A simple K9-AIF squad with one agent."
+    agents:
+      - MyAgent
+    flow:
+      - agent: MyAgent
+        result_key: my_agent_output
+""",
+
+    "agents/src/my_agent.py": '''\
+# agents/src/my_agent.py — K9-AIF Agent SBB
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
@@ -507,27 +518,18 @@ class MyAgent(BaseAgent):
         return {"agent": "MyAgent", "output": resp.output, "model": resp.model_alias}
 ''',
 
-    "my_squad.yaml": """\
-squads:
-  MySquad:
-    description: "A simple K9-AIF squad with one agent."
-    agents:
-      - MyAgent
-    flow:
-      - agent: MyAgent
-        result_key: my_agent_output
-""",
+    "orchestrators/my_orchestrator.py": '''\
+# orchestrators/my_orchestrator.py — K9-AIF Orchestrator SBB
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-    "my_orchestrator.py": '''\
-# my_orchestrator.py — K9-AIF Orchestrator SBB
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from k9_aif_abb.k9_squad.base_squad import BaseSquad
 from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
-from typing import Any, Dict, Optional
-from pathlib import Path
+from typing import Any, Dict
 
-from my_agent import MyAgent
+from agents.src.my_agent import MyAgent
 
 
 class MyOrchestrator(BaseOrchestrator):
@@ -538,7 +540,8 @@ class MyOrchestrator(BaseOrchestrator):
         registry.register("MyAgent", lambda: MyAgent(config=self.config))
 
         loader = SquadLoader(registry)
-        squad = loader.load_one(str(Path(__file__).parent / "my_squad.yaml"), "MySquad")
+        squad_path = str(Path(__file__).resolve().parents[1] / "squads" / "my_squad.yaml")
+        squad = loader.load_one(squad_path, "MySquad")
 
         self.publish_status("started", {"job_id": payload.get("job_id", "")})
         result = squad.run(payload)
@@ -546,12 +549,16 @@ class MyOrchestrator(BaseOrchestrator):
         return result
 ''',
 
-    "my_router.py": '''\
-# my_router.py — K9-AIF Router SBB
+    "router/my_router.py": '''\
+# router/my_router.py — K9-AIF Router SBB
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from k9_aif_abb.k9_core.router.base_router import BaseRouter
 from typing import Any, Dict
 
-from my_orchestrator import MyOrchestrator
+from orchestrators.my_orchestrator import MyOrchestrator
 
 
 class MyRouter(BaseRouter):
@@ -563,16 +570,18 @@ class MyRouter(BaseRouter):
         return orchestrator.execute_flow(payload)
 ''',
 
-    "run.py": '''\
-# run.py — wire everything together and run
-import yaml
+    "main.py": '''\
+# main.py — entry point: Router → Orchestrator → Squad → Agent
+import sys, yaml
 from pathlib import Path
-from my_router import MyRouter
+
+sys.path.insert(0, str(Path(__file__).parent))
+from router.my_router import MyRouter
 
 if __name__ == "__main__":
-    config_path = Path(__file__).parent / "config.yaml"
+    config_path = Path(__file__).parent / "config" / "config.yaml"
     if not config_path.exists():
-        print("ERROR: config.yaml not found. Run 'k9aif init' or 'k9aif --generate complete'.")
+        print("ERROR: config/config.yaml not found.")
         raise SystemExit(1)
 
     with open(config_path) as f:
@@ -593,29 +602,35 @@ if __name__ == "__main__":
 
 
 def generate_complete():
-    """Generate a complete K9-AIF project — router, orchestrator, squad, agent, config."""
+    """Generate a complete K9-AIF project with proper folder structure."""
     from pathlib import Path
 
     print("K9-AIF — Generating complete project scaffold")
     print("=" * 50)
 
-    Path("runtime").mkdir(exist_ok=True)
+    for d in ["config", "agents/src", "orchestrators", "router", "squads", "runtime"]:
+        Path(d).mkdir(parents=True, exist_ok=True)
 
-    for filename, content in COMPLETE_FILES.items():
-        path = Path.cwd() / filename
+    for filepath, content in COMPLETE_FILES.items():
+        path = Path.cwd() / filepath
         if path.exists():
-            print(f"  ○  {filename} already exists — skipped")
+            print(f"  ○  {filepath} already exists — skipped")
         else:
             path.write_text(content)
-            print(f"  ✓  {filename}")
+            print(f"  ✓  {filepath}")
 
     print()
-    print("Generated: Router → Orchestrator → Squad → Agent")
-    print("Mock LLM — no Ollama needed.")
+    print("Structure:")
+    print("  main.py")
+    print("  config/config.yaml       ← LLM + inference config (mock — no Ollama needed)")
+    print("  agents/src/my_agent.py   ← BaseAgent SBB")
+    print("  orchestrators/           ← BaseOrchestrator SBB")
+    print("  router/                  ← BaseRouter SBB")
+    print("  squads/my_squad.yaml     ← Squad flow definition")
+    print("  runtime/                 ← routing state store (auto-created)")
     print()
-    print("Run it:")
-    print("  pip install pyyaml")
-    print("  python run.py")
+    print("Run:")
+    print("  python main.py")
 
 
 def generate_cmd(topic: str):
@@ -733,87 +748,113 @@ def doctor():
 
 
 def init():
-    """Scaffold a minimal K9-AIF project in the current directory."""
-    import os
+    """Scaffold a full K9-AIF project with folder structure + README."""
     from pathlib import Path
 
     cwd = Path.cwd()
     print(f"Initialising K9-AIF project in: {cwd}")
+    print()
 
-    config = """# K9-AIF config.yaml
-inference:
-  router:
-    type: k9_model_router
-    default_model: general
-    persistence:
-      enabled: true
-      provider: sqlite
-      sqlite:
-        db_path: "./runtime/k9_model_router.db"
+    # Generate full project structure
+    generate_complete()
 
-  llm_factory:
-    base_url: "http://localhost:11434"
-    models:
-      general: "llama3.2:1b"
-      reasoning: "llama3.2:1b"
+    # Generate README.md
+    version = _version_str()
+    readme = f"""\
+# K9-AIF Project
 
-  models:
-    general:
-      provider: ollama
-      llm_ref: general
-      capabilities: [general, chat, summarization]
-    reasoning:
-      provider: ollama
-      llm_ref: reasoning
-      capabilities: [reasoning, analysis]
+Initialised with K9-AIF Framework v{version}
+
+## What was created
+
+```
+main.py                      ← entry point — run this
+config/
+  config.yaml                ← LLM + inference config (mock LLM — no Ollama needed to start)
+agents/
+  src/
+    my_agent.py              ← BaseAgent SBB — your first agent
+orchestrators/
+  my_orchestrator.py         ← BaseOrchestrator SBB
+router/
+  my_router.py               ← BaseRouter SBB
+squads/
+  my_squad.yaml              ← squad flow definition
+runtime/                     ← routing state store (auto-created on first run)
+```
+
+## Run it
+
+```bash
+python main.py
+```
+
+No Ollama needed — uses mock LLM by default.
+To use a real LLM, edit `config/config.yaml` and set your Ollama host.
+
+## Upgrade to latest K9-AIF
+
+```bash
+pip install --upgrade git+https://github.com/k9aif/k9-aif-framework.git
+k9aif --version
+```
+
+## Next steps
+
+1. **Run the example**
+   ```bash
+   python main.py
+   ```
+
+2. **Add your own agent** — extend `BaseAgent` in `agents/src/`
+   ```bash
+   k9aif --generate agent
+   ```
+
+3. **Learn the framework**
+   - `k9aif --help develop` — how to build agents, squads, orchestrators
+   - `k9aif --help patterns` — architectural patterns in K9-AIF
+   - `k9aif --help faq` — common questions
+
+4. **Run the full test suite**
+   ```bash
+   k9aif verify
+   k9aif doctor
+   ```
+
+5. **Explore the reference implementation**
+   ```bash
+   git clone https://github.com/k9aif/k9-aif-framework.git
+   cd k9-aif-framework/examples/acme_support_center
+   ```
+
+## API Reference
+
+Full pydoc API reference for `k9_aif_abb`:
+https://pydocs.k9x.ai/pydocs/k9_aif_abb.html
+
+## Links
+
+| Resource | URL |
+|---|---|
+| Framework | https://github.com/k9aif/k9-aif-framework |
+| Docs | https://k9x.ai |
+| Blog | https://blog.k9x.ai |
+| Architecture Graph | https://graph.k9x.ai |
+| API Reference | https://pydocs.k9x.ai/pydocs/k9_aif_abb.html |
 """
 
-    agent = '''# my_agent.py — starter K9-AIF agent
-from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
-import yaml
+    readme_path = cwd / "README.md"
+    if readme_path.exists():
+        print(f"  ○  README.md already exists — skipped")
+    else:
+        readme_path.write_text(readme)
+        print(f"  ✓  README.md")
 
-class MyAgent(BaseAgent):
-    layer = "MyAgent SBB"
-
-    def execute(self, payload: dict) -> dict:
-        req = InferenceRequest(
-            prompt=f"Hello from K9-AIF: {payload.get('input', '')}",
-            task_type="general",
-        )
-        resp = llm_invoke(self.config, req)
-        return {"output": resp.output, "model": resp.model_alias}
-
-
-if __name__ == "__main__":
-    with open("config.yaml") as f:
-        config = yaml.safe_load(f)
-    agent = MyAgent(config=config)
-    result = agent.execute({"input": "test"})
-    print(result)
-'''
-
-    files = {
-        "config.yaml": config,
-        "my_agent.py": agent,
-    }
-
-    created = []
-    for filename, content in files.items():
-        path = cwd / filename
-        if path.exists():
-            print(f"  ○  {filename} already exists — skipped")
-        else:
-            path.write_text(content)
-            print(f"  ✓  {filename} created")
-            created.append(filename)
-
-    Path("runtime").mkdir(exist_ok=True)
-    print(f"  ✓  runtime/ directory ready")
     print()
-    print("Next: edit config.yaml with your Ollama host, then run:")
-    print("  python3 my_agent.py")
+    print("Done. Run: python main.py")
+    print()
+    print("Ready to rumble!")
 
 
 def _scan_subpackage(subpackage: str) -> list[tuple[str, str]]:
