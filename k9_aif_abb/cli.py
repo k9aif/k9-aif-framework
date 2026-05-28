@@ -660,6 +660,9 @@ def main():
         return
 
     cmd = args[0]
+    if cmd in ("--version", "-v"):
+        version()
+        return
     if cmd == "verify":
         verify()
     elif cmd == "version":
