@@ -176,12 +176,6 @@ bash docs/deployment/update_config_volume_mapped.sh
 sudo podman restart eoc-app-backend eoc-orchestrator eoc-router
 ```
 
-If serving via Cloudflare tunnel, restart it after a redeploy:
-
-```bash
-sudo systemctl restart cloudflared
-```
-
 ---
 
 ## Volume layout

@@ -42,7 +42,6 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
   - [Zero Trust Execution Layer](#zero-trust-execution-layer)
 - [Prototype Implementations](#prototype-implementations)
 - [Design Goals](#design-goals)
-- [Framework Comparison](#framework-comparison)
 - [Architectural Patterns](#architectural-patterns)
 - [Intelligent Model Routing](#intelligent-model-routing)
 - [Multi-Provider LLM Support](#multi-provider-llm-support)
@@ -250,27 +249,6 @@ Key architectural goals include:
 
 The framework bridges traditional **enterprise architecture principles**
 with emerging **agentic AI system design**.
-
----
-
-## Framework Comparison
-
-K9-AIF focuses on architectural structure and governed orchestration of multi-agent systems.
-The table below highlights how the framework differs from several popular agentic AI frameworks.
-
-| Capability                             | K9-AIF                                        | CrewAI       | LangGraph            | AgentStack              |
-| -------------------------------------- | --------------------------------------------- | ------------ | -------------------- | ----------------------- |
-| Architecture-first framework           | ✅ Yes                                        | ⚠️ Limited | ⚠️ Partial         | ⚠️ Platform-centric   |
-| ABB/SBB architectural separation       | ✅ Yes                                        | ❌ No        | ❌ No                | ❌ No                   |
-| Explicit orchestration hierarchy       | ✅ Router → Orchestrator → Squads → Agents | ⚠️ Crews   | ⚠️ Graph workflows | ⚠️ Agent services     |
-| Team abstraction                       | ✅ Squads                                     | ✅ Crews     | ❌ None              | ⚠️ Agent groups       |
-| Declarative configuration              | ✅ YAML-driven                                | ⚠️ Partial | ⚠️ Code-centric    | ⚠️ Platform config    |
-| Enterprise architecture alignment      | ✅ Yes                                        | ❌ No        | ❌ No                | ⚠️ Partial            |
-| Governance & observability hooks       | ✅ Built into ABBs                            | ⚠️ Limited | ⚠️ Limited         | ⚠️ Platform dependent |
-| Runtime execution control (Zero Trust) | ✅ Yes (Router + Orchestrator enforcement)    | ❌ No        | ❌ No                | ❌ No                   |
-| Iterative validation loop pattern      | ✅ Built-in (`BaseValidationLoopAgent`)       | ❌ No        | ⚠️ Manual graph    | ❌ No                   |
-
-K9-AIF emphasizes **architectural clarity, composability, and governance**, allowing multi-agent systems to be constructed using well-defined architectural building blocks rather than ad-hoc orchestration logic.
 
 ---
 
