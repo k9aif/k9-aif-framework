@@ -21,8 +21,16 @@ import sys
 
 # ── Help topics ──────────────────────────────────────────────────────────────
 
+def _version_str() -> str:
+    try:
+        from importlib.metadata import version as pkg_version
+        return pkg_version("k9_aif_abb")
+    except Exception:
+        return "unknown"
+
+
 HELP_MAIN = """
-k9aif — K9-AIF Framework CLI
+k9aif — K9-AIF Framework CLI  v{version}
 Architecture-First Framework for Governed, Modular Agentic AI Systems
 
 COMMANDS:
@@ -767,12 +775,15 @@ def inspect():
 
 HELP_MAIN += """
 MORE COMMANDS:
-  k9aif init                Scaffold config.yaml + starter agent in current folder
-  k9aif doctor              Check environment — Python, Ollama, dependencies
-  k9aif list-adapters       List available framework adapters
-  k9aif inspect             Inspect all installed framework components
-  k9aif new agent           Scaffold a new agent (coming soon)
-  k9aif new squad           Scaffold a new squad  (coming soon)
+  k9aif init                         Scaffold config.yaml + starter agent in current folder
+  k9aif doctor                       Check environment — Python, Ollama, dependencies
+  k9aif list [agents|core|factories|adapters|all]   List framework components
+  k9aif inspect                      Inspect all installed framework components
+  k9aif --generate hello-world       Generate hello_world.py in current folder
+  k9aif --generate agent             Generate agent.py template
+  k9aif --generate router            Generate router.py template
+  k9aif new agent                    Scaffold a new agent (coming soon)
+  k9aif new squad                    Scaffold a new squad  (coming soon)
 """
 
 HELP_TOPICS = {
@@ -800,7 +811,7 @@ def main():
             print(f"Available: {', '.join(HELP_TOPICS.keys())}")
             sys.exit(1)
         else:
-            print(HELP_MAIN)
+            print(HELP_MAIN.format(version=_version_str()))
         return
 
     cmd = args[0]
