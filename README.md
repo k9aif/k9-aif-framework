@@ -593,7 +593,7 @@ used to explore practical approaches to building governed agentic AI systems.
 
 ## License
 
-This repository is released under the MIT License.
+This repository is released under the Apache License 2.0.
 
 The framework concepts may be used, adapted, and extended for research and
 development of agentic AI systems.
