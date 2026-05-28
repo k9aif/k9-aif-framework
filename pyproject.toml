@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9_aif_abb"
-version = "1.0.7"
+version = "1.0.8"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -13,6 +13,12 @@ authors = [
     { name = "Ravi Natarajan", email = "ravi.natarajan@ibm.com" }
 ]
 keywords = ["agentic-ai", "multi-agent", "governance", "llm", "enterprise-ai"]
+
+dependencies = [
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "requests>=2.28",
+]
 
 [project.scripts]
 k9aif = "k9_aif_abb.cli:main"
