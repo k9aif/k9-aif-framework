@@ -453,16 +453,186 @@ class MyRouter(BaseRouter):
 }
 
 
+COMPLETE_FILES = {
+    "config.yaml": """\
+# K9-AIF config.yaml — uses mock LLM (no Ollama needed)
+inference:
+  router:
+    type: k9_model_router
+    default_model: general
+    persistence:
+      enabled: true
+      provider: sqlite
+      sqlite:
+        db_path: "./runtime/k9_model_router.db"
+
+  llm_factory:
+    base_url: "http://localhost:11434"
+    models:
+      general: "mock"
+      reasoning: "mock"
+
+  models:
+    general:
+      provider: mock
+      llm_ref: general
+      capabilities: [general, chat, summarization]
+    reasoning:
+      provider: mock
+      llm_ref: reasoning
+      capabilities: [reasoning, analysis]
+""",
+
+    "my_agent.py": '''\
+# my_agent.py — K9-AIF Agent SBB
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+from typing import Any, Dict, Optional
+
+
+class MyAgent(BaseAgent):
+    layer = "MyAgent SBB"
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, **kwargs):
+        super().__init__(config or {}, monitor=monitor, **kwargs)
+
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        req = InferenceRequest(
+            prompt=f"Process this input: {payload.get('input', '')}",
+            task_type="general",
+        )
+        resp = llm_invoke(self.config, req)
+        self.publish_event({"type": "MyAgentCompleted"})
+        return {"agent": "MyAgent", "output": resp.output, "model": resp.model_alias}
+''',
+
+    "my_squad.yaml": """\
+squads:
+  MySquad:
+    description: "A simple K9-AIF squad with one agent."
+    agents:
+      - MyAgent
+    flow:
+      - agent: MyAgent
+        result_key: my_agent_output
+""",
+
+    "my_orchestrator.py": '''\
+# my_orchestrator.py — K9-AIF Orchestrator SBB
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+from k9_aif_abb.k9_squad.base_squad import BaseSquad
+from k9_aif_abb.k9_squad.squad_loader import SquadLoader
+from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
+from typing import Any, Dict, Optional
+from pathlib import Path
+
+from my_agent import MyAgent
+
+
+class MyOrchestrator(BaseOrchestrator):
+    layer = "MyOrchestrator SBB"
+
+    def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        registry = AgentRegistry()
+        registry.register("MyAgent", lambda: MyAgent(config=self.config))
+
+        loader = SquadLoader(registry)
+        squad = loader.load_one(str(Path(__file__).parent / "my_squad.yaml"), "MySquad")
+
+        self.publish_status("started", {"job_id": payload.get("job_id", "")})
+        result = squad.run(payload)
+        self.publish_status("completed", {"job_id": payload.get("job_id", "")})
+        return result
+''',
+
+    "my_router.py": '''\
+# my_router.py — K9-AIF Router SBB
+from k9_aif_abb.k9_core.router.base_router import BaseRouter
+from typing import Any, Dict
+
+from my_orchestrator import MyOrchestrator
+
+
+class MyRouter(BaseRouter):
+    layer = "MyRouter SBB"
+
+    def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        self.publish_event({"type": "Routed", "pipeline": "my-pipeline"})
+        orchestrator = MyOrchestrator(config=self.config)
+        return orchestrator.execute_flow(payload)
+''',
+
+    "run.py": '''\
+# run.py — wire everything together and run
+import yaml
+from pathlib import Path
+from my_router import MyRouter
+
+if __name__ == "__main__":
+    config_path = Path(__file__).parent / "config.yaml"
+    if not config_path.exists():
+        print("ERROR: config.yaml not found. Run 'k9aif init' or 'k9aif --generate complete'.")
+        raise SystemExit(1)
+
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    print("K9-AIF Complete Example")
+    print("Router → Orchestrator → Squad → Agent")
+    print("=" * 40)
+
+    router = MyRouter(config=config)
+    result = router.route({"input": "Hello from K9-AIF", "job_id": "demo-001"})
+
+    print(f"Result : {result}")
+    print()
+    print("Pipeline completed successfully.")
+''',
+}
+
+
+def generate_complete():
+    """Generate a complete K9-AIF project — router, orchestrator, squad, agent, config."""
+    from pathlib import Path
+
+    print("K9-AIF — Generating complete project scaffold")
+    print("=" * 50)
+
+    Path("runtime").mkdir(exist_ok=True)
+
+    for filename, content in COMPLETE_FILES.items():
+        path = Path.cwd() / filename
+        if path.exists():
+            print(f"  ○  {filename} already exists — skipped")
+        else:
+            path.write_text(content)
+            print(f"  ✓  {filename}")
+
+    print()
+    print("Generated: Router → Orchestrator → Squad → Agent")
+    print("Mock LLM — no Ollama needed.")
+    print()
+    print("Run it:")
+    print("  pip install pyyaml")
+    print("  python run.py")
+
+
 def generate_cmd(topic: str):
     from pathlib import Path
 
     if not topic:
-        print("Usage: k9aif --generate [hello-world | agent | router]")
-        print(f"Available: {', '.join(GENERATE_TEMPLATES.keys())}")
+        print("Usage: k9aif --generate [hello-world | agent | router | complete]")
+        print(f"Available: {', '.join(list(GENERATE_TEMPLATES.keys()) + ['complete'])}")
         return
+
+    if topic == "complete":
+        generate_complete()
+        return
+
     if topic not in GENERATE_TEMPLATES:
         print(f"Unknown template: {topic}")
-        print(f"Available: {', '.join(GENERATE_TEMPLATES.keys())}")
+        print(f"Available: {', '.join(list(GENERATE_TEMPLATES.keys()) + ['complete'])}")
         return
 
     filename = topic.replace("-", "_") + ".py"
