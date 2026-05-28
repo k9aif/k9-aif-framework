@@ -369,6 +369,150 @@ def info():
     print("Run 'k9aif --help' for all commands.")
 
 
+GENERATE_TEMPLATES = {
+    "hello-world": '''# K9-AIF Hello World Agent
+# Save as test.py and run: python test.py
+# Requires: config.yaml (run 'k9aif init' first) + Ollama running
+
+import yaml
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+
+
+class HelloWorldAgent(BaseAgent):
+    layer = "HelloWorldAgent SBB"
+
+    def execute(self, payload: dict) -> dict:
+        req = InferenceRequest(
+            prompt=f"Say hello to {payload.get('name', 'World')} in one sentence.",
+            task_type="general",
+        )
+        resp = llm_invoke(self.config, req)
+        return {"agent": "HelloWorldAgent", "output": resp.output, "model": resp.model_alias}
+
+
+if __name__ == "__main__":
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    agent = HelloWorldAgent(config=config)
+    result = agent.execute({"name": "K9-AIF"})
+    print(f"Output : {result['output']}")
+    print(f"Model  : {result['model']}")
+''',
+
+    "agent": '''# K9-AIF Agent Template
+# Rename class and implement execute()
+
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+from typing import Any, Dict, Optional
+
+
+class MyAgent(BaseAgent):
+    layer = "MyAgent SBB"
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, **kwargs):
+        super().__init__(config or {}, monitor=monitor, **kwargs)
+
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        req = InferenceRequest(
+            prompt=f"Your prompt here. Input: {payload}",
+            task_type="reasoning",   # general | reasoning | extraction | summarization
+        )
+        resp = llm_invoke(self.config, req)
+        self.publish_event({"type": "MyAgentCompleted", "job_id": payload.get("job_id")})
+        return {"agent": "MyAgent", "output": resp.output, "model": resp.model_alias}
+''',
+
+    "router": '''# K9-AIF Router Template
+from k9_aif_abb.k9_core.router.base_router import BaseRouter
+from typing import Any, Dict, Optional
+
+
+class MyRouter(BaseRouter):
+    layer = "MyRouter SBB"
+
+    def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        event_type = payload.get("event_type", "")
+        self.publish_event({"type": "Routed", "event_type": event_type})
+        # Return orchestrator result
+        from my_orchestrator import MyOrchestrator
+        return MyOrchestrator(config=self.config).execute_flow(payload)
+''',
+}
+
+
+def generate_cmd(topic: str):
+    from pathlib import Path
+
+    if not topic:
+        print("Usage: k9aif --generate [hello-world | agent | router]")
+        print(f"Available: {', '.join(GENERATE_TEMPLATES.keys())}")
+        return
+    if topic not in GENERATE_TEMPLATES:
+        print(f"Unknown template: {topic}")
+        print(f"Available: {', '.join(GENERATE_TEMPLATES.keys())}")
+        return
+
+    filename = topic.replace("-", "_") + ".py"
+    path = Path.cwd() / filename
+
+    if path.exists():
+        print(f"  ○  {filename} already exists — skipped")
+        return
+
+    path.write_text(GENERATE_TEMPLATES[topic])
+    print(f"  ✓  {filename} created in {Path.cwd()}")
+    print()
+    print(f"Next:")
+    print(f"  k9aif init        # create config.yaml if not done yet")
+    print(f"  python {filename}")
+
+
+def hello_world():
+    """Print the Hello World agent code ready to run."""
+    print("""# K9-AIF Hello World Agent
+# Save as test.py and run: python test.py
+# Requires: config.yaml (run 'k9aif init' first) + Ollama running
+
+import yaml
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+
+
+class HelloWorldAgent(BaseAgent):
+    layer = "HelloWorldAgent SBB"
+
+    def execute(self, payload: dict) -> dict:
+        req = InferenceRequest(
+            prompt=f"Say hello to {payload.get('name', 'World')} in one sentence.",
+            task_type="general",
+        )
+        resp = llm_invoke(self.config, req)
+        return {"agent": "HelloWorldAgent", "output": resp.output, "model": resp.model_alias}
+
+
+if __name__ == "__main__":
+    import yaml
+    with open("config.yaml") as f:
+        config = yaml.safe_load(f)
+
+    agent = HelloWorldAgent(config=config)
+    result = agent.execute({"name": "K9-AIF"})
+    print(f"Output : {result['output']}")
+    print(f"Model  : {result['model']}")
+""")
+    print("─" * 50)
+    print("Steps:")
+    print("  1. k9aif init              # creates config.yaml")
+    print("  2. k9aif --hello-world > test.py   # save this code")
+    print("  3. python test.py          # run it (needs Ollama)")
+
+
 def doctor():
     """Check environment health — Python version, Ollama, dependencies."""
     import importlib
@@ -662,6 +806,13 @@ def main():
     cmd = args[0]
     if cmd in ("--version", "-v"):
         version()
+        return
+    if cmd == "--hello-world":
+        hello_world()
+        return
+    if cmd == "--generate":
+        topic = args[1] if len(args) > 1 else ""
+        generate_cmd(topic)
         return
     if cmd == "verify":
         verify()
