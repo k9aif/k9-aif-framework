@@ -65,7 +65,6 @@ bash build.sh                    # build container image only
 bash run_eoc_pod.sh              # build + create pod + start 3 containers
 sudo podman pod ps               # check pod status
 sudo podman logs eoc-app-backend # tail a container
-sudo systemctl restart cloudflared  # restart Cloudflare tunnel after deploy
 ```
 
 After a `git pull` on RHEL, always rebuild (`run_eoc_pod.sh`) — restarting containers alone does not pick up code changes.
