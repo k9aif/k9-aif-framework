@@ -56,7 +56,7 @@ QUICK START:
   python main.py
 
 UPGRADE:
-  pip install --upgrade git+https://github.com/k9aif/k9-aif-framework.git
+  pip install --upgrade k9-aif
 
 LINKS:
   Framework:  https://github.com/k9aif/k9-aif-framework
@@ -247,8 +247,9 @@ K9-AIF is not a replacement for CrewAI.
 K9-AIF is the governance and model routing layer above CrewAI.
 
 INSTALL:
-  pip install git+https://github.com/k9aif/k9-aif-framework.git
-  pip install crewai>=1.14
+  pip install k9-aif
+  pip install "k9-aif[crewai]"    # installs K9-AIF + CrewAI together
+  pip install crewai>=1.14        # or install CrewAI separately
 
 WIRE K9-AIF MODEL ROUTER INTO CREWAI AGENTS:
   from k9_aif_abb.k9_adapters.crewai.k9x_litellm_bridge_adapter import K9XLiteLLMBridgeAdapter
@@ -812,7 +813,7 @@ To use a real LLM, edit `config/config.yaml` and set your Ollama host.
 ## Upgrade to latest K9-AIF
 
 ```bash
-pip install --upgrade git+https://github.com/k9aif/k9-aif-framework.git
+pip install --upgrade k9-aif
 k9aif --version
 ```
 
