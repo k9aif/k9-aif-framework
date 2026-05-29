@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "k9_aif_abb"
+name = "k9-aif"
 version = "1.1.3"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
