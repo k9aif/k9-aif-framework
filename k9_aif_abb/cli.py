@@ -24,7 +24,10 @@ import sys
 def _version_str() -> str:
     try:
         from importlib.metadata import version as pkg_version
-        return pkg_version("k9_aif_abb")
+        try:
+            return pkg_version("k9-aif")
+        except Exception:
+            return pkg_version("k9_aif_abb")
     except Exception:
         return "unknown"
 
@@ -354,9 +357,13 @@ def verify():
 def version():
     try:
         from importlib.metadata import version as pkg_version
-        print(f"k9_aif_abb {pkg_version('k9_aif_abb')}")
+        try:
+            v = pkg_version("k9-aif")
+        except Exception:
+            v = pkg_version("k9_aif_abb")
+        print(f"k9-aif {v}")
     except Exception:
-        print("k9_aif_abb (version unknown)")
+        print("k9-aif (version unknown)")
 
 
 def info():
