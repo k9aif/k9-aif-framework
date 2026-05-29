@@ -14,3 +14,8 @@ docs/book/
 
 # Publications — not for public repository
 publications/
+
+# PyPI build artifacts
+dist/
+build/
+k9-aif-publish-pypi.sh
