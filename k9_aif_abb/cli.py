@@ -731,9 +731,13 @@ def doctor():
     # Package version
     try:
         from importlib.metadata import version as pkg_version
-        print(f"  ✓  k9_aif_abb {pkg_version('k9_aif_abb')}")
+        try:
+            v = pkg_version("k9-aif")
+        except Exception:
+            v = pkg_version("k9_aif_abb")
+        print(f"  ✓  k9-aif {v}")
     except Exception:
-        print("  ✗  k9_aif_abb not installed")
+        print("  ✗  k9-aif not installed")
 
     # Optional dependencies
     for pkg, label in [
