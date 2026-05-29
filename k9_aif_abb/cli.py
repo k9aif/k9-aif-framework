@@ -468,9 +468,10 @@ inference:
 
   llm_factory:
     base_url: "http://localhost:11434"
+    provider: mock
     models:
-      general: "mock"
-      reasoning: "mock"
+      general: "general"
+      reasoning: "reasoning"
 
   models:
     general:
@@ -565,7 +566,7 @@ class MyRouter(BaseRouter):
     layer = "MyRouter SBB"
 
     def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        self.publish_event({"type": "Routed", "pipeline": "my-pipeline"})
+        self.logger.info("[MyRouter] Routing event: %s", payload.get("job_id", ""))
         orchestrator = MyOrchestrator(config=self.config)
         return orchestrator.execute_flow(payload)
 ''',

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9_aif_abb"
-version = "1.0.9"
+version = "1.1.1"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
