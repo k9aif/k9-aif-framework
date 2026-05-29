@@ -35,6 +35,8 @@ def _version_str() -> str:
 HELP_MAIN = """
 k9aif — K9-AIF Framework CLI  v{version}
 Architecture-First Framework for Governed, Modular Agentic AI Systems
+Author:    Ravi Natarajan — https://k9x.ai
+Community: https://discord.gg/TbyFPvKJ5
 
 COMMANDS:
   k9aif verify              Smoke test — confirms framework is installed correctly
