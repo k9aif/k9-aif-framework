@@ -47,8 +47,11 @@ HELP TOPICS:
   k9aif --help crewai       Using K9-AIF with CrewAI
 
 QUICK START:
-  pip install git+https://github.com/k9aif/k9-aif-framework.git
-  k9aif verify
+  k9aif init
+  python main.py
+
+UPGRADE:
+  pip install --upgrade git+https://github.com/k9aif/k9-aif-framework.git
 
 LINKS:
   Framework:  https://github.com/k9aif/k9-aif-framework
