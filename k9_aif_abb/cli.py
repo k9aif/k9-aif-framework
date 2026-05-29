@@ -1025,6 +1025,9 @@ def main():
             sys.exit(1)
         else:
             print(HELP_MAIN.format(version=_version_str()))
+            print()
+            print("Ready to rumble!")
+            print()
         return
 
     cmd = args[0]
