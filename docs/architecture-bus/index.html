@@ -40,7 +40,7 @@
     .page { max-width: 1100px; margin: 0 auto; padding: 64px 32px; }
 
     /* Header */
-    .article-header { max-width: 760px; padding-bottom: 44px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
+    .article-header { padding-bottom: 44px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
     .kicker { font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; }
     h1 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; color: var(--ink); letter-spacing: -0.5px; line-height: 1.15; margin-bottom: 16px; }
     .intro { font-size: 16px; color: var(--ink-3); line-height: 1.75; max-width: 680px; }
@@ -176,9 +176,16 @@
   </div>
 
   <div class="section">
+    <h2>Motherboard. Plug and Play.</h2>
+    <p>Think of K9-AIF as the motherboard of your agentic AI system. A motherboard does not do the computing — it provides the governed backbone that everything else plugs into. The CPU changes, the GPU changes, the memory changes. The bus stays.</p>
+    <p>CrewAI plugs in. LangChain plugs in. IBM Watsonx plugs in. Ollama plugs in. Each is a peripheral. The K9-AIF Architecture Bus is the backplane — governing what flows between them, routing every request, enforcing every policy, persisting every decision.</p>
+    <p>MCP (Model Context Protocol) connectors follow the same principle. Anthropic's MCP is to tool integration what USB-C is to device connectivity — one standard port, any tool server, any direction. K9-AIF's <code>MCPHttpConnector</code> and <code>MCPStdioConnector</code> are the USB-C ports on the motherboard. Tools plug in without touching the bus.</p>
+  </div>
+
+  <div class="section">
     <h2>The Bus</h2>
     <p>The K9-AIF Architecture Bus is the execution backbone that connects agent frameworks, model providers, and enterprise systems under a single governed runtime.</p>
-    <p>Where traditional ESB carried XML messages between services, the Architecture Bus carries reasoning chains between agents — with governance enforced at every boundary, every routing decision persisted, and every model call auditable.</p>
+    <p>The payload is not a message. It is a reasoning chain — prompts, context, agent outputs, governance decisions — enriched progressively as it moves through the bus. Governance is enforced at every agent boundary, every routing decision is persisted, every model call is auditable.</p>
 
     <div class="bus-visual">
       <div class="bus-top-row">
