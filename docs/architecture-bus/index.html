@@ -216,51 +216,6 @@
   </div>
 
   <div class="section">
-    <h2>K9-AIF vs Traditional ESB</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Concern</th>
-          <th>Traditional ESB</th>
-          <th>K9-AIF Architecture Bus</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Payload</td>
-          <td>Messages (XML, JSON, binary)</td>
-          <td>Reasoning chains — prompts, context, agent outputs</td>
-        </tr>
-        <tr>
-          <td>Routing</td>
-          <td>Content-based, header-based</td>
-          <td>Intent-based, model-weighted, governance-checked</td>
-        </tr>
-        <tr>
-          <td>Mediation</td>
-          <td>Message transformation</td>
-          <td>Context enrichment — each agent enriches the shared payload</td>
-        </tr>
-        <tr>
-          <td>Governance</td>
-          <td>Policy at the integration layer</td>
-          <td>Policy at every agent boundary — zero trust execution</td>
-        </tr>
-        <tr>
-          <td>Audit</td>
-          <td>Message logs</td>
-          <td>Routing state store — every model decision persisted</td>
-        </tr>
-        <tr>
-          <td>Providers</td>
-          <td>Service endpoints</td>
-          <td>LLM providers (Ollama, Watsonx, OpenAI) via Provider Adapter</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="section">
     <h2>Related</h2>
     <div class="related">
       <a href="https://patterns.k9x.ai">Architecture Patterns</a>
