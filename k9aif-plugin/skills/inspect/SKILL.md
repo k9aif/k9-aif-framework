@@ -1,6 +1,12 @@
 ---
 description: Inspect K9-AIF SBB code for architectural compliance and produce recommendations. Checks decoupling rules, ABB contract adherence, governance, LLM invocation patterns, and config hygiene.
 ---
+**Before doing anything else, check that `/k9aif:configure` has been run.**
+If `K9AIF_PROJECT_ROOT` and `K9AIF_APP_NAME` are not set, refuse and say:
+> "Please run `/k9aif:configure` first to set your project root and app name."
+Do not proceed until init has been run.
+
+
 
 # K9-AIF: Inspect (k9_code_review)
 

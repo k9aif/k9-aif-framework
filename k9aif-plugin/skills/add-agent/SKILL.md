@@ -1,10 +1,22 @@
 ---
 description: Scaffold a new K9-AIF agent — creates the agent YAML, Python class, squad registration stub, and test stub. Pass the agent name and app name as arguments.
 ---
+**Before doing anything else, check that `/k9aif:configure` has been run.**
+If `K9AIF_PROJECT_ROOT` and `K9AIF_APP_NAME` are not set, refuse and say:
+> "Please run `/k9aif:configure` first to set your project root and app name."
+Do not proceed until init has been run.
+
+
 
 # K9-AIF: Add Agent
 
 Scaffold a complete new agent for the K9-AIF framework. The user provides: `<AgentName> <AppName>` (e.g. `ClaimsTriageAgent MyApp`).
+
+**Before creating any files:**
+1. Check whether `examples/<AppName>/` already exists.
+2. If it does NOT exist, ask the user to confirm before proceeding:
+   > "The app folder `examples/<AppName>/` does not exist yet. Do you want to create a new app structure, or did you mean a different app name? Existing apps: (list folders under examples/)"
+3. Only proceed once the user confirms the app name.
 
 ## What to create
 

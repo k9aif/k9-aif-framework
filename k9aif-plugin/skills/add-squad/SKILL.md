@@ -1,6 +1,12 @@
 ---
 description: Scaffold a new K9-AIF squad — creates the squad YAML with agents and flow steps. Pass the squad name, app name, and comma-separated agent names.
 ---
+**Before doing anything else, check that `/k9aif:configure` has been run.**
+If `K9AIF_PROJECT_ROOT` and `K9AIF_APP_NAME` are not set, refuse and say:
+> "Please run `/k9aif:configure` first to set your project root and app name."
+Do not proceed until init has been run.
+
+
 
 # K9-AIF: Add Squad
 

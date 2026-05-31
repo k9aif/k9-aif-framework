@@ -1,6 +1,12 @@
 ---
 description: Convert a K9-AIF agent to use the iterative validation loop pattern (K9ValidationLoopAgent). Pass the agent name and app name.
 ---
+**Before doing anything else, check that `/k9aif:configure` has been run.**
+If `K9AIF_PROJECT_ROOT` and `K9AIF_APP_NAME` are not set, refuse and say:
+> "Please run `/k9aif:configure` first to set your project root and app name."
+Do not proceed until init has been run.
+
+
 
 # K9-AIF: Add Validation Loop
 

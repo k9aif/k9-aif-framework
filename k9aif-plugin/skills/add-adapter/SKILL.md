@@ -1,6 +1,12 @@
 ---
 description: Scaffold a new K9-AIF provider adapter following the Provider Adapter Pattern (Skill 11). Pass the concern name and provider name.
 ---
+**Before doing anything else, check that `/k9aif:configure` has been run.**
+If `K9AIF_PROJECT_ROOT` and `K9AIF_APP_NAME` are not set, refuse and say:
+> "Please run `/k9aif:configure` first to set your project root and app name."
+Do not proceed until init has been run.
+
+
 
 # K9-AIF: Add Adapter
 
