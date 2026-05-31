@@ -36,8 +36,11 @@ class HelloWorldOrchestrator(BaseOrchestrator):
         loader = SquadLoader(registry)
         return loader.load_one(_SQUADS_YAML, _SQUAD_ID)
 
-    def run(self, event: Dict[str, Any]) -> Dict[str, Any]:
-        log.info("[%s] Running squad for event: %s", self.layer, event)
-        result = self.squad.run(dict(event))
-        self.publish_event({"type": "HelloWorldFlowCompleted", "result": result.get("hello", {})})
+    def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        log.info("[%s] Running squad for event: %s", self.layer, payload)
+        result = self.squad.run(dict(payload))
+        self.publish_status("completed", {"type": "HelloWorldFlowCompleted", "result": result.get("hello", {})})
         return result
+
+    def run(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        return self.execute_flow(event)
