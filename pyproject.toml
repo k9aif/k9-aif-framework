@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9-aif"
-version = "1.1.8"
+version = "1.2.1"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -42,6 +42,11 @@ all       = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
 ]
+
+[project.urls]
+Homepage   = "https://github.com/k9aif/k9-aif-framework"
+Changelog  = "https://github.com/k9aif/k9-aif-framework/blob/main/CHANGELOG.md"
+Issues     = "https://github.com/k9aif/k9-aif-framework/issues"
 
 [project.scripts]
 k9aif = "k9_aif_abb.cli:main"
