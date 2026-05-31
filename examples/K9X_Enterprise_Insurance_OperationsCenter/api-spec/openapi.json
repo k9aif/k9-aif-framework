@@ -1,0 +1,1862 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "K9-AIF Enterprise Insurance Operations Center API",
+        "description": "Event ingestion, audit query, and HITL escalation management API for the K9-AIF EOC reference application. Every event flows through the governed K9-AIF squad pipeline.",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health",
+                "description": "System health check. Returns service status and component availability.",
+                "operationId": "health_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/submit": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Event",
+                "description": "Submit any enterprise event to the EOC pipeline.\n\nThe event is routed through the EOCOrchestrator \u2192 appropriate squad\norchestrator \u2192 agent pipeline. Results are returned synchronously.\nThe event and its processing result are also pushed to the SSE stream.\n\nSupported event_type values:\n- ``claim_submitted``\n- ``document_received``\n- ``fraud_signal_raised``\n- ``policy_change_requested``\n- ``catastrophe_alert_issued``\n- ``customer_interaction_logged``\n- ``audit_query_received``",
+                "operationId": "submit_event_events_submit_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EOCEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/claim": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Claim",
+                "description": "Submit a typed ClaimSubmitted event with field validation.",
+                "operationId": "submit_claim_events_claim_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClaimSubmittedEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/document": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Document",
+                "description": "Submit a typed DocumentReceived event with field validation.",
+                "operationId": "submit_document_events_document_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DocumentReceivedEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/fraud-signal": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Fraud Signal",
+                "description": "Submit a typed FraudSignalRaised event with field validation.",
+                "operationId": "submit_fraud_signal_events_fraud_signal_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FraudSignalEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/policy-change": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Policy Change",
+                "description": "Submit a typed PolicyChangeRequested event with field validation.",
+                "operationId": "submit_policy_change_events_policy_change_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PolicyChangeEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/catastrophe": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Catastrophe",
+                "description": "Submit a typed CatastropheAlertIssued event with field validation.",
+                "operationId": "submit_catastrophe_events_catastrophe_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CatastropheAlertEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/customer-interaction": {
+            "post": {
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Submit Customer Interaction",
+                "description": "Submit a typed CustomerInteractionLogged event with field validation.",
+                "operationId": "submit_customer_interaction_events_customer_interaction_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CustomerInteractionEvent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EOCEventResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audit/query": {
+            "get": {
+                "tags": [
+                    "Audit"
+                ],
+                "summary": "Query Audit",
+                "description": "Query the immutable EOC audit trail.\n\nReturns AuditEntry records filtered by the provided parameters.\nRecords are ordered by timestamp descending (most recent first).",
+                "operationId": "query_audit_audit_query_get",
+                "parameters": [
+                    {
+                        "name": "correlation_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Filter by correlation ID",
+                            "title": "Correlation Id"
+                        },
+                        "description": "Filter by correlation ID"
+                    },
+                    {
+                        "name": "event_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Filter by event ID",
+                            "title": "Event Id"
+                        },
+                        "description": "Filter by event ID"
+                    },
+                    {
+                        "name": "agent_name",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Filter by agent name",
+                            "title": "Agent Name"
+                        },
+                        "description": "Filter by agent name"
+                    },
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Filter by event type",
+                            "title": "Event Type"
+                        },
+                        "description": "Filter by event type"
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 1000,
+                            "minimum": 1,
+                            "description": "Max records to return",
+                            "default": 100,
+                            "title": "Limit"
+                        },
+                        "description": "Max records to return"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/escalation/queue": {
+            "get": {
+                "tags": [
+                    "Escalation"
+                ],
+                "summary": "Get Escalation Queue",
+                "description": "Return HITL escalation tickets from the eoc.escalation_tickets table.\nFalls back to SSE event log if DB is unavailable.",
+                "operationId": "get_escalation_queue_escalation_queue_get",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "open",
+                            "title": "Status"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/escalation/{ticket_id}/resolve": {
+            "post": {
+                "tags": [
+                    "Escalation"
+                ],
+                "summary": "Resolve Escalation",
+                "description": "Mark a HITL escalation ticket as resolved.\n\nRecords the operator's resolution decision and writes a final\nAuditEntry with the operator_id for compliance traceability.",
+                "operationId": "resolve_escalation_escalation__ticket_id__resolve_post",
+                "parameters": [
+                    {
+                        "name": "ticket_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Ticket Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EscalationResolveRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/stream": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Event Stream",
+                "description": "Server-Sent Events stream for the EOC Operations Dashboard.\n\nStreams all recent EOC events (submitted and processed) in real time.\nThe dashboard subscribes to this endpoint and renders the Live Event Feed,\nAgent Activity Monitor, and Escalation Queue panels.\n\nConnect with ``EventSource`` in the browser::\n\n    const es = new EventSource('/events/stream');\n    es.onmessage = e => console.log(JSON.parse(e.data));",
+                "operationId": "event_stream_events_stream_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/events/recent": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Recent Events",
+                "description": "Return the most recent N events from the in-process event log.",
+                "operationId": "recent_events_events_recent_get",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200,
+                            "minimum": 1,
+                            "default": 50,
+                            "title": "Limit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/eoc/scenarios": {
+            "get": {
+                "tags": [
+                    "Architecture Demo"
+                ],
+                "summary": "Get Scenarios",
+                "description": "Return all seven EOC event scenarios with metadata and sample payloads.\n\nUsed by the web UI to populate the scenario selector and payload editor.",
+                "operationId": "get_scenarios_api_eoc_scenarios_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/eoc/run": {
+            "post": {
+                "tags": [
+                    "Architecture Demo"
+                ],
+                "summary": "Run Scenario",
+                "description": "Execute a named scenario through the full K9-AIF pipeline.\n\nAccepts an ``event_type`` and optional ``payload`` (defaults to the built-in\nsample if omitted).  Returns the annotated step-by-step runtime trace plus\nthe raw pipeline result \u2014 both are used by the EOC Operations Dashboard.",
+                "operationId": "run_scenario_api_eoc_run_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScenarioRunRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ScenarioRunResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/eoc/architecture": {
+            "get": {
+                "tags": [
+                    "Architecture Demo"
+                ],
+                "summary": "Get Architecture",
+                "description": "Return the full K9-AIF EOC architecture metadata.\n\nIncludes router routing table, all squad orchestrators and their agent\npipelines, agent YAML configuration, governance policies, and model routing.\nUsed by the Architecture Inspection tabs in the web UI.",
+                "operationId": "get_architecture_api_eoc_architecture_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/eoc/config-summary": {
+            "get": {
+                "tags": [
+                    "Architecture Demo"
+                ],
+                "summary": "Get Config Summary",
+                "description": "Return a sanitised summary of the runtime configuration.",
+                "operationId": "get_config_summary_api_eoc_config_summary_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/eoc/graph": {
+            "get": {
+                "tags": [
+                    "Architecture Demo"
+                ],
+                "summary": "Get Execution Graph",
+                "description": "Return nodes and edges for Cytoscape.js rendering.\n\n- view=architecture   K9-AIF component graph from Neo4j seed (fallback: static)\n- view=entities       Live Claimant/Claim/Policy/Document graph from Neo4j\n- view=fraud_network  Claimant\u2192Claim\u2192Policy traversal highlighting shared-policy risk\n- event_type=<type>   Execution-path graph for a specific scenario (backward compat)\n- (no params)         Same as view=architecture",
+                "operationId": "get_execution_graph_api_eoc_graph_get",
+                "parameters": [
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Event type filter for execution-path view",
+                            "title": "Event Type"
+                        },
+                        "description": "Event type filter for execution-path view"
+                    },
+                    {
+                        "name": "view",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "description": "Graph view: architecture | entities | fraud_network",
+                            "title": "View"
+                        },
+                        "description": "Graph view: architecture | entities | fraud_network"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CatastropheAlertEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "catastrophe_alert_issued"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "alert_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Alert Id",
+                        "description": "Catastrophe alert identifier"
+                    },
+                    "alert_description": {
+                        "type": "string",
+                        "title": "Alert Description",
+                        "description": "Description of the catastrophe event"
+                    },
+                    "estimated_exposure": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Estimated Exposure",
+                        "description": "Estimated total exposure in USD",
+                        "default": 0.0
+                    },
+                    "affected_regions": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Affected Regions",
+                        "description": "Affected geographic regions"
+                    },
+                    "severity": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Severity",
+                        "description": "Alert severity",
+                        "default": "high"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "alert_description"
+                ],
+                "title": "CatastropheAlertEvent",
+                "description": "Typed payload for CatastropheAlertIssued events."
+            },
+            "ClaimSubmittedEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "claim_submitted"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "claim_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claim Id",
+                        "description": "Unique claim identifier"
+                    },
+                    "claimant_id": {
+                        "type": "string",
+                        "title": "Claimant Id",
+                        "description": "Claimant identifier"
+                    },
+                    "policy_id": {
+                        "type": "string",
+                        "title": "Policy Id",
+                        "description": "Active policy identifier"
+                    },
+                    "claim_type": {
+                        "type": "string",
+                        "title": "Claim Type",
+                        "description": "Type of claim (property_damage, bodily_injury, etc.)"
+                    },
+                    "amount_claimed": {
+                        "type": "number",
+                        "maximum": 1000000000.0,
+                        "minimum": 0.0,
+                        "title": "Amount Claimed",
+                        "description": "Amount claimed in USD (max $1B \u2014 amounts above this are rejected at the API boundary and require manual submission)"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes",
+                        "description": "Free-text claim description"
+                    },
+                    "is_repeat_claimant": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Is Repeat Claimant",
+                        "description": "True if claimant has prior claims",
+                        "default": false
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "claimant_id",
+                    "policy_id",
+                    "claim_type",
+                    "amount_claimed"
+                ],
+                "title": "ClaimSubmittedEvent",
+                "description": "Typed payload for ClaimSubmitted events."
+            },
+            "CustomerInteractionEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "customer_interaction_logged"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "interaction_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interaction Id",
+                        "description": "Interaction identifier"
+                    },
+                    "customer_id": {
+                        "type": "string",
+                        "title": "Customer Id",
+                        "description": "Customer / claimant identifier"
+                    },
+                    "policy_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Policy Id",
+                        "description": "Related policy"
+                    },
+                    "interaction_type": {
+                        "type": "string",
+                        "title": "Interaction Type",
+                        "description": "Type: inquiry | complaint | claim_status | coverage_question"
+                    },
+                    "customer_message": {
+                        "type": "string",
+                        "title": "Customer Message",
+                        "description": "Customer message or query content"
+                    },
+                    "channel": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Channel",
+                        "description": "Interaction channel: portal | phone | chat | email",
+                        "default": "portal"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "customer_id",
+                    "interaction_type",
+                    "customer_message"
+                ],
+                "title": "CustomerInteractionEvent",
+                "description": "Typed payload for CustomerInteractionLogged events."
+            },
+            "DocumentReceivedEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "document_received"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "document_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Document Id",
+                        "description": "Document identifier"
+                    },
+                    "claim_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claim Id",
+                        "description": "Associated claim ID"
+                    },
+                    "claimant_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claimant Id",
+                        "description": "Document owner claimant ID"
+                    },
+                    "filename": {
+                        "type": "string",
+                        "title": "Filename",
+                        "description": "Original filename"
+                    },
+                    "file_type": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Type",
+                        "description": "MIME type or extension"
+                    },
+                    "raw_text": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Raw Text",
+                        "description": "Pre-extracted text content"
+                    },
+                    "file_path": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Path",
+                        "description": "Path to file for OCR processing"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "filename"
+                ],
+                "title": "DocumentReceivedEvent",
+                "description": "Typed payload for DocumentReceived events."
+            },
+            "EOCEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "description": "Event taxonomy type: claim_submitted | document_received | fraud_signal_raised | policy_change_requested | catastrophe_alert_issued | customer_interaction_logged | audit_query_received",
+                        "examples": [
+                            "claim_submitted"
+                        ]
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "event_type"
+                ],
+                "title": "EOCEvent",
+                "description": "Base envelope for all enterprise events submitted to the EOC."
+            },
+            "EOCEventResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "Processing status: completed | error | queued"
+                    },
+                    "event_id": {
+                        "type": "string",
+                        "title": "Event Id",
+                        "description": "Event identifier"
+                    },
+                    "correlation_id": {
+                        "type": "string",
+                        "title": "Correlation Id",
+                        "description": "Trace correlation ID"
+                    },
+                    "squad_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Squad Id",
+                        "description": "Squad that handled this event"
+                    },
+                    "final_decision": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Final Decision",
+                        "description": "Final disposition from the squad"
+                    },
+                    "confidence": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Confidence",
+                        "description": "Confidence score (0.0\u20131.0)"
+                    },
+                    "escalated": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Escalated",
+                        "description": "True if event was escalated to HITL"
+                    },
+                    "ticket_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ticket Id",
+                        "description": "Escalation ticket ID if escalated"
+                    },
+                    "audit_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Audit Id",
+                        "description": "Audit record ID for this event"
+                    },
+                    "details": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Details",
+                        "description": "Full pipeline results"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status",
+                    "event_id",
+                    "correlation_id"
+                ],
+                "title": "EOCEventResponse",
+                "description": "Standard API response envelope for all event submissions."
+            },
+            "EscalationResolveRequest": {
+                "properties": {
+                    "operator_id": {
+                        "type": "string",
+                        "title": "Operator Id",
+                        "description": "ID of the human operator resolving the ticket"
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "title": "Resolution",
+                        "description": "Resolution decision: approve | deny | partial | defer"
+                    },
+                    "resolution_notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Resolution Notes",
+                        "description": "Notes from the operator"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "operator_id",
+                    "resolution"
+                ],
+                "title": "EscalationResolveRequest",
+                "description": "Payload for resolving a HITL escalation ticket."
+            },
+            "FraudSignalEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "fraud_signal_raised"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "alert_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Alert Id",
+                        "description": "Alert identifier"
+                    },
+                    "alert_source": {
+                        "type": "string",
+                        "title": "Alert Source",
+                        "description": "Source system that raised the signal"
+                    },
+                    "claimant_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claimant Id",
+                        "description": "Claimant under review"
+                    },
+                    "claim_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claim Id",
+                        "description": "Related claim if applicable"
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "Description of the fraud signal"
+                    },
+                    "amount_claimed": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Amount Claimed",
+                        "description": "Related claim amount if applicable",
+                        "default": 0.0
+                    },
+                    "severity": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Severity",
+                        "description": "Signal severity: low | medium | high | critical",
+                        "default": "medium"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "alert_source",
+                    "description"
+                ],
+                "title": "FraudSignalEvent",
+                "description": "Typed payload for FraudSignalRaised events."
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "HealthResponse": {
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "service": {
+                        "type": "string",
+                        "title": "Service",
+                        "default": "K9-AIF EOC"
+                    },
+                    "version": {
+                        "type": "string",
+                        "title": "Version",
+                        "default": "0.1.0"
+                    },
+                    "components": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object",
+                        "title": "Components"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "status",
+                    "components"
+                ],
+                "title": "HealthResponse",
+                "description": "System health check response."
+            },
+            "PolicyChangeEvent": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "default": "policy_change_requested"
+                    },
+                    "event_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Event Id",
+                        "description": "Unique event identifier. Auto-generated if not provided."
+                    },
+                    "correlation_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Correlation Id",
+                        "description": "Trace identifier propagated across all agents in the flow."
+                    },
+                    "policy_id": {
+                        "type": "string",
+                        "title": "Policy Id",
+                        "description": "Policy being modified"
+                    },
+                    "claimant_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Claimant Id",
+                        "description": "Policy holder"
+                    },
+                    "change_type": {
+                        "type": "string",
+                        "title": "Change Type",
+                        "description": "Type of change: endorsement | cancellation | modification"
+                    },
+                    "change_description": {
+                        "type": "string",
+                        "title": "Change Description",
+                        "description": "Description of the requested change"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes",
+                        "description": "Additional context"
+                    }
+                },
+                "additionalProperties": true,
+                "type": "object",
+                "required": [
+                    "policy_id",
+                    "change_type",
+                    "change_description"
+                ],
+                "title": "PolicyChangeEvent",
+                "description": "Typed payload for PolicyChangeRequested events."
+            },
+            "ScenarioRunRequest": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type",
+                        "description": "One of the seven EOC event types"
+                    },
+                    "payload": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Payload",
+                        "description": "Event payload; defaults to built-in sample if omitted"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "event_type"
+                ],
+                "title": "ScenarioRunRequest",
+                "description": "Request to execute a named scenario through the K9-AIF pipeline."
+            },
+            "ScenarioRunResponse": {
+                "properties": {
+                    "event_type": {
+                        "type": "string",
+                        "title": "Event Type"
+                    },
+                    "event_id": {
+                        "type": "string",
+                        "title": "Event Id"
+                    },
+                    "correlation_id": {
+                        "type": "string",
+                        "title": "Correlation Id"
+                    },
+                    "squad_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Squad Id"
+                    },
+                    "trace": {
+                        "items": {
+                            "$ref": "#/components/schemas/TraceStep"
+                        },
+                        "type": "array",
+                        "title": "Trace"
+                    },
+                    "result": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Result"
+                    },
+                    "error": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "event_type",
+                    "event_id",
+                    "correlation_id",
+                    "trace",
+                    "result"
+                ],
+                "title": "ScenarioRunResponse",
+                "description": "Full pipeline result returned by POST /api/eoc/run."
+            },
+            "TraceStep": {
+                "properties": {
+                    "step": {
+                        "type": "integer",
+                        "title": "Step"
+                    },
+                    "component": {
+                        "type": "string",
+                        "title": "Component",
+                        "description": "Class or layer name (EOCRouter, ClaimsTriageAgent, \u2026)"
+                    },
+                    "layer": {
+                        "type": "string",
+                        "title": "Layer",
+                        "description": "router | orchestrator | squad | agent | governance | audit | escalation | result"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "ok | warn | error"
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "final": {
+                        "type": "boolean",
+                        "title": "Final",
+                        "default": false
+                    },
+                    "agent_yaml": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Agent Yaml",
+                        "description": "Full agent YAML config: role, goal, instructions, pattern, governance"
+                    },
+                    "model_routing": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Model Routing",
+                        "description": "Model selected, why, cost/latency/governance rationale"
+                    },
+                    "governance_detail": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Governance Detail",
+                        "description": "Pre/post guard gates, confidence threshold, PII fields"
+                    },
+                    "latency_ms": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Latency Ms",
+                        "description": "Estimated execution latency in milliseconds"
+                    },
+                    "tools": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Tools",
+                        "description": "Tool calls available to this agent"
+                    },
+                    "agent_result": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Agent Result",
+                        "description": "Raw agent output from the pipeline result"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "step",
+                    "component",
+                    "layer",
+                    "status",
+                    "message"
+                ],
+                "title": "TraceStep",
+                "description": "A single step in the runtime execution trace \u2014 includes full agent transparency fields."
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    },
+                    "input": {
+                        "title": "Input"
+                    },
+                    "ctx": {
+                        "type": "object",
+                        "title": "Context"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            }
+        }
+    }
+}
