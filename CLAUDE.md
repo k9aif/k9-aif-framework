@@ -158,13 +158,24 @@ Each layer knows only what is **below** it in the hierarchy:
 
 | Layer | Knows about | Does NOT know about |
 |---|---|---|
-| **Orchestrator** | Its squad ID — loaded via `_load_squad()` | Routers, other orchestrators |
+| **Orchestrator** | Its squad — received at construction | Routers, agents, other orchestrators |
 | **Squad** | Its agents and their execution flow | Orchestrators |
 | **Agent** | Its own behavior (role, goal, model) | Squads, routing, next agent |
 
-**Squad YAML has no `orchestrator:` field.** The orchestrator is the caller — the squad must not reference its caller.
+**The single rule: each layer only knows the layer directly below it.**
 
-**Agent YAML has no `squad:` or `routing:` fields.** Agents are squad-agnostic and can be reused across different squads.
+- **Router** only knows Orchestrators — not Squads, not Agents
+- **Orchestrator** only knows Squads — not Agents, not Routers
+- **Squad** only knows Agents — not Orchestrators, not Routers
+- **Agent** knows nothing above itself
+
+**STRICT RULES — never violate:**
+- Router must not import or reference Squad or Agent classes
+- Orchestrator must not import or reference Agent classes
+- Squad YAML has no `orchestrator:` field
+- Agent YAML has no `squad:` or `routing:` fields
+
+Agent registration belongs in the **application entry point** (`app.py`, `bootstrap.py`) — not inside the orchestrator. The orchestrator receives a pre-loaded squad and calls `run()` only.
 
 ### Squad definition (YAML)
 

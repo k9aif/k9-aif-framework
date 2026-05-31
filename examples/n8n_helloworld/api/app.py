@@ -11,17 +11,26 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 
+from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
+from k9_aif_abb.k9_squad.squad_loader import SquadLoader
+
+from agents.src.hello_world_agent import HelloWorldAgent
 from orchestrators.hello_world_orchestrator import HelloWorldOrchestrator
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config/config.yaml")
+_SQUADS_YAML = os.path.join(os.path.dirname(__file__), "../config/squads.yaml")
 
 with open(_CONFIG_PATH) as f:
     _config = yaml.safe_load(f)
 
-_orchestrator = HelloWorldOrchestrator(config=_config)
+# Bootstrap — register agents and load squad here, not in the orchestrator
+_registry = AgentRegistry()
+_registry.register("HelloWorldAgent", lambda: HelloWorldAgent(config=_config))
+_squad = SquadLoader(_registry).load_one(_SQUADS_YAML, "HelloWorldSquad")
+_orchestrator = HelloWorldOrchestrator(squad=_squad, config=_config)
 
 app = FastAPI(
     title="K9-AIF Hello World",
@@ -54,4 +63,4 @@ def run(payload: HelloRequest):
 
 @app.get("/health")
 def health():
-    return {"status": "healthy", "pipeline": "Router → Orchestrator → Squad → Agent"}
+    return {"status": "healthy", "pipeline": "Orchestrator → Squad → Agent"}
