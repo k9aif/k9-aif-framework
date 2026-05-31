@@ -111,29 +111,56 @@ bash test_squads.sh              # squad execution flow
 ### Execution hierarchy
 
 ```
-Event → [IntentSquad] → K9EventRouter → Orchestrator → Squads → Agents → LLM
-          (optional)
+Event → K9EventRouter (single entry point)
+    ├── event_type in routing.table ─────────────────► domain topic
+    └── event_type unknown ──────────► intent.in
+                                            │
+                              IntentOrchestrator (consumes intent.in)
+                                  → IntentSquad → K9IntentAgent
+                                      ├── intent resolved ──► domain topic
+                                      └── intent unclear  ──► responses.out
+
+domain topic → Orchestrator → Squads → Agents → LLM
 ```
 
-- **IntentSquad** (`k9_squad/intent_squad.py`) — optional pre-router squad that stamps `intent` onto the payload for non-deterministic routing; contains one or more `BaseIntentAgent` implementations
-- **Router** (`k9_core/router/base_router.py`) — routes events by `event_type` (or `intent`) to the right orchestrator
+- **Router** (`k9_core/router/base_router.py`) — **single entry point** for all events. Routes by `event_type` deterministically; publishes to `intent.in` when intent cannot be determined. Never contains classification logic.
+- **IntentOrchestrator** — Kafka consumer on `intent.in`. Runs IntentSquad to classify intent, then re-publishes to the correct domain topic. If intent remains unclear, publishes a "please clarify" response. **OOB gap — not yet built; SBBs must implement.**
+- **IntentSquad** (`k9_squad/intent_squad.py`) — squad used by IntentOrchestrator; wraps one or more `BaseIntentAgent` implementations; handles confidence gating
 - **Orchestrator** (`k9_core/orchestration/base_orchestrator.py`) — coordinates squads for a domain workflow
 - **Squad** (`k9_squad/base_squad.py`) — executes a defined `flow` of agents in sequence
 - **Agent** (`k9_core/agent/base_agent.py`) — implements `execute(payload) -> dict`; must extend `BaseAgent`
 
 ### Intent classification ABBs
 
-Use when routing is non-deterministic (free-text input, ambiguous events):
+Used inside `IntentOrchestrator` when the Router cannot determine intent deterministically. The Router publishes to `intent.in`; `IntentOrchestrator` consumes it, runs `IntentSquad`, and re-publishes to the correct domain topic — or generates a "please clarify" response.
+
+**The SA never wires anything in front of the Router.** IntentOrchestrator is a separate Kafka-decoupled process, not a pre-step.
 
 | Class | Kind | Path |
 |---|---|---|
+| `K9EventRouter` | OOB Router | `k9_core/router/k9_event_router.py` |
 | `BaseIntentAgent` | ABB abstract | `k9_agents/intent/base_intent_agent.py` |
 | `K9IntentAgent` | OOB LLM-driven | `k9_agents/intent/k9_intent_agent.py` |
-| `IntentSquad` | Pre-router squad | `k9_squad/intent_squad.py` |
+| `IntentSquad` | ABB squad for intent classification | `k9_squad/intent_squad.py` |
+| `IntentOrchestrator` | OOB — self-bootstrapped with K9IntentAgent | `k9_orchestrators/intent_orchestrator.py` |
 
 `K9IntentAgent` classification order: (1) `intent_map` dict rule lookup — zero latency; (2) LLM via `llm_invoke`; (3) `fallback_intent()` — `event_type` verbatim or `"unknown"`.
 
 `IntentSquad` override surface: `select_agent(payload)`, `merge_intent(payload, result)`, `on_low_confidence(payload, intent, confidence)`. The `confidence_threshold` config key (default 0.5) triggers `on_low_confidence` when below.
+
+**Three routing outcomes from the Router's perspective:**
+1. `event_type` known → publish directly to domain topic (zero latency)
+2. `event_type` unknown → publish to `intent.in` → IntentOrchestrator resolves → domain topic
+3. Intent unresolvable → IntentOrchestrator publishes "please clarify" response
+
+**SBB classification strategies** — all plug in via `BaseIntentAgent.classify()`:
+- Config list / `intent_map` in YAML (zero-code, zero-latency)
+- LLM prompt (`K9IntentAgent` OOB)
+- NLP / regex pipeline
+- Docling document extraction + classification
+- Rules engine (e.g. Drools via an adapter)
+
+The topology (Router → `intent.in` → IntentOrchestrator → domain topic) is the same regardless of which strategy is used inside the agent.
 
 ### Inference pipeline
 

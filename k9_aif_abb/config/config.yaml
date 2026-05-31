@@ -79,24 +79,45 @@ measurements:
 
 external_services:
   docling:
-    endpoint: "http://192.168.1.98:5001/v1/parse"
+    endpoint: "${DOCLING_ENDPOINT:-http://localhost:5001/v1/parse}"
 
 messaging:
   backend: redpanda
-  broker_url: 192.168.1.98:9092
+  broker_url: "${KAFKA_BROKER:-localhost:9092}"
   topic: k9aif-events
   group_id: k9aif-core       # [INFO] one canonical group for all orchestration logs
   client_id: k9aif-console   # optional metadata only
   security_protocol: PLAINTEXT
   auto_create: true
 
+# ------------------------------------------------------------
+# K9 Event Routing
+# ------------------------------------------------------------
+# K9EventRouter publishes to domain topics when event_type is
+# in the table; falls back to intent_topic when unknown.
+# IntentOrchestrator consumes intent_topic, classifies intent,
+# and re-publishes to the resolved domain topic — or sends a
+# "please clarify" to response_topic.
+# SBBs override table entries in their own config.yaml.
+# ------------------------------------------------------------
+routing:
+  intent_topic:        intent.in      # Router → IntentOrchestrator handoff
+  response_topic:      responses.out  # IntentOrchestrator → clarification replies
+  confidence_threshold: 0.6           # below this → ask for clarification
+  table: {}                           # event_type/intent → topic; SBBs fill this in
+
+  # intent_map passed through to K9IntentAgent (fast-path rule lookup, no LLM):
+  # intent_map:
+  #   fraud_report: fraud
+  #   claim_form:   claims
+
 postgres:
-  host: "192.168.1.98"
-  port: 5432
-  user: "postgres"
-  password: "postgres"
-  database: "k9aif"
-  schema: "k9aif"
+  host:     "${POSTGRES_HOST:-localhost}"
+  port:     "${POSTGRES_PORT:-5432}"
+  user:     "${POSTGRES_USER:-postgres}"
+  password: "${POSTGRES_PASSWORD:-postgres}"
+  database: "${POSTGRES_DB:-k9aif}"
+  schema:   "${POSTGRES_SCHEMA:-k9aif}"
 
 # ------------------------------------------------------------
 # K9 Inference Router
@@ -116,16 +137,16 @@ inference:
         db_path: "./runtime/k9_model_router.db"
 
       postgres:
-        host: "192.168.1.98"
-        port: 5432
-        user: "postgres"
-        password: "postgres"
-        database: "k9aif"
-        schema: "k9aif"
+        host:     "${POSTGRES_HOST:-localhost}"
+        port:     "${POSTGRES_PORT:-5432}"
+        user:     "${POSTGRES_USER:-postgres}"
+        password: "${POSTGRES_PASSWORD:-postgres}"
+        database: "${POSTGRES_DB:-k9aif}"
+        schema:   "${POSTGRES_SCHEMA:-k9aif}"
         schema_file: "k9_aif_abb/db/k9_db_schema.sql"
 
   llm_factory:
-    base_url: "http://192.168.1.98:11434"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
       general: "llama3.2:1b"
       fast_local: "llama3.2:1b"

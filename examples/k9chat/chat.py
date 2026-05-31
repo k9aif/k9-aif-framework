@@ -11,8 +11,6 @@ if REPO_ROOT not in sys.path:
 
 from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
-from k9_aif_abb.k9_orchestrators.registry.orchestrator_registry import OrchestratorRegistry
-from k9_aif_abb.k9_orchestrators.framework_orchestrator import FrameworkOrchestrator
 from examples.k9chat.chat_agent import ChatAgent
 
 BASE_DIR = os.path.dirname(__file__)
@@ -30,10 +28,7 @@ def build_chat_agent():
     agent_registry = AgentRegistry()
     agent_registry.register("chat_agent", ChatAgent)
 
-    orchestrator_registry = OrchestratorRegistry()
-    orchestrator_registry.register("framework", FrameworkOrchestrator)
-
-    loader = SquadLoader(agent_registry, orchestrator_registry)
+    loader = SquadLoader(agent_registry)
     squads = loader.load(os.path.join(BASE_DIR, "squad.yaml"))
 
     squad = squads["k9chat"]

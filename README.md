@@ -154,7 +154,18 @@ Rather than orchestrators invoking individual agents directly, K9-AIF introduces
 
 Execution hierarchy:
 
-Router --> Orchestrator --> Squads --> Agents
+```
+Event → K9EventRouter (single entry point)
+    ├── event_type known  ──────────────────► domain topic
+    └── event_type unknown ──► intent.in
+                                    │
+                        IntentOrchestrator
+                            → IntentSquad → K9IntentAgent
+                                ├── intent resolved ──► domain topic
+                                └── intent unclear  ──► responses.out
+
+domain topic → Orchestrator → Squads → Agents → LLM
+```
 
 Squads allow enterprise workflows to be modeled as **capability-based teams of agents**.
 All squad-level execution remains subject to K9-AIF’s governance and Zero Trust execution controls, ensuring that agent actions are verified and policy-enforced at runtime.

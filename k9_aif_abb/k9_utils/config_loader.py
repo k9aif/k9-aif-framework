@@ -7,6 +7,9 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict, List
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()   # load .env into os.environ before any config expansion runs
 
 from k9_aif_abb.k9_core.persistence.base_persistence import (
     MemoryPersistence

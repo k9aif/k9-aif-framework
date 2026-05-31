@@ -1,0 +1,38 @@
+# K9-AIF Intent Routing Example — config.yaml
+# Demonstrates deterministic + non-deterministic routing OOB behaviour.
+
+routing:
+  intent_topic:         intent.in
+  response_topic:       responses.out
+  confidence_threshold: 0.6
+
+  # Deterministic routing table — event_type → topic
+  table:
+    claims_submitted: claims.in
+    fraud_alert:      fraud.in
+    doc_uploaded:     documents.in
+
+  # Fast-path intent_map used by K9IntentAgent (no LLM needed for these)
+  intent_map:
+    claims_submitted: claims
+    fraud_report:     fraud
+    doc_uploaded:     document
+
+inference:
+  router:
+    type: k9_model_router
+    default_model: general
+    persistence:
+      enabled: false
+      provider: memory
+
+  llm_factory:
+    base_url: "http://localhost:11434"
+    models:
+      general: "llama3.2:1b"
+
+  models:
+    general:
+      provider: ollama
+      llm_ref: general
+      capabilities: [general, chat]
