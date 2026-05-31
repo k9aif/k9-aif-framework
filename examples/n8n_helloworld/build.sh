@@ -1,25 +1,27 @@
 #!/bin/bash
-# Build and run K9-AIF n8n Hello World as a Podman container
+# K9-AIF n8n Hello World — build and run as a Podman container
+# Run from within the n8n_helloworld/ folder:
+#   cd examples/n8n_helloworld && bash build.sh
 
 set -e
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-cd "$REPO_ROOT"
+APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$APP_DIR"
 
 IMAGE_NAME="k9aif-n8n-helloworld"
 CONTAINER_NAME="k9aif-helloworld"
 PORT=8001
 
 echo "=== Building $IMAGE_NAME ==="
-sudo podman build -f examples/n8n_helloworld/Containerfile -t $IMAGE_NAME .
+podman build -t $IMAGE_NAME .
 
 echo ""
 echo "=== Stopping existing container (if any) ==="
-sudo podman rm -f $CONTAINER_NAME 2>/dev/null || true
+podman rm -f $CONTAINER_NAME 2>/dev/null || true
 
 echo ""
 echo "=== Starting $CONTAINER_NAME on port $PORT ==="
-sudo podman run -d \
+podman run -d \
   --name $CONTAINER_NAME \
   -p $PORT:$PORT \
   --env K9_ENV=development \
