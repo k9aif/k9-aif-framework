@@ -1,15 +1,18 @@
 # EOC Environment Variables
-# Copy this file to .env and fill in the real values.
+# Copy this file to .env and fill in your values.
 # Never commit .env to version control.
 
-# PostgreSQL credentials
-K9_PG_PASSWORD=your_postgres_password_here
+OLLAMA_BASE_URL=http://your-ollama-host:11434
 
-# Neo4j credentials
-NEO4J_URI=bolt://192.168.1.98:7687
+POSTGRES_HOST=your-postgres-host
+POSTGRES_USER=postgres
+POSTGRES_DB=eoc
+K9_PG_PASSWORD=your_postgres_password
+
+NEO4J_URI=bolt://your-neo4j-host:7687
 NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_neo4j_password_here
+NEO4J_PASSWORD=your_neo4j_password
 
-# Optional: K9_ENV controls governance enforcement
-# development | test | staging | production
+KAFKA_BROKER=your-kafka-host:9092
+
 K9_ENV=development

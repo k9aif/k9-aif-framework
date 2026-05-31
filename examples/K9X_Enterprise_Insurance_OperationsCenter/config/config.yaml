@@ -5,7 +5,7 @@ inference:
   llm_factory:
     backend: ollama
     provider: "ollama"
-    base_url: "http://192.168.1.98:11434"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
       general:
         model: "llama3.2:1b"
@@ -70,23 +70,23 @@ persistence:
   provider: postgres
 
 postgres:
-  host: "192.168.1.98"
+  host: "${POSTGRES_HOST:-localhost}"
   port: 5432
-  user: "postgres"
-  database: "eoc"
+  user: "${POSTGRES_USER:-postgres}"
+  database: "${POSTGRES_DB:-eoc}"
   schema: "eoc"
   echo: false
 
 neo4j:
-  uri: "bolt://192.168.1.98:7687"
-  user: neo4j
+  uri: "${NEO4J_URI:-bolt://localhost:7687}"
+  user: "${NEO4J_USER:-neo4j}"
   database: neo4j
 
 messaging:
   backend: kafka
   brokers:
-    - "192.168.1.98:9092"
-  bootstrap_servers: "192.168.1.98:9092"
+    - "${KAFKA_BROKER:-localhost:9092}"
+  bootstrap_servers: "${KAFKA_BROKER:-localhost:9092}"
   topic: eoc-events
   client_id: eoc-console
   security_protocol: PLAINTEXT
