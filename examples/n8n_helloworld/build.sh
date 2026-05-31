@@ -8,8 +8,8 @@ set -e
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$APP_DIR"
 
-IMAGE_NAME="k9aif-n8n-helloworld"
-CONTAINER_NAME="k9aif-helloworld"
+IMAGE_NAME="n8n-helloworld"
+CONTAINER_NAME="n8n-helloworld"
 PORT=8001
 
 echo "=== Building $IMAGE_NAME ==="

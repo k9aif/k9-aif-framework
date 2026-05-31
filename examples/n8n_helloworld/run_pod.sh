@@ -1,5 +1,5 @@
 #!/bin/bash
-# K9-AIF n8n Hello World — run both n8n and k9aif-helloworld in a shared pod
+# K9-AIF n8n Hello World — run both n8n and n8n-helloworld in a shared pod
 # Containers in the same pod share the network — use http://localhost:8001/run in n8n
 
 set -e
@@ -9,7 +9,7 @@ PORT_N8N=5678
 PORT_K9AIF=8001
 
 echo "=== Stopping existing containers (if any) ==="
-podman rm -f k9aif-helloworld 2>/dev/null || true
+podman rm -f n8n-helloworld 2>/dev/null || true
 podman rm -f n8n 2>/dev/null || true
 podman pod rm -f $POD_NAME 2>/dev/null || true
 
@@ -27,12 +27,12 @@ podman run -d \
   docker.io/n8nio/n8n:latest
 
 echo ""
-echo "=== Starting k9aif-helloworld ==="
+echo "=== Starting n8n-helloworld ==="
 podman run -d \
   --pod $POD_NAME \
-  --name k9aif-helloworld \
+  --name n8n-helloworld \
   --env K9_ENV=development \
-  localhost/k9aif-n8n-helloworld:latest
+  localhost/n8n-helloworld:latest
 
 echo ""
 echo "=== Done ==="
