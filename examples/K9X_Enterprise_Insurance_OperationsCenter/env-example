@@ -1,6 +1,13 @@
-# EOC Environment Variables
-# Copy this file to .env and fill in your values.
-# Never commit .env to version control.
+# ============================================================
+# K9-AIF EOC — Environment Variables
+# ============================================================
+# STEP 1: Copy this file and rename it to .env
+#         cp env-example .env
+#
+# STEP 2: Replace placeholder values with your actual settings
+#
+# STEP 3: Never commit .env — it is gitignored
+# ============================================================
 
 OLLAMA_BASE_URL=http://your-ollama-host:11434
 
@@ -15,4 +22,6 @@ NEO4J_PASSWORD=your_neo4j_password
 
 KAFKA_BROKER=your-kafka-host:9092
 
+# K9_ENV controls governance enforcement
+# development | test | staging | production
 K9_ENV=development
