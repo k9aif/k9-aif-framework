@@ -2,11 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir k9aif uvicorn fastapi
 
 COPY . .
 
 EXPOSE 8001
 
-CMD ["uvicorn", "examples.n8n_helloworld.api.app:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8001"]

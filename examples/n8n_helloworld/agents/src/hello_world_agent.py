@@ -3,13 +3,6 @@
 
 from __future__ import annotations
 
-import os
-import sys
-
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
-
 from typing import Any, Dict, Optional
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 
