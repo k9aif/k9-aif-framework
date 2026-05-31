@@ -647,12 +647,290 @@ def generate_complete():
     print("  python main.py")
 
 
+def generate_n8n_hello_world():
+    from pathlib import Path
+
+    print()
+    print("K9-AIF — Generate n8n Hello World Example")
+    print("==========================================")
+    print()
+
+    app_name = input("App name [n8n_helloworld]: ").strip() or "n8n_helloworld"
+    port = input("Port [8001]: ").strip() or "8001"
+
+    base = Path.cwd() / app_name
+    if base.exists():
+        print(f"\n  ✗  Folder '{app_name}' already exists. Remove it or choose a different name.")
+        return
+
+    # Create folder structure
+    (base / "agents" / "src").mkdir(parents=True)
+    (base / "agents" / "yaml").mkdir(parents=True)
+    (base / "orchestrators").mkdir(parents=True)
+    (base / "config").mkdir(parents=True)
+    (base / "api").mkdir(parents=True)
+
+    # __init__.py files
+    for d in [base, base/"agents", base/"agents"/"src", base/"orchestrators", base/"api"]:
+        (d / "__init__.py").write_text("")
+
+    # .gitignore
+    (base / ".gitignore").write_text("__pycache__/\n*.pyc\n*.pyo\n.DS_Store\n.env\n")
+
+    # agents/yaml/hello_world_agent.yaml
+    (base / "agents" / "yaml" / "hello_world_agent.yaml").write_text(
+        f"""name: HelloWorldAgent
+class: HelloWorldAgent
+
+description: >
+  Minimal demonstration agent. Accepts any payload and returns
+  a greeting. No LLM call required — pure pipeline demo.
+
+pattern: reasoning
+model: general
+
+role: >
+  You are a friendly K9-AIF demonstration agent.
+
+goal: >
+  Return a Hello World greeting to confirm the K9-AIF pipeline is working.
+
+instructions:
+  - Return a greeting message confirming the pipeline is operational
+  - Echo back the caller name if provided in the payload
+
+output_schema:
+  message: string
+  caller: string
+  agent: string
+  status: string
+
+governance:
+  pre_process: false
+  post_process: false
+"""
+    )
+
+    # agents/src/hello_world_agent.py
+    (base / "agents" / "src" / "hello_world_agent.py").write_text(
+        """# SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
+from typing import Any, Dict, Optional
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+
+
+class HelloWorldAgent(BaseAgent):
+
+    layer = "HelloWorldAgent SBB"
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, **kwargs):
+        super().__init__(config or {}, monitor=monitor, **kwargs)
+
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        caller = payload.get("caller", "n8n")
+        self.logger.info("[%s] Received payload from: %s", self.layer, caller)
+        self.publish_event({"type": "HelloWorldCompleted", "agent": "HelloWorldAgent"})
+        return {
+            "message": f"Hello World from K9-AIF Agent! Triggered by: {caller}",
+            "caller": caller,
+            "agent": "HelloWorldAgent",
+            "status": "success",
+            "pipeline": "Orchestrator \\u2192 Squad \\u2192 Agent",
+        }
+"""
+    )
+
+    # orchestrators/hello_world_orchestrator.py
+    (base / "orchestrators" / "hello_world_orchestrator.py").write_text(
+        """# SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
+from typing import Any, Dict, Optional
+import logging
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+
+log = logging.getLogger(__name__)
+
+
+class HelloWorldOrchestrator(BaseOrchestrator):
+
+    layer = "HelloWorldOrchestrator SBB"
+
+    def __init__(self, squad, config: Optional[Dict[str, Any]] = None, monitor=None, **kwargs):
+        super().__init__(config or {}, monitor=monitor, **kwargs)
+        self.squad = squad
+
+    def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        log.info("[%s] Running squad for event: %s", self.layer, payload)
+        result = self.squad.run(dict(payload))
+        self.publish_status("completed", {"type": "HelloWorldFlowCompleted"})
+        return result
+
+    def run(self, event: Dict[str, Any]) -> Dict[str, Any]:
+        return self.execute_flow(event)
+"""
+    )
+
+    # config/squads.yaml
+    (base / "config" / "squads.yaml").write_text(
+        """squads:
+
+  HelloWorldSquad:
+    description: "Minimal squad — runs HelloWorldAgent and returns a greeting."
+    agents:
+      - HelloWorldAgent
+    flow:
+      - agent: HelloWorldAgent
+        result_key: hello
+"""
+    )
+
+    # config/config.yaml
+    (base / "config" / "config.yaml").write_text(
+        """inference:
+
+  router:
+    type: k9
+
+  llm_factory:
+    provider: ollama
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 256
+
+  model_catalog:
+    default_model: general
+    models:
+      general:
+        provider: ollama
+        llm_ref: general
+        capabilities: [general, chat]
+        latency_tier: realtime
+        cost_tier: minimal
+"""
+    )
+
+    # api/app.py
+    (base / "api" / "app.py").write_text(
+        f"""# SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
+import os, yaml, logging
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
+from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
+from k9_aif_abb.k9_squad.squad_loader import SquadLoader
+from agents.src.hello_world_agent import HelloWorldAgent
+from orchestrators.hello_world_orchestrator import HelloWorldOrchestrator
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "../config/config.yaml")
+_SQUADS_YAML = os.path.join(os.path.dirname(__file__), "../config/squads.yaml")
+
+with open(_CONFIG_PATH) as f:
+    _config = yaml.safe_load(f)
+
+_registry = AgentRegistry()
+_registry.register("HelloWorldAgent", lambda: HelloWorldAgent(config=_config))
+_squad = SquadLoader(_registry).load_one(_SQUADS_YAML, "HelloWorldSquad")
+_orchestrator = HelloWorldOrchestrator(squad=_squad, config=_config)
+
+app = FastAPI(title="K9-AIF {app_name}", version="1.0.0")
+
+class HelloRequest(BaseModel):
+    caller: Optional[str] = "n8n"
+    message: Optional[str] = ""
+
+@app.get("/")
+def root():
+    return {{"status": "ok", "endpoint": "POST /run"}}
+
+@app.post("/run")
+def run(payload: HelloRequest):
+    try:
+        result = _orchestrator.run(payload.model_dump())
+        return JSONResponse(content={{"status": "success", "result": result}})
+    except Exception as exc:
+        log.error("Error: %s", exc)
+        return JSONResponse(status_code=500, content={{"status": "error", "detail": str(exc)}})
+
+@app.get("/health")
+def health():
+    return {{"status": "healthy"}}
+"""
+    )
+
+    # Containerfile
+    (base / "Containerfile").write_text(
+        f"""FROM python:3.11-slim
+WORKDIR /app
+RUN pip install --no-cache-dir k9-aif uvicorn fastapi
+COPY . .
+EXPOSE {port}
+CMD ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "{port}"]
+"""
+    )
+
+    # build.sh
+    build_sh = f"""#!/bin/bash
+# Build the {app_name} container image
+set -e
+APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$APP_DIR"
+IMAGE_NAME="{app_name}"
+CONTAINER_NAME="{app_name}"
+PORT={port}
+echo "=== Building $IMAGE_NAME ==="
+podman build -t $IMAGE_NAME .
+echo ""
+echo "=== Stopping existing container (if any) ==="
+podman rm -f $CONTAINER_NAME 2>/dev/null || true
+echo ""
+echo "=== Starting $CONTAINER_NAME on port $PORT ==="
+podman run -d --name $CONTAINER_NAME -p $PORT:$PORT --env K9_ENV=development $IMAGE_NAME
+HOST_IP=$(hostname -I | awk '{{print $1}}')
+echo ""
+echo "=== Done ==="
+echo "K9-AIF running at http://$HOST_IP:$PORT"
+echo "Test: curl -X POST http://$HOST_IP:$PORT/run -H 'Content-Type: application/json' -d '{{\"caller\":\"test\"}}'"
+"""
+    (base / "build.sh").write_text(build_sh)
+    (base / "build.sh").chmod(0o755)
+
+    print()
+    print(f"  ✓  {app_name}/ created with full K9-AIF n8n Hello World structure")
+    print()
+    print("Architecture rules enforced in the generated code:")
+    print("  Router       → knows Orchestrators only")
+    print("  Orchestrator → knows Squads only")
+    print("  Squad        → knows Agents only")
+    print("  Agent        → knows nothing above")
+    print()
+    print("Next steps:")
+    print(f"  cd {app_name}")
+    print(f"  k9aif inspect .        # verify architecture compliance before building")
+    print(f"  bash build.sh          # build and run the container")
+    print(f"  # In n8n: POST http://<your-ip>:{port}/run")
+    print()
+    print("Full example and docs: https://github.com/k9aif/examples")
+
+
 def generate_cmd(topic: str):
     from pathlib import Path
 
     if not topic:
-        print("Usage: k9aif --generate [hello-world | agent | router | complete]")
-        print(f"Available: {', '.join(list(GENERATE_TEMPLATES.keys()) + ['complete'])}")
+        print("Usage: k9aif --generate [n8n-hello-world | hello-world | agent | router | complete]")
+        print(f"Available: n8n-hello-world, {', '.join(list(GENERATE_TEMPLATES.keys()) + ['complete'])}")
+        return
+
+    if topic == "n8n-hello-world":
+        generate_n8n_hello_world()
         return
 
     if topic == "complete":

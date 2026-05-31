@@ -34,10 +34,11 @@ podman run -d \
   --env K9_ENV=development \
   localhost/n8n-helloworld:latest
 
+HOST_IP=$(hostname -I | awk '{print $1}')
 echo ""
 echo "=== Done ==="
-echo "n8n UI:            http://192.168.1.98:$PORT_N8N"
-echo "K9-AIF Hello World: http://192.168.1.98:$PORT_K9AIF/run"
+echo "n8n UI:             http://$HOST_IP:$PORT_N8N"
+echo "K9-AIF Hello World: http://$HOST_IP:$PORT_K9AIF/run"
 echo ""
 echo "In n8n HTTP Request node, set URL to:"
 echo "  http://localhost:$PORT_K9AIF/run"
