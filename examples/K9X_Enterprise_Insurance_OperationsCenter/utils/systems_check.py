@@ -94,7 +94,7 @@ def check_postgres(config: Dict[str, Any]) -> bool:
         conn = psycopg2.connect(
             host=host, port=port,
             user=pg.get("user", "postgres"),
-            password=pg.get("password", ""),
+            password=os.environ.get("K9_PG_PASSWORD") or os.environ.get("POSTGRES_PASSWORD", ""),
             dbname=pg.get("database", "eoc"),
             connect_timeout=5,
             options=f"-c search_path={pg.get('schema', 'eoc')},public",
