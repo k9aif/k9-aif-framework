@@ -51,11 +51,6 @@ output_schema:
 
 tools: []
 
-squads:
-  - ClaimsProcessingSquad
-  - RiskAssessmentSquad
-  - CustomerServiceSquad
-
 config:
   confidence_threshold: 0.75
   source_config_key: eoc.confidence_threshold

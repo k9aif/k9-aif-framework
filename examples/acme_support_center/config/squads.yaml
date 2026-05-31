@@ -1,17 +1,20 @@
 squads:
 
   support_squad:
-    orchestrator: support_orchestrator
     description: Handles end-to-end customer support requests
-
-    flow:
-      - triage_agent
-      - knowledge_agent
-      - resolution_agent
-      - quality_agent
 
     agents:
       - TriageAgent
       - KnowledgeAgent
       - ResolutionAgent
       - QualityAgent
+
+    flow:
+      - agent: TriageAgent
+        result_key: triage
+      - agent: KnowledgeAgent
+        result_key: knowledge
+      - agent: ResolutionAgent
+        result_key: resolution
+      - agent: QualityAgent
+        result_key: quality

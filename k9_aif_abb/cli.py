@@ -1026,10 +1026,14 @@ HELP_TOPICS = {
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     args = sys.argv[1:]
 
     if not args:
-        print(HELP_MAIN)
+        print(HELP_MAIN.format(version=_version_str()))
+        print()
+        print("Ready to rumble!")
+        print()
         return
 
     if args[0] in ("--help", "-h", "help"):

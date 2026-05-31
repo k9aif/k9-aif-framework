@@ -1,0 +1,13 @@
+{
+  "name": "k9aif",
+  "displayName": "K9-AIF Framework",
+  "description": "Skills for building governed agentic AI systems with K9-AIF: scaffold agents, squads, routers, validation loops, provider adapters, and architectural inspection.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ravi Natarajan",
+    "url": "https://k9x.ai"
+  },
+  "repository": "https://github.com/k9aif/k9-aif-framework",
+  "license": "Apache-2.0",
+  "keywords": ["agentic-ai", "k9-aif", "multi-agent", "enterprise", "architecture-first"]
+}

@@ -45,15 +45,5 @@ output_schema:
 
 tools: []
 
-squads:
-  - RiskAssessmentSquad
-  - CatastropheResponseSquad
-
-model_routing:
-  task_type: fraud
-  primary_model: reasoning
-  fallback_model: general
-  rationale: "Complex signal correlation requiring deep reasoning"
-
 escalation:
   auto_escalate_threshold: 0.8

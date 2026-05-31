@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Guide — K9-AIF</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="mobile-topbar">
+    <div class="mobile-title">K9-AIF — Start Here</div>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mobileMenu" onclick="toggleMenu()">Sections</button>
+  </div>
+
+  <div id="mobileMenu" class="mobile-menu">
+    <a href="index.html" class="">Start Here</a>
+    <a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+    <a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+    <a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+    <a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+    <a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+    <a href="faq.html" class="">FAQ</a>
+    <a href="developer.html" class="active">K9-AIF for Developers</a>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>K9-AIF — Start Here</h1>
+        <p>K9-AIF makes agent systems enterprise-ready.</p>
+      </div>
+
+      <div class="toc-title">Contents</div>
+      <nav class="nav">
+        <a href="index.html" class="">Start Here</a>
+        <a href="the-path-of-k9-aif.html" class="">The Path of K9-AIF</a>
+        <a href="what-k9-aif-is.html" class="">What K9-AIF Is</a>
+        <a href="k9-aif-for-stakeholders.html" class="">K9-AIF for Stakeholders</a>
+        <a href="k9-aif-vs-agent-frameworks.html" class="">K9-AIF vs Agent Frameworks</a>
+        <a href="where-agent-systems-fail.html" class="">Where Agent Systems Fail</a>
+        <a href="faq.html" class="">FAQ</a>
+        <a href="developer.html" class="active">K9-AIF for Developers</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>A guided overview for architects, technical leaders, and enterprise stakeholders.</p>
+        <a href="https://k9x.ai" class="sidebar-home-link">← Back to Main Site</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="hero">
+        <div class="eyebrow">Developer</div>
+        <h2>Building with K9-AIF</h2>
+        <p class="tagline">Prerequisites, environment setup, and the developer workflow for building governed agentic systems with K9-AIF.</p>
+        <div class="links">
+          <a class="button-link" href="https://github.com/k9aif/k9-aif-framework" target="_blank" rel="noopener noreferrer">GitHub Repository</a>
+          <a class="button-link" href="https://pydocs.k9x.ai/" target="_blank" rel="noopener noreferrer">Python API Docs</a>
+          <a class="button-link" href="https://pydocs.k9x.ai/developers/" target="_blank" rel="noopener noreferrer">Full Developer Guide</a>
+        </div>
+      </div>
+
+      <article class="doc">
+        <h1>Developer Guide</h1>
+        <p>K9-AIF is an architecture-first framework. Before writing code, you design components using ABB contracts, then implement SBBs that extend them. This page covers what you need to know before you start, and how to set up your environment.</p>
+
+        <hr />
+
+        <h2>Prerequisites</h2>
+        <p>K9-AIF is designed for developers with practical software engineering experience. You do not need to be an AI researcher, but you should be comfortable with the following.</p>
+
+        <h3>Language and Runtime</h3>
+        <ul>
+          <li><strong>Python 3.11</strong> — required. K9-AIF uses Python 3.11 features and is tested against this version.</li>
+          <li>Familiarity with virtual environments (<code>venv</code>), <code>pip</code>, and package management.</li>
+          <li>Object-oriented programming — classes, inheritance, abstract base classes.</li>
+        </ul>
+
+        <h3>AI and Agent Concepts</h3>
+        <ul>
+          <li><strong>LLMs</strong> — you should understand what a large language model is, how to prompt it, and what an inference call returns. K9-AIF uses Ollama locally by default.</li>
+          <li><strong>Agents</strong> — you should understand what an AI agent is: a component that receives input, reasons about it (usually via an LLM), and returns a structured output.</li>
+          <li><strong>Multi-agent systems</strong> — helpful but not required. K9-AIF introduces this through its Router → Orchestrator → Squad → Agent hierarchy.</li>
+        </ul>
+
+        <h3>Architecture and Design</h3>
+        <ul>
+          <li>Familiarity with <strong>design patterns</strong> — Factory, Strategy, Template Method, Observer. K9-AIF applies these structurally.</li>
+          <li>Understanding of <strong>separation of concerns</strong> — each layer in K9-AIF knows only what is below it, never above.</li>
+          <li>YAML configuration — agents and squads are defined in YAML; no hardcoded behavior.</li>
+        </ul>
+
+        <h3>Infrastructure</h3>
+        <ul>
+          <li><strong>SQL basics</strong> — K9-AIF persists routing decisions to SQLite (default) or PostgreSQL. You don't need to write SQL, but you should understand schemas and connections.</li>
+          <li><strong>Kafka / messaging</strong> (optional for production) — the EOC reference example uses Kafka for event routing. Not required to get started.</li>
+          <li><strong>Docker / Podman</strong> (optional) — the EOC example runs in containers. The framework itself runs without containers.</li>
+        </ul>
+
+        <hr />
+
+        <h2>Environment Setup</h2>
+
+        <h3>1. Clone the Repository</h3>
+        <pre><code>git clone https://github.com/k9aif/k9-aif-framework.git
+cd k9-aif-framework</code></pre>
+
+        <h3>2. Create a Virtual Environment</h3>
+        <pre><code>python3.11 -m venv .venv
+source .venv/bin/activate       # Mac / Linux
+.venv\Scripts\activate          # Windows</code></pre>
+
+        <h3>3. Install Dependencies</h3>
+        <pre><code>pip install -r requirements.txt</code></pre>
+
+        <h3>4. Install the CLI</h3>
+        <pre><code>pip install k9aif</code></pre>
+        <p>Verify the install:</p>
+        <pre><code>k9aif verify
+k9aif --version</code></pre>
+
+        <h3>5. Ollama (Local LLM)</h3>
+        <p>K9-AIF uses Ollama as the default LLM provider. Install Ollama and pull a model:</p>
+        <pre><code>ollama pull llama3.2
+ollama pull granite3-dense:2b</code></pre>
+        <p>The framework config points to Ollama at <code>localhost:11434</code> by default.</p>
+
+        <hr />
+
+        <h2>Run the Framework Tests</h2>
+        <p>Confirm everything is wired correctly — no LLM or database needed:</p>
+        <pre><code>pytest k9_aif_abb/tests/test_framework.py -v
+pytest k9_aif_abb/tests/test_intelligent_model_router.py -v</code></pre>
+
+        <hr />
+
+        <h2>VS Code + Claude Code</h2>
+        <p>K9-AIF is designed to be developed with <strong>VS Code</strong> and the <strong>Claude Code extension</strong>. The repository ships with pre-configured context files and hooks that make Claude Code framework-aware.</p>
+
+        <h3>What's Included</h3>
+        <ul>
+          <li><strong>CLAUDE.md</strong> — full architecture reference loaded automatically into every Claude Code session in this project.</li>
+          <li><strong>SKILLS.md</strong> — 11 step-by-step recipes for the most common tasks: adding agents, squads, routers, validation loops, adapters, and tests.</li>
+          <li><strong>Hooks</strong> — five post-edit hooks that run automatically on every file save: Python syntax check, YAML validation, ABB test suite, governance check, and docstring check.</li>
+          <li><strong>k9aif Plugin</strong> — a Claude Code plugin in <code>k9aif-plugin/</code> that exposes framework skills as slash commands.</li>
+        </ul>
+
+        <h3>Plugin Slash Commands</h3>
+        <p>Load the plugin in a terminal session:</p>
+        <pre><code>claude --plugin-dir ./k9aif-plugin</code></pre>
+        <p>Available commands:</p>
+        <ul>
+          <li><code>/k9aif:add-agent &lt;AgentName&gt; &lt;AppName&gt;</code> — scaffolds agent YAML, Python class, and test stub</li>
+          <li><code>/k9aif:add-squad &lt;SquadName&gt; &lt;AppName&gt; &lt;Agent1,Agent2&gt;</code> — creates squad YAML with flow steps</li>
+          <li><code>/k9aif:add-validation-loop &lt;AgentName&gt; &lt;AppName&gt;</code> — converts agent to iterative K9ValidationLoopAgent</li>
+          <li><code>/k9aif:add-router &lt;RouterName&gt; &lt;AppName&gt;</code> — scaffolds a custom BaseModelRouter</li>
+          <li><code>/k9aif:add-adapter &lt;ConcernName&gt; &lt;ProviderName&gt;</code> — scaffolds a provider adapter</li>
+          <li><code>/k9aif:inspect &lt;examples/AppName&gt;</code> — inspects SBBs for architectural violations, warnings, and recommendations</li>
+        </ul>
+
+        <hr />
+
+        <h2>Key Concepts Before You Code</h2>
+
+        <h3>ABB vs SBB</h3>
+        <p><strong>Architecture Building Blocks (ABB)</strong> live in <code>k9_aif_abb/</code>. They are abstract contracts — interfaces, lifecycle hooks, governance points. You never modify them.</p>
+        <p><strong>Solution Building Blocks (SBB)</strong> live in <code>examples/&lt;AppName&gt;/</code> or <code>k9_projects/&lt;AppName&gt;/</code>. These are your implementations — agents, squads, orchestrators, routers — that extend the ABBs with domain logic.</p>
+
+        <h3>The Execution Hierarchy</h3>
+        <pre><code>Event → Router → Orchestrator → Squad → Agents → LLM</code></pre>
+        <p>Each layer knows only what is below it. Agents do not know about squads. Squads do not know about orchestrators. This decoupling is enforced by convention and validated by <code>/k9aif:inspect</code>.</p>
+
+        <h3>The Three Rules Every Agent Must Follow</h3>
+        <ul>
+          <li>Always call the LLM via <code>llm_invoke()</code> — never call <code>OllamaLLM</code> directly.</li>
+          <li>Always wrap <code>llm_invoke()</code> in a <code>try/except RuntimeError</code> and return a <code>[WARN]</code> dict on failure.</li>
+          <li>Never reference squads, orchestrators, or routing in agent code or YAML.</li>
+        </ul>
+
+        <hr />
+
+        <h2>Next Steps</h2>
+        <ul>
+          <li><a href="https://pydocs.k9x.ai/developers/" target="_blank" rel="noopener noreferrer">Full Developer Guide</a> — all 21 sections including patterns, governance, messaging, and testing</li>
+          <li><a href="https://pydocs.k9x.ai/examples/" target="_blank" rel="noopener noreferrer">EOC Reference Example</a> — the canonical K9-AIF application: insurance operations with Kafka, PostgreSQL, and Neo4j</li>
+          <li><a href="https://pydocs.k9x.ai/" target="_blank" rel="noopener noreferrer">Python API Docs</a> — full pydoc reference for every ABB class</li>
+          <li><a href="https://graph.k9x.ai/" target="_blank" rel="noopener noreferrer">Architecture Graph</a> — live Neo4j graph of all K9-AIF components and relationships</li>
+        </ul>
+
+      </article>
+    </main>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('mobileMenu');
+      const btn = document.querySelector('.menu-btn');
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen);
+    }
+  </script>
+</body>
+</html>

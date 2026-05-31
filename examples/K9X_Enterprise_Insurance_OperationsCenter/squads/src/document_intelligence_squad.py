@@ -15,26 +15,19 @@ class DocumentIntelligenceSquad(BaseSquad):
     """
     SBB Squad for DocumentIntelligenceSquad.
 
-    Extends ``BaseSquad``. Agent pipeline and conditional steps are declared
-    in config/squads.yaml ``flow:`` section. This SBB's ``run()`` delegates
-    to the orchestrator for backward compatibility.
+    Agent pipeline and flow are declared in config/squads.yaml.
+    Orchestrators load this squad via SquadLoader — not by instantiating
+    this class directly. This SBB exists for registry and type-checking purposes.
     """
 
     def __init__(
         self,
         name: str,
         agents: Dict[str, Any],
-        orchestrator: Any,
         config: Optional[Dict[str, Any]] = None,
     ) -> None:
-        super().__init__(squad_id=name, agents=[], orchestrator=orchestrator)
+        super().__init__(squad_id=name, agents=[])
         self.name = name
         self.agents = agents
         self.config = config or {}
         log.info("Initialized squad: %s", self.name)
-
-    def run(self, request: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Delegate to DocumentIntelligenceOrchestrator."""
-        context = context or {}
-        log.info("Squad %s received request", self.name)
-        return self.orchestrator.run(request=request, agents=self.agents, context=context)

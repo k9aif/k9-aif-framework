@@ -50,8 +50,3 @@ governance:
   pre_process: true
   post_process: true
 
-model_routing:
-  task_type: adjudication
-  primary_model: reasoning
-  fallback_model: general
-  rationale: "Domain-specific, high accuracy required"

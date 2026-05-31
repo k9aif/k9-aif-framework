@@ -73,7 +73,6 @@ postgres:
   host: "192.168.1.98"
   port: 5432
   user: "postgres"
-  password: "postgres"
   database: "eoc"
   schema: "eoc"
   echo: false
@@ -81,7 +80,6 @@ postgres:
 neo4j:
   uri: "bolt://192.168.1.98:7687"
   user: neo4j
-  password: neo4j!123
   database: neo4j
 
 messaging:

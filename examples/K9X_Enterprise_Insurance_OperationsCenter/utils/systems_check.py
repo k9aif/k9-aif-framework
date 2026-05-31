@@ -116,10 +116,11 @@ def check_postgres(config: Dict[str, Any]) -> bool:
 # -----------------------------------------------------------
 def check_neo4j(config: Dict[str, Any]) -> bool:
     log.info("Checking Neo4j...")
+    import os
     neo4j_cfg = config.get("neo4j", {})
     uri      = neo4j_cfg.get("uri", "bolt://localhost:7687")
     user     = neo4j_cfg.get("user", "neo4j")
-    password = neo4j_cfg.get("password", "")
+    password = os.environ.get("NEO4J_PASSWORD", "")
     try:
         from neo4j import GraphDatabase
         driver = GraphDatabase.driver(uri, auth=(user, password))

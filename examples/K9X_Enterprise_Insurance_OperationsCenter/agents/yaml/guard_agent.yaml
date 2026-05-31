@@ -43,20 +43,8 @@ output_schema:
 
 tools: []
 
-squads:
-  - ClaimsProcessingSquad
-  - DocumentIntelligenceSquad
-  - RiskAssessmentSquad
-  - PolicyManagementSquad
-  - CustomerServiceSquad
-
 governance:
   pre_process: false
   post_process: false
   note: "GuardAgent IS the governance implementation — it does not go through governance itself"
 
-model_routing:
-  task_type: guardrails
-  primary_model: guardian
-  fallback_model: null
-  compliance_note: "NO fallback — Granite Guardian is a hard regulatory requirement"

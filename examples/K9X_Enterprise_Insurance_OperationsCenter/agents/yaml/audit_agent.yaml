@@ -45,15 +45,6 @@ query_output_schema:
 
 tools: []
 
-squads:
-  - ClaimsProcessingSquad
-  - DocumentIntelligenceSquad
-  - RiskAssessmentSquad
-  - PolicyManagementSquad
-  - CatastropheResponseSquad
-  - CustomerServiceSquad
-  - AuditComplianceSquad
-
 persistence:
   dev: sqlite
   prod: postgresql
