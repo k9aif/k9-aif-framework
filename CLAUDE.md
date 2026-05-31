@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Pre-Push Checklist
+
+Before committing or pushing any file, verify:
+
+- **No hardcoded IP addresses** — never commit `192.168.x.x` or any private IP. Use env vars with defaults: `"${POSTGRES_HOST:-localhost}"`, `"${OLLAMA_BASE_URL:-http://localhost:11434}"` etc.
+- **No credentials in config files** — passwords, API keys, tokens must be in `.env` (gitignored), never in `config.yaml`
+- **`.env` is never staged** — it is in `.gitignore`; use `env-example` for the template
+- **No `__pycache__` or `.pyc` files** — ensure `.gitignore` is present before first commit
+- **Three-layer decoupling preserved** — Router knows only Orchestrators, Orchestrator knows only Squads, Squad knows only Agents
+
+---
+
 ## Hooks
 
 Five PostToolUse hooks fire automatically after every Write or Edit (configured in `.claude/settings.json`):
