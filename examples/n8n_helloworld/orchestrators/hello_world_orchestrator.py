@@ -9,7 +9,7 @@ import logging
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_squad.squad_loader import SquadLoader
-from k9_aif_abb.k9_core.agent.base_agent import AgentRegistry
+from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
 
 from agents.src.hello_world_agent import HelloWorldAgent
 
