@@ -1,0 +1,9 @@
+squads:
+
+  HelloWorldSquad:
+    description: "Minimal squad — runs HelloWorldAgent and returns a greeting."
+    agents:
+      - HelloWorldAgent
+    flow:
+      - agent: HelloWorldAgent
+        result_key: hello

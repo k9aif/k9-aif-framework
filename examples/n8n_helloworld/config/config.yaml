@@ -1,0 +1,24 @@
+inference:
+
+  router:
+    type: k9
+
+  llm_factory:
+    provider: ollama
+    base_url: http://192.168.1.98:11434
+
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 256
+
+  model_catalog:
+    default_model: general
+    models:
+      general:
+        provider: ollama
+        llm_ref: general
+        capabilities: [general, chat]
+        latency_tier: realtime
+        cost_tier: minimal

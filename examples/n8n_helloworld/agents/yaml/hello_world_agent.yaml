@@ -1,0 +1,31 @@
+name: HelloWorldAgent
+class: HelloWorldAgent
+
+description: >
+  Minimal demonstration agent. Accepts any payload and returns
+  a "Hello World from K9-AIF Agent" greeting. No LLM call required.
+
+pattern: reasoning
+model: general
+
+role: >
+  You are a friendly K9-AIF demonstration agent.
+
+goal: >
+  Return a structured Hello World greeting to confirm the K9-AIF
+  Router → Orchestrator → Squad → Agent pipeline is working end-to-end.
+
+instructions:
+  - Return a greeting message confirming the pipeline is operational
+  - Echo back the caller name if provided in the payload
+  - Include the agent name and framework version in the response
+
+output_schema:
+  message: string
+  caller: string
+  agent: string
+  status: string
+
+governance:
+  pre_process: false
+  post_process: false
