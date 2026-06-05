@@ -588,63 +588,469 @@ class MyRouter(BaseRouter):
 # main.py — entry point: Router → Orchestrator → Squad → Agent
 import sys, yaml
 from pathlib import Path
+from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Check for .env before anything else
+env_file = Path(__file__).parent / ".env"
+if not env_file.exists():
+    print()
+    print("  ⚠  .env not found.")
+    print()
+    print("     Copy env-example to get started:")
+    print("       cp env-example .env")
+    print()
+    print("     Then run again: python main.py")
+    print()
+    raise SystemExit(1)
+
+load_dotenv(env_file)
+
 from router.my_router import MyRouter
 
 if __name__ == "__main__":
     config_path = Path(__file__).parent / "config" / "config.yaml"
     if not config_path.exists():
-        print("ERROR: config/config.yaml not found.")
+        print("  ⚠  config/config.yaml not found.")
         raise SystemExit(1)
 
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
-    print("K9-AIF Complete Example")
-    print("Router → Orchestrator → Squad → Agent")
-    print("=" * 40)
+    print()
+    print("  K9-AIF — Router → Orchestrator → Squad → Agent")
+    print("  " + "─" * 48)
+    print()
 
     router = MyRouter(config=config)
     result = router.route({"input": "Hello from K9-AIF", "job_id": "demo-001"})
 
-    print(f"Result : {result}")
+    print(f"  Result : {result}")
     print()
-    print("Pipeline completed successfully.")
+    print("  Pipeline completed successfully.")
+    print()
 ''',
+    "env-example": """\
+# K9-AIF Environment Variables
+# Copy this file to .env and fill in your values:
+#   cp env-example .env
+
+# Runtime environment — controls governance enforcement
+# development | test | staging | production
+K9_ENV=development
+
+# Ollama LLM server — uncomment when switching from mock to real LLM
+# OLLAMA_BASE_URL=http://localhost:11434
+
+# OpenAI (optional — if using OpenAI provider)
+# OPENAI_API_KEY=sk-...
+
+# Anthropic (optional — if using Anthropic provider)
+# ANTHROPIC_API_KEY=sk-ant-...
+
+# IBM watsonx (optional)
+# WATSONX_API_KEY=
+# WATSONX_PROJECT_ID=
+# WATSONX_URL=https://us-south.ml.cloud.ibm.com
+
+# PostgreSQL (optional — defaults to SQLite)
+# POSTGRES_HOST=localhost
+# POSTGRES_PORT=5432
+# POSTGRES_DB=k9aif
+# POSTGRES_USER=k9aif
+# POSTGRES_PASSWORD=
+
+# Kafka / Redpanda (optional — for event-driven squads)
+# KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+""",
+    ".gitignore": """\
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.env
+runtime/
+*.db
+*.log
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+""",
 }
+
+
+K9AIF_CONTEXT_MD = """\
+# K9-AIF Context — Architecture-First Agentic AI Framework
+
+K9-AIF is a Python framework for designing and building governed, modular multi-agent AI systems.
+Every solution is decomposed from business requirements into Architecture Building Blocks (ABBs)
+and Solution Building Blocks (SBBs), then assembled into Squads that execute as event-driven pipelines.
+
+## Core Concepts
+
+**ABB (Architecture Building Block)** — Abstract contracts in `k9_aif_abb/`. Define interfaces,
+lifecycle, and governance hooks. Never contain domain logic.
+
+**SBB (Solution Building Block)** — Concrete implementations that extend ABBs with domain-specific
+behavior. Live in your project folder (e.g. `agents/src/`, `orchestrators/`, `router/`).
+
+## Execution Hierarchy
+
+```
+Event → Router
+    └── Orchestrator
+            └── Squad
+                    └── Agent → LLM
+```
+
+- **Router** — single entry point. Routes events by `event_type` to the correct Orchestrator.
+- **Orchestrator** — coordinates a Squad for a domain workflow.
+- **Squad** — executes a defined flow of Agents in sequence. Each Agent enriches shared context progressively.
+- **Agent** — implements `execute(payload) -> dict`. Calls LLM via `llm_invoke`.
+
+## Three-Layer Decoupling — Never Violate
+
+| Layer | Knows about | Does NOT know |
+|---|---|---|
+| Router | Orchestrators only | Squads, Agents |
+| Orchestrator | Its Squad only | Routers, other Orchestrators |
+| Squad | Its Agents only | Orchestrators |
+| Agent | Its own behavior | Squads, routing, next Agent |
+
+## Add a New Agent
+
+**1. Agent YAML** — `agents/yaml/my_agent.yaml`
+```yaml
+name: MyAgent
+class: MyAgent
+description: What this agent does.
+pattern: reasoning
+model: reasoning
+role: You are a ...
+goal: Your goal is to ...
+instructions:
+  - Instruction one
+output_schema:
+  result: string
+  confidence: float
+governance:
+  pre_process: true
+  post_process: false
+```
+
+**2. Agent Python** — `agents/src/my_agent.py`
+```python
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+
+class MyAgent(BaseAgent):
+    layer = "MyAgent SBB"
+
+    def execute(self, payload):
+        prompt = f"Role: {self.config.get('role')}\\nInput: {payload}"
+        req = InferenceRequest(prompt=prompt, task_type=self.config.get("model", "general"))
+        resp = llm_invoke(self.config, req)
+        self.publish_event({"type": "MyAgentCompleted"})
+        return {"agent": "MyAgent", "output": resp.output.strip(), "model_used": resp.model_alias}
+```
+
+**3. Register in `_load_squad()`** and **add to squad YAML flow**.
+
+## Add a New Squad — `squads/my_squad.yaml`
+
+```yaml
+squads:
+  MySquad:
+    description: What this squad does.
+    agents:
+      - AgentOne
+      - AgentTwo
+    flow:
+      - agent: AgentOne
+        result_key: agent_one
+      - agent: AgentTwo
+        result_key: agent_two
+```
+
+Flow steps MUST be dicts with an `agent:` key — plain strings raise `ValueError`.
+
+## LLM Invocation — Always Use This Pattern
+
+```python
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+
+req = InferenceRequest(
+    prompt="Your prompt",
+    task_type="reasoning",       # drives model scoring
+    sensitivity="confidential",  # optional
+    latency_budget="realtime",   # optional
+    cost_profile="minimal",      # optional
+)
+resp = llm_invoke(self.config, req)
+# resp.output, resp.model_alias, resp.provider, resp.latency_ms
+```
+
+Never call `OllamaLLM` or `LLMFactory` directly from agent code.
+
+## Config Structure — `config/config.yaml`
+
+```yaml
+inference:
+  router:
+    type: k9_model_router
+    default_model: general
+    persistence:
+      enabled: true
+      provider: sqlite
+  llm_factory:
+    base_url: "http://localhost:11434"
+    models:
+      general: "llama3.2:1b"
+      reasoning: "granite3-dense:2b"
+  models:
+    general:
+      provider: ollama
+      llm_ref: general
+      capabilities: [general, chat, summarization]
+    reasoning:
+      provider: ollama
+      llm_ref: reasoning
+      capabilities: [reasoning, analysis, extraction]
+```
+
+## Iterative Agents — Use `K9ValidationLoopAgent`
+
+When an agent must test a hypothesis, observe a result, and decide whether to retry:
+
+```python
+from k9_aif_abb.k9_agents.validation import K9ValidationLoopAgent, ValidationDisposition
+
+class FraudValidationAgent(K9ValidationLoopAgent):
+    def generate_hypothesis(self, loop_ctx): ...
+    def run_validation(self, hypothesis, loop_ctx): ...
+    def evaluate_observation(self, tool_result, loop_ctx): ...
+    def should_continue(self, observation, loop_ctx):
+        if observation["confidence"] >= 0.9:
+            return ValidationDisposition.FINALIZE
+        return ValidationDisposition.CONTINUE
+    def finalize(self, loop_ctx): ...
+```
+
+One-pass → extend `BaseAgent`. Iterative convergence → extend `K9ValidationLoopAgent`.
+
+## Governance
+
+`K9_ENV=development` — NoopGovernance logs WARNING, continues.
+`K9_ENV=production` — `enforce_governance()` raises `PermissionError`.
+
+```python
+def execute(self, payload):
+    self.enforce_governance()   # raises in production if not configured
+    ...
+```
+
+## Key CLI Commands
+
+```bash
+k9aif verify                   # smoke test
+k9aif --generate complete      # scaffold full project
+k9aif --context-init           # write k9aif_context.md to current folder
+k9aif list agents              # list framework components
+k9aif doctor                   # check environment
+```
+
+## Links
+
+- Framework: https://github.com/k9aif/k9-aif-framework
+- Docs: https://k9x.ai
+- Blog: https://blog.k9x.ai
+"""
+
+K9AIF_README_MD = """\
+# My K9-AIF Project
+
+Built with [K9-AIF](https://k9x.ai) — Architecture-First Framework for Governed, Modular Agentic AI Systems.
+
+## Quick Start
+
+```bash
+pip install k9-aif
+k9aif --generate complete
+cp env-example .env        # copy and edit your environment variables
+python main.py
+```
+
+## Environment Setup
+
+```bash
+cp env-example .env
+```
+
+Open `.env` and set your values. The starter project uses a mock LLM — no API keys needed to run for the first time. When you are ready to connect a real LLM, uncomment and set `OLLAMA_BASE_URL` (or your provider's key) in `.env`.
+
+> `.env` is in `.gitignore` — never commit it.
+
+## Project Structure
+
+```
+config/config.yaml           ← LLM + inference config
+agents/src/my_agent.py       ← Agent SBB (extend BaseAgent)
+agents/yaml/                 ← Agent YAML definitions
+orchestrators/               ← Orchestrator SBB
+router/                      ← Router SBB
+squads/                      ← Squad YAML flow definitions
+runtime/                     ← Routing state store (auto-created)
+main.py                      ← Entry point
+```
+
+## AI Coding Assistant Setup
+
+This project includes `k9aif_context.md` — a complete description of K9-AIF architecture,
+patterns, and development recipes. Point your AI assistant at it:
+
+**Claude Code** — add to your `CLAUDE.md`:
+```
+@k9aif_context.md
+```
+
+**GitHub Copilot** — add contents to `.github/copilot-instructions.md`
+
+**Cursor / Windsurf** — add contents to `.cursorrules`
+
+**IBM BoB or any LLM chat** — start your session with:
+> "Read k9aif_context.md first, then help me build on K9-AIF."
+
+## Learn More
+
+- Docs: https://k9x.ai
+- Blog: https://blog.k9x.ai
+- Framework: https://github.com/k9aif/k9-aif-framework
+"""
+
+
+def context_init(silent=False):
+    """Write k9aif_context.md, README.md, and wire CLAUDE.md for Claude Code."""
+    import time
+    from pathlib import Path
+
+    if not silent:
+        print()
+        print("  K9-AIF — Context Init")
+        print("  " + "─" * 40)
+        print()
+
+    def _write(filename, content, label=None):
+        label = label or filename
+        if not silent:
+            print(f"  Writing {label:<30}", end="", flush=True)
+            time.sleep(0.15)
+        path = Path.cwd() / filename
+        if path.exists():
+            if not silent:
+                print("  ○  (exists — skipped)")
+        else:
+            path.write_text(content)
+            if not silent:
+                print("  ✓")
+
+    _write("k9aif_context.md", K9AIF_CONTEXT_MD)
+    _write("README.md", K9AIF_README_MD)
+
+    # Wire Claude Code — write or append @k9aif_context.md to CLAUDE.md
+    claude_md = Path.cwd() / "CLAUDE.md"
+    import_line = "@k9aif_context.md"
+    if not silent:
+        print(f"  Wiring CLAUDE.md                ", end="", flush=True)
+        time.sleep(0.15)
+    if claude_md.exists():
+        existing = claude_md.read_text()
+        if import_line not in existing:
+            claude_md.write_text(existing.rstrip() + f"\n\n{import_line}\n")
+            if not silent:
+                print("  ✓  (appended @k9aif_context.md)")
+        else:
+            if not silent:
+                print("  ○  (already wired)")
+    else:
+        claude_md.write_text(f"{import_line}\n")
+        if not silent:
+            print("  ✓")
+
+    if not silent:
+        print()
+        print("  Claude Code: reads k9aif_context.md automatically via CLAUDE.md")
+        print("  Other tools: see README.md for setup instructions")
+        print()
 
 
 def generate_complete():
     """Generate a complete K9-AIF project with proper folder structure."""
+    import time
     from pathlib import Path
 
-    print("K9-AIF — Generating complete project scaffold")
-    print("=" * 50)
+    print()
+    print("  K9-AIF — Architecture-First Agentic AI Framework")
+    print("  " + "─" * 48)
+    print()
 
-    for d in ["config", "agents/src", "orchestrators", "router", "squads", "runtime"]:
-        Path(d).mkdir(parents=True, exist_ok=True)
+    steps = [
+        ("config",        ["config"]),
+        ("agents",        ["agents/src"]),
+        ("orchestrators", ["orchestrators"]),
+        ("router",        ["router"]),
+        ("squads",        ["squads"]),
+        ("runtime",       ["runtime"]),
+    ]
+
+    for label, dirs in steps:
+        print(f"  Scaffolding {label} ...", end="", flush=True)
+        time.sleep(0.15)
+        for d in dirs:
+            Path(d).mkdir(parents=True, exist_ok=True)
+        print("  ✓")
+
+    print()
+
+    file_labels = {
+        "config/config.yaml":               "Generating config               ",
+        "agents/src/my_agent.py":           "Generating agent                ",
+        "orchestrators/my_orchestrator.py": "Generating orchestrator         ",
+        "router/my_router.py":              "Generating router               ",
+        "squads/my_squad.yaml":             "Generating squad                ",
+        "main.py":                          "Generating main                 ",
+        "env-example":                      "Generating env-example          ",
+        ".gitignore":                       "Generating .gitignore           ",
+    }
 
     for filepath, content in COMPLETE_FILES.items():
+        label = file_labels.get(filepath, f"Generating {filepath:<30}")
+        print(f"  {label}", end="", flush=True)
+        time.sleep(0.2)
         path = Path.cwd() / filepath
         if path.exists():
-            print(f"  ○  {filepath} already exists — skipped")
+            print("  ○  (exists — skipped)")
         else:
             path.write_text(content)
-            print(f"  ✓  {filepath}")
+            print("  ✓")
+
+    context_init(silent=True)
 
     print()
-    print("Structure:")
-    print("  main.py")
-    print("  config/config.yaml       ← LLM + inference config (mock — no Ollama needed)")
-    print("  agents/src/my_agent.py   ← BaseAgent SBB")
-    print("  orchestrators/           ← BaseOrchestrator SBB")
-    print("  router/                  ← BaseRouter SBB")
-    print("  squads/my_squad.yaml     ← Squad flow definition")
-    print("  runtime/                 ← routing state store (auto-created)")
+    print("  " + "─" * 48)
     print()
-    print("Run:")
-    print("  python main.py")
+    print("  Done!")
+    print()
+    print("  Ready to rumble!")
+    print()
+    print("  Next: python main.py")
+    print()
+    print("> ", end="", flush=True)
+    print()
 
 
 def generate_n8n_hello_world():
@@ -1339,6 +1745,9 @@ def main():
     if cmd == "--generate":
         topic = args[1] if len(args) > 1 else ""
         generate_cmd(topic)
+        return
+    if cmd == "--context-init":
+        context_init()
         return
     if cmd == "verify":
         verify()
