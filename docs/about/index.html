@@ -44,6 +44,169 @@
       font-weight: 700;
     }
 
+    /* ── Origin Story Block ───────────────────────────────── */
+    .origin-story {
+      background: var(--surface-soft-2, #f7f8fc);
+      border-radius: 14px;
+      border: 1px solid var(--border, #e4e8f0);
+      padding: 1.6rem 1.8rem 1.8rem;
+      margin: 0 0 2.8rem;
+    }
+
+    .origin-story h2 {
+      font-size: 1.18rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 1.1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .origin-story p {
+      font-size: 1.04rem;
+      color: #444;
+      line-height: 1.9;
+      margin-bottom: 1.1rem;
+    }
+
+    .origin-story p:last-child {
+      margin-bottom: 0;
+    }
+
+    .origin-quote {
+      border-left: 4px solid var(--accent);
+      background: #fff;
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1.2rem;
+      margin: 1.3rem 0;
+      font-style: italic;
+      color: #3f4d66;
+      font-size: 1.05rem;
+      line-height: 1.8;
+    }
+
+    .origin-quote cite {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: normal;
+    }
+
+    /* ── Timeline ─────────────────────────────────────────── */
+    .timeline-section {
+      margin: 2.5rem 0 2.8rem;
+    }
+
+    .timeline-section h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 1.5rem;
+    }
+
+    .timeline {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      height: 2px;
+      background: linear-gradient(to right, var(--accent, #4a6fa5), #a3bbd4);
+      z-index: 0;
+    }
+
+    .tl-item {
+      flex: 1;
+      position: relative;
+      padding-top: 28px;
+      padding-right: 10px;
+    }
+
+    .tl-item:last-child {
+      padding-right: 0;
+    }
+
+    .tl-dot {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent, #4a6fa5);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px var(--accent, #4a6fa5);
+      z-index: 1;
+    }
+
+    .tl-item:last-child .tl-dot {
+      background: #28a745;
+      box-shadow: 0 0 0 2px #28a745;
+    }
+
+    .tl-date {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent, #4a6fa5);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.3rem;
+      white-space: nowrap;
+    }
+
+    .tl-item:last-child .tl-date {
+      color: #28a745;
+    }
+
+    .tl-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .tl-desc {
+      font-size: 0.79rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .timeline {
+        flex-direction: column;
+        gap: 1.4rem;
+      }
+
+      .timeline::before {
+        top: 10px;
+        left: 7px;
+        right: auto;
+        width: 2px;
+        height: calc(100% - 10px);
+      }
+
+      .tl-item {
+        padding-top: 0;
+        padding-left: 28px;
+        padding-right: 0;
+      }
+
+      .tl-dot {
+        top: 0;
+        left: 0;
+      }
+    }
+
+    /* ── Callout + Thesis (existing) ──────────────────────── */
     .callout,
     .thesis {
       background: var(--surface);
@@ -81,6 +244,12 @@
       color: var(--muted);
     }
 
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border, #e4e8f0);
+      margin: 2.5rem 0;
+    }
+
     .closing {
       font-size: 1.04rem;
       font-weight: 600;
@@ -102,6 +271,10 @@
 
       .content p {
         font-size: 1rem;
+      }
+
+      .origin-story {
+        padding: 1.2rem 1.1rem;
       }
     }
   </style>
@@ -134,65 +307,150 @@
     </section>
 
     <section class="content">
-      <p>
-        K9 Agentic Integration Framework (K9-AIF) did not begin as a grand architectural vision.
-        It began as a retrieval component — a focused capability designed to fetch the right
-        information, precisely and reliably, at enterprise scale.
-      </p>
 
-      <div class="callout">
-        The name K9 stayed for a reason. It represents discipline, precision, and purpose —
-        not exploration for its own sake.
+      <!-- Origin Story -->
+      <div class="origin-story">
+        <h2>How It Started</h2>
+        <p>
+          It began with ideas — not code. In early 2025, Ravi Natarajan started capturing his
+          thinking about how agentic AI systems should be built. Not in a notebook, not in a doc.
+          In a <strong>voice recorder on his iPad</strong>. Architecture as spoken word — patterns,
+          boundaries, contracts, governance — recorded before a single line was written.
+        </p>
+
+        <div class="origin-quote">
+          "I wanted to capture my vision of how things have to be done.
+          That capturing reflected into the code — the framework."
+          <cite>— Ravi Natarajan</cite>
+        </div>
+
+        <p>
+          Those voice memos became code. The original intent was focused and specific:
+          build a <strong>Retriever</strong> — a precise, reliable component that fetches
+          the right information at enterprise scale. That is where the name came from.
+          K9. A retriever. Disciplined, purposeful, trained to find exactly what is needed.
+        </p>
+        <p>
+          But retrieval exposed deeper questions. What governs what gets fetched?
+          Which agent should act, and when? When should a system decide autonomously,
+          and when should it defer? Those questions were not retrieval questions —
+          they were architecture questions. The codebase grew to answer them.
+        </p>
+        <p>
+          At some point, Ravi asked ChatGPT directly: <em>"Should this be a framework?"</em>
+          The answer came back: <em>"Absolutely."</em> That was the turning point.
+        </p>
+        <p>
+          It was not a leap of faith. It was a recognition. Ravi had built frameworks before —
+          in <strong>MuleSoft</strong>, where the pattern was exactly this: design a template
+          process flow, and let teams plug their business logic in. The framework provides the
+          structure, the governance, the integration plumbing. The team brings the domain.
+          That same principle — applied now to agentic AI, through the lens of
+          <strong>TOGAF</strong>, <strong>OOA/OOD</strong>, and <strong>UML</strong> —
+          became K9-AIF.
+        </p>
+
+        <p>
+          For months, every line was written without any AI assistance. Then the tooling
+          evolved: <strong>Cursor IDE</strong>, using inline code generation (Ctrl+K) for
+          small fragments — a class stub, a method signature. Every fragment reviewed,
+          corrected, made architecturally coherent. The design always came first.
+        </p>
+
+        <p>
+          Then, in <strong>February 2026</strong>, ChatGPT entered the picture — used precisely
+          like hiring a developer. Ravi would write a complete design specification: the pattern,
+          its purpose, how it should be applied, what constraints it must respect. ChatGPT
+          would implement to that specification. The output was reviewed, corrected, adjusted.
+          The architecture was always Ravi's. AI executed; it did not design.
+        </p>
+
+        <p>
+          Then came the second shift. All of that hard-won architectural knowledge — the patterns,
+          the rules, the boundaries, the contracts — was captured into two documents:
+          <code>CLAUDE.md</code> and <code>SKILLS.md</code>. Not documentation for humans.
+          Structured context, written so that an AI coding assistant could read it, understand the
+          framework, and work within its architectural boundaries.
+        </p>
+
+        <div class="origin-quote">
+          "I asked Claude Code to read this and understand the framework. It then started to apply
+          the knowledge to efficiently enhance the framework."
+          <cite>— Ravi Natarajan</cite>
+        </div>
+
+        <p>
+          That is what makes K9-AIF different. The architecture is not just in the code — it is
+          encoded in a form that an AI can reason about and apply correctly. Every building block
+          Claude Code contributes is governed by what Ravi wrote down. The framework grows;
+          the architectural intent never drifts.
+        </p>
       </div>
 
-      <p>
-        But retrieval exposed deeper questions: what governs what gets fetched, what determines
-        which agent should act, and when should a system act autonomously versus defer to a human?
-      </p>
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <h2>Journey</h2>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Early 2025</div>
+            <div class="tl-title">Ideas &amp; Voice Memos</div>
+            <div class="tl-desc">Architecture spoken into an iPad voice recorder; intent: a Retriever — K9 name born here</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Mid–Late 2025</div>
+            <div class="tl-title">Codebase &amp; Cursor IDE</div>
+            <div class="tl-desc">Voice memos become code; Cursor Ctrl+K for fragments; "Should this be a framework?" → "Absolutely"</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Feb 2026</div>
+            <div class="tl-title">ChatGPT as Developer</div>
+            <div class="tl-desc">Ravi writes complete design specs; ChatGPT implements to spec; research paper published and refined</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Mar 2026</div>
+            <div class="tl-title">CLAUDE.md + Claude Code</div>
+            <div class="tl-desc">Architecture knowledge encoded for AI; Claude Code reads it and enhances the framework within architectural guardrails</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Apr 2026</div>
+            <div class="tl-title">k9x.ai Live</div>
+            <div class="tl-desc">K9AIF goes public; evolves into K9X — an ecosystem of components, tools, and patterns around the framework</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">May 2026</div>
+            <div class="tl-title">studio.k9x.ai Live</div>
+            <div class="tl-desc">Visual drag-and-drop K9-AIF builder goes live; Studio refined through June</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-date">Jun 2026 →</div>
+            <div class="tl-title">k9x_modernize</div>
+            <div class="tl-desc">How legacy systems transform into agentic flows — tooling in progress; the ecosystem keeps growing</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider" />
 
       <p>
-        Those questions were no longer just about retrieval. They were about control, structure,
-        orchestration, and governance.
-      </p>
-
-      <p>
-        Answering them required more than a component. It required architecture.
-      </p>
-
-      <p>
-        At that point, I began to draw on over three decades of experience in enterprise systems —
+        The rigor K9-AIF carries did not come from a methodology or a textbook.
+        It came from over three decades of building enterprise systems —
         integration, service-oriented architecture (SOA), object-oriented analysis and design (OOA/OOD),
-        UML, and design patterns.
-      </p>
-
-      <p>
-        These disciplines were never just about building systems — they were about structuring
-        complexity, defining boundaries, managing interactions, and governing behavior.
-      </p>
-
-      <p>
-        Applying those same principles through a TOGAF-aligned architectural lens made it clear
-        that agentic AI systems require the same rigor. They need more than tools, models, and
-        agents. They need architecture building blocks, solution building blocks, governance
-        boundaries, orchestration layers, integration patterns, and decision frameworks.
+        UML, and design patterns. These disciplines were never just about building systems.
+        They were about structuring complexity, defining boundaries, and governing behavior.
+        Applied through a TOGAF-aligned lens to agentic AI, they produced something the industry
+        has been missing: a framework that treats agents as first-class architectural concerns,
+        not just scripts with an LLM attached.
       </p>
 
       <div class="thesis">
         K9-AIF was not created to simply run agents — it was created to structure, govern, and integrate them.
-      </div>
-
-      <p>
-        That realization changed everything.
-      </p>
-
-      <p>
-        What began as a retrieval capability started to evolve into something broader: a structured
-        framework for architecting agentic AI systems in a disciplined, modular, and enterprise-aligned way.
-      </p>
-
-      <div class="evolution">
-        <p>The retrieval component evolved into a system.</p>
-        <p>The system evolved into a framework.</p>
       </div>
 
       <p class="closing">The name stayed — because it still means something.</p>
