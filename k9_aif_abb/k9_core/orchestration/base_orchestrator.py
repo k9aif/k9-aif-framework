@@ -66,11 +66,13 @@ class BaseOrchestrator(ABC):
         zero_trust_guard=None,
         policy_enforcer=None,
         enable_zero_trust: Optional[bool] = None,
+        session_manager=None,
     ):
         self.config = config or {}
         self.monitor = monitor
         self.message_bus = message_bus
         self.governance = require_governance(governance, self.config.get("k9_env"))
+        self._session_manager = session_manager or self._bootstrap_session(self.config)
 
         self.enable_zero_trust = (
             enable_zero_trust
@@ -227,9 +229,28 @@ class BaseOrchestrator(ABC):
         )
 
     # ------------------------------------------------------------------
+    @staticmethod
+    def _bootstrap_session(config: Dict[str, Any]):
+        """Auto-create session manager from config when session.enabled: true. Returns None otherwise."""
+        try:
+            from k9_aif_abb.k9_factories.session_factory import SessionFactory
+            return SessionFactory.create_manager(config)
+        except Exception:
+            return None
+
     def _governance_context(self) -> Dict[str, Any]:
         return {
             "layer": self.layer,
             "component": self.__class__.__name__,
             "component_type": "orchestrator",
         }
+
+    def _update_session(self, session_id: str, context_delta: Dict[str, Any]) -> None:
+        """
+        Persist squad result context back to session after execution.
+
+        Call this at the end of the SBB orchestrator's run() method.
+        No-op when no session_manager is configured — existing behaviour preserved.
+        """
+        if self._session_manager is not None and session_id:
+            self._session_manager.on_session_update(session_id, context_delta)
