@@ -689,22 +689,55 @@ Inheritance hierarchy:
 ```
 BaseAgent
   └── BaseValidationLoopAgent   (loop skeleton — ABB)
-        └── K9ValidationLoopAgent   (LLM-driven OOB)
-              └── FraudValidationAgent   (domain SBB — overrides only what differs)
+        ├── K9ValidationLoopAgent   (LLM-driven OOB — confidence convergence)
+        │     └── FraudValidationAgent   (domain SBB — overrides only what differs)
+        └── K9PlanningLoopAgent    (LLM-driven OOB — dynamic plan + scratchpad)
 ```
 
-### Solutions Architect decision — BaseAgent vs K9ValidationLoopAgent
+### OOB implementation — K9PlanningLoopAgent
 
-> **The generator, intake, and Claude Code scaffold all agents extending `BaseAgent` by default.** This is correct for most agents. The SA must explicitly decide at design time which agents need the validation loop.
+`K9PlanningLoopAgent` (`k9_aif_abb/k9_agents/planning/`) is the dynamic-planning sibling of `K9ValidationLoopAgent`. Same loop skeleton, same "LLM is the validation tool" approach — the difference is the loop-continuation signal.
+
+Each iteration, the LLM is shown its current plan (`remaining_steps`) and scratchpad (`notes`), carried across iterations in `ValidationLoopContext`. It returns an updated plan and notes alongside the usual `confidence`/`reasoning`. The loop `FINALIZE`s when the LLM explicitly returns an empty `remaining_steps` (plan complete) **or** `confidence` reaches `confidence_threshold` — whichever comes first. If the LLM's response can't be parsed, or it doesn't mention a plan, behaviour falls back to confidence-driven continuation exactly like `K9ValidationLoopAgent`.
+
+```python
+from k9_aif_abb.k9_agents.planning import K9PlanningLoopAgent
+
+# Use OOB as-is — wire via agent YAML (class: K9PlanningLoopAgent)
+
+# Or extend and override only what differs (e.g. fail fast on very low confidence
+# regardless of plan state):
+class StrictPlanningAgent(K9PlanningLoopAgent):
+    layer = "StrictPlanningAgent SBB"
+
+    def should_continue(self, observation, loop_ctx):
+        if observation["confidence"] < 0.2:
+            return ValidationDisposition.FAIL
+        return super().should_continue(observation, loop_ctx)
+```
+
+Config keys are the same as `K9ValidationLoopAgent` (`role`, `goal`, `model`, `max_iterations`, `confidence_threshold`, `finalize_on_max_iterations`, `escalate_on_tool_error`) — no new YAML keys are required. `remaining_steps`/`notes` are runtime state, not config.
+
+`_to_dict()` output includes two additional top-level keys for **every** `BaseValidationLoopAgent` subclass (additive — existing agents simply report empty defaults):
+
+| Key | Type | Meaning |
+|---|---|---|
+| `remaining_steps` | `list[str]` | Final plan state at finalize time (empty if complete or unused) |
+| `notes` | `dict` | Final scratchpad state at finalize time (empty if unused) |
+
+### Solutions Architect decision — BaseAgent vs K9ValidationLoopAgent vs K9PlanningLoopAgent
+
+> **The generator, intake, and Claude Code scaffold all agents extending `BaseAgent` by default.** This is correct for most agents. The SA must explicitly decide at design time which agents need a loop, and which loop variant.
 
 Ask this question for every agent during design:
 
-> *"Does this agent need to test something, observe the result, and decide whether to try again — or does it produce its answer in one pass?"*
+> *"Does this agent need to test something, observe the result, and decide whether to try again — or does it produce its answer in one pass? If it loops, is the number of steps known in advance (convergence on a confidence score), or does the agent need to plan and revise its own steps as it goes?"*
 
 | Answer | Extend |
 |---|---|
 | One-pass — classify, route, audit, guard, sync | `BaseAgent` |
-| Iterative convergence — fraud, evidence, compliance, document confidence | `K9ValidationLoopAgent` |
+| Iterative convergence on a confidence score — fraud, evidence, compliance, document confidence | `K9ValidationLoopAgent` |
+| Open-ended — agent must plan its own steps and revise the plan as it learns — investigation, diagnosis, multi-stage research | `K9PlanningLoopAgent` |
 
 When changing a generated agent from one-shot to iterative, replace the parent class and swap `execute()` for the five loop methods:
 

@@ -5,6 +5,7 @@ runtime/
 .DS_Store
 .env
 *.egg-info/
+.venv/
 
 k9_projects/
 k9_recycle_bin/
