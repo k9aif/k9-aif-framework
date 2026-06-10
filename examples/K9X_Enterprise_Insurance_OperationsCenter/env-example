@@ -22,6 +22,10 @@ NEO4J_PASSWORD=your_neo4j_password
 
 KAFKA_BROKER=your-kafka-host:9092
 
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+
 # K9_ENV controls governance enforcement
 # development | test | staging | production
 K9_ENV=development
