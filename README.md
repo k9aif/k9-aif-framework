@@ -534,6 +534,12 @@ The combination of `CLAUDE.md`, `SKILLS.md`, and the reference example gives Cla
 
 > Read more: [Build a K9-AIF Example App in Minutes Using Claude Code](https://blog.k9x.ai/build-k9-aif-example-with-claude-code/)
 
+### Automated hooks (`.claude/settings.json`)
+
+The repository also ships `.claude/settings.json`, which wires five `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, and `__init__.py` docstring check (see [Hooks](CLAUDE.md#hooks) in `CLAUDE.md`) — that run automatically whenever Claude Code writes or edits a file.
+
+**Each hook command uses an absolute path** (e.g. `/Users/<you>/k9-aif-framework/.claude/hooks/check-python.sh`). After cloning, edit `.claude/settings.json` and replace the path prefix with the absolute path of your own clone, or the hooks will fail with "command not found".
+
 ---
 
 ## Quick Start (Linux / Ubuntu)
