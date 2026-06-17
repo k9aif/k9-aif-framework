@@ -24,18 +24,24 @@
 7. [Router Development Guide](#7-router-development-guide)
 8. [Validation Loop Pattern](#8-validation-loop-pattern)
 9. [Critic-Actor Pattern](#9-critic-actor-pattern)
-10. [Model Routing and Inference](#10-model-routing-and-inference)
-11. [Governance and Zero Trust](#11-governance-and-zero-trust)
-12. [Messaging, Events, and Telemetry](#12-messaging-events-and-telemetry)
-13. [Persistence and Graph Integration](#13-persistence-and-graph-integration)
-14. [Configuration Standards](#14-configuration-standards)
-15. [Testing Standards](#15-testing-standards)
-16. [Developer Workflow](#16-developer-workflow)
-17. [Using Claude Code with VSCode for K9-AIF Development](#17-using-claude-code-with-vscode-for-k9-aif-development)
-18. [Author's Recommendations](#18-authors-recommendations)
-19. [Patterns Reference](#19-patterns-reference)
-20. [Acknowledgements](#20-acknowledgements)
-21. [References](#21-references)
+10. [Planning Loop Pattern](#10-planning-loop-pattern)
+11. [Model Routing and Inference](#11-model-routing-and-inference)
+12. [Governance and Zero Trust](#12-governance-and-zero-trust)
+13. [Messaging, Events, and Telemetry](#13-messaging-events-and-telemetry)
+14. [Persistence and Graph Integration](#14-persistence-and-graph-integration)
+15. [Configuration Standards](#15-configuration-standards)
+16. [Testing Standards](#16-testing-standards)
+17. [Developer Workflow](#17-developer-workflow)
+18. [K9X Studio Integration](#18-k9x-studio-integration)
+19. [K9X Enterprise Continuum](#19-k9x-enterprise-continuum)
+20. [Human-in-the-Loop Integration](#20-human-in-the-loop-integration)
+21. [Provider Adapter Pattern](#21-provider-adapter-pattern)
+22. [Using Claude Code with VSCode for K9-AIF Development](#22-using-claude-code-with-vscode-for-k9-aif-development)
+23. [Author's Recommendations](#23-authors-recommendations)
+24. [Patterns Reference](#24-patterns-reference)
+25. [K9X Ecosystem](#25-k9x-ecosystem)
+26. [Acknowledgements](#26-acknowledgements)
+27. [References](#27-references)
 
 ---
 
@@ -1439,7 +1445,86 @@ class ContractDraftingAgent(K9CriticActorAgent):
 
 ---
 
-## 10. Model Routing and Inference
+## 10. Planning Loop Pattern
+
+### 10.1 When to Use K9PlanningLoopAgent
+
+Use `K9PlanningLoopAgent` when the agent must **plan its own steps and revise the plan as it goes**. Unlike `K9ValidationLoopAgent` (which converges on a confidence score), the planning loop maintains a dynamic plan (`remaining_steps`) and a scratchpad (`notes`) that evolve across iterations.
+
+**Decision rule:**
+
+| One-pass | Validation Loop | Planning Loop |
+|---|---|---|
+| Classify, route, audit | Fraud correlation, document confidence | Investigation, multi-stage research, architecture planning |
+| `BaseAgent` | `K9ValidationLoopAgent` | `K9PlanningLoopAgent` |
+
+### 10.2 How It Works
+
+`K9PlanningLoopAgent` extends `BaseValidationLoopAgent`. Each iteration, the LLM is shown its current plan and scratchpad. It returns:
+- An updated `remaining_steps` list
+- Updated `notes` (scratchpad)
+- `confidence` and `reasoning`
+
+The loop finalizes when:
+- The LLM returns an empty `remaining_steps` (plan complete), OR
+- `confidence` reaches `confidence_threshold`
+
+If the LLM's response cannot be parsed, behavior falls back to confidence-driven continuation exactly like `K9ValidationLoopAgent`.
+
+### 10.3 Implementation
+
+```python
+from k9_aif_abb.k9_agents.planning import K9PlanningLoopAgent
+
+class ArchitecturePlannerAgent(K9PlanningLoopAgent):
+
+    layer = "ArchitecturePlannerAgent SBB"
+
+    def should_continue(self, observation, loop_ctx):
+        if observation["confidence"] < 0.2:
+            return ValidationDisposition.FAIL
+        return super().should_continue(observation, loop_ctx)
+```
+
+### 10.4 Configuration
+
+```yaml
+name: ArchitecturePlannerAgent
+class: ArchitecturePlannerAgent
+pattern: reasoning
+model: reasoning
+max_iterations: 8
+confidence_threshold: 0.85
+finalize_on_max_iterations: true
+
+role: >
+  You are an enterprise architect that generates architecture plans.
+
+goal: >
+  Generate a complete, actionable architecture plan with clear steps.
+```
+
+### 10.5 Output
+
+`K9PlanningLoopAgent._to_dict()` includes two additional keys beyond the standard `BaseValidationLoopAgent` output:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `remaining_steps` | `list[str]` | Final plan state at finalize time (empty if complete) |
+| `notes` | `dict` | Final scratchpad state |
+
+### 10.6 Inheritance Hierarchy
+
+```
+BaseAgent
+  └── BaseValidationLoopAgent       (loop skeleton — ABB)
+        ├── K9ValidationLoopAgent   (confidence convergence — OOB)
+        └── K9PlanningLoopAgent     (dynamic plan + scratchpad — OOB)
+```
+
+---
+
+## 11. Model Routing and Inference
 
 ### 10.1 The Inference Pipeline
 
@@ -2349,7 +2434,233 @@ bash run_eoc_pod.sh
 
 ---
 
-## 17. Using Claude Code with VSCode for K9-AIF Development
+## 18. K9X Studio Integration
+
+### 18.1 What Studio Does
+
+K9X Studio is a visual architecture designer for K9-AIF systems. Architects design on a drag-and-drop canvas; developers receive a framework-compliant scaffold.
+
+**Install and run:**
+
+```bash
+pip install k9x
+k9x studio
+```
+
+Opens at `http://localhost:9494`.
+
+### 18.2 Using Studio
+
+1. **Start from a template** or drag components from the palette
+2. **Palette components:** Router (indigo), Orchestrator (purple), Squad (blue), Agent (green), Validation Loop (amber), Critic-Actor (red), Guard (slate), HIL Orchestrator (teal)
+3. **Connect components** — Studio validates the hierarchy (Router → Orchestrator → Squad → Agent)
+4. **Configure** each component in the Inspector panel — name, agent type, model, LLM provider
+5. **Generate scaffold** — exports a K9-AIF project with all files, YAML configs, and agent stubs
+
+### 18.3 From Specification
+
+Upload a markdown spec, BPMN file, or process description. Studio reads it and suggests an architecture on the canvas. Adjust and generate.
+
+### 18.4 Scaffold Output
+
+```
+my_project/
+├── config/
+│   ├── config.yaml
+│   └── squads.yaml
+├── agents/
+│   ├── yaml/           # Agent YAML configs
+│   └── src/            # Agent Python stubs
+├── orchestrators/
+├── main.py
+├── run.sh
+└── setup.sh
+```
+
+Every stub extends the correct ABB. Squad YAML is pre-wired. Configuration is populated from the canvas.
+
+---
+
+## 19. K9X Enterprise Continuum
+
+### 19.1 What the Continuum Does
+
+The K9X Enterprise Continuum is a governed catalog where validated SBBs and ABBs are published, discovered, and evolved. It implements the TOGAF Enterprise Continuum as live, API-first infrastructure.
+
+### 19.2 Publishing an SBB
+
+**Step 1 — Validate compliance:**
+
+```bash
+k9aif inspect
+```
+
+Checks that every agent extends the correct ABB, squad YAML is valid, and configuration is complete.
+
+**Step 2 — Publish:**
+
+```bash
+k9aif publish --name MyAgent --kind Agent --abb-names BaseAgent \
+  --domain insurance --project MyProject
+```
+
+The SBB is registered in the Continuum with metadata: ABB contract, domain tag, version, inspection status, author.
+
+### 19.3 Tier Classification
+
+SBBs are classified into four tiers based on their ABB implementations and domain tags:
+
+| Tier | Criteria |
+|---|---|
+| Foundation | Implements Foundation ABBs, no domain tag |
+| Common Systems | Implements Common Systems ABBs (validation loop, planning loop, etc.) |
+| Industry | Has a domain tag (insurance, healthcare, defense) |
+| Organization-Specific | Enterprise-customized, deployed applications |
+
+### 19.4 Querying the Continuum
+
+The Continuum is API-first. Studio queries it before generating scaffolds.
+
+```
+GET /api/sbbs                          # list all SBBs
+GET /api/sbbs?domain=insurance         # filter by domain
+GET /api/abbs                          # list all ABBs
+GET /api/abbs/{id}/sbbs                # SBBs implementing this ABB
+```
+
+---
+
+## 20. Human-in-the-Loop Integration
+
+### 20.1 When to Use HIL
+
+Use HIL when an agent cannot decide with sufficient confidence, or when policy requires human review. The decision of where HIL belongs is made at design time using the 4Ds framework:
+
+- **Delegation** — fully automated, no HIL
+- **Description** — needs clear spec, no HIL
+- **Discernment** — agent confidence is uncertain → HIL
+- **Diligence** — regulation requires human sign-off → HIL
+
+### 20.2 Wiring a HIL Breakpoint
+
+In your orchestrator, when the agent's confidence is below threshold:
+
+```python
+if result.get("confidence", 1.0) < self.config.get("hil_threshold", 0.8):
+    self.publish_event({
+        "type": "hil.task.created",
+        "correlation_id": payload.get("correlation_id"),
+        "reply_to": "workflow.eoc.hil.response",
+        "title": f"Review: {payload.get('claim_id')}",
+        "description": "Agent confidence below threshold",
+        "ttl_hours": 168,
+        "ttl_action": "reject",
+        "payload": result,
+    })
+    return {"status": "awaiting_hil", "correlation_id": payload.get("correlation_id")}
+```
+
+The orchestrator publishes and exits. No thread blocked. No resource consumed while waiting.
+
+### 20.3 Consuming the HIL Response
+
+The HILOrchestrator subscribes to the `reply_to` topic:
+
+```python
+class EOCHILOrchestrator(BaseOrchestrator):
+    def orchestrate(self, event: dict) -> dict:
+        human_decision = event.get("decision")
+        correlation_id = event.get("correlation_id")
+        # Continue the pipeline with the human's decision in context
+        return self.run_squad({"decision": human_decision, "correlation_id": correlation_id})
+```
+
+### 20.4 Studio Canvas
+
+In K9X Studio, drop the HIL Orchestrator from the palette. It auto-creates a HILSquad and HILAgent, connected to the Kafka bus via a teal dotted line. No Router needed — the HIL Orchestrator is event-driven.
+
+### 20.5 K9X HIL Platform
+
+K9X HIL is a dedicated case management platform for human tasks:
+
+```bash
+pip install k9x-hil
+```
+
+- **Project → Application → Queue → Task** hierarchy
+- **Role-based access** — Root, Project Admin, App Admin, Manager, HIL Operator
+- **TTL enforcement** — tasks expire if humans don't act
+- **PII awareness** — incoming message declares sensitive fields
+- **Kafka-native** — works with any system that writes JSON to Kafka
+
+---
+
+## 21. Provider Adapter Pattern
+
+### 21.1 The Three-Layer Structure
+
+Every infrastructure concern in K9-AIF follows the same pattern:
+
+1. **ABB Contract** — abstract base class defining the interface
+2. **Concrete Adapter** — wraps a vendor SDK behind the ABB contract (lazy imports)
+3. **Factory** — reads config, resolves the correct adapter, returns the uniform interface
+
+### 21.2 Implemented Areas
+
+| Concern | ABB Contract | Default Adapter | Other Adapters | Factory | Config Key |
+|---|---|---|---|---|---|
+| Inference | `BaseLLM` | `OllamaLLM` | OpenAI, Anthropic, watsonx, Azure | `LLMFactory` | `inference.llm_factory` |
+| Model Routing | `BaseModelRouter` | `K9ModelRouter` | Custom via config | `ModelRouterFactory` | `inference.router` |
+| Secret Management | `BaseSecretManager` | `EnvSecretAdapter` | Vault, AWS, IBM | `SecretManagerFactory` | `secrets.provider` |
+| Cache | `BaseCache` | `InMemoryAdapter` | Redis | `CacheFactory` | `cache.provider` |
+
+### 21.3 Adding a New Adapter
+
+```python
+# k9_<concern>/adapters/my_adapter.py
+
+class MyAdapter(BaseSecretManager):
+    def __init__(self, config=None):
+        self._config = config or {}
+        self._client = None
+
+    def _ensure_client(self):
+        if self._client is not None:
+            return
+        try:
+            import my_package
+            self._client = my_package.Client(...)
+        except ImportError as exc:
+            raise RuntimeError("pip install my_package required") from exc
+
+    def get(self, key: str) -> str:
+        self._ensure_client()
+        return self._client.get_secret(key)
+```
+
+Register with the factory:
+
+```python
+SecretManagerFactory.register("my_provider", MyAdapter)
+```
+
+Or via config:
+
+```yaml
+secrets:
+  provider: my_provider
+```
+
+### 21.4 Constraints
+
+- Credentials NEVER in `config.yaml` — use environment variables
+- Optional packages: lazy import, raise `RuntimeError` with install hint
+- Factory `create(config)` always has a zero-config default
+- All adapter code is purely additive — no modification to existing classes
+
+---
+
+## 22. Using Claude Code with VSCode for K9-AIF Development
 
 ### 17.1 Overview
 
@@ -2543,7 +2854,7 @@ A useful discipline: write the YAML specification files yourself, then let Claud
 
 ---
 
-## 18. Author's Recommendations
+## 23. Author's Recommendations
 
 ### 18.1 Keep ABBs Small and Stable
 
@@ -2579,7 +2890,7 @@ Design agents and squads to be composable — an agent in one squad should work 
 
 ---
 
-## 19. Patterns Reference
+## 24. Patterns Reference
 
 ### 19.1 Classic Software Patterns in K9-AIF
 
@@ -2675,7 +2986,48 @@ Each layer depends only on the layer below it. No upward dependencies.
 
 ---
 
-## 20. Acknowledgements
+## 25. K9X Ecosystem
+
+The K9-AIF framework is part of a four-product ecosystem. Each product is independently installable and deployable.
+
+| Product | Purpose | Install | Dependency |
+|---|---|---|---|
+| **K9-AIF Framework** | Architecture contracts, agent runtime | `pip install k9-aif` | Python 3.10+ |
+| **K9X Studio** | Visual architecture designer | `pip install k9x` | Framework |
+| **K9X Enterprise Continuum** | SBB/ABB catalog & governance | `pip install k9x-continuum` | PostgreSQL |
+| **K9X HIL** | Human-in-the-loop case management | `pip install k9x-hil` | PostgreSQL, Kafka |
+
+### Quick Start
+
+```bash
+# Framework only — build and run agents locally
+pip install k9-aif
+
+# Framework + visual designer
+pip install k9-aif k9x
+k9x studio
+
+# Full ecosystem (self-hosted)
+pip install k9-aif k9x k9x-continuum k9x-hil
+```
+
+### Product Relationships
+
+- **Studio** generates K9-AIF scaffolds and queries the Continuum for existing SBBs
+- **Continuum** stores published SBBs and ABBs; validates compliance via `k9aif inspect`
+- **HIL** receives tasks from orchestrators via Kafka; responds to `reply_to` topics
+- **Framework** is self-sufficient — runs without any other product
+
+### Links
+
+- **Website:** [https://k9x.ai](https://k9x.ai)
+- **Studio:** [https://studio.k9x.ai](https://studio.k9x.ai)
+- **Continuum:** [https://continuum.k9x.ai](https://continuum.k9x.ai)
+- **GitHub:** [https://github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework)
+
+---
+
+## 26. Acknowledgements
 
 K9-AIF reflects the accumulated influence of several bodies of knowledge and practice.
 
@@ -2702,7 +3054,7 @@ Every architectural decision in K9-AIF reflects human architectural judgment. AI
 
 ---
 
-## 21. References
+## 27. References
 
 ### K9-AIF Project
 
