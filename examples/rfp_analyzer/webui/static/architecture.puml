@@ -1,0 +1,85 @@
+@startuml rfp_analyzer_architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam arrowColor #6366F1
+skinparam defaultFontSize 11
+
+title RFP Analyzer — Class Diagram
+
+abstract class "BaseAgent" as BA {
+  +execute(payload) : dict
+}
+
+abstract class "BaseVectorDB" as BV {
+  +insert(id, embedding, metadata)
+  +search(query_embedding, top_k) : list
+  +delete(id)
+}
+
+class "K9DocPreprocessor" as DP {
+  +execute(payload) : dict
+  -_extract_sections(text) : list
+  -_chunk_sections(sections) : list
+  --
+  max_chunk_tokens
+  overlap_tokens
+}
+
+class "K9EmbeddingAgent" as EA {
+  +execute(payload) : dict
+  -_generate_embedding(text) : list
+  -_ensure_vectordb()
+}
+
+class "K9RetrievalAgent" as RA {
+  +execute(payload) : dict
+  -_generate_embedding(text) : list
+  -_ensure_vectordb()
+  --
+  top_k
+}
+
+class "RFPAnalysisAgent" as AA {
+  +execute(payload) : dict
+  --
+  Uses llm_invoke()
+}
+
+class "ChromaDBAdapter" as CA {
+  +insert()
+  +insert_batch()
+  +search()
+  +delete()
+  +count()
+}
+
+class "VectorDBFactory" as VF {
+  {static} +create(config) : BaseVectorDB
+  {static} +from_config(cfg) : BaseVectorDB
+  {static} +register(name, cls)
+}
+
+BA <|-- DP
+BA <|-- EA
+BA <|-- RA
+BA <|-- AA
+
+BV <|-- CA
+
+EA --> VF : uses
+RA --> VF : uses
+VF --> BV : creates
+
+note bottom of DP
+  Chunks document by section
+  with token-aware splitting
+end note
+
+note bottom of AA
+  LLM-powered analysis
+  via ModelRouter
+end note
+
+@enduml

@@ -145,6 +145,13 @@ async function runPipeline() {
   }
 }
 
+function switchTab(tab) {
+  document.getElementById("tab-results").classList.toggle("active", tab === "results");
+  document.getElementById("tab-architecture").classList.toggle("active", tab === "architecture");
+  document.getElementById("output-area").style.display = tab === "results" ? "" : "none";
+  document.getElementById("arch-area").style.display = tab === "architecture" ? "" : "none";
+}
+
 function esc(s) {
   if (!s) return "";
   const d = document.createElement("div");
