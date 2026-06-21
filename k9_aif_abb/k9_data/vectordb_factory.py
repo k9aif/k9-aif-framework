@@ -30,7 +30,13 @@ class VectorDBFactory:
             if VectorDBFactory._bootstrapped:
                 return
             from k9_aif_abb.k9_data.adapters.chromadb_adapter import ChromaDBAdapter
+            from k9_aif_abb.k9_data.adapters.milvus_adapter import MilvusAdapter
+            from k9_aif_abb.k9_data.adapters.qdrant_adapter import QdrantAdapter
+            from k9_aif_abb.k9_data.adapters.pgvector_adapter import PgVectorAdapter
             VectorDBFactory._registry["chromadb"] = ChromaDBAdapter
+            VectorDBFactory._registry["milvus"] = MilvusAdapter
+            VectorDBFactory._registry["qdrant"] = QdrantAdapter
+            VectorDBFactory._registry["pgvector"] = PgVectorAdapter
             VectorDBFactory._bootstrapped = True
 
     @staticmethod
