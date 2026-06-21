@@ -94,49 +94,65 @@ async def run_full_pipeline(file: UploadFile = File(None), text: str = Form(None
     """Run the full pipeline: preprocess → embed → retrieve → analyze"""
     config = load_config()
 
-    # 1. Get document
-    if file:
-        content = (await file.read()).decode("utf-8")
-    elif text:
-        content = text
-    else:
-        content = open(_ROOT / "data" / "sample_rfp.md").read()
+    try:
+        # 1. Get document
+        if file:
+            content = (await file.read()).decode("utf-8")
+        elif text:
+            content = text
+        else:
+            content = open(_ROOT / "data" / "sample_rfp.md").read()
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": f"Failed to read document: {e}"})
 
     steps = []
 
     # 2. Preprocess
-    preprocessor = K9DocPreprocessor(config=config)
-    preprocess_result = preprocessor.execute({"document": content})
-    steps.append({"step": "preprocess", "agent": "K9DocPreprocessor", "result": {
-        "chunk_count": preprocess_result["chunk_count"],
-        "sections": preprocess_result["metadata"]["section_count"],
-        "chunks": preprocess_result["chunks"],
-    }})
+    try:
+        preprocessor = K9DocPreprocessor(config=config)
+        preprocess_result = preprocessor.execute({"document": content})
+        steps.append({"step": "preprocess", "agent": "K9DocPreprocessor", "result": {
+            "chunk_count": preprocess_result["chunk_count"],
+            "sections": preprocess_result["metadata"]["section_count"],
+            "chunks": preprocess_result["chunks"],
+        }})
+    except Exception as e:
+        return JSONResponse(content={"steps": steps, "query": query, "error": f"Preprocess failed: {e}"})
 
     # 3. Embed
-    embedder = K9EmbeddingAgent(config=config)
-    embed_result = embedder.execute(preprocess_result)
-    steps.append({"step": "embed", "agent": "K9EmbeddingAgent", "result": {
-        "indexed": embed_result["indexed"],
-        "skipped": embed_result.get("skipped", 0),
-    }})
+    try:
+        embedder = K9EmbeddingAgent(config=config)
+        embed_result = embedder.execute(preprocess_result)
+        steps.append({"step": "embed", "agent": "K9EmbeddingAgent", "result": {
+            "indexed": embed_result["indexed"],
+            "skipped": embed_result.get("skipped", 0),
+        }})
+    except Exception as e:
+        steps.append({"step": "embed", "agent": "K9EmbeddingAgent", "result": {"error": str(e), "indexed": 0}})
 
     # 4. Retrieve
-    retriever = K9RetrievalAgent(config={**config, "top_k": 5})
-    retrieval_result = retriever.execute({"query": query})
-    steps.append({"step": "retrieve", "agent": "K9RetrievalAgent", "result": {
-        "count": retrieval_result["count"],
-        "retrieved": retrieval_result["retrieved"],
-    }})
+    try:
+        retriever = K9RetrievalAgent(config={**config, "top_k": 5})
+        retrieval_result = retriever.execute({"query": query})
+        steps.append({"step": "retrieve", "agent": "K9RetrievalAgent", "result": {
+            "count": retrieval_result["count"],
+            "retrieved": retrieval_result["retrieved"],
+        }})
+    except Exception as e:
+        retrieval_result = {"count": 0, "retrieved": [], "context": ""}
+        steps.append({"step": "retrieve", "agent": "K9RetrievalAgent", "result": {"error": str(e), "count": 0}})
 
     # 5. Analyze
-    analysis_payload = {**preprocess_result, **retrieval_result}
-    analyzer = RFPAnalysisAgent(config=config)
-    analysis_result = analyzer.execute(analysis_payload)
-    steps.append({"step": "analyze", "agent": "RFPAnalysisAgent", "result": {
-        "output": analysis_result.get("output", ""),
-        "model_used": analysis_result.get("model_used", ""),
-    }})
+    try:
+        analysis_payload = {**preprocess_result, **retrieval_result}
+        analyzer = RFPAnalysisAgent(config=config)
+        analysis_result = analyzer.execute(analysis_payload)
+        steps.append({"step": "analyze", "agent": "RFPAnalysisAgent", "result": {
+            "output": analysis_result.get("output", ""),
+            "model_used": analysis_result.get("model_used", ""),
+        }})
+    except Exception as e:
+        steps.append({"step": "analyze", "agent": "RFPAnalysisAgent", "result": {"error": str(e), "output": ""}})
 
     return {"steps": steps, "query": query}
 
