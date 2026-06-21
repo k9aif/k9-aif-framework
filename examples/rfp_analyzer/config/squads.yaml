@@ -1,0 +1,17 @@
+squads:
+  DocumentProcessingSquad:
+    description: "Processes a large RFP document through chunking, indexing, retrieval, and analysis."
+    agents:
+      - K9DocPreprocessor
+      - K9EmbeddingAgent
+      - K9RetrievalAgent
+      - RFPAnalysisAgent
+    flow:
+      - agent: K9DocPreprocessor
+        result_key: parsed
+      - agent: K9EmbeddingAgent
+        result_key: indexed
+      - agent: K9RetrievalAgent
+        result_key: retrieved
+      - agent: RFPAnalysisAgent
+        result_key: analysis

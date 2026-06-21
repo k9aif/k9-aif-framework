@@ -1,0 +1,37 @@
+app:
+  name: RFP Analyzer
+  description: Large document processing with OOB RAG pipeline
+
+inference:
+  llm_factory:
+    base_url: ${OLLAMA_BASE_URL:-http://localhost:11434}
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 2048
+      reasoning:
+        model: "granite3-dense:2b"
+        temperature: 0.2
+        max_tokens: 4096
+  model_catalog:
+    models:
+      general:
+        provider: ollama
+        llm_ref: general
+        capabilities: [general, chat, summarization]
+        latency_tier: realtime
+        cost_tier: minimal
+      reasoning:
+        provider: ollama
+        llm_ref: reasoning
+        capabilities: [reasoning, analysis, extraction]
+        latency_tier: interactive
+        cost_tier: standard
+
+vectordb:
+  provider: chromadb
+  path: ./data/vectors
+  collection: rfp_chunks
+  embedding_provider: ollama
+  embedding_model: nomic-embed-text
