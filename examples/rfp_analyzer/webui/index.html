@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K9-AIF RFP Analyzer</title>
+  <link rel="stylesheet" href="/static/app.css?v=1" />
+  <script src="/static/app.js?v=1" defer></script>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Left panel — Chunks -->
+  <aside class="left-panel">
+    <div class="panel-header">
+      <span class="panel-icon">◫</span> Document Chunks
+      <span class="chunk-count" id="chunk-count"></span>
+    </div>
+    <div class="chunk-list" id="chunk-list">
+      <div class="empty-state">Upload a document to see chunks</div>
+    </div>
+  </aside>
+
+  <!-- Center -->
+  <main class="center">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">K9-AIF</span>
+        <span class="logo-sub">RFP Analyzer</span>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">☀️</button>
+      </div>
+    </header>
+
+    <!-- Upload + Query -->
+    <div class="input-area">
+      <div class="upload-section">
+        <label class="upload-label" for="file-input">
+          <span class="upload-icon">📄</span>
+          <span id="file-name">Drop RFP document or click to upload</span>
+          <input type="file" id="file-input" accept=".md,.txt,.doc,.docx" style="display:none" onchange="fileSelected(this)" />
+        </label>
+        <button class="btn btn-ghost btn-sm" onclick="loadSample()">Load Sample RFP</button>
+      </div>
+      <div class="query-section">
+        <input type="text" id="query-input" class="query-input" placeholder="Ask about the RFP..." value="Analyze this RFP. Extract all requirements, deadlines, and compliance needs." />
+        <button class="btn btn-primary" id="run-btn" onclick="runPipeline()">
+          <span id="run-text">Analyze</span>
+          <span id="run-spinner" style="display:none">⏳</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Agent processing steps -->
+    <div class="steps-area" id="steps-area">
+      <div class="step" id="step-preprocess">
+        <div class="step-icon">◉</div>
+        <div class="step-info">
+          <div class="step-name">K9DocPreprocessor</div>
+          <div class="step-desc">Chunk document by sections</div>
+        </div>
+        <div class="step-status" id="status-preprocess">waiting</div>
+      </div>
+      <div class="step-connector">→</div>
+      <div class="step" id="step-embed">
+        <div class="step-icon">◈</div>
+        <div class="step-info">
+          <div class="step-name">K9EmbeddingAgent</div>
+          <div class="step-desc">Generate embeddings → VectorDB</div>
+        </div>
+        <div class="step-status" id="status-embed">waiting</div>
+      </div>
+      <div class="step-connector">→</div>
+      <div class="step" id="step-retrieve">
+        <div class="step-icon">⇄</div>
+        <div class="step-info">
+          <div class="step-name">K9RetrievalAgent</div>
+          <div class="step-desc">RAG query against chunks</div>
+        </div>
+        <div class="step-status" id="status-retrieve">waiting</div>
+      </div>
+      <div class="step-connector">→</div>
+      <div class="step" id="step-analyze">
+        <div class="step-icon">↻</div>
+        <div class="step-info">
+          <div class="step-name">RFPAnalysisAgent</div>
+          <div class="step-desc">Extract requirements + summarize</div>
+        </div>
+        <div class="step-status" id="status-analyze">waiting</div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-area" id="output-area">
+      <div class="empty-state">Results will appear here after analysis</div>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>
