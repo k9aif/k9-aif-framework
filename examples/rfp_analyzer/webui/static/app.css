@@ -161,5 +161,13 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .tab-btn:hover { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+/* Errors */
+.output-errors { margin-bottom: 16px; }
+.output-error-item {
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 6px; padding: 8px 12px; margin-bottom: 6px;
+  font-size: 11px; color: var(--red); line-height: 1.4;
+}
+
 /* Empty state */
 .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }

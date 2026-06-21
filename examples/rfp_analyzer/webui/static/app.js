@@ -76,8 +76,20 @@ function renderOutput(data) {
   if (analyzeStep) html += `<span>Model: ${esc(analyzeStep.result.model_used || "N/A")}</span>`;
   html += `</div>`;
 
-  if (analyzeStep) {
-    html += `<div class="output-body">${esc(analyzeStep.result.output || "No output")}</div>`;
+  // Show errors from any step
+  const errors = (data.steps || []).filter(s => s.result && s.result.error);
+  if (errors.length > 0) {
+    html += `<div class="output-errors">`;
+    errors.forEach(e => {
+      html += `<div class="output-error-item"><strong>${esc(e.agent)}</strong>: ${esc(e.result.error)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (analyzeStep && analyzeStep.result.output) {
+    html += `<div class="output-body">${esc(analyzeStep.result.output)}</div>`;
+  } else if (errors.length === 0) {
+    html += `<div class="output-body">No output generated</div>`;
   }
 
   if (retrieveStep && retrieveStep.result.retrieved && retrieveStep.result.retrieved.length > 0) {
@@ -115,15 +127,31 @@ async function runPipeline() {
     if (selectedFile) formData.append("file", selectedFile);
     formData.append("query", query);
 
-    // Run full pipeline
-    setStepStatus("preprocess", "running");
+    const stepNames = ["preprocess", "embed", "retrieve", "analyze"];
+    const stepLabels = {
+      preprocess: "Chunking document...",
+      embed: "Generating embeddings...",
+      retrieve: "Searching VectorDB...",
+      analyze: "Analyzing with LLM...",
+    };
+
+    // Animate steps sequentially
+    for (const s of stepNames) {
+      setStepStatus(s, "running");
+      document.getElementById("output-area").innerHTML = `<div class="empty-state">${stepLabels[s]}</div>`;
+      await sleep(600);
+    }
 
     const resp = await fetch("/api/run", { method: "POST", body: formData });
     const data = await resp.json();
 
-    // Update step statuses
+    // Update step statuses with error detection
     (data.steps || []).forEach(s => {
-      setStepStatus(s.step, "done");
+      if (s.result && s.result.error) {
+        setStepStatus(s.step, "error");
+      } else {
+        setStepStatus(s.step, "done");
+      }
     });
 
     // Render chunks in left panel
@@ -151,6 +179,8 @@ function switchTab(tab) {
   document.getElementById("output-area").style.display = tab === "results" ? "" : "none";
   document.getElementById("arch-area").style.display = tab === "architecture" ? "" : "none";
 }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function esc(s) {
   if (!s) return "";
