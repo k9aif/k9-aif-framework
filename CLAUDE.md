@@ -6,6 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Architecture & Design Discipline
+
+> "The entire history of software engineering is one of rising levels of abstraction. This is as it was, is now, and always shall be." — Grady Booch
+
+K9-AIF is built on OOA, OOD, TOGAF, and Design Pattern principles. When working on this codebase, apply these disciplines:
+
+- **OOA / OOD** — every new concern follows the ABB/SBB separation: abstract contract first, concrete implementation second. Liskov Substitution and Open-Closed Principle are non-negotiable.
+- **Design Patterns** — Factory, Adapter, Registry are the core patterns. New infrastructure concerns must follow the existing `Base<Concern>` → `<Provider>Adapter` → `<Concern>Factory` structure.
+- **TOGAF** — ABB (Architecture Building Block) = abstract contract in `k9_core/`. SBB (Solution Building Block) = concrete implementation. This is not a suggestion — it is the architecture.
+- **UML / PlantUML** — default to PlantUML for all diagrams. Class diagrams for ABB/SBB relationships, component diagrams for infrastructure, activity diagrams for flows.
+- **BPMN** — swim lane diagrams use BPMN conventions: horizontal bands stacked top-to-bottom, lane labels on the left, activities flowing left-to-right within each lane, vertical arrows for cross-lane interactions.
+- **ABC inheritance** — `BaseComponent` does NOT extend `ABC`. ABBs that need both infrastructure (logging, monitoring, message bus) and abstract method enforcement must extend `(BaseComponent, ABC)` — this is correct multiple inheritance, not redundant. Never assume a parent class already extends `ABC` without checking the source.
+
+---
+
 ## Pre-Push Checklist
 
 Before committing or pushing any file, verify:
