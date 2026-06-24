@@ -44,6 +44,12 @@ tools: []
 governance:
   pre_process: true
   post_process: false
+
+# Optional — 4Ds AI Fluency annotations (see Skill 12)
+delegation:
+  interaction_mode: automation       # automation | augmentation | agency
+  ai_tasks: [classify, score]
+  human_tasks: [approve, override]
 ```
 
 ### Step 2: Create the Python class
@@ -922,3 +928,136 @@ cache = CacheFactory.create(self.config)           # default: in_memory adapter
 api_key = sm.get("MY_API_KEY")                     # raises KeyError if absent
 cache.set("result:001", payload, ttl=300)
 ```
+
+---
+
+## Skill 12 — Apply the 4Ds AI Fluency Framework to Agent Design
+
+The **4Ds** (Anthropic AI Fluency Framework) define four competencies for effective human-AI collaboration: **Delegation**, **Description**, **Discernment**, and **Diligence**. In K9-AIF, these map directly to agent YAML configuration and architectural decisions the Solutions Architect makes at design time.
+
+Reference: `4Ds/AI Fluency_ Key Terminology Cheat Sheet.pdf`
+
+### How the 4Ds map to K9-AIF
+
+| 4D | K9-AIF equivalent | Where it lives |
+|---|---|---|
+| **Delegation** | Agent scope, HIL boundaries, interaction mode | Agent YAML `delegation:` section, SA design decision |
+| **Description** | Agent prompt engineering — role, goal, instructions, output format | Agent YAML `role:`, `goal:`, `instructions:`, `output_schema:` |
+| **Discernment** | Validation loops, governance checks, quality evaluation | `K9ValidationLoopAgent` config, governance pipeline |
+| **Diligence** | Audit trail, transparency, deployment verification | Governance enforcement, `publish_event()`, record keeping |
+
+### Delegation — deciding what the agent does vs what stays human
+
+The SA must answer three questions per agent:
+
+- **Problem Awareness** — what business problem does this agent solve? (captured in `description:`)
+- **Platform Awareness** — what are the model's capabilities and limitations for this task? (captured in `model:` and model catalog capabilities)
+- **Task Delegation** — what does the AI do, what does the human do? (captured in `delegation:`)
+
+This also determines the **interaction mode**:
+
+| Mode | K9-AIF pattern | When to use |
+|---|---|---|
+| **Automation** | `BaseAgent` (one-shot) | Deterministic tasks — triage, routing, classification, audit |
+| **Augmentation** | `K9ValidationLoopAgent` + HIL escalation | Iterative tasks needing human review — fraud analysis, compliance |
+| **Agency** | `K9PlanningLoopAgent` | Open-ended tasks where the agent plans its own steps — investigation, diagnosis |
+
+### Description — the agent's prompt engineering contract
+
+These are already first-class in the K9-AIF agent YAML:
+
+| 4D sub-competency | Agent YAML field |
+|---|---|
+| **Product Description** — output format, audience, style | `output_schema:`, `instructions:` |
+| **Process Description** — step-by-step reasoning approach | `instructions:`, `pattern:` (reasoning / extraction / chat / guardrails) |
+| **Performance Description** — behavioral style (concise, detailed, challenging) | `role:`, `goal:` |
+
+### Discernment — evaluating agent output quality
+
+| 4D sub-competency | K9-AIF mechanism |
+|---|---|
+| **Product Discernment** — accuracy, coherence, relevance | `confidence_threshold` in validation loop config |
+| **Process Discernment** — logical errors, reasoning quality | `should_continue()` evaluation in `K9ValidationLoopAgent` |
+| **Performance Discernment** — communication effectiveness | Governance post-process pipeline, QA review |
+
+### Diligence — responsible and ethical agent operation
+
+| 4D sub-competency | K9-AIF mechanism |
+|---|---|
+| **Creation Diligence** — model selection rationale | Model catalog capabilities, `K9ModelRouter` scoring |
+| **Transparency Diligence** — disclosing AI role | `publish_event()` audit trail, governance logging |
+| **Deployment Diligence** — verifying outputs | `enforce_governance()`, HIL escalation via `ValidationDisposition.ESCALATE` |
+
+### Agent YAML with 4D annotations
+
+Add an optional `delegation:` section to the agent YAML to make the 4D design decisions explicit and self-documenting:
+
+```yaml
+name: FraudDetectionAgent
+class: FraudDetectionAgent
+
+description: >
+  Correlates fraud signals across claims data using iterative validation.
+
+pattern: reasoning
+model: reasoning
+
+role: >
+  You are a fraud analyst evaluating insurance claims for indicators of fraud.
+
+goal: >
+  Identify fraud signals with high confidence, escalating ambiguous cases
+  for human review rather than making false accusations.
+
+instructions:
+  - Cross-reference claim amount against policy limits
+  - Check for temporal anomalies in claim submission
+  - Flag geographic inconsistencies
+  - Always include confidence score and evidence chain
+
+output_schema:
+  fraud_signals: list
+  risk_score: float (0.0–1.0)
+  confidence: float (0.0–1.0)
+  evidence: list
+  recommendation: string (approve | flag | escalate)
+
+# 4Ds — AI Fluency design decisions
+delegation:
+  interaction_mode: augmentation
+  ai_tasks:
+    - signal correlation
+    - pattern detection
+    - evidence gathering
+    - risk scoring
+  human_tasks:
+    - final fraud determination
+    - investigation initiation
+    - customer communication
+  escalation_trigger: "confidence < 0.6 or risk_score > 0.8"
+
+discernment:
+  confidence_threshold: 0.8
+  max_iterations: 5
+  escalate_on_low_confidence: true
+
+diligence:
+  audit_trail: true
+  requires_governance: true
+  human_verification: required_above_threshold
+
+governance:
+  pre_process: true
+  post_process: true
+```
+
+### SA checklist — applying the 4Ds to a new agent
+
+Before writing any code, answer these for each agent:
+
+1. **Delegation** — Is this automation (one-shot), augmentation (iterative + human), or agency (self-planning)? What tasks stay with the human?
+2. **Description** — Is the role, goal, and output format precise enough that the LLM can produce consistent output? Are the instructions step-by-step?
+3. **Discernment** — How do we know the output is good? What confidence threshold triggers escalation? Does this agent need a validation loop?
+4. **Diligence** — Is governance enforced? Is the audit trail complete? Can a human verify the output before it is acted upon?
+
+If the answer to any Discernment question is "we need to check and possibly retry," the agent should extend `K9ValidationLoopAgent`, not `BaseAgent`.

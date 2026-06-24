@@ -45,3 +45,25 @@ tools: []
 governance:
   pre_process: true
   post_process: false
+
+# 4Ds — AI Fluency design decisions (Anthropic 4Ds Framework)
+delegation:
+  interaction_mode: automation
+  ai_tasks:
+    - completeness validation
+    - coverage matching
+    - priority classification
+    - LLM-assisted triage reasoning
+  human_tasks:
+    - override priority for edge cases
+    - policy exception handling
+
+discernment:
+  confidence_threshold: 0.7
+  max_iterations: 1
+  escalate_on_low_confidence: false
+
+diligence:
+  audit_trail: true
+  requires_governance: true
+  human_verification: not_required

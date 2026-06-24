@@ -47,3 +47,27 @@ tools: []
 
 escalation:
   auto_escalate_threshold: 0.8
+
+# 4Ds — AI Fluency design decisions (Anthropic 4Ds Framework)
+delegation:
+  interaction_mode: augmentation
+  ai_tasks:
+    - signal correlation
+    - pattern detection
+    - risk scoring
+    - evidence gathering
+  human_tasks:
+    - final fraud determination
+    - investigation initiation
+    - customer communication
+    - regulatory reporting
+
+discernment:
+  confidence_threshold: 0.8
+  max_iterations: 5
+  escalate_on_low_confidence: true
+
+diligence:
+  audit_trail: true
+  requires_governance: true
+  human_verification: required_above_threshold
