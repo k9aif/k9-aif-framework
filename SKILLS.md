@@ -180,7 +180,7 @@ llm_invoke(config, req)
   → K9ModelRouter.route(req)                   # scores all catalog models
   → catalog.get_model(best_alias)              # looks up llm_ref
   → LLMFactory.get(llm_ref)                   # cached OllamaLLM instance
-  → OllamaLLM.invoke(prompt)                  # hits Ollama at 192.168.1.98:11434
+  → OllamaLLM.invoke(prompt)                  # hits Ollama at ${OLLAMA_BASE_URL}
   → RouteDecision + complexity/governance scores persisted to routing state store (SQLite or PostgreSQL)
 ```
 
@@ -199,7 +199,9 @@ except RuntimeError as exc:
 ## Skill 3 — How to add a custom Model Router by extending BaseModelRouter
 
 The ABB contract is `BaseModelRouter` (`k9_aif_abb/k9_inference/routers/base_model_router.py`).
-`K9ModelRouter` is the **OOB default SBB** — a ready-to-use extension that scores models from the catalog using weighted signals. It is not mandatory.
+It defines **three** abstract methods: `route()`, `invoke()`, and `ainvoke()` (async) — all three must be implemented.
+
+`K9ModelRouter` is the **OOB default SBB** — a ready-to-use extension that scores models from the catalog using weighted signals. `DefaultModelRouter` is a second OOB option (`router.type: default`). Neither is mandatory.
 
 If a solution needs different routing logic (cost optimization, compliance routing, A/B testing, provider switching), extend `BaseModelRouter` and register it via config. The rest of the framework — agents, squads, orchestrators — is unaffected.
 
@@ -210,20 +212,26 @@ If a solution needs different routing logic (cost optimization, compliance routi
 
 from k9_aif_abb.k9_inference.routers.base_model_router import BaseModelRouter
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 from k9_aif_abb.k9_inference.models.route_decision import RouteDecision
+from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 
 
 class MyRouter(BaseModelRouter):
 
     def route(self, request: InferenceRequest) -> RouteDecision:
-        # Your routing logic here — pick a model alias from the catalog
         alias = "reasoning" if request.task_type == "reasoning" else "general"
         return RouteDecision(model_alias=alias)
 
-    def invoke(self, request: InferenceRequest):
+    def invoke(self, request: InferenceRequest) -> InferenceResponse:
         decision = self.route(request)
-        llm = self._get_llm(decision.model_alias)   # inherited helper
+        llm = LLMFactory.get(decision.model_alias)
         return llm.invoke(request.prompt)
+
+    async def ainvoke(self, request: InferenceRequest) -> InferenceResponse:
+        decision = self.route(request)
+        llm = LLMFactory.get(decision.model_alias)
+        return await llm.ainvoke(request.prompt)
 ```
 
 ### Step 2: Register in `config.yaml`
@@ -756,9 +764,9 @@ When changing a generated agent from one-shot to iterative, replace the parent c
 | | `def should_continue(self, observation, loop_ctx)` |
 | | `def finalize(self, loop_ctx) -> ValidationLoopResult` |
 
-**EOC reference agents requiring this migration:**
-- `FraudDetectionAgent` — fraud signal correlation across multiple passes is the canonical iterative use case
-- `DocumentExtractorAgent` — extraction confidence check + re-extraction on parse failure benefits from iterative refinement
+**EOC reference agents already migrated (use as examples):**
+- `FraudDetectionAgent` (`examples/.../agents/src/fraud_detection_agent.py`) — extends `K9ValidationLoopAgent`; fraud signal correlation across multiple passes
+- `DocumentExtractorAgent` (`examples/.../agents/src/document_extractor_agent.py`) — extends `K9ValidationLoopAgent`; extraction confidence check + re-extraction on parse failure
 
 ---
 
@@ -909,24 +917,56 @@ class MyThingFactory:
 - All new code is purely additive — no modification to existing classes
 - Adapters accept `config=None` in `__init__` — factory always passes `config=cfg`
 
-### Already-implemented adapter areas (Phase 1)
+### Already-implemented adapter areas
 
 | Concern | Contract | Default | Other adapters | Factory |
 |---|---|---|---|---|
 | Secret Management | `BaseSecretManager` | `EnvSecretAdapter` | Vault, AWS, IBM | `SecretManagerFactory` |
 | Cache | `BaseCache` | `InMemoryAdapter` | `RedisAdapter` | `CacheFactory` |
+| Object Storage | `BaseObjectStorage` | `LocalObjectStorageAdapter` | `S3ObjectStorageAdapter` (OOB — S3/MinIO), `IbmCosObjectStorageAdapter` | `ObjectStorageFactory` |
 
 Usage in agent or service code:
 
 ```python
 from k9_aif_abb.k9_factories.security_factory import SecretManagerFactory
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
+from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
 
 sm    = SecretManagerFactory.create(self.config)   # default: env adapter
 cache = CacheFactory.create(self.config)           # default: in_memory adapter
+store = ObjectStorageFactory.create(self.config)   # default: local adapter
 
 api_key = sm.get("MY_API_KEY")                     # raises KeyError if absent
 cache.set("result:001", payload, ttl=300)
+
+# Object storage — Router stores documents, agents retrieve by URI
+uri  = store.upload("documents", "claim-001/form.pdf", file_bytes)
+data = store.download("documents", "claim-001/form.pdf")
+```
+
+### Object storage — document flow
+
+The Router is the single entry point and owns the object store. When a document event arrives:
+
+```
+UI upload → app_backend → Router
+                            ├── 1. store_document(bucket, key, bytes) → URI
+                            └── 2. publish JSON to domain topic
+                                    { "document_uri": "s3://documents/claim-001/form.pdf",
+                                      "filename": "form.pdf", "event_type": "document_received", ... }
+                                          ↓
+                                    Orchestrator → Squad → DocumentExtractorAgent
+                                                            downloads from document_uri via ObjectStorageFactory
+```
+
+Config for S3 / MinIO:
+
+```yaml
+object_storage:
+  provider: s3                                              # local | s3 | ibm
+  endpoint_url: "${S3_ENDPOINT_URL:-http://localhost:9000}"  # MinIO
+  region: "${S3_REGION:-us-east-1}"
+# Credentials: AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from env only
 ```
 
 ---

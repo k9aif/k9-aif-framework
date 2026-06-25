@@ -138,8 +138,8 @@ Event → K9EventRouter (single entry point)
 domain topic → Orchestrator → Squads → Agents → LLM
 ```
 
-- **Router** (`k9_core/router/base_router.py`) — **single entry point** for all events. Routes by `event_type` deterministically; publishes to `intent.in` when intent cannot be determined. Never contains classification logic.
-- **IntentOrchestrator** — Kafka consumer on `intent.in`. Runs IntentSquad to classify intent, then re-publishes to the correct domain topic. If intent remains unclear, publishes a "please clarify" response. **OOB gap — not yet built; SBBs must implement.**
+- **Router** (`k9_core/router/base_router.py`) — **single entry point** for all events. Routes by `event_type` deterministically; publishes to `intent.in` when intent cannot be determined. Never contains classification logic. Owns the **object store** — when a document arrives, the Router stores it in the bucket and publishes a JSON event with the `document_uri` to the domain topic. Downstream agents receive only the URI.
+- **IntentOrchestrator** (`k9_orchestrators/intent_orchestrator.py`) — OOB Kafka consumer on `intent.in`. Self-bootstraps `IntentSquad` + `K9IntentAgent`. Runs IntentSquad to classify intent, then re-publishes to the correct domain topic. If intent remains unclear or confidence is below threshold, publishes a "please clarify" response.
 - **IntentSquad** (`k9_squad/intent_squad.py`) — squad used by IntentOrchestrator; wraps one or more `BaseIntentAgent` implementations; handles confidence gating
 - **Orchestrator** (`k9_core/orchestration/base_orchestrator.py`) — coordinates squads for a domain workflow
 - **Squad** (`k9_squad/base_squad.py`) — executes a defined `flow` of agents in sequence
@@ -188,7 +188,7 @@ resp = llm_invoke(self.config, InferenceRequest(prompt=..., task_type=...))
 
 `llm_invoke` → `ModelRouterFactory.get_router()` → `BaseModelRouter.route()` → `LLMFactory.get(llm_ref)` → `OllamaLLM.invoke()`
 
-`K9ModelRouter` is the OOB default implementation of `BaseModelRouter`. Solutions can substitute their own router by implementing `BaseModelRouter` (`k9_inference/routers/base_model_router.py`) and registering it via `ModelRouterFactory`.
+`K9ModelRouter` is the OOB default implementation of `BaseModelRouter`. `DefaultModelRouter` (`k9_inference/routers/default_model_router.py`) is a second OOB router, selectable via `router.type: default`. Solutions can substitute their own router by implementing `BaseModelRouter` (`k9_inference/routers/base_model_router.py`) — which has three abstract methods: `route()`, `invoke()`, and `ainvoke()` (async) — and registering it via `ModelRouterFactory`.
 
 `K9ModelRouter` selects the model via weighted scoring:
 - `+3` task_type matches a model's `capabilities[]`
@@ -229,7 +229,7 @@ Each layer knows only what is **below** it in the hierarchy:
 - Squad YAML has no `orchestrator:` field
 - Agent YAML has no `squad:` or `routing:` fields
 
-Agent registration belongs in the **application entry point** (`app.py`, `bootstrap.py`) — not inside the orchestrator. The orchestrator receives a pre-loaded squad and calls `run()` only.
+Agent registration belongs in the **application entry point** (`app.py`, `bootstrap.py`) — not inside the orchestrator. The orchestrator receives a pre-loaded squad and calls `execute_flow()` only.
 
 ### Squad definition (YAML)
 
@@ -260,14 +260,14 @@ squads:
 ### Config structure (`config.yaml`)
 
 Two levels:
-- **Framework ABB config** (`k9_aif_abb/config/config.yaml`) — defaults for testing; Ollama at `192.168.1.98:11434`, SQLite persistence
-- **Example SBB config** (`examples/<App>/config/config.yaml`) — overrides for that app; EOC uses PostgreSQL (`eoc` schema), Kafka at `192.168.1.98:9092`
+- **Framework ABB config** (`k9_aif_abb/config/config.yaml`) — defaults for testing; Ollama at `${OLLAMA_BASE_URL:-http://localhost:11434}`, SQLite persistence
+- **Example SBB config** (`examples/<App>/config/config.yaml`) — overrides for that app; EOC uses PostgreSQL (`eoc` schema), Kafka at `${KAFKA_BROKER:-localhost:9092}`
 
 Key config sections: `inference.llm_factory.models` (maps alias → Ollama model name + params), `inference.model_catalog` (maps alias → capabilities/tiers), `inference.router.persistence` (sqlite | postgres | memory), `postgres`, `messaging` (Kafka/Redpanda).
 
 ### Persistence
 
-- **Routing state store** (`k9_storage/routing_state_store.py`) — 4 tables: `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`. SQLite OOB (auto-created); PostgreSQL via reflection. All tables live in the `k9aif` schema on the shared PostgreSQL instance at `192.168.1.98`.
+- **Routing state store** (`k9_storage/routing_state_store.py`) — 4 tables: `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`. SQLite OOB (auto-created); PostgreSQL via reflection. All tables live in the `k9aif` schema on the PostgreSQL instance at `${POSTGRES_HOST:-localhost}`.
 - **PostgresDatabaseStorage** sets `search_path` and `MetaData(schema=...)` from `postgres.schema` in config — schema must match the PostgreSQL schema or reflection will miss the tables.
 
 ### EOC example structure
@@ -291,10 +291,11 @@ Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version
 | File | Contract |
 |---|---|
 | `k9_core/agent/base_agent.py` | `execute(payload: dict) -> dict` — synchronous, must be implemented |
-| `k9_core/orchestration/base_orchestrator.py` | `run(event)` — coordinates squad execution |
-| `k9_core/router/base_router.py` | `route(event_type)` — returns orchestrator |
-| `k9_squad/base_squad.py` | `run(context)` — executes `flow` steps in order |
-| `k9_inference/routers/base_model_router.py` | `route(request)` → `RouteDecision`; `invoke(request)` → `InferenceResponse` |
+| `k9_core/orchestration/base_orchestrator.py` | `execute_flow(payload: dict) -> dict` — coordinates squad execution |
+| `k9_core/router/base_router.py` | `route(payload: dict) -> dict` — dispatches event to the Orchestrator's topic (deterministic or via `intent.in`); returns routing metadata |
+| `k9_squad/base_squad.py` | `execute(payload: dict) -> dict` — executes `flow` steps in order (`run()` exists as backwards-compat alias) |
+| `k9_inference/routers/base_model_router.py` | `route(request)` → `RouteDecision`; `invoke(request)` → `InferenceResponse`; `ainvoke(request)` → `InferenceResponse` (async) |
+| `k9_core/storage/base_object_storage.py` | `upload(bucket, key, data)` → URI; `download(bucket, key)` → bytes; `get_uri(bucket, key)` → str |
 | `k9_core/governance/pipeline.py` | `require_governance()` factory; `NoopGovernance`; `GovernanceConfigError` |
 | `k9_agents/validation/base_validation_loop_agent.py` | Iterative loop ABB — `generate_hypothesis` · `run_validation` · `evaluate_observation` · `should_continue` · `finalize` |
 | `k9_agents/validation/k9_validation_loop_agent.py` | OOB LLM-driven loop — extend and override only what differs (analogous to `K9ModelRouter`) |
@@ -324,17 +325,17 @@ All major components are provisioned through factories — never instantiated di
 - `OrchestratorRegistry` — same pattern for orchestrators
 - `SecretManagerFactory.create(config)` — provisions secret manager from `config["secrets"]["provider"]` (default: `"env"`)
 - `CacheFactory.create(config)` — provisions cache from `config["cache"]["provider"]` (default: `"in_memory"`)
+- `ObjectStorageFactory.create(config)` — provisions object store from `config["object_storage"]["provider"]` (default: `"local"`)
 
 ### Provider Adapter Pattern
 
 The multi-provider LLM pattern is applied consistently across infrastructure concerns. Each area follows the same three-layer structure: `BaseXxx` ABB contract → provider `XxxAdapter` implementations → `XxxFactory` with config-driven default. All changes are additive — existing solutions using concrete classes directly are unaffected.
 
-**Phase 1 — completed:**
-
 | Concern | Contract | Adapters | Factory | Config key |
 |---|---|---|---|---|
 | Secret Management | `BaseSecretManager` | `EnvSecretAdapter` (default), `VaultSecretAdapter`, `AwsSecretAdapter`, `IbmSecretAdapter` | `SecretManagerFactory` | `secrets.provider` |
 | Cache | `BaseCache` | `InMemoryAdapter` (default), `RedisAdapter` | `CacheFactory` | `cache.provider` |
+| Object Storage | `BaseObjectStorage` | `LocalObjectStorageAdapter` (default), `S3ObjectStorageAdapter` (OOB — S3/MinIO), `IbmCosObjectStorageAdapter` | `ObjectStorageFactory` | `object_storage.provider` |
 
 **Design constraints (must be preserved in all adapter work):**
 - API keys and secrets NEVER in `config.yaml` — credentials come from environment variables only
@@ -344,17 +345,26 @@ The multi-provider LLM pattern is applied consistently across infrastructure con
 
 ---
 
-## Infrastructure (shared, always-on at 192.168.1.98)
+## Infrastructure (env-var driven — no hardcoded IPs)
 
-| Service | Address |
+| Service | Env var / Default |
 |---|---|
-| Ollama | `http://192.168.1.98:11434` |
-| PostgreSQL | `192.168.1.98:5432` (databases: `k9aif` schema `k9aif`, EOC uses `eoc` schema `eoc`) |
-| Kafka / Redpanda | `192.168.1.98:9092` |
-| Neo4j | `bolt://192.168.1.98:7687` |
-| Docling OCR | `http://192.168.1.98:5001/v1/parse` |
+| Ollama | `${OLLAMA_BASE_URL:-http://localhost:11434}` |
+| PostgreSQL | `${POSTGRES_HOST:-localhost}:5432` (databases: `k9aif` schema `k9aif`, EOC uses `eoc` schema `eoc`) |
+| Kafka / Redpanda | `${KAFKA_BROKER:-localhost:9092}` |
+| Neo4j | `${NEO4J_URI:-bolt://localhost:7687}` |
+| Docling OCR | `${DOCLING_ENDPOINT:-http://localhost:5001/v1/parse}` |
+| Object Storage (S3/MinIO) | `${S3_ENDPOINT_URL:-http://localhost:9000}` (credentials via `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`) |
 
 `K9_ENV` environment variable controls governance enforcement: `development` / `test` permit NoopGovernance; `production` / `staging` cause `enforce_governance()` to raise.
+
+### Zero Trust execution layer
+
+`BaseOrchestrator` includes an opt-in Zero Trust guard (`k9_security/zero_trust/`). Enable via `enable_zero_trust: true` in config or constructor. When enabled, `apply_zero_trust(payload, ctx)` evaluates a `DefaultZeroTrustGuard` before flow execution — denied payloads raise before any squad runs. The guard, context builder, and enforcers are pluggable.
+
+### Session management
+
+`BaseOrchestrator` auto-wires session management when `session.enabled: true` in config. `_bootstrap_session(config)` creates a session manager; `_enrich_with_session(payload)` and `_update_session(payload, result)` are called around flow execution. `SessionFactory` selects the backend. Sessions are optional — no config key means no session overhead.
 
 ### MCP (Model Context Protocol) layer
 
@@ -367,4 +377,4 @@ K9-AIF includes a full MCP client ABB stack for calling external tool servers:
 | `BaseMCPAgent` | `k9_core/agent/base_mcp_agent.py` | Abstract base for MCP-aware agents |
 | `MCPClientAgent` | `k9_agents/integration/mcp_client_agent.py` | Concrete MCP agent SBB |
 
-The **Docling OCR MCP server** at `http://192.168.1.98:5001/v1/parse` is the live tool server for document intelligence. It converts PDF, DOCX, and images to clean Markdown (tables, layout preserved), which agents consume as prompt context. `DocumentExtractorAgent` in the EOC connects to Docling via `MCPHttpConnector` — the connector type is config-driven, so any MCP-compatible tool server can be substituted without touching squad or orchestrator code.
+The **Docling OCR MCP server** at `${DOCLING_ENDPOINT:-http://localhost:5001/v1/parse}` is the live tool server for document intelligence. It converts PDF, DOCX, and images to clean Markdown (tables, layout preserved), which agents consume as prompt context. `DocumentExtractorAgent` in the EOC connects to Docling via `MCPHttpConnector` — the connector type is config-driven, so any MCP-compatible tool server can be substituted without touching squad or orchestrator code.

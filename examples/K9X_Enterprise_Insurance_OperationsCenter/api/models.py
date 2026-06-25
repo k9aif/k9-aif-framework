@@ -63,8 +63,9 @@ class DocumentReceivedEvent(EOCEvent):
     claimant_id: Optional[str] = Field(None, description="Document owner claimant ID")
     filename: str = Field(..., description="Original filename")
     file_type: Optional[str] = Field(None, description="MIME type or extension")
-    raw_text: Optional[str] = Field(None, description="Pre-extracted text content")
-    file_path: Optional[str] = Field(None, description="Path to file for OCR processing")
+    document_uri: Optional[str] = Field(None, description="Object store URI (s3://bucket/key) — primary document reference")
+    raw_text: Optional[str] = Field(None, description="Pre-extracted text content (fallback when no object store)")
+    file_path: Optional[str] = Field(None, description="Local file path (fallback for legacy/local-only deployments)")
 
 
 class FraudSignalEvent(EOCEvent):

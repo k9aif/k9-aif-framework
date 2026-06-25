@@ -123,6 +123,12 @@
                         <li>
                                 <a class="variable" href="#ValidationLoopContext.metadata">metadata</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#ValidationLoopContext.remaining_steps">remaining_steps</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ValidationLoopContext.notes">notes</a>
+                        </li>
                 </ul>
 
             </li>
@@ -149,6 +155,12 @@
                         </li>
                         <li>
                                 <a class="variable" href="#ValidationLoopResult.evidence">evidence</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ValidationLoopResult.remaining_steps">remaining_steps</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#ValidationLoopResult.notes">notes</a>
                         </li>
                 </ul>
 
@@ -494,20 +506,22 @@
 </span><span id="BaseValidationLoopAgent-293"><a href="#BaseValidationLoopAgent-293"><span class="linenos">293</span></a>            <span class="s2">&quot;iterations&quot;</span><span class="p">:</span>       <span class="n">result</span><span class="o">.</span><span class="n">iterations</span><span class="p">,</span>
 </span><span id="BaseValidationLoopAgent-294"><a href="#BaseValidationLoopAgent-294"><span class="linenos">294</span></a>            <span class="s2">&quot;final_confidence&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">final_confidence</span><span class="p">,</span>
 </span><span id="BaseValidationLoopAgent-295"><a href="#BaseValidationLoopAgent-295"><span class="linenos">295</span></a>            <span class="s2">&quot;evidence&quot;</span><span class="p">:</span>         <span class="n">result</span><span class="o">.</span><span class="n">evidence</span><span class="p">,</span>
-</span><span id="BaseValidationLoopAgent-296"><a href="#BaseValidationLoopAgent-296"><span class="linenos">296</span></a>            <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="p">[</span>
-</span><span id="BaseValidationLoopAgent-297"><a href="#BaseValidationLoopAgent-297"><span class="linenos">297</span></a>                <span class="p">{</span>
-</span><span id="BaseValidationLoopAgent-298"><a href="#BaseValidationLoopAgent-298"><span class="linenos">298</span></a>                    <span class="s2">&quot;iteration&quot;</span><span class="p">:</span>   <span class="n">s</span><span class="o">.</span><span class="n">iteration</span><span class="p">,</span>
-</span><span id="BaseValidationLoopAgent-299"><a href="#BaseValidationLoopAgent-299"><span class="linenos">299</span></a>                    <span class="s2">&quot;hypothesis&quot;</span><span class="p">:</span>  <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">),</span>
-</span><span id="BaseValidationLoopAgent-300"><a href="#BaseValidationLoopAgent-300"><span class="linenos">300</span></a>                    <span class="s2">&quot;observation&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">observation</span><span class="p">),</span>
-</span><span id="BaseValidationLoopAgent-301"><a href="#BaseValidationLoopAgent-301"><span class="linenos">301</span></a>                    <span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">disposition</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
-</span><span id="BaseValidationLoopAgent-302"><a href="#BaseValidationLoopAgent-302"><span class="linenos">302</span></a>                    <span class="s2">&quot;confidence&quot;</span><span class="p">:</span>  <span class="n">s</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
-</span><span id="BaseValidationLoopAgent-303"><a href="#BaseValidationLoopAgent-303"><span class="linenos">303</span></a>                    <span class="c1"># tool_result intentionally excluded — raw tool output may</span>
-</span><span id="BaseValidationLoopAgent-304"><a href="#BaseValidationLoopAgent-304"><span class="linenos">304</span></a>                    <span class="c1"># contain sensitive data. Add sanitized_tool_result in</span>
-</span><span id="BaseValidationLoopAgent-305"><a href="#BaseValidationLoopAgent-305"><span class="linenos">305</span></a>                    <span class="c1"># subclass finalize() if inspection is needed.</span>
-</span><span id="BaseValidationLoopAgent-306"><a href="#BaseValidationLoopAgent-306"><span class="linenos">306</span></a>                <span class="p">}</span>
-</span><span id="BaseValidationLoopAgent-307"><a href="#BaseValidationLoopAgent-307"><span class="linenos">307</span></a>                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">steps</span>
-</span><span id="BaseValidationLoopAgent-308"><a href="#BaseValidationLoopAgent-308"><span class="linenos">308</span></a>            <span class="p">],</span>
-</span><span id="BaseValidationLoopAgent-309"><a href="#BaseValidationLoopAgent-309"><span class="linenos">309</span></a>        <span class="p">}</span>
+</span><span id="BaseValidationLoopAgent-296"><a href="#BaseValidationLoopAgent-296"><span class="linenos">296</span></a>            <span class="s2">&quot;remaining_steps&quot;</span><span class="p">:</span>  <span class="n">result</span><span class="o">.</span><span class="n">remaining_steps</span><span class="p">,</span>
+</span><span id="BaseValidationLoopAgent-297"><a href="#BaseValidationLoopAgent-297"><span class="linenos">297</span></a>            <span class="s2">&quot;notes&quot;</span><span class="p">:</span>            <span class="n">result</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
+</span><span id="BaseValidationLoopAgent-298"><a href="#BaseValidationLoopAgent-298"><span class="linenos">298</span></a>            <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="BaseValidationLoopAgent-299"><a href="#BaseValidationLoopAgent-299"><span class="linenos">299</span></a>                <span class="p">{</span>
+</span><span id="BaseValidationLoopAgent-300"><a href="#BaseValidationLoopAgent-300"><span class="linenos">300</span></a>                    <span class="s2">&quot;iteration&quot;</span><span class="p">:</span>   <span class="n">s</span><span class="o">.</span><span class="n">iteration</span><span class="p">,</span>
+</span><span id="BaseValidationLoopAgent-301"><a href="#BaseValidationLoopAgent-301"><span class="linenos">301</span></a>                    <span class="s2">&quot;hypothesis&quot;</span><span class="p">:</span>  <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">hypothesis</span><span class="p">),</span>
+</span><span id="BaseValidationLoopAgent-302"><a href="#BaseValidationLoopAgent-302"><span class="linenos">302</span></a>                    <span class="s2">&quot;observation&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">observation</span><span class="p">),</span>
+</span><span id="BaseValidationLoopAgent-303"><a href="#BaseValidationLoopAgent-303"><span class="linenos">303</span></a>                    <span class="s2">&quot;disposition&quot;</span><span class="p">:</span> <span class="n">s</span><span class="o">.</span><span class="n">disposition</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+</span><span id="BaseValidationLoopAgent-304"><a href="#BaseValidationLoopAgent-304"><span class="linenos">304</span></a>                    <span class="s2">&quot;confidence&quot;</span><span class="p">:</span>  <span class="n">s</span><span class="o">.</span><span class="n">confidence</span><span class="p">,</span>
+</span><span id="BaseValidationLoopAgent-305"><a href="#BaseValidationLoopAgent-305"><span class="linenos">305</span></a>                    <span class="c1"># tool_result intentionally excluded — raw tool output may</span>
+</span><span id="BaseValidationLoopAgent-306"><a href="#BaseValidationLoopAgent-306"><span class="linenos">306</span></a>                    <span class="c1"># contain sensitive data. Add sanitized_tool_result in</span>
+</span><span id="BaseValidationLoopAgent-307"><a href="#BaseValidationLoopAgent-307"><span class="linenos">307</span></a>                    <span class="c1"># subclass finalize() if inspection is needed.</span>
+</span><span id="BaseValidationLoopAgent-308"><a href="#BaseValidationLoopAgent-308"><span class="linenos">308</span></a>                <span class="p">}</span>
+</span><span id="BaseValidationLoopAgent-309"><a href="#BaseValidationLoopAgent-309"><span class="linenos">309</span></a>                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">steps</span>
+</span><span id="BaseValidationLoopAgent-310"><a href="#BaseValidationLoopAgent-310"><span class="linenos">310</span></a>            <span class="p">],</span>
+</span><span id="BaseValidationLoopAgent-311"><a href="#BaseValidationLoopAgent-311"><span class="linenos">311</span></a>        <span class="p">}</span>
 </span></pre></div>
 
 
@@ -1371,10 +1385,12 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
 </span><span id="ValidationLoopContext-35"><a href="#ValidationLoopContext-35"><span class="linenos">35</span></a><span class="k">class</span><span class="w"> </span><span class="nc">ValidationLoopContext</span><span class="p">:</span>
 </span><span id="ValidationLoopContext-36"><a href="#ValidationLoopContext-36"><span class="linenos">36</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mutable state carried across iterations — the agent&#39;s working memory.&quot;&quot;&quot;</span>
 </span><span id="ValidationLoopContext-37"><a href="#ValidationLoopContext-37"><span class="linenos">37</span></a>
-</span><span id="ValidationLoopContext-38"><a href="#ValidationLoopContext-38"><span class="linenos">38</span></a>    <span class="n">payload</span><span class="p">:</span>   <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span><span id="ValidationLoopContext-39"><a href="#ValidationLoopContext-39"><span class="linenos">39</span></a>    <span class="n">steps</span><span class="p">:</span>     <span class="n">List</span><span class="p">[</span><span class="n">ValidationLoopStep</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-</span><span id="ValidationLoopContext-40"><a href="#ValidationLoopContext-40"><span class="linenos">40</span></a>    <span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span id="ValidationLoopContext-41"><a href="#ValidationLoopContext-41"><span class="linenos">41</span></a>    <span class="n">metadata</span><span class="p">:</span>  <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+</span><span id="ValidationLoopContext-38"><a href="#ValidationLoopContext-38"><span class="linenos">38</span></a>    <span class="n">payload</span><span class="p">:</span>         <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span><span id="ValidationLoopContext-39"><a href="#ValidationLoopContext-39"><span class="linenos">39</span></a>    <span class="n">steps</span><span class="p">:</span>           <span class="n">List</span><span class="p">[</span><span class="n">ValidationLoopStep</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</span><span id="ValidationLoopContext-40"><a href="#ValidationLoopContext-40"><span class="linenos">40</span></a>    <span class="n">iteration</span><span class="p">:</span>       <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="ValidationLoopContext-41"><a href="#ValidationLoopContext-41"><span class="linenos">41</span></a>    <span class="n">metadata</span><span class="p">:</span>        <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+</span><span id="ValidationLoopContext-42"><a href="#ValidationLoopContext-42"><span class="linenos">42</span></a>    <span class="n">remaining_steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</span><span id="ValidationLoopContext-43"><a href="#ValidationLoopContext-43"><span class="linenos">43</span></a>    <span class="n">notes</span><span class="p">:</span>           <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -1385,7 +1401,7 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
                             <div id="ValidationLoopContext.__init__" class="classattr">
                                 <div class="attr function">
             
-        <span class="name">ValidationLoopContext</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n"><a href="#ValidationLoopStep">ValidationLoopStep</a></span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>,</span><span class="param">	<span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span></span>)</span>
+        <span class="name">ValidationLoopContext</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n"><a href="#ValidationLoopStep">ValidationLoopStep</a></span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">iteration</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>,</span><span class="param">	<span class="n">metadata</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">remaining_steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">notes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span></span>)</span>
 
         
     </div>
@@ -1439,6 +1455,28 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
     
 
                             </div>
+                            <div id="ValidationLoopContext.remaining_steps" class="classattr">
+                                <div class="attr variable">
+            <span class="name">remaining_steps</span><span class="annotation">: List[str]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ValidationLoopContext.remaining_steps"></a>
+    
+    
+
+                            </div>
+                            <div id="ValidationLoopContext.notes" class="classattr">
+                                <div class="attr variable">
+            <span class="name">notes</span><span class="annotation">: Dict[str, Any]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ValidationLoopContext.notes"></a>
+    
+    
+
+                            </div>
                 </section>
                 <section id="ValidationLoopResult">
                             <input id="ValidationLoopResult-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -1452,16 +1490,18 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
 
     </div>
     <a class="headerlink" href="#ValidationLoopResult"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ValidationLoopResult-44"><a href="#ValidationLoopResult-44"><span class="linenos">44</span></a><span class="nd">@dataclass</span>
-</span><span id="ValidationLoopResult-45"><a href="#ValidationLoopResult-45"><span class="linenos">45</span></a><span class="k">class</span><span class="w"> </span><span class="nc">ValidationLoopResult</span><span class="p">:</span>
-</span><span id="ValidationLoopResult-46"><a href="#ValidationLoopResult-46"><span class="linenos">46</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Final output produced by finalize(), escalate(), or fail().&quot;&quot;&quot;</span>
-</span><span id="ValidationLoopResult-47"><a href="#ValidationLoopResult-47"><span class="linenos">47</span></a>
-</span><span id="ValidationLoopResult-48"><a href="#ValidationLoopResult-48"><span class="linenos">48</span></a>    <span class="n">disposition</span><span class="p">:</span>      <span class="n">ValidationDisposition</span>
-</span><span id="ValidationLoopResult-49"><a href="#ValidationLoopResult-49"><span class="linenos">49</span></a>    <span class="n">output</span><span class="p">:</span>           <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-</span><span id="ValidationLoopResult-50"><a href="#ValidationLoopResult-50"><span class="linenos">50</span></a>    <span class="n">steps</span><span class="p">:</span>            <span class="n">List</span><span class="p">[</span><span class="n">ValidationLoopStep</span><span class="p">]</span>
-</span><span id="ValidationLoopResult-51"><a href="#ValidationLoopResult-51"><span class="linenos">51</span></a>    <span class="n">iterations</span><span class="p">:</span>       <span class="nb">int</span>
-</span><span id="ValidationLoopResult-52"><a href="#ValidationLoopResult-52"><span class="linenos">52</span></a>    <span class="n">final_confidence</span><span class="p">:</span> <span class="nb">float</span>
-</span><span id="ValidationLoopResult-53"><a href="#ValidationLoopResult-53"><span class="linenos">53</span></a>    <span class="n">evidence</span><span class="p">:</span>         <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ValidationLoopResult-46"><a href="#ValidationLoopResult-46"><span class="linenos">46</span></a><span class="nd">@dataclass</span>
+</span><span id="ValidationLoopResult-47"><a href="#ValidationLoopResult-47"><span class="linenos">47</span></a><span class="k">class</span><span class="w"> </span><span class="nc">ValidationLoopResult</span><span class="p">:</span>
+</span><span id="ValidationLoopResult-48"><a href="#ValidationLoopResult-48"><span class="linenos">48</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Final output produced by finalize(), escalate(), or fail().&quot;&quot;&quot;</span>
+</span><span id="ValidationLoopResult-49"><a href="#ValidationLoopResult-49"><span class="linenos">49</span></a>
+</span><span id="ValidationLoopResult-50"><a href="#ValidationLoopResult-50"><span class="linenos">50</span></a>    <span class="n">disposition</span><span class="p">:</span>      <span class="n">ValidationDisposition</span>
+</span><span id="ValidationLoopResult-51"><a href="#ValidationLoopResult-51"><span class="linenos">51</span></a>    <span class="n">output</span><span class="p">:</span>           <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span><span id="ValidationLoopResult-52"><a href="#ValidationLoopResult-52"><span class="linenos">52</span></a>    <span class="n">steps</span><span class="p">:</span>            <span class="n">List</span><span class="p">[</span><span class="n">ValidationLoopStep</span><span class="p">]</span>
+</span><span id="ValidationLoopResult-53"><a href="#ValidationLoopResult-53"><span class="linenos">53</span></a>    <span class="n">iterations</span><span class="p">:</span>       <span class="nb">int</span>
+</span><span id="ValidationLoopResult-54"><a href="#ValidationLoopResult-54"><span class="linenos">54</span></a>    <span class="n">final_confidence</span><span class="p">:</span> <span class="nb">float</span>
+</span><span id="ValidationLoopResult-55"><a href="#ValidationLoopResult-55"><span class="linenos">55</span></a>    <span class="n">evidence</span><span class="p">:</span>         <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</span><span id="ValidationLoopResult-56"><a href="#ValidationLoopResult-56"><span class="linenos">56</span></a>    <span class="n">remaining_steps</span><span class="p">:</span>  <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</span><span id="ValidationLoopResult-57"><a href="#ValidationLoopResult-57"><span class="linenos">57</span></a>    <span class="n">notes</span><span class="p">:</span>            <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -1472,7 +1512,7 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
                             <div id="ValidationLoopResult.__init__" class="classattr">
                                 <div class="attr function">
             
-        <span class="name">ValidationLoopResult</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">disposition</span><span class="p">:</span> <span class="n"><a href="#ValidationDisposition">ValidationDisposition</a></span>,</span><span class="param">	<span class="n">output</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n"><a href="#ValidationLoopStep">ValidationLoopStep</a></span><span class="p">]</span>,</span><span class="param">	<span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span>,</span><span class="param">	<span class="n">final_confidence</span><span class="p">:</span> <span class="nb">float</span>,</span><span class="param">	<span class="n">evidence</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span></span>)</span>
+        <span class="name">ValidationLoopResult</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">disposition</span><span class="p">:</span> <span class="n"><a href="#ValidationDisposition">ValidationDisposition</a></span>,</span><span class="param">	<span class="n">output</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n"><a href="#ValidationLoopStep">ValidationLoopStep</a></span><span class="p">]</span>,</span><span class="param">	<span class="n">iterations</span><span class="p">:</span> <span class="nb">int</span>,</span><span class="param">	<span class="n">final_confidence</span><span class="p">:</span> <span class="nb">float</span>,</span><span class="param">	<span class="n">evidence</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">remaining_steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span>,</span><span class="param">	<span class="n">notes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">factory</span><span class="o">&gt;</span></span>)</span>
 
         
     </div>
@@ -1543,6 +1583,28 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
         
     </div>
     <a class="headerlink" href="#ValidationLoopResult.evidence"></a>
+    
+    
+
+                            </div>
+                            <div id="ValidationLoopResult.remaining_steps" class="classattr">
+                                <div class="attr variable">
+            <span class="name">remaining_steps</span><span class="annotation">: List[str]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ValidationLoopResult.remaining_steps"></a>
+    
+    
+
+                            </div>
+                            <div id="ValidationLoopResult.notes" class="classattr">
+                                <div class="attr variable">
+            <span class="name">notes</span><span class="annotation">: Dict[str, Any]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ValidationLoopResult.notes"></a>
     
     
 

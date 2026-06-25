@@ -49,25 +49,31 @@ class DocumentExtractorAgent(K9ValidationLoopAgent):
 
     layer = "EOC DocumentExtractor SBB"
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, **kwargs):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None, object_store=None, **kwargs):
         super().__init__(config or {}, monitor=monitor, **kwargs)
         self._tesseract_available = self._check_tesseract()
         self._raw_text_cache: Optional[str] = None   # OCR runs once, cached
-        self.logger.info(f"[{self.layer}] Ready, Tesseract={self._tesseract_available}")
+        self._object_store = object_store or self._bootstrap_object_store(self.config)
+        self.logger.info(f"[{self.layer}] Ready, Tesseract={self._tesseract_available}, ObjectStore={self._object_store is not None}")
+
+    @staticmethod
+    def _bootstrap_object_store(config: Dict[str, Any]):
+        if not config.get("object_storage"):
+            return None
+        try:
+            from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
+            return ObjectStorageFactory.create(config)
+        except Exception:
+            return None
 
     # ------------------------------------------------------------------
     # Validation loop — five domain methods
     # ------------------------------------------------------------------
 
     def generate_hypothesis(self, loop_ctx: ValidationLoopContext) -> Dict[str, Any]:
-        # OCR on first iteration only — cache the result
+        # First iteration: resolve document content — cache the result
         if loop_ctx.iteration == 1:
-            raw_text = loop_ctx.payload.get("raw_text", "")
-            file_path = loop_ctx.payload.get("file_path")
-            if not raw_text and file_path:
-                raw_text = self._ocr_extract(file_path)
-            if not raw_text:
-                raw_text = loop_ctx.payload.get("content", "")
+            raw_text = self._resolve_document_content(loop_ctx.payload)
             self._raw_text_cache = raw_text
         else:
             raw_text = self._raw_text_cache or ""
@@ -203,7 +209,72 @@ class DocumentExtractorAgent(K9ValidationLoopAgent):
         return {**base, **base.get("output", {})}
 
     # ------------------------------------------------------------------
-    # Helpers (unchanged from original one-shot implementation)
+    # Document resolution — object store URI → raw_text → file_path
+    # ------------------------------------------------------------------
+
+    def _resolve_document_content(self, payload: Dict[str, Any]) -> str:
+        """
+        Resolve document content in priority order:
+        1. document_uri — download from object store, then OCR if binary
+        2. raw_text     — pre-extracted text passed inline
+        3. file_path    — local file for OCR
+        4. content      — generic text field fallback
+        """
+        document_uri = payload.get("document_uri")
+        if document_uri and self._object_store:
+            try:
+                bucket, key = self._parse_uri(document_uri)
+                doc_bytes = self._object_store.download(bucket, key)
+                text = self._bytes_to_text(doc_bytes, payload.get("filename", ""))
+                if text:
+                    return text
+            except Exception as exc:
+                self.logger.warning("[%s] Object store download failed: %s", self.layer, exc)
+
+        raw_text = payload.get("raw_text", "")
+        if not raw_text:
+            file_path = payload.get("file_path")
+            if file_path:
+                raw_text = self._ocr_extract(file_path)
+        if not raw_text:
+            raw_text = payload.get("content", "")
+        return raw_text
+
+    @staticmethod
+    def _parse_uri(uri: str):
+        """Parse 's3://bucket/key' or 'cos://bucket/key' or 'file:///path' into (bucket, key)."""
+        for scheme in ("s3://", "cos://"):
+            if uri.startswith(scheme):
+                path = uri[len(scheme):]
+                bucket, _, key = path.partition("/")
+                return bucket, key
+        if uri.startswith("file://"):
+            path = uri[len("file://"):]
+            return "", path
+        raise ValueError(f"Unsupported URI scheme: {uri}")
+
+    def _bytes_to_text(self, data: bytes, filename: str) -> str:
+        """Convert downloaded bytes to text — decode UTF-8 or OCR if binary."""
+        try:
+            return data.decode("utf-8")
+        except UnicodeDecodeError:
+            pass
+        if self._tesseract_available:
+            import tempfile
+            suffix = "." + filename.rsplit(".", 1)[-1] if "." in filename else ".bin"
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                tmp.write(data)
+                tmp_path = tmp.name
+            try:
+                return self._ocr_extract(tmp_path)
+            finally:
+                import os
+                os.unlink(tmp_path)
+        self.logger.warning("[%s] Binary document but Tesseract unavailable", self.layer)
+        return ""
+
+    # ------------------------------------------------------------------
+    # Helpers
     # ------------------------------------------------------------------
 
     def _persist(self, payload: Dict[str, Any], result: Dict[str, Any]) -> None:

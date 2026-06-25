@@ -53,6 +53,7 @@ class BaseRouter(ABC):
         policy_enforcer=None,
         enable_zero_trust: Optional[bool] = None,
         session_manager=None,
+        object_store=None,
     ):
         self.config = config or {}
         self.monitor = monitor
@@ -60,6 +61,7 @@ class BaseRouter(ABC):
         self.governance = require_governance(governance, self.config.get("k9_env"))
         self.registry: Dict[str, Any] = {}
         self._session_manager = session_manager or self._bootstrap_session(self.config)
+        self.object_store = object_store or self._bootstrap_object_store(self.config)
 
         self.enable_zero_trust = (
             enable_zero_trust
@@ -93,6 +95,35 @@ class BaseRouter(ABC):
             return SessionFactory.create_manager(config)
         except Exception:
             return None
+
+    @staticmethod
+    def _bootstrap_object_store(config: Dict[str, Any]):
+        """Auto-create object store from config.  Returns None when object_storage block is absent."""
+        if not config.get("object_storage"):
+            return None
+        try:
+            from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
+            return ObjectStorageFactory.create(config)
+        except Exception:
+            return None
+
+    def store_document(
+        self,
+        bucket: str,
+        key: str,
+        data: bytes,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Store a document in the object store and return its URI.
+
+        Raises RuntimeError if no object_store is configured.
+        """
+        if self.object_store is None:
+            raise RuntimeError(
+                "No object_store configured — add an object_storage block to config.yaml"
+            )
+        return self.object_store.upload(bucket, key, data, metadata)
 
     def normalize(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return self._enrich_with_session(payload)
