@@ -89,11 +89,16 @@ class EOCRouter(BaseRouter):
         """
         Route an event to the correct Kafka topic.
 
+        If the payload contains document bytes (``document_data``), the Router
+        stores them in the object store first and replaces the bytes with a
+        ``document_uri`` — the Kafka message stays small.
+
         Args:
             event_type: The type of event (e.g. ``"claim_submitted"``).
                         Case-insensitive.
             payload:    The full event payload including all context,
                         uploaded document references, correlation_id, etc.
+                        May include ``document_data`` (bytes) for document uploads.
 
         Returns:
             True if the event was routed, False if no route was found.
@@ -108,6 +113,8 @@ class EOCRouter(BaseRouter):
                 list(_ROUTING_TABLE.keys()),
             )
             return False
+
+        payload = self._store_document_if_present(payload)
 
         zt = self.apply_zero_trust(payload)
         if not zt["allowed"]:
@@ -126,6 +133,39 @@ class EOCRouter(BaseRouter):
         )
         bus.publish({**zt["payload"], "event_type": key})
         return True
+
+    # ------------------------------------------------------------------
+    def _store_document_if_present(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        If payload contains ``document_data`` (bytes), store it in the
+        object store and replace with ``document_uri``.  The bytes never
+        reach Kafka.
+        """
+        doc_data = payload.get("document_data")
+        if doc_data is None or self.object_store is None:
+            return payload
+
+        import uuid
+        doc_id = payload.get("document_id") or f"DOC-{uuid.uuid4().hex[:8].upper()}"
+        filename = payload.get("filename", "document.bin")
+        bucket = "eoc-documents"
+        key = f"{doc_id}/{filename}"
+
+        uri = self.store_document(bucket, key, doc_data, metadata={
+            "document_id": doc_id,
+            "claim_id": payload.get("claim_id", ""),
+            "correlation_id": payload.get("correlation_id", ""),
+        })
+
+        log.info(
+            "[EOCRouter] Stored document %s → %s (%d bytes)",
+            filename, uri, len(doc_data),
+        )
+
+        clean = {k: v for k, v in payload.items() if k != "document_data"}
+        clean["document_uri"] = uri
+        clean["document_id"] = doc_id
+        return clean
 
     # ------------------------------------------------------------------
     def supported_event_types(self) -> list:
