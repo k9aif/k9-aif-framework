@@ -47,7 +47,11 @@ class BaseOrchestrator(ABC):
     =================
     Abstract base class for all orchestrators in the K9-AIF framework.
 
+    Cardinality: Router 1→N Orchestrators, Orchestrator 1→N Squads, Squad 1→N Agents.
+    Use ``execute_squads()`` for multi-squad execution with optional parallelism.
+
     Supports:
+    - 1 or more squads (sequential or parallel via execute_squads)
     - monitoring
     - message bus publishing
     - governance pre/post processing
@@ -94,6 +98,65 @@ class BaseOrchestrator(ABC):
     @abstractmethod
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError("Subclasses must implement execute_flow()")
+
+    # ------------------------------------------------------------------
+    def execute_squads(
+        self,
+        squads,
+        payload: Dict[str, Any],
+        parallel: bool = False,
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Execute one or more squads owned by this orchestrator.
+
+        An Orchestrator owns 1 or more Squads, each with its own team of
+        Agents. When ``parallel=True``, squads execute concurrently via a
+        thread pool; results are namespaced by squad_id to prevent collision.
+
+        Returns ``{squad_id: squad_result, ...}`` — one entry per squad.
+
+        Sequential (default) is appropriate when squads feed into each other.
+        Parallel is appropriate for cross-cutting or independent squads.
+        """
+        if not squads:
+            return {}
+
+        if not parallel or len(squads) <= 1:
+            results = {}
+            for squad in squads:
+                self.logger.info(
+                    "[%s] Executing squad: %s (sequential)", self.layer, squad.squad_id,
+                )
+                result = squad.execute(payload)
+                results[squad.squad_id] = result
+            return results
+
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        self.logger.info(
+            "[%s] Executing %d squads in parallel: %s",
+            self.layer, len(squads), [s.squad_id for s in squads],
+        )
+        results = {}
+        with ThreadPoolExecutor(max_workers=len(squads)) as executor:
+            futures = {
+                executor.submit(squad.execute, {**payload}): squad
+                for squad in squads
+            }
+            for future in as_completed(futures):
+                squad = futures[future]
+                try:
+                    results[squad.squad_id] = future.result()
+                except Exception as exc:
+                    self.logger.error(
+                        "[%s] Squad %s failed: %s", self.layer, squad.squad_id, exc,
+                    )
+                    results[squad.squad_id] = {
+                        "status": "failed",
+                        "squad_id": squad.squad_id,
+                        "error": str(exc),
+                    }
+        return results
 
     # ------------------------------------------------------------------
     def publish_status(self, status: str, context: Dict[str, Any]):

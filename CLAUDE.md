@@ -135,14 +135,14 @@ Event → K9EventRouter (single entry point)
                                       ├── intent resolved ──► domain topic
                                       └── intent unclear  ──► responses.out
 
-domain topic → Orchestrator → Squads → Agents → LLM
+domain topic → Orchestrator → 1+ Squads → 1+ Agents → LLM
 ```
 
 - **Router** (`k9_core/router/base_router.py`) — **single entry point** for all events. Routes by `event_type` deterministically; publishes to `intent.in` when intent cannot be determined. Never contains classification logic. Owns the **object store** — when a document arrives, the Router stores it in the bucket and publishes a JSON event with the `document_uri` to the domain topic. Downstream agents receive only the URI.
 - **IntentOrchestrator** (`k9_orchestrators/intent_orchestrator.py`) — OOB Kafka consumer on `intent.in`. Self-bootstraps `IntentSquad` + `K9IntentAgent`. Runs IntentSquad to classify intent, then re-publishes to the correct domain topic. If intent remains unclear or confidence is below threshold, publishes a "please clarify" response.
 - **IntentSquad** (`k9_squad/intent_squad.py`) — squad used by IntentOrchestrator; wraps one or more `BaseIntentAgent` implementations; handles confidence gating
-- **Orchestrator** (`k9_core/orchestration/base_orchestrator.py`) — coordinates squads for a domain workflow
-- **Squad** (`k9_squad/base_squad.py`) — executes a defined `flow` of agents in sequence
+- **Orchestrator** (`k9_core/orchestration/base_orchestrator.py`) — coordinates 1 or more squads for a domain workflow. Use `execute_squads(squads, payload, parallel=True)` for multi-squad parallel execution; results namespaced by `squad_id`
+- **Squad** (`k9_squad/base_squad.py`) — executes a defined `flow` of 1 or more agents in sequence
 - **Agent** (`k9_core/agent/base_agent.py`) — implements `execute(payload) -> dict`; must extend `BaseAgent`
 
 ### Intent classification ABBs
@@ -206,13 +206,21 @@ Every agent receives a governance pipeline via `require_governance()` at init ti
 
 Agents that must enforce governance call `self.enforce_governance()` at the top of `execute()`. Agents that skip this call will silently use NoopGovernance even in production.
 
+### Cardinality
+
+```
+Router 1 → N Orchestrators
+Orchestrator 1 → N Squads (sequential or parallel via execute_squads)
+Squad 1 → N Agents (sequential via flow)
+```
+
 ### Three-level decoupling
 
 Each layer knows only what is **below** it in the hierarchy:
 
 | Layer | Knows about | Does NOT know about |
 |---|---|---|
-| **Orchestrator** | Its squad — received at construction | Routers, agents, other orchestrators |
+| **Orchestrator** | Its squads — loaded via `_load_squad()` | Routers, agents, other orchestrators |
 | **Squad** | Its agents and their execution flow | Orchestrators |
 | **Agent** | Its own behavior (role, goal, model) | Squads, routing, next agent |
 
@@ -291,7 +299,7 @@ Static assets (`webui/`) use `?v=N` cache busting on own files. Bump the version
 | File | Contract |
 |---|---|
 | `k9_core/agent/base_agent.py` | `execute(payload: dict) -> dict` — synchronous, must be implemented |
-| `k9_core/orchestration/base_orchestrator.py` | `execute_flow(payload: dict) -> dict` — coordinates squad execution |
+| `k9_core/orchestration/base_orchestrator.py` | `execute_flow(payload: dict) -> dict` — coordinates squad execution; `execute_squads(squads, payload, parallel=False) -> dict[str, dict]` — run 1+ squads (sequential or parallel) |
 | `k9_core/router/base_router.py` | `route(payload: dict) -> dict` — dispatches event to the Orchestrator's topic (deterministic or via `intent.in`); returns routing metadata |
 | `k9_squad/base_squad.py` | `execute(payload: dict) -> dict` — executes `flow` steps in order (`run()` exists as backwards-compat alias) |
 | `k9_inference/routers/base_model_router.py` | `route(request)` → `RouteDecision`; `invoke(request)` → `InferenceResponse`; `ainvoke(request)` → `InferenceResponse` (async) |
