@@ -1101,3 +1101,161 @@ Before writing any code, answer these for each agent:
 4. **Diligence** — Is governance enforced? Is the audit trail complete? Can a human verify the output before it is acted upon?
 
 If the answer to any Discernment question is "we need to check and possibly retry," the agent should extend `K9ValidationLoopAgent`, not `BaseAgent`.
+
+---
+
+## Skill 13 — Add a new LLM provider adapter (Claude, Bedrock, OpenAI, etc.)
+
+The framework ships with `OllamaLLM` as the OOB LLM adapter. To connect to a different provider (Anthropic Claude, AWS Bedrock, OpenAI, xAI Grok, IBM watsonx), implement a new adapter that extends `BaseLLM` and register it in `LLMFactory`.
+
+**The framework is LLM-agnostic by design.** Agents, squads, orchestrators, and governance — none of them know or care which LLM provider is running underneath. They call `llm_invoke()`, and the factory + router + adapter chain handles the rest.
+
+### Step 1: Implement the adapter
+
+Extend `BaseLLM` (`k9_aif_abb/k9_core/inference/base_llm.py`). The contract is one method: `generate(prompt: str) -> str`.
+
+```python
+# k9_aif_abb/k9_core/inference/claude_llm.py
+
+import os
+from typing import Any, Optional
+from k9_aif_abb.k9_core.inference.base_llm import BaseLLM
+
+
+class ClaudeLLM(BaseLLM):
+    """LLM adapter for Anthropic Claude API."""
+
+    layer = "Inference SBB — Claude"
+
+    def __init__(
+        self,
+        model: str = "claude-sonnet-4-20250514",
+        timeout: int = 300,
+        monitor: Optional[Any] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(name="ClaudeLLM", monitor=monitor)
+        self.model = model
+        self.timeout = timeout
+        self.api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+        self.base_url = os.environ.get(
+            "ANTHROPIC_BASE_URL", "https://api.anthropic.com"
+        )
+        self._client = None
+
+    def _ensure_client(self):
+        if self._client is not None:
+            return
+        try:
+            import anthropic
+            self._client = anthropic.Anthropic(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                timeout=self.timeout,
+            )
+        except ImportError:
+            raise RuntimeError("pip install anthropic required")
+
+    async def generate(self, prompt: str) -> str:
+        self._ensure_client()
+        try:
+            message = self._client.messages.create(
+                model=self.model,
+                max_tokens=4096,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = message.content[0].text
+            self.logger.info("[ClaudeLLM] %s responded (%d chars)", self.model, len(text))
+            return text
+        except Exception as e:
+            self.logger.error("[ClaudeLLM] request failed: %s", e)
+            return f"[WARN] Claude API failed: {e}"
+```
+
+**For AWS Bedrock**, the adapter would use `boto3` with the Bedrock runtime client instead of the Anthropic SDK directly. Same `BaseLLM` contract, different transport.
+
+**For OpenAI / xAI / watsonx**, the pattern is identical — different SDK, same `generate()` contract.
+
+### Step 2: Register in LLMFactory
+
+`LLMFactory` uses a provider map to instantiate the right adapter. Add the new provider:
+
+```python
+# In LLMFactory.bootstrap() or via registration
+from k9_aif_abb.k9_core.inference.claude_llm import ClaudeLLM
+
+LLMFactory.register("claude", ClaudeLLM)
+```
+
+Or extend the bootstrap logic in `LLMFactory` to recognize the new backend.
+
+### Step 3: Configure in config.yaml
+
+```yaml
+inference:
+  llm_factory:
+    backend: claude
+    provider: anthropic
+    base_url: "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}"
+    models:
+      general:
+        model: "claude-haiku-4-5-20251001"
+        temperature: 0.3
+        max_tokens: 4096
+      reasoning:
+        model: "claude-sonnet-4-20250514"
+        temperature: 0.2
+        max_tokens: 8192
+
+  model_catalog:
+    default_model: general
+    models:
+      general:
+        provider: anthropic
+        llm_ref: general
+        capabilities: [general, chat, summarization]
+        latency_tier: realtime
+        cost_tier: standard
+      reasoning:
+        provider: anthropic
+        llm_ref: reasoning
+        capabilities: [reasoning, analysis, extraction]
+        latency_tier: interactive
+        cost_tier: premium
+```
+
+### Step 4: Credentials in .env only
+
+```bash
+# .env (never in config.yaml, never in git)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# For AWS Bedrock:
+# AWS_ACCESS_KEY_ID=...
+# AWS_SECRET_ACCESS_KEY=...
+# AWS_DEFAULT_REGION=us-east-1
+```
+
+### What does NOT change
+
+When switching providers, these remain **identical** — zero code changes:
+
+- All agents (same `llm_invoke()` call)
+- All squads (same YAML, same flow)
+- All orchestrators (same `execute_flow()`)
+- Router and Kafka topology
+- Governance pipeline
+- Validation loop behavior
+- HITL gates
+- Audit trail and event publishing
+- UI and SSE streaming
+
+The only changes are: (1) the adapter class, (2) `config.yaml` provider section, (3) `.env` credentials.
+
+### Design constraints
+
+- **Lazy imports** — adapter packages (`anthropic`, `boto3`, `openai`) are imported inside the adapter, not at module level. This avoids `ImportError` for teams that don't use that provider.
+- **Credentials from env only** — never from `config.yaml`. Use `os.environ.get("KEY")`.
+- **Timeout must be configurable** — production LLMs with large prompts can take minutes. Never hardcode.
+- **Error handling** — return `[WARN]` prefixed string on failure (same convention as `OllamaLLM`). `llm_invoke()` detects this and raises `RuntimeError`.
+- **Async generate** — `BaseLLM.generate()` can be sync or async. `K9ModelRouter.invoke()` handles both via `asyncio.run()` or direct call.
