@@ -1259,3 +1259,198 @@ The only changes are: (1) the adapter class, (2) `config.yaml` provider section,
 - **Timeout must be configurable** — production LLMs with large prompts can take minutes. Never hardcode.
 - **Error handling** — return `[WARN]` prefixed string on failure (same convention as `OllamaLLM`). `llm_invoke()` detects this and raises `RuntimeError`.
 - **Async generate** — `BaseLLM.generate()` can be sync or async. `K9ModelRouter.invoke()` handles both via `asyncio.run()` or direct call.
+
+---
+
+## Skill 14 — Chat session management (multi-turn conversation context)
+
+LLM APIs (Claude, OpenAI, Ollama) are stateless — they don't store messages. Each API call is independent. To maintain a multi-turn conversation, the application must manage the message history and send the full context with every request.
+
+K9-AIF provides the building blocks for this via `CacheFactory` (Redis/in-memory) and `SessionManager` (Postgres). The application decides which to use based on the use case.
+
+### The problem
+
+```
+User: "What is the F-22's radar system?"
+LLM:  "The F-22 uses the AN/APG-77 AESA radar..."
+
+User: "What about its range?"           ← LLM has no idea what "its" refers to
+LLM:  "Could you clarify what you mean?"  ← context lost
+```
+
+### The solution — config-driven session management
+
+Enable chat sessions in `config.yaml`:
+
+```yaml
+chat:
+  session_enabled: true
+  provider: redis          # redis | memory | postgres
+  ttl_seconds: 3600        # session expires after 1 hour of inactivity
+  max_history: 50          # max messages per session (prevent unbounded growth)
+```
+
+### Step 1: Chat agent with session awareness
+
+```python
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_factories.cache_factory import CacheFactory
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+import json
+
+
+class ChatAgent(BaseAgent):
+
+    layer = "Chat Agent SBB"
+
+    def __init__(self, config=None, **kwargs):
+        super().__init__(config or {}, **kwargs)
+        self._session_enabled = self.config.get("chat", {}).get("session_enabled", False)
+        self._max_history = self.config.get("chat", {}).get("max_history", 50)
+        self._ttl = self.config.get("chat", {}).get("ttl_seconds", 3600)
+        if self._session_enabled:
+            self._cache = CacheFactory.create(self.config)
+        else:
+            self._cache = None
+
+    def execute(self, payload: dict) -> dict:
+        session_id = payload.get("session_id", "default")
+        user_message = payload.get("message", "")
+
+        # Build prompt with history
+        if self._session_enabled and self._cache:
+            history = self._get_history(session_id)
+            history.append({"role": "user", "content": user_message})
+            prompt = self._format_history(history)
+        else:
+            history = []
+            prompt = user_message
+
+        req = InferenceRequest(
+            prompt=prompt,
+            task_type="chat",
+            metadata={"agent": self.layer, "session_id": session_id},
+        )
+        resp = llm_invoke(self.config, req)
+
+        # Store updated history
+        if self._session_enabled and self._cache:
+            history.append({"role": "assistant", "content": resp.output})
+            # Trim to max_history (keep most recent)
+            if len(history) > self._max_history:
+                history = history[-self._max_history:]
+            self._cache.set(f"chat:{session_id}", json.dumps(history), ttl=self._ttl)
+
+        return {
+            "response": resp.output,
+            "session_id": session_id,
+            "model": resp.model_alias,
+            "turn": len(history) // 2,
+        }
+
+    def _get_history(self, session_id: str) -> list:
+        raw = self._cache.get(f"chat:{session_id}")
+        if raw:
+            return json.loads(raw)
+        return []
+
+    def _format_history(self, history: list) -> str:
+        parts = []
+        for msg in history:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "user":
+                parts.append(f"User: {content}")
+            else:
+                parts.append(f"Assistant: {content}")
+        return "\n\n".join(parts)
+```
+
+### Step 2: API endpoint with session ID
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+import uuid
+
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str = None
+
+@app.post("/chat")
+def chat(payload: ChatRequest):
+    session_id = payload.session_id or str(uuid.uuid4())
+    result = agent.execute({
+        "session_id": session_id,
+        "message": payload.message,
+    })
+    return result
+```
+
+The UI sends `session_id` with every request. First request generates one; subsequent requests reuse it.
+
+### Step 3: Config for each storage backend
+
+**Redis (recommended for production):**
+
+```yaml
+cache:
+  provider: redis
+
+chat:
+  session_enabled: true
+  provider: redis
+  ttl_seconds: 3600
+  max_history: 50
+```
+
+```bash
+# .env
+REDIS_HOST=192.168.1.98
+REDIS_PORT=6379
+REDIS_PASSWORD=redis
+```
+
+**In-memory (dev/testing only):**
+
+```yaml
+cache:
+  provider: in_memory
+
+chat:
+  session_enabled: true
+  provider: memory
+  ttl_seconds: 3600
+  max_history: 50
+```
+
+**PostgreSQL (audit trail, compliance):**
+
+When chat history must be persisted for compliance or replay, use `SessionManager` on `BaseOrchestrator` with `session.enabled: true`. This stores turns in the `session_turns` table — queryable, auditable, no TTL expiry.
+
+### What the framework provides vs what the application builds
+
+| Concern | Framework ABB | Application SBB |
+|---|---|---|
+| Cache backend | `CacheFactory` → `RedisAdapter` / `InMemoryAdapter` | Config choice |
+| Session persistence | `SessionManager` on `BaseOrchestrator` | Config choice |
+| Message history format | — | Application decides (list of dicts, prompt template) |
+| History truncation | — | Application decides (`max_history`) |
+| Session ID generation | — | Application generates (UUID, user-based, etc.) |
+| Prompt formatting | — | Application formats history into prompt string |
+
+The framework provides the **storage and retrieval infrastructure**. The application decides **what to store and how to format it** for the LLM.
+
+### Key considerations
+
+- **Token limits** — long histories exceed LLM context windows. Use `max_history` to cap, or implement summarization (use the LLM to summarize older turns before including them).
+- **TTL** — sessions should expire. A user who returns after 2 hours probably wants a fresh conversation. Redis TTL handles this automatically.
+- **PII** — chat history may contain sensitive data. Use the `pii` flag on cache entries if the cache adapter supports it, and ensure TTL-based cleanup.
+- **Multi-agent chat** — if a chat session involves multiple agents (e.g., intent classification → domain agent), the session ID is shared across all agents in the flow. The orchestrator passes it through.
+
+### Reference: k9chat example
+
+`examples/k9chat/` is the starting point for a chat application. Currently stateless — enhancing it with session management as described above makes it a complete multi-turn chat solution.
