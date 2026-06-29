@@ -196,10 +196,12 @@ class K9ModelRouter(BaseModelRouter):
 
         llm = LLMFactory.get(llm_ref)
 
+        sys_prompt = getattr(request, "system_prompt", None)
+
         if hasattr(llm, "invoke"):
-            result = llm.invoke(request.prompt)
+            result = llm.invoke(request.prompt, system_prompt=sys_prompt)
         elif hasattr(llm, "generate"):
-            result = asyncio.run(llm.generate(request.prompt))
+            result = asyncio.run(llm.generate(request.prompt, system_prompt=sys_prompt))
         elif hasattr(llm, "chat"):
             result = llm.chat(request.prompt)
         elif callable(llm):
@@ -230,17 +232,19 @@ class K9ModelRouter(BaseModelRouter):
 
         llm = LLMFactory.get(llm_ref)
 
+        sys_prompt = getattr(request, "system_prompt", None)
+
         if hasattr(llm, "ainvoke") and callable(llm.ainvoke):
-            result = await llm.ainvoke(request.prompt)
+            result = await llm.ainvoke(request.prompt, system_prompt=sys_prompt)
 
         elif hasattr(llm, "agenerate") and callable(llm.agenerate):
-            result = await llm.agenerate(request.prompt)
+            result = await llm.agenerate(request.prompt, system_prompt=sys_prompt)
 
         elif hasattr(llm, "generate") and callable(llm.generate):
-            result = await llm.generate(request.prompt)
+            result = await llm.generate(request.prompt, system_prompt=sys_prompt)
 
         elif hasattr(llm, "invoke") and callable(llm.invoke):
-            result = llm.invoke(request.prompt)
+            result = llm.invoke(request.prompt, system_prompt=sys_prompt)
 
         elif callable(llm):
             result = llm(request.prompt)

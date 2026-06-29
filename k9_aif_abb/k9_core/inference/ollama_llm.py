@@ -36,10 +36,12 @@ class OllamaLLM(BaseLLM):
         self.kwargs = kwargs
 
     # ----------------------------------------------------------
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str, system_prompt: str = None) -> str:
         await self.log(f"Sending inference request to Ollama ({self.model})", "DEBUG")
         url = f"{self.host}/api/generate"
         payload = {"model": self.model, "prompt": prompt, "stream": False}
+        if system_prompt:
+            payload["system"] = system_prompt
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:

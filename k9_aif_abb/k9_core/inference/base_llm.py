@@ -57,9 +57,18 @@ class BaseLLM(BaseComponent):
     # ------------------------------------------------------------------
     # Abstract inference contract
     # ------------------------------------------------------------------
-    def generate(self, prompt: str) -> str:
+    def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """
         Generate a text completion or inference result for a given prompt.
+
+        Args:
+            prompt: The user prompt / task content.
+            system_prompt: Optional system-level instructions (role, persona,
+                constraints). Kept separate from the user prompt so providers
+                that support a dedicated system channel (Ollama ``system``,
+                Claude ``system``, etc.) can use it — and so the system portion
+                is cacheable independently of per-request content.
+
         Subclasses must override this method to connect to their backend LLM.
         """
         raise NotImplementedError("Subclasses must implement generate()")
