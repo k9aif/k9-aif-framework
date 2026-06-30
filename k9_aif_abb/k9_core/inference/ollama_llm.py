@@ -4,6 +4,7 @@
 # K9-AIF - Async OllamaLLM (governed inference bridge)
 
 import aiohttp
+import json
 import traceback
 import asyncio
 from typing import Any, Optional
@@ -63,6 +64,51 @@ class OllamaLLM(BaseLLM):
             await self.log(msg, "ERROR")
             traceback.print_exc()
             return f"[WARN] Ollama connection failed: {e}"
+
+    # ----------------------------------------------------------
+    async def generate_stream(self, prompt: str, system_prompt: str = None):
+        """
+        Yield response text incrementally using Ollama's NDJSON streaming API
+        (``stream: true``). Each line of the response body is a JSON object
+        with a ``response`` fragment; the final line has ``done: true``.
+        """
+        await self.log(f"Streaming inference request to Ollama ({self.model})", "DEBUG")
+        url = f"{self.host}/api/generate"
+        payload = {"model": self.model, "prompt": prompt, "stream": True}
+        if system_prompt:
+            payload["system"] = system_prompt
+
+        try:
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                async with session.post(url, json=payload) as resp:
+                    if resp.status != 200:
+                        body = await resp.text()
+                        msg = f"Ollama HTTP {resp.status} | model={self.model} | body={body}"
+                        await self.log(msg, "WARNING")
+                        yield f"[WARN] {msg}"
+                        return
+
+                    async for line in resp.content:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            data = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        chunk = data.get("response", "")
+                        if chunk:
+                            yield chunk
+                        if data.get("done"):
+                            break
+
+            await self.log("Ollama stream complete", "INFO")
+
+        except Exception as e:
+            msg = f"Ollama streaming request failed: {e}"
+            await self.log(msg, "ERROR")
+            traceback.print_exc()
+            yield f"[WARN] Ollama connection failed: {e}"
 
     # ----------------------------------------------------------
     async def start(self):

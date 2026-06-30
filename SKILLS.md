@@ -1454,3 +1454,129 @@ The framework provides the **storage and retrieval infrastructure**. The applica
 ### Reference: k9chat example
 
 `examples/k9chat/` is the starting point for a chat application. Currently stateless — enhancing it with session management as described above makes it a complete multi-turn chat solution.
+
+---
+
+## Skill 15 — Streaming LLM responses (token-by-token output)
+
+Batch inference (`llm_invoke`) waits for the complete response before returning — fine for document processing, wrong for chat. A user watching a 30-second wait with no feedback assumes something broke. Streaming sends text incrementally as the model produces it, the same way Claude's `converse_stream` or OpenAI's `stream=True` work.
+
+K9-AIF supports this as an **additive, config-driven capability** — existing code is unaffected; streaming is opt-in per application.
+
+### Architecture
+
+```
+BaseLLM.generate_stream()        ABB — optional, raises NotImplementedError by default
+  └── OllamaLLM.generate_stream()    OOB SBB — Ollama NDJSON stream:true
+
+BaseModelRouter.ainvoke_stream()  ABB — concrete default, falls back to ainvoke()
+  └── K9ModelRouter.ainvoke_stream()  OOB — detects generate_stream(), streams real chunks
+
+llm_invoke_stream(config, request)  utility — async generator, mirrors llm_invoke()
+```
+
+Every layer degrades gracefully: an LLM adapter without `generate_stream()` still works through `ainvoke_stream()`'s default (yields the complete response as one chunk). A custom `BaseModelRouter` that never overrides `ainvoke_stream()` still works the same way. **No existing code breaks** — this is why the new methods are concrete with sane defaults, not abstract.
+
+### Step 1: Enable streaming in agent config
+
+```yaml
+# config.yaml
+chat:
+  stream: true   # config-driven — false (or omit) for non-streaming
+```
+
+### Step 2: Add a streaming execute method to the agent
+
+Keep `execute()` as-is for any caller that wants the synchronous, complete-response contract. Add `execute_stream()` alongside it — don't replace.
+
+```python
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke_stream
+
+class ChatAgent(BaseAgent):
+
+    def execute(self, payload: dict) -> dict:
+        # unchanged — full response, synchronous
+        ...
+
+    async def execute_stream(self, payload: dict):
+        """Yield response chunks incrementally. Used when chat.stream: true."""
+        prompt = payload.get("text", "")
+        req = InferenceRequest(prompt=prompt, task_type="chat")
+
+        async for chunk in llm_invoke_stream(self.config, req):
+            yield chunk
+```
+
+### Step 3: Wire an SSE endpoint in the application
+
+```python
+from fastapi.responses import StreamingResponse
+import json
+
+@app.post("/chat/stream")
+async def chat_stream(payload: ChatRequest):
+    async def event_generator():
+        async for chunk in agent.execute_stream({"text": payload.message}):
+            yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+```
+
+### Step 4: Consume the stream in the browser
+
+```javascript
+const response = await fetch("/chat/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ message: text }),
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = "", fullText = "";
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  buffer += decoder.decode(value, { stream: true });
+  const lines = buffer.split("\n\n");
+  buffer = lines.pop();
+  for (const line of lines) {
+    if (!line.startsWith("data: ")) continue;
+    const data = JSON.parse(line.slice(6));
+    if (data.chunk) { fullText += data.chunk; bubble.textContent = fullText; }
+    if (data.done) return;
+  }
+}
+```
+
+### Toggling streaming OFF
+
+Set `chat.stream: false` (or omit the key). The agent and app code don't need an `if streaming` branch — `is_streaming_enabled()` (or equivalent config read) tells the frontend which endpoint to call (`/chat` vs `/chat/stream`), and the backend `execute()` path is unchanged.
+
+### Reference implementation
+
+`examples/k9chat/` — `chat_agent.py` (`execute_stream()`), `chat.py` (`send_message_stream()`, `is_streaming_enabled()`), `app.py` (`/chat/stream` SSE endpoint, `/chat/config`), `templates/index.html` (fetch + ReadableStream consumer). Toggle via `chat.stream` in `config.yaml`.
+
+### Building a streaming adapter for a new LLM provider
+
+When adding a provider (see Skill 13), implement `generate_stream()` alongside `generate()`:
+
+```python
+class ClaudeLLM(BaseLLM):
+    async def generate(self, prompt, system_prompt=None) -> str:
+        ...  # existing non-streaming implementation
+
+    async def generate_stream(self, prompt, system_prompt=None):
+        # Claude's streaming API yields events; extract text deltas
+        with self._client.messages.stream(
+            model=self.model,
+            system=system_prompt,
+            messages=[{"role": "user", "content": prompt}],
+        ) as stream:
+            for text in stream.text_stream:
+                yield text
+```
+
+`K9ModelRouter.ainvoke_stream()` detects `generate_stream()` automatically via `hasattr()` — no router changes needed when adding a new provider.

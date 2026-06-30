@@ -12,6 +12,7 @@ if REPO_ROOT not in sys.path:
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke_stream
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -41,3 +42,19 @@ class ChatAgent(BaseAgent):
             "text": response.output,
             "model": response.model_alias
         }
+
+    async def execute_stream(self, request):
+        """
+        Stream the chat response incrementally. Mirrors ``execute()`` but
+        yields text chunks as they arrive from the LLM instead of returning
+        a complete dict. Used when ``chat.stream: true`` in config.
+        """
+        prompt = request.get("text") or request.get("prompt", "")
+
+        inf_req = InferenceRequest(
+            prompt=prompt,
+            task_type="chat"
+        )
+
+        async for chunk in llm_invoke_stream(self.config, inf_req):
+            yield chunk

@@ -42,6 +42,19 @@ def send_message(text: str) -> str:
     return result.get("text", "")
 
 
+def is_streaming_enabled() -> bool:
+    with open(os.path.join(BASE_DIR, "config.yaml"), "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+    return bool(config.get("chat", {}).get("stream", False))
+
+
+async def send_message_stream(text: str):
+    """Yield response chunks as they arrive — used when chat.stream: true."""
+    agent = build_chat_agent()
+    async for chunk in agent.execute_stream({"text": text}):
+        yield chunk
+
+
 def get_chat_runtime_info() -> dict:
     with open(os.path.join(BASE_DIR, "config.yaml"), "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)

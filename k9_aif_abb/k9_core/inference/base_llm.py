@@ -72,3 +72,25 @@ class BaseLLM(BaseComponent):
         Subclasses must override this method to connect to their backend LLM.
         """
         raise NotImplementedError("Subclasses must implement generate()")
+
+    async def generate_stream(self, prompt: str, system_prompt: Optional[str] = None):
+        """
+        Yield response text incrementally as it becomes available.
+
+        Optional capability — not every adapter must implement this. The
+        default raises ``NotImplementedError`` so callers (``K9ModelRouter``)
+        can detect support via ``hasattr`` and fall back to ``generate()``
+        for adapters that don't override it.
+
+        Args:
+            prompt: The user prompt / task content.
+            system_prompt: Optional system-level instructions — same
+                separation as ``generate()``.
+
+        Yields:
+            str: Incremental text chunks as the model produces them.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__} does not implement generate_stream(). "
+            "Override it to enable streaming for this adapter."
+        )

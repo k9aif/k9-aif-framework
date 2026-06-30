@@ -98,3 +98,58 @@ def llm_invoke(config: Dict[str, Any], request: InferenceRequest) -> InferenceRe
         elapsed_ms,
     )
     return resp
+
+
+async def llm_invoke_stream(config: Dict[str, Any], request: InferenceRequest):
+    """
+    Invoke the LLM router and yield the response incrementally.
+
+    Streaming counterpart to :func:`llm_invoke`. Use when the caller wants
+    to forward text to a UI as it's generated (chat, live console) rather
+    than waiting for the complete response.
+
+    Args:
+        config:  Application config dict (must contain ``inference`` section).
+        request: :class:`InferenceRequest` describing the prompt and task type.
+
+    Yields:
+        str: Incremental text chunks. If the underlying router/LLM doesn't
+            support true streaming, yields the complete response as a single
+            chunk — callers can always use this interface uniformly.
+
+    Note:
+        Unlike :func:`llm_invoke`, this does not raise on ``[WARN]``-prefixed
+        output — streaming callers typically render chunks as they arrive
+        and should check the accumulated text themselves if hard failure
+        detection is needed.
+    """
+    router = ModelRouterFactory.get_router(config)
+    t0 = time.monotonic()
+    full_output = []
+
+    async for chunk in router.ainvoke_stream(request):
+        full_output.append(chunk)
+        yield chunk
+
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
+
+    if _trace_callback is not None:
+        try:
+            _trace_callback({
+                "type":       "LLMCall",
+                "agent":      (request.metadata or {}).get("agent", "unknown"),
+                "task_type":  request.task_type or "general",
+                "model":      request.metadata.get("model_alias") if request.metadata else None,
+                "latency_ms": elapsed_ms,
+                "streamed":   True,
+            })
+        except Exception as exc:
+            log.warning("[llm_invoke_stream] trace callback failed: %s", exc)
+
+    log.info(
+        "[llm_invoke_stream] agent=%s task=%s latency_ms=%d chunks=%d",
+        (request.metadata or {}).get("agent", "?"),
+        request.task_type,
+        elapsed_ms,
+        len(full_output),
+    )

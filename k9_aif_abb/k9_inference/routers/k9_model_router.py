@@ -259,3 +259,39 @@ class K9ModelRouter(BaseModelRouter):
             model_alias=decision.model_alias,
             provider=model_info.get("provider"),
         )
+
+    # ------------------------------------------------------------------
+    # Async Streaming Invoke
+    # ------------------------------------------------------------------
+    async def ainvoke_stream(self, request: InferenceRequest):
+        """
+        Route the request and stream the inference response incrementally.
+
+        Uses the same routing/scoring logic as ``ainvoke()``. If the selected
+        LLM adapter implements ``generate_stream()``, chunks are yielded as
+        they arrive. Otherwise falls back to the base class behavior — a
+        single chunk containing the complete ``ainvoke()`` output — so the
+        streaming interface works uniformly regardless of adapter support.
+        """
+        session_id, user_id, turn_id = self._persist_request_context(request)
+
+        decision = self.route(request)
+        self._persist_route_decision(session_id, turn_id, decision, request)
+
+        model_info = self.catalog.get_model(decision.model_alias)
+        llm_ref = model_info.get("llm_ref")
+
+        llm = LLMFactory.get(llm_ref)
+        sys_prompt = getattr(request, "system_prompt", None)
+
+        if hasattr(llm, "generate_stream") and callable(llm.generate_stream):
+            try:
+                async for chunk in llm.generate_stream(request.prompt, system_prompt=sys_prompt):
+                    yield chunk
+                return
+            except NotImplementedError:
+                pass  # adapter declared but didn't override — fall through
+
+        # Fallback: no streaming support — yield the complete response once
+        response = await self.ainvoke(request)
+        yield response.output

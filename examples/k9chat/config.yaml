@@ -1,3 +1,6 @@
+chat:
+  stream: true   # config-driven — set false for non-streaming (full response) chat
+
 inference:
 
   router:
