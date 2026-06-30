@@ -6,150 +6,167 @@
   <title>K9Chat</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
-<body>
+<body data-theme="dark">
   <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <h1>K9Chat</h1>
-        <p class="subtitle">K9-AIF Example Chat Interface</p>
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="http://k9x.ai" target="_blank" rel="noopener" class="brand-link" title="K9X ecosystem">
+          <span class="brand">K9X</span>
+        </a>
+        <button id="theme-toggle" class="icon-btn" title="Toggle dark / light">🌙</button>
       </div>
-      <div class="badge-group">
-        <div class="badge">Provider: {{ provider }}</div>
-        <div class="badge">Model: {{ model }}</div>
-        <div class="badge">Host: {{ base_url }}</div>
-      </div>
-    </header>
+      <button id="new-chat-btn" class="new-chat-btn">+ New Chat</button>
+      <div id="session-list" class="session-list"></div>
 
-    <main class="chat-panel">
-      <div id="chat-history" class="chat-history">
-        <div class="message assistant">
-          <div class="bubble">
-            Hello. K9Chat is ready.
+      <div class="settings-block">
+        <button id="settings-toggle" class="settings-toggle">⚙ Provider Settings</button>
+        <div id="settings-panel" class="settings-panel" style="display:none">
+          <label>Provider</label>
+          <select id="settings-provider">
+            <option value="ollama">Ollama</option>
+            <option value="openai-compatible">OpenAI-compatible</option>
+          </select>
+
+          <label>Base URL</label>
+          <input id="settings-base-url" type="text" placeholder="http://localhost:11434" />
+
+          <label>API Key <span class="optional-tag">(optional)</span></label>
+          <input id="settings-api-key" type="password" placeholder="only needed for hosted providers" />
+
+          <div class="button-row">
+            <button id="settings-fetch-btn" class="secondary" type="button">Fetch Models</button>
+          </div>
+
+          <label>Model</label>
+          <select id="settings-model"></select>
+
+          <div class="button-row">
+            <button id="settings-apply-btn" type="button">Apply</button>
+          </div>
+
+          <div id="settings-status" class="settings-status"></div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div>
+          <h1>K9Chat</h1>
+          <p class="subtitle">K9-AIF Example Chat Interface</p>
+        </div>
+        <div class="badge-group">
+          <div class="badge badge-stream" id="badge-stream-wrap">
+            <span class="stream-dot" id="stream-dot"></span>Streaming: <span id="badge-streaming">…</span>
+          </div>
+          <div class="badge">Provider: <span id="badge-provider">{{ provider }}</span></div>
+          <div class="badge">Model: <span id="badge-model">{{ model }}</span></div>
+          <div class="badge">Host: <span id="badge-host">{{ base_url }}</span></div>
+        </div>
+      </header>
+
+      <div id="health-banner" class="health-banner" style="display:none"></div>
+
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="chat">Chat</button>
+        <button class="tab-btn" data-tab="architecture">Architecture</button>
+      </nav>
+
+      <main id="tab-chat" class="tab-panel chat-panel">
+        <div id="chat-history" class="chat-history"></div>
+
+        <div class="input-panel">
+          <div class="input-row">
+            <textarea id="message-input" placeholder="Type your message here... (Enter to send, Shift+Enter for newline)"></textarea>
+            <button id="send-btn" class="send-btn" title="Send">➤</button>
+          </div>
+          <div class="input-footer">
+            <button id="clear-btn" class="secondary small">Clear chat</button>
           </div>
         </div>
-      </div>
+      </main>
 
-      <div class="input-panel">
-        <textarea id="message-input" placeholder="Type your message here..."></textarea>
-        <div class="button-row">
-          <button id="send-btn">Send</button>
-          <button id="clear-btn" class="secondary">Clear</button>
+      <section id="tab-architecture" class="tab-panel architecture-panel" style="display:none">
+        <h2>Live Execution Trace</h2>
+        <p style="color: var(--text-muted)">
+          The actual path your last message took through the stack — provider, model, host,
+          and latency are live; new steps (guardrails, RAG, multi-agent fan-out, validation
+          loops, token counts) can be appended here as they're added.
+        </p>
+        <div id="architecture-trace" class="architecture-trace"></div>
+
+        <div class="explainer-card">
+          <h3>What does the "Streaming" badge mean?</h3>
+          <p>
+            <strong>ON</strong> — the answer appears word-by-word as the model generates it, like
+            watching someone type in real time. The model isn't running any faster; you just stop
+            waiting for the whole answer before seeing the first words.
+          </p>
+          <p>
+            <strong>OFF</strong> — K9Chat waits for the complete answer, then shows it all at once.
+            Total time to finish is usually about the same either way.
+          </p>
+          <p>
+            Controlled by <code>chat.stream</code> in <code>config.yaml</code>. Technically: streamed
+            requests go to <code>/chat/stream</code> over Server-Sent Events and call
+            <code>OllamaLLM.generate_stream()</code>; non-streamed requests go to <code>/chat</code>
+            and call <code>generate()</code> once. The "Presentation Layer" row in the trace above
+            shows which path your last message took.
+          </p>
         </div>
-      </div>
-    </main>
+
+        <h2 style="margin-top: 36px;">K9-AIF Execution Pipeline</h2>
+        <p style="color: var(--text-muted)">
+          K9Chat is a reference SBB (Solution Building Block) built on the K9-AIF framework's ABBs
+          (Architecture Building Blocks). This request's path through the stack:
+        </p>
+
+        <div class="pipeline">
+          <div class="pipeline-step">SquadLoader</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">k9chat Squad</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">ChatAgent</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">K9ModelRouter</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">OllamaLLM</div>
+        </div>
+
+        <div class="arch-grid">
+          <div class="arch-card">
+            <h3>ChatAgent</h3>
+            <p>Extends BaseAgent. Formats prompt + history, calls the model router, persists the new turn.</p>
+          </div>
+          <div class="arch-card">
+            <h3>CacheFactory → BaseCache</h3>
+            <p>Backs conversation memory. In-memory by default; swap to Redis via cache.provider: redis with zero code changes.</p>
+          </div>
+          <div class="arch-card">
+            <h3>K9ModelRouter</h3>
+            <p>Weighted scoring selects the model alias, then dispatches to the LLM adapter — sync or streaming.</p>
+          </div>
+          <div class="arch-card">
+            <h3>OllamaLLM</h3>
+            <p>Concrete BaseLLM adapter. Supports generate() and token-streaming generate_stream().</p>
+          </div>
+          <div class="arch-card">
+            <h3>Session Memory</h3>
+            <p>Each browser tab keeps a session_id. History round-trips through the cache on every turn so follow-up questions keep context.</p>
+          </div>
+          <div class="arch-card">
+            <h3>Governance</h3>
+            <p>Every agent receives a governance pipeline via require_governance() — Noop in dev, enforced in production.</p>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <script>
-    const chatHistory = document.getElementById("chat-history");
-    const messageInput = document.getElementById("message-input");
-    const sendBtn = document.getElementById("send-btn");
-    const clearBtn = document.getElementById("clear-btn");
-
-    function appendMessage(role, text) {
-      const wrapper = document.createElement("div");
-      wrapper.className = `message ${role}`;
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-
-      wrapper.appendChild(bubble);
-      chatHistory.appendChild(wrapper);
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
-
-    let streamEnabled = false;
-    fetch("/chat/config").then(r => r.json()).then(cfg => { streamEnabled = !!cfg.stream; });
-
-    async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-
-      appendMessage("user", text);
-      messageInput.value = "";
-      sendBtn.disabled = true;
-      sendBtn.textContent = "Sending...";
-
-      try {
-        if (streamEnabled) {
-          await sendMessageStreaming(text);
-        } else {
-          const response = await fetch("/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text })
-          });
-          const data = await response.json();
-          appendMessage("assistant", data.reply || "");
-        }
-      } catch (error) {
-        appendMessage("assistant", "Error: unable to reach K9Chat backend.");
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = "Send";
-      }
-    }
-
-    async function sendMessageStreaming(text) {
-      // Create an empty assistant bubble, fill it as chunks arrive
-      const wrapper = document.createElement("div");
-      wrapper.className = "message assistant";
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      wrapper.appendChild(bubble);
-      chatHistory.appendChild(wrapper);
-
-      const response = await fetch("/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
-      });
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let fullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop();  // keep incomplete trailing chunk
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = JSON.parse(line.slice(6));
-          if (data.chunk) {
-            fullText += data.chunk;
-            bubble.textContent = fullText;
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-          }
-          if (data.done) return;
-        }
-      }
-    }
-
-    sendBtn.addEventListener("click", sendMessage);
-
-    messageInput.addEventListener("keydown", function(event) {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-      }
-    });
-
-    clearBtn.addEventListener("click", function() {
-      chatHistory.innerHTML = `
-        <div class="message assistant">
-          <div class="bubble">
-            Hello. K9Chat is ready.
-          </div>
-        </div>
-      `;
-      messageInput.value = "";
-    });
-  </script>
+  <script src="/static/js/message_list.js"></script>
+  <script src="/static/js/session_sidebar.js"></script>
+  <script src="/static/js/chat_input.js"></script>
+  <script src="/static/js/architecture_trace.js"></script>
+  <script src="/static/js/app.js"></script>
 </body>
 </html>

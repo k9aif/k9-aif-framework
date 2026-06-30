@@ -1,6 +1,12 @@
 chat:
   stream: true   # config-driven — set false for non-streaming (full response) chat
 
+guardrails:
+  enabled: false   # set true once the guardian model below is pulled
+  model_alias: guardian
+  fail_closed: false   # if the guardian call errors, allow the message through (true = block)
+  refusal_message: "I can't help with that request."
+
 inference:
 
   router:
@@ -8,10 +14,11 @@ inference:
 
   llm_factory:
     provider: ollama
-    base_url: http://192.168.1.98:11434
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
 
     models:
       general: llama3.2:1b
+      guardian: "${K9CHAT_GUARDIAN_MODEL:-granite3-guardian:2b}"
 
   model_catalog:
     default_model: general
@@ -21,3 +28,7 @@ inference:
         provider: ollama
         llm_ref: general
         capabilities: [chat]
+      guardian:
+        provider: ollama
+        llm_ref: guardian
+        capabilities: [guardrails]
