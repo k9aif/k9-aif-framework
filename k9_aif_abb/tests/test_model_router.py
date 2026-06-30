@@ -5,17 +5,15 @@
 
 from pathlib import Path
 
-import yaml
-
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.config_loader import load_yaml
 
 
 def load_config():
     config_path = Path("k9_aif_abb/config/config.yaml")
-    with config_path.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    return load_yaml(config_path)
 
 
 def main():
