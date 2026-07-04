@@ -23,6 +23,7 @@ inference:
 
     models:
       general: llama3.2:1b
+      reasoning: "${K9CHAT_REASONING_MODEL:-llama3.2:1b}"
       guardian: "${K9CHAT_GUARDIAN_MODEL:-granite3-guardian:2b}"
 
   model_catalog:
@@ -33,6 +34,10 @@ inference:
         provider: ollama
         llm_ref: general
         capabilities: [chat]
+      reasoning:
+        provider: ollama
+        llm_ref: reasoning
+        capabilities: [reasoning]
       guardian:
         provider: ollama
         llm_ref: guardian

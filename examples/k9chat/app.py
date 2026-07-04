@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
+import asyncio
 import json
 import os
 import time
@@ -111,7 +112,9 @@ async def chat_stream(payload: ChatRequest):
             "provider": runtime["provider"],
             "base_url": runtime["base_url"],
         }
-        eval_result = evaluate_response(message, full_text)
+        eval_result = await asyncio.get_event_loop().run_in_executor(
+            None, evaluate_response, message, full_text
+        )
         if eval_result:
             done_payload["evaluation"] = eval_result
         yield f"data: {json.dumps(done_payload)}\n\n"
