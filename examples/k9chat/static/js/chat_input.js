@@ -43,7 +43,10 @@ const ChatInput = (() => {
         });
         const data = await response.json();
         MessageList.removeNode(thinkingNode);
-        MessageList.appendMessage(sessionId, "assistant", data.reply || "", { elapsed_ms: data.elapsed_ms });
+        MessageList.appendMessage(sessionId, "assistant", data.reply || "", {
+          elapsed_ms: data.elapsed_ms,
+          evaluation: data.evaluation,
+        });
         SessionSidebar.touch(sessionId, { model: data.model });
         ArchitectureTrace.record({
           input: text,
@@ -106,7 +109,13 @@ const ChatInput = (() => {
             bubbleRef.elapsedSpan.textContent =
               data.elapsed_ms < 1000 ? `${data.elapsed_ms} ms` : `${(data.elapsed_ms / 1000).toFixed(1)} s`;
           }
-          MessageList.persistMessage(sessionId, "assistant", fullText, { elapsed_ms: data.elapsed_ms });
+          if (data.evaluation) {
+            MessageList.addEvalBadge(bubbleRef, data.evaluation);
+          }
+          MessageList.persistMessage(sessionId, "assistant", fullText, {
+            elapsed_ms: data.elapsed_ms,
+            evaluation: data.evaluation,
+          });
           SessionSidebar.touch(sessionId, { model: data.model });
           ArchitectureTrace.record({
             input: text,

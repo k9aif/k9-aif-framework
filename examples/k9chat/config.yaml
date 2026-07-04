@@ -1,6 +1,11 @@
 chat:
   stream: true   # config-driven — set false for non-streaming (full response) chat
 
+evaluation:
+  enabled: false          # toggle at runtime via POST /chat/evaluation/toggle
+  pass_threshold: 70
+  judge_model: reasoning  # model alias used as the LLM judge
+
 guardrails:
   enabled: false   # set true once the guardian model below is pulled
   model_alias: guardian

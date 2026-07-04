@@ -69,6 +69,15 @@ const MessageList = (() => {
       copyBtn.textContent = "⧉";
       copyBtn.addEventListener("click", () => copyToClipboard(bubble.textContent, copyBtn));
       metaRow.appendChild(copyBtn);
+
+      if (meta.evaluation) {
+        const ev = meta.evaluation;
+        const gradeEl = document.createElement("span");
+        gradeEl.className = `msg-grade grade-${ev.grade.toLowerCase()}`;
+        gradeEl.title = `${ev.verdict} · Score: ${ev.score} · ${ev.rationale}`;
+        gradeEl.textContent = `${ev.grade} ${ev.score}`;
+        metaRow.appendChild(gradeEl);
+      }
     }
 
     col.appendChild(metaRow);
@@ -128,12 +137,26 @@ const MessageList = (() => {
     chatHistoryEl.innerHTML = "";
   }
 
+  function addEvalBadge(bubbleRef, evaluation) {
+    if (!evaluation || !bubbleRef) return;
+    const metaRow = bubbleRef.wrapper.querySelector(".msg-meta");
+    if (!metaRow) return;
+    if (metaRow.querySelector(".msg-grade")) return; // already added
+    const ev = evaluation;
+    const gradeEl = document.createElement("span");
+    gradeEl.className = `msg-grade grade-${ev.grade.toLowerCase()}`;
+    gradeEl.title = `${ev.verdict} · Score: ${ev.score} · ${ev.rationale}`;
+    gradeEl.textContent = `${ev.grade} ${ev.score}`;
+    metaRow.appendChild(gradeEl);
+  }
+
   return {
     loadMessages,
     saveMessages,
     renderHistory,
     addBubble,
     addThinkingBubble,
+    addEvalBadge,
     removeNode,
     appendMessage,
     persistMessage,

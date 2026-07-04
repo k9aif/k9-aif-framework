@@ -308,6 +308,47 @@ body {
   100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
+/* ── Prompt Evaluation badge ── */
+.eval-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  background: #9ca3af;
+}
+.eval-dot.on {
+  background: #f59e0b;
+  animation: k9-pulse-eval 1.6s infinite;
+}
+@keyframes k9-pulse-eval {
+  0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+.badge-eval { cursor: pointer; user-select: none; }
+.badge-eval:hover { opacity: 0.8; }
+.badge-eval.active { outline: 2px solid #f59e0b; }
+
+/* ── Grade pill on messages ── */
+.msg-grade {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: default;
+}
+.grade-a, .grade-b { background: #d1fae5; color: #065f46; }
+.grade-c            { background: #fef3c7; color: #92400e; }
+.grade-d, .grade-f  { background: #fee2e2; color: #991b1b; }
+
+[data-theme="dark"] .grade-a,
+[data-theme="dark"] .grade-b { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .grade-c  { background: #451a03; color: #fbbf24; }
+[data-theme="dark"] .grade-d,
+[data-theme="dark"] .grade-f  { background: #450a0a; color: #fca5a5; }
+
 .health-banner {
   background: #fef3c7;
   color: #92400e;

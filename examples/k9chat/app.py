@@ -13,6 +13,9 @@ from examples.k9chat.chat import (
     send_message,
     send_message_stream,
     is_streaming_enabled,
+    is_evaluation_enabled,
+    toggle_evaluation,
+    evaluate_response,
     get_chat_runtime_info,
     get_health_status,
     run_chat_startup_check,
@@ -71,13 +74,17 @@ def chat(payload: ChatRequest):
     reply = send_message(message, session_id=payload.session_id)
     elapsed_ms = round((time.monotonic() - start) * 1000)
     runtime = get_chat_runtime_info()
-    return JSONResponse({
+    response = {
         "reply": reply,
         "elapsed_ms": elapsed_ms,
         "model": runtime["model"],
         "provider": runtime["provider"],
         "base_url": runtime["base_url"],
-    })
+    }
+    eval_result = evaluate_response(message, reply)
+    if eval_result:
+        response["evaluation"] = eval_result
+    return JSONResponse(response)
 
 
 @app.post("/chat/stream")
@@ -91,11 +98,23 @@ async def chat_stream(payload: ChatRequest):
             yield f"data: {json.dumps({'done': True})}\n\n"
             return
         start = time.monotonic()
+        full_text = ""
         async for chunk in send_message_stream(message, session_id=session_id):
+            full_text += chunk
             yield f"data: {json.dumps({'chunk': chunk})}\n\n"
         elapsed_ms = round((time.monotonic() - start) * 1000)
         runtime = get_chat_runtime_info()
-        yield f"data: {json.dumps({'done': True, 'elapsed_ms': elapsed_ms, 'model': runtime['model'], 'provider': runtime['provider'], 'base_url': runtime['base_url']})}\n\n"
+        done_payload = {
+            "done": True,
+            "elapsed_ms": elapsed_ms,
+            "model": runtime["model"],
+            "provider": runtime["provider"],
+            "base_url": runtime["base_url"],
+        }
+        eval_result = evaluate_response(message, full_text)
+        if eval_result:
+            done_payload["evaluation"] = eval_result
+        yield f"data: {json.dumps(done_payload)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -103,6 +122,17 @@ async def chat_stream(payload: ChatRequest):
 @app.get("/chat/config")
 def chat_config():
     return JSONResponse({"stream": is_streaming_enabled()})
+
+
+@app.get("/chat/evaluation")
+def evaluation_status():
+    return JSONResponse({"evaluation_enabled": is_evaluation_enabled()})
+
+
+@app.post("/chat/evaluation/toggle")
+def evaluation_toggle():
+    enabled = toggle_evaluation()
+    return JSONResponse({"evaluation_enabled": enabled})
 
 
 @app.delete("/chat/session/{session_id}")

@@ -19,16 +19,23 @@ BASE_DIR = os.path.dirname(__file__)
 # live alongside k9chat instead of requiring edits to the shared root .env.
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
+import logging
+
 from k9_aif_abb.k9_utils.config_loader import load_yaml
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
+from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
 from examples.k9chat.chat_agent import ChatAgent
 from examples.k9chat.health_check import check_ollama_model, run_startup_check
 from examples.k9chat import provider_settings
 
+log = logging.getLogger(__name__)
+
 _AGENT = None
 _CONFIG = None
 _LLM_OVERRIDES = None  # set via apply_settings() — never persisted to disk
+_EVAL_ENABLED = False
+_EVALUATOR = None
 
 
 def load_config() -> dict:
@@ -148,3 +155,44 @@ def get_health_status() -> dict:
 def run_chat_startup_check() -> None:
     """Call once at app startup — prints a clear PASS/FAIL banner."""
     run_startup_check(load_config())
+
+
+# ── Prompt Evaluation ──────────────────────────────────────────────────────────
+
+def is_evaluation_enabled() -> bool:
+    return _EVAL_ENABLED
+
+
+def toggle_evaluation() -> bool:
+    global _EVAL_ENABLED, _EVALUATOR
+    _EVAL_ENABLED = not _EVAL_ENABLED
+    if not _EVAL_ENABLED:
+        _EVALUATOR = None
+    return _EVAL_ENABLED
+
+
+def evaluate_response(user_message: str, actual_output: str) -> dict | None:
+    global _EVALUATOR
+    if not _EVAL_ENABLED:
+        return None
+    try:
+        if _EVALUATOR is None:
+            _EVALUATOR = EvaluationFactory.create(load_config())
+        result = _EVALUATOR.evaluate(
+            prompt=user_message,
+            input_data={"message": user_message},
+            actual_output=actual_output,
+            expected=(
+                "Respond helpfully, accurately, and clearly to the user's question. "
+                "Stay on topic, be concise, and avoid irrelevant content."
+            ),
+        )
+        return {
+            "score": round(result.score, 1),
+            "grade": result.grade,
+            "verdict": result.verdict,
+            "rationale": result.rationale,
+        }
+    except Exception as exc:
+        log.warning("[Evaluation] Failed: %s", exc)
+        return None

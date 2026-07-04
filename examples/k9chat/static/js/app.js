@@ -36,6 +36,25 @@
   }
   refreshStreamBadge();
 
+  // ---------------- Evaluation toggle ----------------
+  function refreshEvalBadge() {
+    fetch("/chat/evaluation").then(r => r.json()).then(cfg => {
+      const dot   = document.getElementById("eval-dot");
+      const label = document.getElementById("badge-eval");
+      const wrap  = document.getElementById("badge-eval-wrap");
+      const on    = !!cfg.evaluation_enabled;
+      label.textContent = on ? "ON" : "OFF";
+      dot.classList.toggle("on", on);
+      wrap.classList.toggle("active", on);
+    }).catch(() => {});
+  }
+  refreshEvalBadge();
+  document.getElementById("badge-eval-wrap").addEventListener("click", () => {
+    fetch("/chat/evaluation/toggle", { method: "POST" })
+      .then(() => refreshEvalBadge())
+      .catch(() => {});
+  });
+
   // ---------------- Health check ----------------
   const healthBanner = document.getElementById("health-banner");
   function refreshHealth() {

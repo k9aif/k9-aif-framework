@@ -1,0 +1,36 @@
+app:
+  name: Prompt Evaluation Client
+  description: Demonstrates K9PromptEvaluator — single eval, A/B compare, suite run
+
+inference:
+  llm_factory:
+    base_url: "${OLLAMA_BASE_URL}"
+    models:
+      general:
+        model: "llama3.2:1b"
+        temperature: 0.3
+        max_tokens: 2048
+      reasoning:
+        model: "granite3-dense:2b"
+        temperature: 0.1
+        max_tokens: 4096
+  model_catalog:
+    models:
+      general:
+        provider: ollama
+        llm_ref: general
+        capabilities: [general, chat, summarization]
+        latency_tier: realtime
+        cost_tier: minimal
+      reasoning:
+        provider: ollama
+        llm_ref: reasoning
+        capabilities: [reasoning, analysis, extraction]
+        latency_tier: interactive
+        cost_tier: standard
+
+evaluation:
+  provider: k9
+  pass_threshold: 70
+  judge_model: reasoning
+  model: general
