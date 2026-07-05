@@ -25,23 +25,24 @@
 8. [Validation Loop Pattern](#8-validation-loop-pattern)
 9. [Critic-Actor Pattern](#9-critic-actor-pattern)
 10. [Planning Loop Pattern](#10-planning-loop-pattern)
-11. [Model Routing and Inference](#11-model-routing-and-inference)
-12. [Governance and Zero Trust](#12-governance-and-zero-trust)
-13. [Messaging, Events, and Telemetry](#13-messaging-events-and-telemetry)
-14. [Persistence and Graph Integration](#14-persistence-and-graph-integration)
-15. [Configuration Standards](#15-configuration-standards)
-16. [Testing Standards](#16-testing-standards)
-17. [Developer Workflow](#17-developer-workflow)
-18. [K9X Studio Integration](#18-k9x-studio-integration)
-19. [K9X Enterprise Continuum](#19-k9x-enterprise-continuum)
-20. [Human-in-the-Loop Integration](#20-human-in-the-loop-integration)
-21. [Provider Adapter Pattern](#21-provider-adapter-pattern)
-22. [Using Claude Code with VSCode for K9-AIF Development](#22-using-claude-code-with-vscode-for-k9-aif-development)
-23. [Author's Recommendations](#23-authors-recommendations)
-24. [Patterns Reference](#24-patterns-reference)
-25. [K9X Ecosystem](#25-k9x-ecosystem)
-26. [Acknowledgements](#26-acknowledgements)
-27. [References](#27-references)
+11. [Prompt Evaluation Pattern](#11-prompt-evaluation-pattern)
+12. [Model Routing and Inference](#12-model-routing-and-inference)
+13. [Governance and Zero Trust](#13-governance-and-zero-trust)
+14. [Messaging, Events, and Telemetry](#14-messaging-events-and-telemetry)
+15. [Persistence and Graph Integration](#15-persistence-and-graph-integration)
+16. [Configuration Standards](#16-configuration-standards)
+17. [Testing Standards](#17-testing-standards)
+18. [Developer Workflow](#18-developer-workflow)
+19. [K9X Studio Integration](#19-k9x-studio-integration)
+20. [K9X Enterprise Continuum](#20-k9x-enterprise-continuum)
+21. [Human-in-the-Loop Integration](#21-human-in-the-loop-integration)
+22. [Provider Adapter Pattern](#22-provider-adapter-pattern)
+23. [Using Claude Code with VSCode for K9-AIF Development](#23-using-claude-code-with-vscode-for-k9-aif-development)
+24. [Author's Recommendations](#24-authors-recommendations)
+25. [Patterns Reference](#25-patterns-reference)
+26. [K9X Ecosystem](#26-k9x-ecosystem)
+27. [Acknowledgements](#27-acknowledgements)
+28. [References](#28-references)
 
 ---
 
@@ -530,7 +531,7 @@ class BaseClaimsAgent(BaseAgent):
 ```python
 # Wrong — calling Ollama directly from agent code
 import requests
-resp = requests.post("http://192.168.1.98:11434/api/generate", json={...})
+resp = requests.post("http://localhost:11434/api/generate", json={...})
 ```
 
 **Anti-pattern: Agents referencing squads**
@@ -1524,9 +1525,319 @@ BaseAgent
 
 ---
 
-## 11. Model Routing and Inference
+## 11. Prompt Evaluation Pattern
 
-### 10.1 The Inference Pipeline
+### 11.1 Overview
+
+The Prompt Evaluation Pattern provides a development-time pipeline for grading authored prompts before they enter a workflow. It answers the question: how well does this prompt perform across a range of inputs, and what grade does it earn?
+
+**Scope:** This is a design-time and measurement-time tool. It grades authored prompts — system prompts, agent instructions, guided-flow templates — not user-provided inputs at runtime. Runtime quality enforcement is `K9ValidationLoopAgent`'s responsibility.
+
+```mermaid
+graph LR
+    A[Author Prompt] --> B[Define Test Cases]
+    B --> C[run_suite]
+    C --> D{Grade >= C?}
+    D -->|Yes| E[Promote to Config]
+    D -->|No| F[Review Rationale]
+    F --> G[Revise Prompt]
+    G --> H[compare variants]
+    H --> I[Adopt Winner]
+    I --> C
+```
+
+### 11.2 BasePromptEvaluator — ABB Contract
+
+`k9_core/evaluation/base_prompt_evaluator.py`
+
+Three abstract methods define the contract:
+
+```python
+class BasePromptEvaluator(BaseComponent, ABC):
+    layer: str = "BasePromptEvaluator"
+
+    @abstractmethod
+    def evaluate(
+        self,
+        prompt: str,
+        input_data: Dict[str, Any],
+        actual_output: str,
+        expected: str,
+        test_case_description: str = "",
+    ) -> EvaluationResult:
+        """Score a single prompt execution against an expectation."""
+
+    @abstractmethod
+    def compare(
+        self,
+        prompt_a: str,
+        prompt_b: str,
+        test_cases: List[PromptTestCase],
+    ) -> ComparisonResult:
+        """A/B test two prompt variants across a list of test cases."""
+
+    @abstractmethod
+    def run_suite(
+        self,
+        prompt: str,
+        test_cases: List[PromptTestCase],
+    ) -> SuiteResult:
+        """Batch evaluation across a list of test cases."""
+```
+
+### 11.3 Evaluation Data Models
+
+```python
+@dataclass
+class EvaluationResult:
+    score: float                    # 0–100 composite score
+    grade: str                      # A | B | C | D | F
+    verdict: str                    # PASS | FAIL
+    dimensions: List[DimensionScore]
+    rationale: str                  # judge's overall summary
+    actual_output: str
+    prompt: str
+    test_case_description: str
+
+@dataclass
+class DimensionScore:
+    name: str        # correctness | completeness | format_compliance | clarity | relevance
+    score: float     # 0–100
+    rationale: str
+
+@dataclass
+class ComparisonResult:
+    winner: str      # prompt_a | prompt_b | tie
+    score_a: float
+    score_b: float
+    grade_a: str
+    grade_b: str
+    rationale: str
+    results_a: List[EvaluationResult]
+    results_b: List[EvaluationResult]
+
+@dataclass
+class SuiteResult:
+    total: int
+    passed: int
+    failed: int
+    average_score: float
+    overall_grade: str
+    pass_rate: float
+    results: List[EvaluationResult]
+
+@dataclass
+class PromptTestCase:
+    input_data: Dict[str, Any]
+    expected: str
+    description: str = ""
+```
+
+### 11.4 K9PromptEvaluator — OOB SBB
+
+`k9_agents/evaluation/k9_prompt_evaluator.py`
+
+The OOB implementation uses LLM-as-judge via `llm_invoke()`. No external evaluation service; no additional dependencies beyond the inference layer already present.
+
+The judge scores five weighted dimensions:
+
+| Dimension | Weight | Question |
+|---|---|---|
+| Correctness | 35% | Does the output correctly answer the task? |
+| Completeness | 25% | Does it cover all required aspects? |
+| Format compliance | 15% | Does it follow the requested format / structure? |
+| Clarity | 15% | Is the output clear, coherent, and readable? |
+| Relevance | 10% | Is the output focused and on-topic? |
+
+**Grade scale:** A (90+), B (80–89), C (70–79), D (60–69), F (<60). Default PASS threshold: 70.
+
+**Key design:** Each LLM call sets `metadata["operation"]` to separate concerns in telemetry and routing:
+
+- `"operation": "invoke"` — the prompt execution call (generates the output to evaluate)
+- `"operation": "evaluate"` — the judge call (scores the output)
+
+This keeps evaluation traffic identifiably separate from production inference traffic.
+
+### 11.5 EvaluationFactory
+
+`EvaluationFactory` follows the standard K9-AIF factory pattern:
+
+```python
+from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
+
+evaluator = EvaluationFactory.create(config)
+# Returns K9PromptEvaluator by default (provider: k9)
+# Returns custom SBB when provider: my_evaluator is set
+```
+
+```yaml
+evaluation:
+  provider: k9          # default OOB — K9PromptEvaluator
+  pass_threshold: 70    # PASS when score >= this
+  judge_model: reasoning
+```
+
+### 11.6 Developer Workflow
+
+The workflow from authored prompt to promoted config:
+
+1. **Author** the prompt template (system prompt, agent instructions, guided-flow step)
+2. **Define test cases** — representative inputs and expected output behaviour
+3. **Run `run_suite()`** — batch score across all test cases
+4. **Review results** — inspect failing cases; identify weak dimensions
+5. **Compare variants** — use `compare()` to A/B test the revised prompt against the original
+6. **Adopt the winner** and re-run the suite to confirm the improvement holds
+
+When the underlying model changes (upgrade or provider swap), re-run the suite. The scores either hold or they do not — that delta is the signal.
+
+### 11.7 Extending the Evaluator
+
+`K9PromptEvaluator` is one implementation. Solution Architects extend `BasePromptEvaluator` for domain-specific evaluation needs:
+
+```python
+from k9_aif_abb.k9_core.evaluation.base_prompt_evaluator import BasePromptEvaluator
+
+class ClinicalPrecisionEvaluator(BasePromptEvaluator):
+    """Domain-calibrated evaluator for clinical AI prompts."""
+    layer = "ClinicalPrecisionEvaluator SBB"
+
+    def evaluate(self, prompt, input_data, actual_output, expected, description=""):
+        # Replace generic dimensions with clinical rubrics:
+        # clinical_accuracy, drug_safety, terminology_correctness,
+        # evidence_citation, format
+        ...
+
+    def compare(self, prompt_a, prompt_b, test_cases): ...
+    def run_suite(self, prompt, test_cases): ...
+```
+
+Extension patterns:
+
+- **Domain-calibrated** — replace generic dimensions with domain rubrics (clinical precision, regulatory completeness, citation accuracy)
+- **Golden-set** — compare against a curated reference set using semantic similarity rather than LLM judgment
+- **Multi-judge** — call two models as judges; resolve disagreements by majority or confidence weighting
+- **Regression** — store scores per run; flag when a prompt change drops any dimension by more than N points
+
+All extend `BasePromptEvaluator`, implement three abstract methods, and register with `EvaluationFactory`. No changes to callers.
+
+### 11.8 Testing Prompt Evaluators
+
+```python
+from unittest.mock import patch, MagicMock
+from k9_aif_abb.k9_agents.evaluation.k9_prompt_evaluator import K9PromptEvaluator
+from k9_aif_abb.k9_agents.evaluation.models.evaluation import PromptTestCase
+from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
+
+
+def _make_evaluator(config=None):
+    return K9PromptEvaluator(
+        config=config or {"pass_threshold": 70.0, "judge_model": "reasoning"}
+    )
+
+
+def test_evaluate_returns_grade():
+    judge_json = (
+        '{"correctness":{"score":90,"rationale":"correct"},'
+        '"completeness":{"score":85,"rationale":"complete"},'
+        '"format_compliance":{"score":80,"rationale":"formatted"},'
+        '"clarity":{"score":88,"rationale":"clear"},'
+        '"relevance":{"score":92,"rationale":"relevant"},'
+        '"overall_rationale":"Good response."}'
+    )
+    mock_resp = MagicMock(spec=InferenceResponse)
+    mock_resp.output = judge_json
+
+    with patch(
+        "k9_aif_abb.k9_agents.evaluation.k9_prompt_evaluator.llm_invoke",
+        return_value=mock_resp,
+    ):
+        result = _make_evaluator().evaluate(
+            prompt="Summarize the following:",
+            input_data={"text": "K9-AIF is..."},
+            actual_output="K9-AIF is a framework...",
+            expected="A concise summary of K9-AIF",
+        )
+
+    assert result.grade in ("A", "B", "C", "D", "F")
+    assert result.verdict in ("PASS", "FAIL")
+    assert 0 <= result.score <= 100
+
+
+def test_run_suite_pass_rate():
+    judge_json = (
+        '{"correctness":{"score":80,"rationale":"ok"},'
+        '"completeness":{"score":80,"rationale":"ok"},'
+        '"format_compliance":{"score":80,"rationale":"ok"},'
+        '"clarity":{"score":80,"rationale":"ok"},'
+        '"relevance":{"score":80,"rationale":"ok"},'
+        '"overall_rationale":"Acceptable."}'
+    )
+    mock_resp = MagicMock(spec=InferenceResponse)
+    mock_resp.output = judge_json
+
+    test_cases = [
+        PromptTestCase(input_data={"x": 1}, expected="result 1"),
+        PromptTestCase(input_data={"x": 2}, expected="result 2"),
+    ]
+
+    with patch(
+        "k9_aif_abb.k9_agents.evaluation.k9_prompt_evaluator.llm_invoke",
+        return_value=mock_resp,
+    ):
+        suite = _make_evaluator().run_suite("Test prompt", test_cases)
+
+    assert suite.total == 2
+    assert suite.pass_rate >= 0.0
+```
+
+**Test coverage requirements:**
+
+- Grade boundary conditions (A/B/C/D/F thresholds)
+- Weighted composite arithmetic
+- PASS/FAIL threshold behaviour
+- Custom threshold override
+- Malformed judge JSON fallback — score=50, no crash
+- `compare()` winner detection and tie detection
+- `run_suite()` aggregation for all-pass and all-fail states
+
+### 11.9 K9Chat Integration
+
+K9Chat includes an evaluation toggle in the topbar for development-time prompt grading. When enabled:
+
+- A grade pill (A–F) appears beneath each assistant message
+- Hover to see the composite score, verdict, and judge rationale per dimension
+- Toggle the provider model in settings to observe the grade change — that delta is signal for which model executes the authored prompt best
+
+This is a **development tool, not a production feature**. Enable it during prompt authoring; disable it in production deployments.
+
+```yaml
+evaluation:
+  enabled: false      # toggle via /chat/evaluation/toggle endpoint
+  provider: k9
+  pass_threshold: 70
+  judge_model: reasoning
+```
+
+### 11.10 When to Use Prompt Evaluation
+
+Use this pattern when:
+
+- An agent's system prompt or instruction set has been authored and you need to verify it performs as intended before deploying
+- You are comparing two prompt variants and need a data-backed decision on which to adopt
+- A model upgrade or provider change occurred and you need to verify existing prompts still perform acceptably
+- A new guided-flow step is being designed and you want to gate promotion on a minimum grade
+
+Do not use it for:
+
+- **Runtime quality enforcement** — that is `K9ValidationLoopAgent`'s role
+- **User input validation** — prompt evaluation targets authored prompts, not user messages
+- **Agent regression testing** — domain-specific behaviour belongs in the domain test suite
+
+---
+
+## 12. Model Routing and Inference
+
+### 12.1 The Inference Pipeline
 
 Agents must never call LLM providers directly. All LLM invocations go through `llm_invoke()`:
 
@@ -1541,7 +1852,7 @@ llm_invoke(config, InferenceRequest)
   → InferenceResponse returned
 ```
 
-### 10.2 llm_invoke
+### 12.2 llm_invoke
 
 `k9_utils/llm_invoke.py` — the canonical LLM call path:
 
@@ -1575,7 +1886,7 @@ except RuntimeError as exc:
     return {"agent": self.layer, "output": "[WARN] LLM unavailable", "confidence": 0.0}
 ```
 
-### 10.3 InferenceRequest
+### 12.3 InferenceRequest
 
 ```python
 class InferenceRequest(BaseModel):
@@ -1590,7 +1901,7 @@ class InferenceRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 ```
 
-### 10.4 K9ModelRouter Scoring
+### 12.4 K9ModelRouter Scoring
 
 `K9ModelRouter` selects the best model from the catalog using weighted scoring:
 
@@ -1603,7 +1914,7 @@ class InferenceRequest(BaseModel):
 
 The model with the highest score is selected. Falls back to `default_model` when no model scores above zero.
 
-### 10.5 Model Catalog Configuration
+### 12.5 Model Catalog Configuration
 
 ```yaml
 inference:
@@ -1617,7 +1928,7 @@ inference:
         db_path: "./runtime/k9_model_router.db"
 
   llm_factory:
-    base_url: "http://192.168.1.98:11434"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
       general: "llama3.2:1b"
       reasoning: "granite3-dense:2b"
@@ -1646,7 +1957,7 @@ inference:
       cost_tier: premium
 ```
 
-### 10.6 Custom Model Router
+### 12.6 Custom Model Router
 
 To replace `K9ModelRouter` with domain-specific routing logic:
 
@@ -1678,7 +1989,7 @@ class ComplianceAwareRouter(BaseModelRouter):
 
 Register it in `config.yaml` by setting `inference.router.type: compliance_aware_router`.
 
-### 10.7 Routing Decision Persistence
+### 12.7 Routing Decision Persistence
 
 `K9ModelRouter` persists every routing decision to the `RoutingStateStore`. This provides:
 
@@ -1689,7 +2000,7 @@ Register it in `config.yaml` by setting `inference.router.type: compliance_aware
 
 The state store uses SQLite by default and PostgreSQL when configured. Tables: `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`.
 
-### 10.8 Why Direct Model Calls Must Be Avoided
+### 12.8 Why Direct Model Calls Must Be Avoided
 
 | Concern | Direct Call | Via llm_invoke |
 |---|---|---|
@@ -1702,9 +2013,9 @@ The state store uses SQLite by default and PostgreSQL when configured. Tables: `
 
 ---
 
-## 11. Governance and Zero Trust
+## 13. Governance and Zero Trust
 
-### 11.1 The Governance Pipeline
+### 13.1 The Governance Pipeline
 
 Every K9-AIF component receives a governance pipeline at construction via `require_governance()`. The pipeline provides two lifecycle hooks:
 
@@ -1720,7 +2031,7 @@ class BaseGovernance(ABC):
         """Apply governance AFTER payload is received."""
 ```
 
-### 11.2 require_governance()
+### 13.2 require_governance()
 
 `k9_core/governance/pipeline.py` — governance resolution at component init:
 
@@ -1743,11 +2054,11 @@ export K9_ENV=staging       # pre-production
 export K9_ENV=production    # production
 ```
 
-### 11.3 NoopGovernance
+### 13.3 NoopGovernance
 
 `NoopGovernance` is a passthrough — it returns the payload unchanged. It is valid only in `development` and `test` environments. In `staging` or `production`, any component that calls `enforce_governance()` will raise `PermissionError` if `NoopGovernance` is active.
 
-### 11.4 ProfanityGovernance OOB
+### 13.4 ProfanityGovernance OOB
 
 `k9_governance/profanity_governance.py` provides a content-filtering governance implementation using an LLM guardian model:
 
@@ -1769,7 +2080,7 @@ governance:
         Respond SAFE or BLOCK.
 ```
 
-### 11.5 Zero Trust Security Layer
+### 13.5 Zero Trust Security Layer
 
 `k9_security/zero_trust/` implements a runtime zero-trust execution model. It is optional and enabled per-component via `enable_zero_trust: true` in config or at construction.
 
@@ -1809,7 +2120,7 @@ Results are returned as:
 }
 ```
 
-### 11.6 Governance vs Zero Trust
+### 13.6 Governance vs Zero Trust
 
 These two mechanisms are architecturally distinct:
 
@@ -1821,7 +2132,7 @@ These two mechanisms are architecturally distinct:
 | Default | NoopGovernance | Disabled unless `enable_zero_trust: true` |
 | ABB | `BaseGovernance` | `BaseZeroTrustGuard`, `BasePolicyEnforcer` |
 
-### 11.7 Governance Enforcement Patterns
+### 13.7 Governance Enforcement Patterns
 
 ```python
 # Pattern 1: Enforce governance is configured (fail-fast in production)
@@ -1848,7 +2159,7 @@ if not zt_result["allowed"]:
     return {"status": "denied", "reason": zt_result["reason"]}
 ```
 
-### 11.8 Why Governance Must Not Be Bypassed
+### 13.8 Why Governance Must Not Be Bypassed
 
 Governance bypasses in production create invisible risks. Payloads that bypass governance may:
 
@@ -1861,9 +2172,9 @@ The framework makes bypassing governance explicit and traceable. `NoopGovernance
 
 ---
 
-## 12. Messaging, Events, and Telemetry
+## 14. Messaging, Events, and Telemetry
 
-### 12.1 publish_event()
+### 14.1 publish_event()
 
 `publish_event()` is defined on `BaseAgent` and routes events to the wired monitor and message bus:
 
@@ -1878,11 +2189,11 @@ def publish_event(self, event: Dict[str, Any]):
 
 In standard K9-AIF solutions, agents are constructed without a `message_bus`. Their events reach the monitor and logger. Only the Router and Orchestrator are wired with a message bus for Kafka integration.
 
-### 12.2 Message Bus Abstraction
+### 14.2 Message Bus Abstraction
 
 The message bus abstraction is `K9EventBus` (`k9_core/messaging/k9_event_bus.py`), which provides a local publish/subscribe mechanism. For Kafka/Redpanda integration, `RedpandaStreamProvider` (`k9_core/streaming/redpanda_provider.py`) implements the `BaseStreamProvider` contract.
 
-### 12.3 Framework Event Taxonomy
+### 14.3 Framework Event Taxonomy
 
 | Component | Event Type | Description |
 |---|---|---|
@@ -1893,7 +2204,7 @@ The message bus abstraction is `K9EventBus` (`k9_core/messaging/k9_event_bus.py`
 | BaseCriticActorAgent | `loop_started`, `draft_generated`, `draft_refined`, `critique_produced`, `loop_accepted`, `loop_rejected`, `loop_escalated`, `loop_failed` | Round lifecycle |
 | llm_invoke | `LLMCall` | Per inference call (via trace callback) |
 
-### 12.4 LLM Trace Callback
+### 14.4 LLM Trace Callback
 
 ```python
 from k9_aif_abb.k9_utils.llm_invoke import register_trace_callback
@@ -1905,7 +2216,7 @@ def my_trace_handler(event: Dict[str, Any]) -> None:
 register_trace_callback(my_trace_handler)
 ```
 
-### 12.5 BaseMonitor
+### 14.5 BaseMonitor
 
 `k9_core/monitoring/base_monitoring.py`
 
@@ -1932,7 +2243,7 @@ monitors:
     kwargs: {}
 ```
 
-### 12.6 Kafka Topology in Production
+### 14.6 Kafka Topology in Production
 
 ```
 Client App
@@ -1963,7 +2274,7 @@ Configuration:
 ```yaml
 messaging:
   backend: redpanda
-  broker_url: 192.168.1.98:9092
+  broker_url: "${KAFKA_BROKER:-localhost:9092}"
   topic: k9aif-events
   group_id: k9aif-core
   client_id: k9aif-console
@@ -1973,9 +2284,9 @@ messaging:
 
 ---
 
-## 13. Persistence and Graph Integration
+## 15. Persistence and Graph Integration
 
-### 13.1 BasePersistence
+### 15.1 BasePersistence
 
 `k9_core/persistence/base_persistence.py` — state storage contract:
 
@@ -1997,7 +2308,7 @@ class BasePersistence(ABC):
 
 OOB implementations: `SQLitePersistence`, `ChromaDBPersistence`, `MemoryPersistence`.
 
-### 13.2 BaseStorage
+### 15.2 BaseStorage
 
 `k9_core/storage/base_storage.py` — file/object storage contract:
 
@@ -2019,7 +2330,7 @@ class BaseStorage(ABC):
 
 OOB implementations: `FileStorage`, `ObjectStorage`, `SQLiteDatabaseStorage`, `PostgresDatabaseStorage`.
 
-### 13.3 RoutingStateStore
+### 15.3 RoutingStateStore
 
 `k9_storage/routing_state_store.py` — K9ModelRouter decision tracking:
 
@@ -2031,11 +2342,11 @@ Four tables managed automatically:
 
 This store provides the data foundation for model performance analytics, governance reporting, and compliance audit trails.
 
-### 13.4 PostgreSQL Integration
+### 15.4 PostgreSQL Integration
 
 ```yaml
 postgres:
-  host: "192.168.1.98"
+  host: "${POSTGRES_HOST:-localhost}"
   port: 5432
   user: "postgres"
   password: "postgres"
@@ -2045,7 +2356,7 @@ postgres:
 
 `PostgresDatabaseStorage` sets `search_path` and `MetaData(schema=...)` from `postgres.schema`. The schema value must match the PostgreSQL schema where tables reside.
 
-### 13.5 Neo4j / Architecture Graph
+### 15.5 Neo4j / Architecture Graph
 
 K9-AIF is aligned with the [https://graph.k9x.ai](https://graph.k9x.ai) architecture graph, which represents the K9-AIF component topology as a property graph in Neo4j.
 
@@ -2059,12 +2370,12 @@ The architecture graph is intended for:
 Connection details for the shared Neo4j instance:
 
 ```
-bolt://192.168.1.98:7687
+bolt://${NEO4J_HOST:-localhost}:7687
 ```
 
 Solution teams can write agent and squad registration events to Neo4j to maintain a live topology view of their solution.
 
-### 13.6 Persistence Factory
+### 15.6 Persistence Factory
 
 ```python
 from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
@@ -2076,9 +2387,9 @@ persistence = PersistenceFactory.create(config)
 
 ---
 
-## 14. Configuration Standards
+## 16. Configuration Standards
 
-### 14.1 YAML Structure
+### 16.1 YAML Structure
 
 K9-AIF uses YAML for all component configuration. The config hierarchy:
 
@@ -2090,7 +2401,7 @@ config/
 └── governance.yaml     # governance policy definitions
 ```
 
-### 14.2 Global config.yaml Sections
+### 16.2 Global config.yaml Sections
 
 ```yaml
 # Infrastructure — always in global config
@@ -2117,7 +2428,7 @@ demo:
   query: ...
 ```
 
-### 14.3 Agent Config Merging
+### 16.3 Agent Config Merging
 
 When `agent_loader.merge_with_global(agent_name, global_config)` is called:
 
@@ -2134,7 +2445,7 @@ self.config.get("inference")  # from global config.yaml
 self.config.get("postgres")   # from global config.yaml
 ```
 
-### 14.4 Naming Standards
+### 16.4 Naming Standards
 
 | Component | Naming Convention | Example |
 |---|---|---|
@@ -2147,7 +2458,7 @@ self.config.get("postgres")   # from global config.yaml
 | Model alias | snake_case | `reasoning`, `fast_local`, `enterprise` |
 | Event type | PascalCase | `ClaimsTriageCompleted` |
 
-### 14.5 Squad YAML Format
+### 16.5 Squad YAML Format
 
 ```yaml
 squads:
@@ -2173,23 +2484,23 @@ squads:
 
 **Critical:** Flow steps must be dicts with an `agent:` key. Plain strings raise `ValueError` at runtime.
 
-### 14.6 Environment Configuration
+### 16.6 Environment Configuration
 
 ```bash
 # Required for governance enforcement behavior
 export K9_ENV=development   # or test | staging | production
 
-# Infrastructure (typically set in container environment)
-export OLLAMA_HOST=http://192.168.1.98:11434
-export POSTGRES_HOST=192.168.1.98
-export KAFKA_BROKER=192.168.1.98:9092
+# Infrastructure (typically set in container environment or .env)
+export OLLAMA_BASE_URL=http://localhost:11434
+export POSTGRES_HOST=localhost
+export KAFKA_BROKER=localhost:9092
 ```
 
 ---
 
-## 15. Testing Standards
+## 17. Testing Standards
 
-### 15.1 Testing Philosophy
+### 17.1 Testing Philosophy
 
 K9-AIF tests are divided into two categories:
 
@@ -2198,7 +2509,7 @@ K9-AIF tests are divided into two categories:
 
 Framework tests live in `k9_aif_abb/tests/`. Domain tests live alongside the SBB code.
 
-### 15.2 Testing Agents Offline
+### 17.2 Testing Agents Offline
 
 Always mock `llm_invoke` — never call a real LLM in unit tests:
 
@@ -2243,7 +2554,7 @@ def test_execute_handles_llm_error():
     assert "[WARN]" in result.get("output", "")
 ```
 
-### 15.3 Testing Validation Loop Agents
+### 17.3 Testing Validation Loop Agents
 
 ```python
 from k9_aif_abb.k9_agents.validation.models.validation_loop import (
@@ -2341,9 +2652,9 @@ pytest tests/test_k9_validation_loop_agent.py -v
 
 ---
 
-## 16. Developer Workflow
+## 18. Developer Workflow
 
-### 16.1 Environment Setup
+### 18.1 Environment Setup
 
 ```bash
 # Clone the repository
@@ -2361,7 +2672,7 @@ pip install -r requirements.txt
 export K9_ENV=development
 ```
 
-### 16.2 Adding a New ABB
+### 18.2 Adding a New ABB
 
 1. Identify the capability gap — only add an ABB if no existing ABB covers the need
 2. Create the abstract class in the appropriate `k9_core/` sub-package
@@ -2372,7 +2683,7 @@ export K9_ENV=development
 7. Write framework stability tests
 8. Update the package docstring in `__init__.py`
 
-### 16.3 Adding a New SBB
+### 18.3 Adding a New SBB
 
 ```bash
 # Use the generator for complete scaffold
@@ -2390,7 +2701,7 @@ The generator creates:
 
 After generation, flesh out the stubs using the EOC example as reference.
 
-### 16.4 Development Checklist
+### 18.4 Development Checklist
 
 Before submitting any agent or orchestrator:
 
@@ -2409,7 +2720,7 @@ Before submitting any agent or orchestrator:
 [ ] K9_ENV set appropriately for test environment
 ```
 
-### 16.5 Common Commands
+### 18.5 Common Commands
 
 ```bash
 # Run framework tests
@@ -2434,9 +2745,9 @@ bash run_eoc_pod.sh
 
 ---
 
-## 18. K9X Studio Integration
+## 19. K9X Studio Integration
 
-### 18.1 What Studio Does
+### 19.1 What Studio Does
 
 K9X Studio is a visual architecture designer for K9-AIF systems. Architects design on a drag-and-drop canvas; developers receive a framework-compliant scaffold.
 
@@ -2449,7 +2760,7 @@ k9x studio
 
 Opens at `http://localhost:9494`.
 
-### 18.2 Using Studio
+### 19.2 Using Studio
 
 1. **Start from a template** or drag components from the palette
 2. **Palette components:** Router (indigo), Orchestrator (purple), Squad (blue), Agent (green), Validation Loop (amber), Critic-Actor (red), Guard (slate), HIL Orchestrator (teal)
@@ -2457,11 +2768,11 @@ Opens at `http://localhost:9494`.
 4. **Configure** each component in the Inspector panel — name, agent type, model, LLM provider
 5. **Generate scaffold** — exports a K9-AIF project with all files, YAML configs, and agent stubs
 
-### 18.3 From Specification
+### 19.3 From Specification
 
 Upload a markdown spec, BPMN file, or process description. Studio reads it and suggests an architecture on the canvas. Adjust and generate.
 
-### 18.4 Scaffold Output
+### 19.4 Scaffold Output
 
 ```
 my_project/
@@ -2481,13 +2792,13 @@ Every stub extends the correct ABB. Squad YAML is pre-wired. Configuration is po
 
 ---
 
-## 19. K9X Enterprise Continuum
+## 20. K9X Enterprise Continuum
 
-### 19.1 What the Continuum Does
+### 20.1 What the Continuum Does
 
 The K9X Enterprise Continuum is a governed catalog where validated SBBs and ABBs are published, discovered, and evolved. It implements the TOGAF Enterprise Continuum as live, API-first infrastructure.
 
-### 19.2 Publishing an SBB
+### 20.2 Publishing an SBB
 
 **Step 1 — Validate compliance:**
 
@@ -2506,7 +2817,7 @@ k9aif publish --name MyAgent --kind Agent --abb-names BaseAgent \
 
 The SBB is registered in the Continuum with metadata: ABB contract, domain tag, version, inspection status, author.
 
-### 19.3 Tier Classification
+### 20.3 Tier Classification
 
 SBBs are classified into four tiers based on their ABB implementations and domain tags:
 
@@ -2517,7 +2828,7 @@ SBBs are classified into four tiers based on their ABB implementations and domai
 | Industry | Has a domain tag (insurance, healthcare, defense) |
 | Organization-Specific | Enterprise-customized, deployed applications |
 
-### 19.4 Querying the Continuum
+### 20.4 Querying the Continuum
 
 The Continuum is API-first. Studio queries it before generating scaffolds.
 
@@ -2530,9 +2841,9 @@ GET /api/abbs/{id}/sbbs                # SBBs implementing this ABB
 
 ---
 
-## 20. Human-in-the-Loop Integration
+## 21. Human-in-the-Loop Integration
 
-### 20.1 When to Use HIL
+### 21.1 When to Use HIL
 
 Use HIL when an agent cannot decide with sufficient confidence, or when policy requires human review. The decision of where HIL belongs is made at design time using the 4Ds framework:
 
@@ -2541,7 +2852,7 @@ Use HIL when an agent cannot decide with sufficient confidence, or when policy r
 - **Discernment** — agent confidence is uncertain → HIL
 - **Diligence** — regulation requires human sign-off → HIL
 
-### 20.2 Wiring a HIL Breakpoint
+### 21.2 Wiring a HIL Breakpoint
 
 In your orchestrator, when the agent's confidence is below threshold:
 
@@ -2562,7 +2873,7 @@ if result.get("confidence", 1.0) < self.config.get("hil_threshold", 0.8):
 
 The orchestrator publishes and exits. No thread blocked. No resource consumed while waiting.
 
-### 20.3 Consuming the HIL Response
+### 21.3 Consuming the HIL Response
 
 The HILOrchestrator subscribes to the `reply_to` topic:
 
@@ -2575,11 +2886,11 @@ class EOCHILOrchestrator(BaseOrchestrator):
         return self.run_squad({"decision": human_decision, "correlation_id": correlation_id})
 ```
 
-### 20.4 Studio Canvas
+### 21.4 Studio Canvas
 
 In K9X Studio, drop the HIL Orchestrator from the palette. It auto-creates a HILSquad and HILAgent, connected to the Kafka bus via a teal dotted line. No Router needed — the HIL Orchestrator is event-driven.
 
-### 20.5 K9X HIL Platform
+### 21.5 K9X HIL Platform
 
 K9X HIL is a dedicated case management platform for human tasks:
 
@@ -2595,9 +2906,9 @@ pip install k9x-hil
 
 ---
 
-## 21. Provider Adapter Pattern
+## 22. Provider Adapter Pattern
 
-### 21.1 The Three-Layer Structure
+### 22.1 The Three-Layer Structure
 
 Every infrastructure concern in K9-AIF follows the same pattern:
 
@@ -2605,7 +2916,7 @@ Every infrastructure concern in K9-AIF follows the same pattern:
 2. **Concrete Adapter** — wraps a vendor SDK behind the ABB contract (lazy imports)
 3. **Factory** — reads config, resolves the correct adapter, returns the uniform interface
 
-### 21.2 Implemented Areas
+### 22.2 Implemented Areas
 
 | Concern | ABB Contract | Default Adapter | Other Adapters | Factory | Config Key |
 |---|---|---|---|---|---|
@@ -2614,7 +2925,7 @@ Every infrastructure concern in K9-AIF follows the same pattern:
 | Secret Management | `BaseSecretManager` | `EnvSecretAdapter` | Vault, AWS, IBM | `SecretManagerFactory` | `secrets.provider` |
 | Cache | `BaseCache` | `InMemoryAdapter` | Redis | `CacheFactory` | `cache.provider` |
 
-### 21.3 Adding a New Adapter
+### 22.3 Adding a New Adapter
 
 ```python
 # k9_<concern>/adapters/my_adapter.py
@@ -2651,7 +2962,7 @@ secrets:
   provider: my_provider
 ```
 
-### 21.4 Constraints
+### 22.4 Constraints
 
 - Credentials NEVER in `config.yaml` — use environment variables
 - Optional packages: lazy import, raise `RuntimeError` with install hint
@@ -2660,15 +2971,15 @@ secrets:
 
 ---
 
-## 22. Using Claude Code with VSCode for K9-AIF Development
+## 23. Using Claude Code with VSCode for K9-AIF Development
 
-### 17.1 Overview
+### 23.1 Overview
 
 Claude Code is an AI-assisted coding assistant that integrates with VSCode and operates via the Claude Code CLI. K9-AIF uses Claude Code as a development accelerator — not as the architect. The human architect retains authority over all structural decisions.
 
 This chapter documents lessons learned from using Claude Code throughout K9-AIF development and provides guidance for teams adopting it.
 
-### 17.2 Recommended Developer Workflow
+### 23.2 Recommended Developer Workflow
 
 The effective K9-AIF + Claude Code workflow is:
 
@@ -2678,7 +2989,7 @@ The effective K9-AIF + Claude Code workflow is:
 4. **Review all generated code critically:** Claude Code does not always preserve framework boundaries. Review every generated file before committing.
 5. **Run framework tests immediately:** The hooks in `.claude/settings.json` run `test_framework.py` automatically after every write — any regression is visible immediately.
 
-### 17.3 CLAUDE.md Structure
+### 23.3 CLAUDE.md Structure
 
 The `CLAUDE.md` file is the primary mechanism for teaching Claude Code about the K9-AIF framework. It should contain:
 
@@ -2691,7 +3002,7 @@ The `CLAUDE.md` file is the primary mechanism for teaching Claude Code about the
 
 The `CLAUDE.md` in this repository is authoritative. Read it before using Claude Code for any K9-AIF development.
 
-### 17.4 Purpose of SKILLS.md
+### 23.4 Purpose of SKILLS.md
 
 `SKILLS.md` provides step-by-step recipes that Claude Code can follow for common tasks:
 
@@ -2705,10 +3016,15 @@ The `CLAUDE.md` in this repository is authoritative. Read it before using Claude
 - Skill 8: Add model routing signal
 - Skill 9: Agent config merging
 - Skill 10: Build a validation loop agent
+- Skill 11: Provider Adapter Pattern (Secret Management, Cache, and future areas)
+- Skill 12: Apply the 4Ds AI Fluency Framework to Agent Design
+- Skill 13: Add a new LLM provider adapter (Claude, Bedrock, OpenAI, etc.)
+- Skill 14: Chat session management (multi-turn conversation context)
+- Skill 15: Streaming LLM responses (token-by-token output)
 
 Reference these skills in prompts: "Follow Skill 1 to add a new FraudAssessmentAgent."
 
-### 17.5 Teaching Claude Code Framework Conventions
+### 23.5 Teaching Claude Code Framework Conventions
 
 Claude Code learns framework conventions from `CLAUDE.md` context. For K9-AIF, the most critical conventions to reinforce are:
 
@@ -2728,7 +3044,7 @@ class MyRouter(BaseRouter):
 - "Create a direct Ollama connection" — always use `llm_invoke()`
 - "Save the governance check for later" — governance must be wired at init
 
-### 17.6 Common Mistakes AI Coding Assistants Make in Framework Development
+### 23.6 Common Mistakes AI Coding Assistants Make in Framework Development
 
 | Mistake | Correct Pattern |
 |---|---|
@@ -2741,7 +3057,7 @@ class MyRouter(BaseRouter):
 | Using plain strings in squad flow steps | Flow steps must be dicts with `agent:` key |
 | Calling `asyncio.run()` inside an `async def` | Use `await` instead |
 
-### 17.7 Guiding Claude Code Toward Correct Patterns
+### 23.7 Guiding Claude Code Toward Correct Patterns
 
 **Prompt patterns that work well:**
 
@@ -2770,7 +3086,7 @@ Fix them to be dicts with an 'agent:' key and appropriate 'result_key' values."
 - "Add persistence to the agent" — agents should not own persistence; orchestrators do
 - "Generate the whole solution" — one-shot generation misses framework boundaries
 
-### 17.8 Incremental Generation vs Large One-Shot Generation
+### 23.8 Incremental Generation vs Large One-Shot Generation
 
 **Incremental is better.** Generate one component at a time:
 
@@ -2789,7 +3105,7 @@ One-shot generation of a complete solution reliably produces:
 
 Incremental generation with review between steps produces code that matches the framework contract.
 
-### 17.9 Reviewing AI-Generated Code Critically
+### 23.9 Reviewing AI-Generated Code Critically
 
 Review every generated file for:
 
@@ -2802,7 +3118,7 @@ Review every generated file for:
 7. **Layer attribute:** Set to `"<App> <Name> SBB"`?
 8. **Error handling:** Does `execute()` handle `RuntimeError` from `llm_invoke`?
 
-### 17.10 Examples of Successful Claude Code Usage in K9-AIF
+### 23.10 Examples of Successful Claude Code Usage in K9-AIF
 
 **Validation Loop Pattern:**
 Claude Code was used to generate the initial `BaseValidationLoopAgent` skeleton and `K9ValidationLoopAgent` implementation. The abstract method signatures, loop lifecycle, and telemetry event names were specified precisely in the prompt. The resulting code required minimal revision.
@@ -2820,7 +3136,7 @@ Claude Code consistently produces accurate offline tests when the prompt specifi
 **OOB Implementations:**
 Generating `K9ModelRouter` from `BaseModelRouter` worked well when the scoring logic was specified explicitly in the prompt, including the exact point values.
 
-### 17.11 Maintaining Architecture Authority
+### 23.11 Maintaining Architecture Authority
 
 AI coding assistants accelerate implementation. They do not make architectural decisions. The human architect must:
 
@@ -2832,7 +3148,7 @@ AI coding assistants accelerate implementation. They do not make architectural d
 
 A useful discipline: write the YAML specification files yourself, then let Claude Code generate the Python from them. The YAML captures your architectural intent; the Python is an implementation detail.
 
-### 17.12 Recommended Tool Combination
+### 23.12 Recommended Tool Combination
 
 | Tool | Role |
 |---|---|
@@ -2843,7 +3159,7 @@ A useful discipline: write the YAML specification files yourself, then let Claud
 | Remote Ollama | LLM backend for production deployment |
 | Architecture graph | graph.k9x.ai — validate topology against intent |
 
-### 17.13 Practical Lessons Learned
+### 23.13 Practical Lessons Learned
 
 1. **Specify the exact base class in every prompt.** Claude Code defaults to `BaseAgent`; remind it explicitly when a different base is needed.
 2. **Specify what NOT to do.** "Do not call OllamaLLM directly" prevents a common mistake.
@@ -2854,51 +3170,51 @@ A useful discipline: write the YAML specification files yourself, then let Claud
 
 ---
 
-## 23. Author's Recommendations
+## 24. Author's Recommendations
 
-### 18.1 Keep ABBs Small and Stable
+### 24.1 Keep ABBs Small and Stable
 
 Every addition to `k9_aif_abb/` is a commitment to all solutions built on the framework. Add an ABB only when you identify a genuine cross-solution contract that all implementations will need to realize. When in doubt, implement it in an SBB first and promote it to ABB after it has proven stable.
 
-### 18.2 Do Not Overgeneralize Too Early
+### 24.2 Do Not Overgeneralize Too Early
 
 The temptation to build a maximally general framework is strong. Resist it. A framework that tries to handle every possible case handles none of them well. Start with concrete problems, extract the general pattern once you have three implementations, and promote it to an ABB only when the contract is stable.
 
-### 18.3 Prefer Explicit Architecture Decisions
+### 24.3 Prefer Explicit Architecture Decisions
 
 Implicit architecture decisions accumulate as technical debt. When you choose `BaseValidationLoopAgent` over `BaseAgent` for a specific agent, document that decision in the squad YAML description or agent YAML description. When you wire zero-trust, document why. Future developers — and AI coding assistants — need this context.
 
-### 18.4 Keep Domain Logic in SBBs
+### 24.4 Keep Domain Logic in SBBs
 
 The most common framework mistake is letting domain logic creep into ABBs. Review every change to `k9_aif_abb/` for domain knowledge. Prompts, business rules, domain constants, and connection strings belong in SBBs.
 
-### 18.5 Preserve Framework Boundaries
+### 24.5 Preserve Framework Boundaries
 
 The three-level decoupling — Router → Orchestrator → Squad → Agent — exists to make the system composable and testable. Breaking it (agents that publish to Kafka, squads that know their orchestrator, agents that call LLMs directly) produces systems that are harder to test, harder to govern, and harder to extend.
 
-### 18.6 Do Not Bypass Governance or Telemetry Hooks
+### 24.6 Do Not Bypass Governance or Telemetry Hooks
 
 Governance and telemetry are structural requirements, not optional features. A system that bypasses them in production is not governed. The framework provides mechanisms to make bypassing visible (NoopGovernance raises in production); use them.
 
-### 18.7 Favor Architecture Consistency Over Feature Explosion
+### 24.7 Favor Architecture Consistency Over Feature Explosion
 
 A consistent, limited feature set is more valuable than a large, inconsistent one. K9-AIF covers the major patterns: one-shot agents, validation loops, actor-critic refinement, squad orchestration, intent routing, model routing, governance, and zero-trust. These are sufficient for most enterprise AI workflows. Resist adding patterns that do not fit this vocabulary.
 
-### 18.8 Prefer Composable Runtime Patterns
+### 24.8 Prefer Composable Runtime Patterns
 
 Design agents and squads to be composable — an agent in one squad should work in a different squad without modification. An orchestrator should be invokable by a different router without modification. Composability is a direct result of respecting the decoupling rules.
 
 ---
 
-## 24. Patterns Reference
+## 25. Patterns Reference
 
-### 19.1 Classic Software Patterns in K9-AIF
+### 25.1 Classic Software Patterns in K9-AIF
 
 K9-AIF's architecture draws on well-established software design patterns. Understanding these patterns helps explain why the framework is structured as it is.
 
 For the complete patterns library, see [https://github.com/k9aif/k9aif-patterns](https://github.com/k9aif/k9aif-patterns).
 
-### 19.2 Template Method
+### 25.2 Template Method
 
 **Where used:** `BaseValidationLoopAgent`, `BaseCriticActorAgent`
 
@@ -2916,13 +3232,13 @@ def execute(self, payload):
             return self.finalize(loop_ctx)                  # deferred
 ```
 
-### 19.3 Strategy
+### 25.3 Strategy
 
 **Where used:** `BaseModelRouter` / `K9ModelRouter`
 
 The Strategy pattern defines a family of algorithms, encapsulates each, and makes them interchangeable. Model routing strategies — weighted scoring, compliance-aware, cost-optimized — are interchangeable via config without changing agent code.
 
-### 19.4 Factory
+### 25.4 Factory
 
 **Where used:** `LLMFactory`, `ModelRouterFactory`, `PersistenceFactory`, `MonitorFactory`
 
@@ -2936,37 +3252,37 @@ router = ModelRouterFactory.get_router(config)
 router = K9ModelRouter(catalog=..., config=..., state_store=...)
 ```
 
-### 19.5 Chain of Responsibility
+### 25.5 Chain of Responsibility
 
 **Where used:** `Handler`, `AgentHandler` in `k9_core/orchestration/base_handler.py`
 
 The Chain of Responsibility pattern passes a request along a chain of handlers until one handles it. `AgentHandler` wraps agents in a CoR chain, allowing pre/post processing at each step without modifying the agents themselves.
 
-### 19.6 Observer / Eventing
+### 25.6 Observer / Eventing
 
 **Where used:** `publish_event()`, `K9EventBus`, `BaseMonitor`
 
 The Observer pattern notifies interested parties of events without coupling the emitter to the observers. `publish_event()` decouples agents from the monitoring, messaging, and telemetry systems that consume their events.
 
-### 19.7 Adapter
+### 25.7 Adapter
 
 **Where used:** `k9_adapters/crewai/`
 
 The Adapter pattern converts one interface to another. `K9CrewAIAdapter` bridges the CrewAI agent interface to K9-AIF's `BaseAgent` contract, enabling CrewAI agents to participate in K9-AIF squads without modification.
 
-### 19.8 Builder
+### 25.8 Builder
 
 **Where used:** `SquadLoader`, `OrchestratorLoader`
 
 The Builder pattern constructs complex objects step by step. `SquadLoader` builds a `BaseSquad` by loading YAML, resolving agent classes from the registry, wiring them together, and setting the flow configuration.
 
-### 19.9 Orchestrator
+### 25.9 Orchestrator
 
 **Where used:** `BaseOrchestrator`
 
 The Orchestrator pattern coordinates multiple services to complete a workflow. `BaseOrchestrator` is a direct realization of this pattern — it knows the workflow structure and delegates execution to squads and agents.
 
-### 19.10 Layered Architecture
+### 25.10 Layered Architecture
 
 The overall K9-AIF architecture follows a strict layered approach:
 
@@ -2986,7 +3302,7 @@ Each layer depends only on the layer below it. No upward dependencies.
 
 ---
 
-## 25. K9X Ecosystem
+## 26. K9X Ecosystem
 
 The K9-AIF framework is part of a four-product ecosystem. Each product is independently installable and deployable.
 
@@ -3027,7 +3343,7 @@ pip install k9-aif k9x k9x-continuum k9x-hil
 
 ---
 
-## 26. Acknowledgements
+## 27. Acknowledgements
 
 K9-AIF reflects the accumulated influence of several bodies of knowledge and practice.
 
@@ -3047,14 +3363,14 @@ The validation loop and actor-critic refinement patterns are informed by the bro
 Ollama, Redpanda, Neo4j, ChromaDB, and the broader Python AI ecosystem provide the infrastructure that K9-AIF orchestrates. The framework is intentionally backend-agnostic at the ABB level.
 
 **Claude Code and AI-Assisted Development**  
-Several K9-AIF components — including `BaseValidationLoopAgent`, `BaseCriticActorAgent`, and their OOB implementations — were developed with Claude Code as an accelerator. The experience directly informed Chapter 17 and the guidance on maintaining architecture authority while using AI coding assistants.
+Several K9-AIF components — including `BaseValidationLoopAgent`, `BaseCriticActorAgent`, and their OOB implementations — were developed with Claude Code as an accelerator. The experience directly informed Chapter 23 and the guidance on maintaining architecture authority while using AI coding assistants.
 
 **Human-Guided Architecture**  
 Every architectural decision in K9-AIF reflects human architectural judgment. AI tools accelerated implementation; they did not make structural choices. The framework is a record of those choices, not an artifact of automated generation.
 
 ---
 
-## 27. References
+## 28. References
 
 ### K9-AIF Project
 

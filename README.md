@@ -85,7 +85,7 @@ Start here for a structured explanation of K9-AIF:
 
 # Core Architectural Concepts
 
-K9-AIF introduces two primary architectural abstractions.
+K9-AIF separates architecture into abstract ABB contracts and concrete SBB implementations.
 
 ## Architecture Building Blocks (ABB)
 
@@ -332,17 +332,19 @@ K9-AIF uses a **Provider Adapter** pattern to support multiple LLM backends with
 
 ### Supported out of the box
 
-| Provider | `backend` config value | API key env var |
-|---|---|---|
-| Ollama (local) | `ollama` | — |
-| OpenAI | `openai` | `OPENAI_API_KEY` |
-| Anthropic Claude | `claude` | `ANTHROPIC_API_KEY` |
-| Grok / xAI | `openai-compatible` | `GROK_API_KEY` |
-| Any OpenAI-compatible endpoint | `openai-compatible` | your choice |
+
+| Provider                       | `backend` config value | API key env var     |
+| -------------------------------- | ------------------------ | --------------------- |
+| Ollama (local)                 | `ollama`               | —                  |
+| OpenAI                         | `openai`               | `OPENAI_API_KEY`    |
+| Anthropic Claude               | `claude`               | `ANTHROPIC_API_KEY` |
+| Grok / xAI                     | `openai-compatible`    | `GROK_API_KEY`      |
+| Any OpenAI-compatible endpoint | `openai-compatible`    | your choice         |
 
 ### Switching provider — config only, no code changes
 
 **Ollama (default):**
+
 ```yaml
 inference:
   llm_factory:
@@ -354,6 +356,7 @@ inference:
 ```
 
 **OpenAI:**
+
 ```yaml
 inference:
   llm_factory:
@@ -365,6 +368,7 @@ inference:
 ```
 
 **Grok / xAI:**
+
 ```yaml
 inference:
   llm_factory:
@@ -472,10 +476,11 @@ The diagram illustrates how applications are built using K9-AIF:
 
 Two paths to a running scaffold:
 
-| Path | Tool | How |
-|---|---|---|
-| Visual | K9X Studio | Drag-and-drop canvas → Generate Scaffold |
-| CLI | k9_generator.sh | `./k9_generator.sh run <AppName>` |
+
+| Path   | Tool            | How                                       |
+| -------- | ----------------- | ------------------------------------------- |
+| Visual | K9X Studio      | Drag-and-drop canvas → Generate Scaffold |
+| CLI    | k9_generator.sh | `./k9_generator.sh run <AppName>`         |
 
 Both paths produce the same scaffold structure — runnable out of the box with Ollama.
 
@@ -497,10 +502,11 @@ supporting framework components used to construct K9-AIF applications.
 
 A comprehensive developer guide for contributors and solution developers building on K9-AIF is available in the `docs/developers/` folder.
 
-| Format | Location |
-|---|---|
-| Markdown | [docs/developers/Developer-guide.md](docs/developers/Developer-guide.md) |
-| PDF | [docs/developers/Developer-guide.pdf](docs/developers/Developer-guide.pdf) |
+
+| Format   | Location                                                                   |
+| ---------- | ---------------------------------------------------------------------------- |
+| Markdown | [docs/developers/Developer-guide.md](docs/developers/Developer-guide.md)   |
+| PDF      | [docs/developers/Developer-guide.pdf](docs/developers/Developer-guide.pdf) |
 
 The guide covers all 21 chapters — from core architecture and ABB/SBB development model through agent, orchestrator, and router development; the Validation Loop and Critic-Actor iterative reasoning patterns; model routing, governance, testing standards, and developer workflow. It includes accurate class signatures, config examples, and code drawn directly from the `k9_aif_abb` source.
 
@@ -512,11 +518,12 @@ K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assist
 
 ### Context files included
 
-| File                                                                       | How it helps Claude Code                                                                                                                                                                                                                                                                                                                 |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`CLAUDE.md`](CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                             |
-| [`SKILLS.md`](SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full `llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
-| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                                     |
+
+| File                                                                        | How it helps Claude Code                                                                                                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`CLAUDE.md`](CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                  |
+| [`SKILLS.md`](SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full`llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
+| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                          |
 
 ### Generating a new example with Claude Code
 
