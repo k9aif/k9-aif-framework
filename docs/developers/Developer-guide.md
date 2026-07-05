@@ -38,11 +38,13 @@
 21. [Human-in-the-Loop Integration](#21-human-in-the-loop-integration)
 22. [Provider Adapter Pattern](#22-provider-adapter-pattern)
 23. [Using Claude Code with VSCode for K9-AIF Development](#23-using-claude-code-with-vscode-for-k9-aif-development)
-24. [Author's Recommendations](#24-authors-recommendations)
-25. [Patterns Reference](#25-patterns-reference)
-26. [K9X Ecosystem](#26-k9x-ecosystem)
-27. [Acknowledgements](#27-acknowledgements)
-28. [References](#28-references)
+24. [Common Architectural Mistakes](#24-common-architectural-mistakes)
+25. [Author's Recommendations](#25-authors-recommendations)
+26. [Patterns Reference](#26-patterns-reference)
+27. [K9X Ecosystem](#27-k9x-ecosystem)
+28. [Architect's Mindset](#28-architects-mindset)
+29. [Acknowledgements](#29-acknowledgements)
+30. [References](#30-references)
 
 ---
 
@@ -69,15 +71,17 @@ K9-AIF applies a principle borrowed from enterprise architecture: define stable 
 - Enable configuration-driven assembly of agents, squads, and orchestrators
 - Support multiple inference backends, persistence stores, monitoring systems, and messaging backends through the factory pattern
 
-### 1.4 ABB/SBB Philosophy
+### 1.4 ABB / OOB / SBB — Three Architectural Layers
 
-K9-AIF uses TOGAF-inspired terminology to distinguish between two kinds of components:
+K9-AIF uses TOGAF-inspired terminology to organize components into three distinct layers:
 
-**Architecture Building Blocks (ABBs)** define what a component does. They are abstract classes that specify contracts — method signatures, lifecycle hooks, governance wiring — without implementing domain behavior. ABBs live in `k9_aif_abb/` and change infrequently.
+**Architecture Building Blocks (ABBs)** define the architectural abstractions. They are abstract classes that specify contracts — method signatures, lifecycle hooks, governance wiring — without any domain behavior. ABBs establish the vocabulary of the framework: what it means to be an agent, a router, a governance pipeline. They live in `k9_aif_abb/k9_core/` and change infrequently.
 
-**Solution Building Blocks (SBBs)** define how a specific solution implements those contracts. They extend ABBs with domain-specific logic, prompts, business rules, and tool integrations. SBBs live in `examples/` or `k9_projects/` and change frequently as requirements evolve.
+**Out-of-the-Box (OOB) implementations** are framework-provided realizations of ABB contracts. `K9ValidationLoopAgent`, `K9ModelRouter`, `K9PromptEvaluator`, and the provider adapters are OOB implementations. They are ready to use without modification and are the natural extension base for most domain SBBs — extend them and override only what differs.
 
-This separation means the framework core stays stable while domain behavior evolves independently.
+**Solution Building Blocks (SBBs)** realize ABB contracts for a specific solution. They extend ABBs or OOB implementations with domain-specific logic, prompts, business rules, and tool integrations. SBBs live in `examples/` or `k9_projects/` and evolve as domain requirements evolve.
+
+This three-layer separation means the architectural vocabulary (ABBs) stays stable, reusable defaults (OOB) reduce implementation effort, and domain behavior (SBBs) can evolve independently without affecting either layer above it.
 
 ### 1.5 Router → Orchestrator → Squads → Agents Hierarchy
 
@@ -111,6 +115,30 @@ Each layer knows only what is below it. An agent does not know which squad it be
 Isolated agents solve demos. Enterprise AI systems solve production problems. The difference lies in governance (who authorized this action?), observability (what happened and why?), failure handling (what do we do when the LLM is unavailable?), and extensibility (how do we add a new domain without rewriting existing code?).
 
 K9-AIF is designed for enterprise AI systems. Every architectural decision in the framework reflects these concerns.
+
+### 1.7 K9-AIF Architecture Principles
+
+These principles govern how K9-AIF is designed and how solutions built on it should be structured. Understanding them helps developers make better decisions at every stage of development.
+
+**Architecture before implementation.** Design the component structure — agents, squads, orchestrators, routing — before writing Python. YAML first, code second. The YAML captures architectural intent; the Python fills it in.
+
+**ABB first, SBB second.** Define the abstract contract before implementing domain behavior. If you cannot state what the ABB is, you are not ready to write the SBB.
+
+**Realize contracts; do not bypass them.** Every SBB must extend an ABB or OOB implementation. Bypassing the contract — direct LLM calls, skipping governance, inventing a parallel orchestration path — produces ungovernable systems that cannot be tested, extended, or governed in production.
+
+**Composition over coupling.** Agents, squads, orchestrators, and routers are composed via configuration and factories. Direct class references across layers are forbidden. An agent does not reference its squad. A squad does not reference its orchestrator.
+
+**Configuration over hardcoding.** Model names, connection strings, provider choices, threshold values, and environment flags belong in YAML configuration, not Python code. The system should be promotable from development to production by changing configuration, not by changing code.
+
+**Governance by construction.** Governance is wired at component initialization via `require_governance()`, not added later as an afterthought. A component without a governance pipeline is architecturally incomplete regardless of how much domain logic it contains.
+
+**Observability by default.** Every framework component inherits logging, monitoring, and event publishing from `BaseComponent`. Telemetry is not optional and does not require separate wiring — it is part of the contract.
+
+**Provider independence.** LLM backends, persistence stores, monitoring systems, messaging platforms, and secret managers are abstracted behind factory-provisioned ABBs. No concrete provider class should appear in domain code.
+
+**Pattern-based development.** New domain behaviors emerge from extending established patterns — validation loop, actor-critic, squad orchestration, prompt evaluation — rather than from ad-hoc agent logic. When a new pattern is genuinely needed, formalize it as an ABB before building solutions with it.
+
+**Framework stability over feature growth.** The ABB layer changes infrequently by design. The cost of every addition to `k9_aif_abb/` is paid by every current and future SBB. Domain-specific behavior belongs in SBBs, not in the framework core.
 
 ---
 
@@ -553,6 +581,83 @@ squads:
 ### 4.6 Why Not Everything Belongs in the Framework Core
 
 The framework core is stable because it is small and focused. Every addition to the ABB layer increases the surface area that all solutions must track. Domain logic, prompt engineering, and business rules evolve at a much higher rate than architectural contracts. Keeping them in SBBs means the framework stays stable while solutions evolve freely.
+
+### 4.7 The Three-Layer Model: ABB, OOB, and SBB
+
+| Layer | Purpose | Location | Change Rate |
+|---|---|---|---|
+| **ABB** (Architecture Building Block) | Abstract contracts — defines the architectural interface | `k9_aif_abb/k9_core/` | Infrequent — changes only when the architectural contract itself must evolve |
+| **OOB** (Out-of-the-Box) | Framework-provided reusable implementations — ready to use or extend | `k9_aif_abb/k9_agents/`, `k9_aif_abb/k9_inference/` | Moderate — new capabilities and improved defaults |
+| **SBB** (Solution Building Block) | Domain realizations — extends ABB or OOB for a specific solution | `examples/` or `k9_projects/` | Frequent — evolves with domain requirements |
+
+**ABBs define what.** They establish the architectural vocabulary: what it means to be an agent, a router, a governance pipeline.
+
+**OOBs demonstrate how.** `K9ValidationLoopAgent`, `K9ModelRouter`, `K9PromptEvaluator` — these are reusable defaults that work without modification, and are the natural extension base for most SBBs. Extend an OOB when the default behavior is mostly correct and you need to override only 1–2 methods. Extend the ABB directly only when you need full control over the entire realization.
+
+**SBBs realize the domain.** A fraud detection agent, a claims processing squad, a compliance router — all domain knowledge lives here, behind ABB contracts.
+
+The three-layer model ensures that architectural stability (ABBs never change due to domain requirements) and solution velocity (SBBs change freely) can coexist without coordination.
+
+### 4.8 Why ABBs Exist
+
+ABBs exist to stabilize architecture, not to enable code reuse. Code reuse is a side effect. The primary goal is this: once an ABB is established, every solution built on it can evolve independently without coordination. Adding a new inference provider, a new persistence backend, or a new agent pattern does not require any change to existing SBBs — because they depend on the ABB contract, not on any concrete implementation.
+
+Without stable ABBs, enterprise multi-agent systems devolve into point-to-point integrations: every new model, every new backend, every new feature requires changes in multiple places. The ABB layer prevents this by giving every solution a fixed, governance-bearing surface area to depend on.
+
+**ABBs are commitments.** Every abstract method in an ABB is a commitment to every current and future SBB that realizes it. Add abstract methods carefully — each addition becomes a requirement for all implementations.
+
+**ABBs are not domain code.** The moment an ABB contains a domain constant, a specific prompt, a named model, or a business rule, the architectural boundary has been violated. Domain knowledge belongs exclusively in SBBs.
+
+### 4.9 SBB Lifecycle
+
+Every SBB follows a lifecycle from initial design to reusable architectural knowledge:
+
+```
+1. Design     → Identify the ABB or OOB base; clarify what the SBB realizes
+2. Scaffold   → Use k9_generator.sh or Studio to create the file structure
+3. Realize    → Override required abstract methods; add domain logic
+4. Test       → Write domain behavior tests; verify governance and LLM mocking
+5. Inspect    → Run k9aif inspect to verify ABB compliance and decoupling
+6. Deploy     → Run in production; observe telemetry and governance output
+7. Publish    → Publish to the K9X Enterprise Continuum with metadata
+8. Reuse      → Other solutions discover and extend the published SBB
+9. Promote    → If the pattern recurs across 3+ solutions, consider promoting to OOB or ABB
+```
+
+Steps 1–6 are required for every SBB. Steps 7–9 enable organizational learning: validated domain realizations become reusable building blocks that future solutions can discover and build on. The K9X Enterprise Continuum (Chapter 22) provides the infrastructure for steps 7–9.
+
+### 4.10 Architectural Decision Guide
+
+Use this matrix when making design decisions in K9-AIF.
+
+**When should I create a new ABB?**
+- There is a genuine gap in the architectural vocabulary that no existing ABB covers
+- The need will recur across multiple solutions (not domain-specific)
+- The interface has been proven stable by at least two independent SBB realizations
+- The contract can be specified without any domain knowledge
+
+**When should I extend an OOB implementation (rather than the ABB directly)?**
+- The OOB default behavior is mostly correct and you need to override only 1–2 methods
+- You want to inherit the event taxonomy, telemetry hooks, and configuration defaults
+- The OOB provides a proven loop skeleton, routing algorithm, or evaluation pipeline
+
+**When should I create a new SBB (by extending the ABB directly)?**
+- You need domain-specific behavior from the ground up
+- No OOB implementation exists or fits the domain structure
+- You need full control over the entire realization
+
+**When should I NOT create a new ABB?**
+- The need is specific to one domain or one solution
+- The contract would require domain knowledge to specify
+- Fewer than two independent implementations exist yet
+
+**When should I introduce a new pattern?**
+- Three or more solutions have independently arrived at similar iterative logic
+- The pattern can be described as a lifecycle with clear abstract steps
+- The pattern complements (does not duplicate) existing patterns
+
+**When should I reuse an existing OOB implementation?**
+- Always — when a validation loop, actor-critic refinement, planning loop, or prompt evaluation cycle fits the problem, extend the established OOB implementation before building from scratch
 
 ---
 
@@ -2360,12 +2465,22 @@ postgres:
 
 K9-AIF is aligned with the [https://graph.k9x.ai](https://graph.k9x.ai) architecture graph, which represents the K9-AIF component topology as a property graph in Neo4j.
 
-The architecture graph is intended for:
+The architecture graph supports multiple governance and analysis capabilities:
 
-- Visualizing the ABB/SBB component hierarchy
-- Tracking which SBBs realize which ABBs
-- Documenting solution topology
-- Supporting lineage queries (which agents participate in which workflows)
+**Visualization and discovery:**
+- Visualize the full ABB/SBB/OOB component hierarchy
+- Track which SBBs realize which ABBs across solutions
+- Explore solution topology (which agents run in which squads, which squads in which orchestrators)
+
+**Impact analysis:** Before modifying an ABB contract, query the graph to identify all SBBs that realize it. Impact is explicit before any change is made.
+
+**Dependency analysis:** Identify which solutions depend on a specific OOB implementation, model catalog entry, or infrastructure service.
+
+**Lineage:** Trace the full execution path for a given event type — from Router through Orchestrator, Squad, and Agent — to understand where a result was produced.
+
+**Architecture governance:** Verify that every SBB in a solution has a valid ABB realization (no orphaned implementations). Identify decoupling violations where a layer references a layer above it.
+
+**Reusable pattern discovery:** Query for all SBBs of a given ABB type to find prior implementations that can be reused or extended for a new solution.
 
 Connection details for the shared Neo4j instance:
 
@@ -2373,7 +2488,7 @@ Connection details for the shared Neo4j instance:
 bolt://${NEO4J_HOST:-localhost}:7687
 ```
 
-Solution teams can write agent and squad registration events to Neo4j to maintain a live topology view of their solution.
+Solution teams write agent and squad registration events to Neo4j at deploy time to maintain a live topology view of their solution.
 
 ### 15.6 Persistence Factory
 
@@ -2796,7 +2911,11 @@ Every stub extends the correct ABB. Squad YAML is pre-wired. Configuration is po
 
 ### 20.1 What the Continuum Does
 
-The K9X Enterprise Continuum is a governed catalog where validated SBBs and ABBs are published, discovered, and evolved. It implements the TOGAF Enterprise Continuum as live, API-first infrastructure.
+The K9X Enterprise Continuum is the institutional memory of a K9-AIF organization. It captures architectural knowledge — not just software artifacts.
+
+Every time a solution team builds and validates an SBB, they produce knowledge: which ABB contract this pattern realizes, which domain it applies to, what implementation choices work, and at what quality threshold. Without a continuum, that knowledge lives inside one team's codebase. With the Continuum, it becomes discoverable and reusable by every future solution.
+
+The Continuum implements the TOGAF Enterprise Continuum as live, API-first infrastructure: Foundation ABBs, Common Systems OOB implementations, Industry SBBs, and Organization-Specific solutions are all catalogued, versioned, and governed. When a new solution starts, the first step should be: query the Continuum for what already exists.
 
 ### 20.2 Publishing an SBB
 
@@ -2907,6 +3026,14 @@ pip install k9x-hil
 ---
 
 ## 22. Provider Adapter Pattern
+
+Provider lock-in is one of the most costly problems in enterprise AI infrastructure. When domain code imports a specific vendor SDK directly, every infrastructure change — a model upgrade, a cloud migration, a shift from one secret manager to another — requires changes in domain code. In a multi-agent system with dozens of agents, that cost compounds rapidly.
+
+K9-AIF addresses this with the Provider Adapter Pattern applied consistently across all infrastructure concerns. The pattern achieves three things:
+
+1. **Vendor SDK isolation.** Concrete vendor SDKs (`boto3`, `redis`, `vault`, `anthropic`) are imported only inside adapter classes, behind lazy-import guards. Domain code never imports a vendor SDK directly.
+2. **Uniform interfaces.** Factories always return ABB contract instances, never concrete adapters. Domain code calls `evaluator.evaluate(...)` or `storage.upload(...)` — it cannot tell which provider is backing it.
+3. **Additive change.** Adding a new provider means writing a new adapter class and registering it with the factory. No existing domain code changes.
 
 ### 22.1 The Three-Layer Structure
 
@@ -3170,51 +3297,126 @@ A useful discipline: write the YAML specification files yourself, then let Claud
 
 ---
 
-## 24. Author's Recommendations
+## 24. Common Architectural Mistakes
 
-### 24.1 Keep ABBs Small and Stable
+This chapter collects the framework-level mistakes that appear most frequently in K9-AIF development. Each one is an architectural mistake, not just a code mistake — every entry produces a system that is harder to govern, test, observe, or extend.
+
+### 24.1 Putting Domain Logic in ABBs
+
+**Mistake:** Adding business rules, specific prompts, domain constants, or solution-specific behavior to classes in `k9_aif_abb/`.
+
+**Consequence:** The framework becomes specific to one solution. Every new solution must either inherit unwanted domain behavior or fork the framework. The ABB layer loses architectural stability.
+
+**Correction:** ABBs express contracts only — abstract methods, lifecycle hooks, governance wiring. Domain behavior belongs exclusively in SBBs.
+
+### 24.2 Bypassing Factories
+
+**Mistake:** Instantiating `K9ModelRouter`, `OllamaLLM`, `SQLitePersistence`, or other framework components directly rather than through their factory.
+
+```python
+# Wrong — bypasses factory, breaks config-driven substitution
+router = K9ModelRouter(catalog=..., state_store=...)
+```
+
+**Consequence:** The component is no longer config-swappable. Changing the router, LLM backend, or persistence store requires code changes instead of configuration changes.
+
+**Correction:** Always use `ModelRouterFactory.get_router(config)`, `LLMFactory.get(alias)`, `PersistenceFactory.create(config)`.
+
+### 24.3 Direct LLM Calls in Agents
+
+**Mistake:** Calling `OllamaLLM`, the OpenAI SDK, or any LLM API directly from agent code instead of going through `llm_invoke()`.
+
+**Consequence:** No routing, no governance hooks, no audit trail, no model swap without code changes, no `LLMCall` trace events in telemetry.
+
+**Correction:** All LLM calls go through `llm_invoke(self.config, InferenceRequest(...))`. See Chapter 12 (Model Routing).
+
+### 24.4 Agents Publishing to Kafka
+
+**Mistake:** Wiring agents with a `message_bus` and having them publish domain events directly to Kafka topics.
+
+**Consequence:** Breaks the three-level decoupling. Agents become aware of the messaging topology, making them non-portable across squads and orchestrators.
+
+**Correction:** In standard K9-AIF solutions, only the Router and Orchestrator are wired with a message bus. Agents share context sequentially through the squad flow. See Chapter 14 (Messaging).
+
+### 24.5 Cross-Layer References
+
+**Mistake:** Agent YAML referencing its squad. Squad YAML referencing its orchestrator. Orchestrator code importing agent classes directly.
+
+**Consequence:** The decoupling rules are violated. Changes in one layer require changes in layers that should be independent.
+
+**Correction:** Enforce the three-layer rule: Router knows only Orchestrators. Orchestrators know only Squads. Squads know only Agents. Agent registration belongs in the application entry point, not inside the orchestrator.
+
+### 24.6 Bypassing Governance
+
+**Mistake:** Using `NoopGovernance` in production, omitting `require_governance()` at construction, or skipping `enforce_governance()` in regulated agents.
+
+**Consequence:** The system operates without a governance pipeline in production. Governance bypasses are invisible — there is no failure, only missing audit trails, unvalidated payloads, and undetected policy violations.
+
+**Correction:** Wire real governance at construction. Call `enforce_governance()` in every agent that handles regulated data. The framework raises `PermissionError` in production when `NoopGovernance` is detected — this behavior is intentional.
+
+### 24.7 Hardcoding Providers and Endpoints
+
+**Mistake:** Hardcoding model names, connection strings, IP addresses, or vendor SDK classes in agent or orchestrator code or in config YAML.
+
+**Consequence:** Infrastructure moves and environment promotions all require code changes. The system cannot be promoted from development to production without rewriting source files.
+
+**Correction:** Provider selection through config (`inference.router.default_model`). Connection strings through env vars (`${OLLAMA_BASE_URL:-http://localhost:11434}`). Never hardcode in code files or committed YAML.
+
+### 24.8 One-Shot Generation of Complete Solutions
+
+**Mistake:** Asking an AI coding assistant to generate the entire solution in a single prompt.
+
+**Consequence:** Generated code reliably violates framework boundaries — agents reference squads, direct LLM calls appear, governance is omitted, squad YAML uses plain strings instead of dicts.
+
+**Correction:** Generate one component at a time. YAML before Python. Review each generated file before moving to the next. See Chapter 23 for the incremental generation pattern.
+
+---
+
+## 25. Author's Recommendations
+
+### 25.1 Keep ABBs Small and Stable
 
 Every addition to `k9_aif_abb/` is a commitment to all solutions built on the framework. Add an ABB only when you identify a genuine cross-solution contract that all implementations will need to realize. When in doubt, implement it in an SBB first and promote it to ABB after it has proven stable.
 
-### 24.2 Do Not Overgeneralize Too Early
+### 25.2 Do Not Overgeneralize Too Early
 
 The temptation to build a maximally general framework is strong. Resist it. A framework that tries to handle every possible case handles none of them well. Start with concrete problems, extract the general pattern once you have three implementations, and promote it to an ABB only when the contract is stable.
 
-### 24.3 Prefer Explicit Architecture Decisions
+### 25.3 Prefer Explicit Architecture Decisions
 
 Implicit architecture decisions accumulate as technical debt. When you choose `BaseValidationLoopAgent` over `BaseAgent` for a specific agent, document that decision in the squad YAML description or agent YAML description. When you wire zero-trust, document why. Future developers — and AI coding assistants — need this context.
 
-### 24.4 Keep Domain Logic in SBBs
+### 25.4 Keep Domain Logic in SBBs
 
 The most common framework mistake is letting domain logic creep into ABBs. Review every change to `k9_aif_abb/` for domain knowledge. Prompts, business rules, domain constants, and connection strings belong in SBBs.
 
-### 24.5 Preserve Framework Boundaries
+### 25.5 Preserve Framework Boundaries
 
 The three-level decoupling — Router → Orchestrator → Squad → Agent — exists to make the system composable and testable. Breaking it (agents that publish to Kafka, squads that know their orchestrator, agents that call LLMs directly) produces systems that are harder to test, harder to govern, and harder to extend.
 
-### 24.6 Do Not Bypass Governance or Telemetry Hooks
+### 25.6 Do Not Bypass Governance or Telemetry Hooks
 
 Governance and telemetry are structural requirements, not optional features. A system that bypasses them in production is not governed. The framework provides mechanisms to make bypassing visible (NoopGovernance raises in production); use them.
 
-### 24.7 Favor Architecture Consistency Over Feature Explosion
+### 25.7 Favor Architecture Consistency Over Feature Explosion
 
 A consistent, limited feature set is more valuable than a large, inconsistent one. K9-AIF covers the major patterns: one-shot agents, validation loops, actor-critic refinement, squad orchestration, intent routing, model routing, governance, and zero-trust. These are sufficient for most enterprise AI workflows. Resist adding patterns that do not fit this vocabulary.
 
-### 24.8 Prefer Composable Runtime Patterns
+### 25.8 Prefer Composable Runtime Patterns
 
 Design agents and squads to be composable — an agent in one squad should work in a different squad without modification. An orchestrator should be invokable by a different router without modification. Composability is a direct result of respecting the decoupling rules.
 
 ---
 
-## 25. Patterns Reference
+## 26. Patterns Reference
 
-### 25.1 Classic Software Patterns in K9-AIF
+### 26.1 Classic Software Patterns in K9-AIF
 
 K9-AIF's architecture draws on well-established software design patterns. Understanding these patterns helps explain why the framework is structured as it is.
 
 For the complete patterns library, see [https://github.com/k9aif/k9aif-patterns](https://github.com/k9aif/k9aif-patterns).
 
-### 25.2 Template Method
+### 26.2 Template Method
 
 **Where used:** `BaseValidationLoopAgent`, `BaseCriticActorAgent`
 
@@ -3232,13 +3434,13 @@ def execute(self, payload):
             return self.finalize(loop_ctx)                  # deferred
 ```
 
-### 25.3 Strategy
+### 26.3 Strategy
 
 **Where used:** `BaseModelRouter` / `K9ModelRouter`
 
 The Strategy pattern defines a family of algorithms, encapsulates each, and makes them interchangeable. Model routing strategies — weighted scoring, compliance-aware, cost-optimized — are interchangeable via config without changing agent code.
 
-### 25.4 Factory
+### 26.4 Factory
 
 **Where used:** `LLMFactory`, `ModelRouterFactory`, `PersistenceFactory`, `MonitorFactory`
 
@@ -3252,37 +3454,37 @@ router = ModelRouterFactory.get_router(config)
 router = K9ModelRouter(catalog=..., config=..., state_store=...)
 ```
 
-### 25.5 Chain of Responsibility
+### 26.5 Chain of Responsibility
 
 **Where used:** `Handler`, `AgentHandler` in `k9_core/orchestration/base_handler.py`
 
 The Chain of Responsibility pattern passes a request along a chain of handlers until one handles it. `AgentHandler` wraps agents in a CoR chain, allowing pre/post processing at each step without modifying the agents themselves.
 
-### 25.6 Observer / Eventing
+### 26.6 Observer / Eventing
 
 **Where used:** `publish_event()`, `K9EventBus`, `BaseMonitor`
 
 The Observer pattern notifies interested parties of events without coupling the emitter to the observers. `publish_event()` decouples agents from the monitoring, messaging, and telemetry systems that consume their events.
 
-### 25.7 Adapter
+### 26.7 Adapter
 
 **Where used:** `k9_adapters/crewai/`
 
 The Adapter pattern converts one interface to another. `K9CrewAIAdapter` bridges the CrewAI agent interface to K9-AIF's `BaseAgent` contract, enabling CrewAI agents to participate in K9-AIF squads without modification.
 
-### 25.8 Builder
+### 26.8 Builder
 
 **Where used:** `SquadLoader`, `OrchestratorLoader`
 
 The Builder pattern constructs complex objects step by step. `SquadLoader` builds a `BaseSquad` by loading YAML, resolving agent classes from the registry, wiring them together, and setting the flow configuration.
 
-### 25.9 Orchestrator
+### 26.9 Orchestrator
 
 **Where used:** `BaseOrchestrator`
 
 The Orchestrator pattern coordinates multiple services to complete a workflow. `BaseOrchestrator` is a direct realization of this pattern — it knows the workflow structure and delegates execution to squads and agents.
 
-### 25.10 Layered Architecture
+### 26.10 Layered Architecture
 
 The overall K9-AIF architecture follows a strict layered approach:
 
@@ -3302,7 +3504,7 @@ Each layer depends only on the layer below it. No upward dependencies.
 
 ---
 
-## 26. K9X Ecosystem
+## 27. K9X Ecosystem
 
 The K9-AIF framework is part of a four-product ecosystem. Each product is independently installable and deployable.
 
@@ -3343,7 +3545,83 @@ pip install k9-aif k9x k9x-continuum k9x-hil
 
 ---
 
-## 27. Acknowledgements
+## 28. The Architect's Mindset
+
+This chapter is not about code. It is about how to think when building AI systems with K9-AIF.
+
+### 28.1 K9-AIF Is an Architectural Framework, Not a Library
+
+A library gives you functions to call. A framework gives you a structure to inhabit. The distinction matters.
+
+When you use a library, you remain in control: you call the library when you need it, on your terms, with your types. When you work within a framework, the framework is in control: it defines the lifecycle, the contracts, the allowable patterns, and the extension points. Your code plugs into the framework's structure, not the other way around.
+
+K9-AIF is a framework. ABBs define the contracts. The three-layer model defines where each type of code lives. The squad flow defines how agents relate. The factory pattern defines how components are created. The governance contract defines what every component must respect.
+
+Trying to use K9-AIF like a library — assembling components ad hoc, bypassing factories, calling LLMs directly, working around contracts — produces systems that look like they use K9-AIF but cannot be governed, observed, or maintained. The framework's value is architectural integrity. That value disappears when the structure is bypassed.
+
+### 28.2 Developers Realize Architecture; They Do Not Create It
+
+The role of a developer working within K9-AIF is to realize the architecture, not to create it from scratch in each new project.
+
+The architecture — ABBs, patterns, the three-layer model, governance wiring — already exists. It was designed to be stable across domains and projects. A developer realizing architecture:
+
+- Reads the ABB contract first, before writing a line of code
+- Identifies which existing pattern fits the problem (validation loop, planning loop, multi-orchestrator, provider adapter)
+- Extends the right OOB base class, in the right layer, with the right contract
+- Delegates infrastructure concerns (LLM routing, persistence, governance, messaging) to the framework
+- Concentrates domain logic in the SBB, and only in the SBB
+
+A developer creating architecture from scratch — choosing new abstractions, building custom pipelines, ignoring the existing layer model — pays the full cost of that architecture in every future project. The framework's value is that those costs have already been paid, once, in a principled way.
+
+### 28.3 The Framework Is Small Because It Is Opinionated
+
+K9-AIF does not offer every possible abstraction. It offers the right abstractions for governed, enterprise AI systems.
+
+This is intentional. A framework that tries to accommodate every possible architecture accommodates none well. K9-AIF makes specific choices: ABBs are abstract; OOBs are concrete implementations that most projects use unchanged; SBBs are domain realizations that every project writes differently. The factory pattern is the only way to instantiate components. The squad flow is the only way agents share context. Governance is not optional.
+
+When a problem feels like it does not fit the framework, the first question is whether the problem is being framed correctly. Often, a problem that appears to need a new pattern is actually an existing pattern applied in a new domain. The second question is whether the issue belongs in a new ABB. New ABBs are rare: they indicate a genuinely new architectural concept, not a new domain.
+
+### 28.4 Architecture Outlasts Implementation
+
+The implementation you write today will be refactored, extended, or replaced. The architecture it realizes should not be.
+
+ABBs and OOBs change slowly and deliberately. The three-layer model is stable. The governance contract is stable. The factory pattern is stable. Individual SBBs, prompts, domain logic, and infrastructure wiring change frequently.
+
+The practical consequence is that architectural decisions — which pattern to use, which ABB to extend, which factory to configure — deserve more time and care than implementation decisions. Getting the pattern wrong costs rework across every component that depends on it. Getting a single agent's prompt wrong costs one prompt update.
+
+Invest disproportionately in architectural decisions. Treat them as durable commitments. Document the reasoning, not just the result.
+
+### 28.5 Governance Is Not Optional in Enterprise Systems
+
+In enterprise AI, governance is the mechanism that makes AI behavior predictable, auditable, and correctable. Without governance, AI systems produce results that cannot be traced, policies that cannot be enforced, and errors that cannot be detected without manual review.
+
+K9-AIF wires governance at construction, not as a post-deployment layer. Every component that inherits from a framework base class participates in the governance lifecycle. This is not bureaucracy. It is the engineering equivalent of writing testable code — not because tests are required at this moment, but because untestable code is fragile code.
+
+Resist the temptation to use `NoopGovernance` in development and add real governance later. Governance assumptions are architectural: a system built without governance assumptions leaks business logic into places governance cannot reach. Wire governance early. Test it. Treat a governance gate failure as a framework-level signal, not an inconvenient exception to suppress.
+
+### 28.6 The Architect Remains in Authority
+
+The deepest shift in working with AI-assisted development is the temptation to delegate architecture. A sufficiently capable AI assistant will generate an entire squad YAML, a full orchestrator, and working agents from a single prompt. It will also, reliably, violate framework boundaries in ways that are invisible until production.
+
+The architect's role is not to generate code faster. It is to make architectural decisions that the AI cannot make — decisions that require understanding why the framework is structured the way it is, what invariants must be preserved, and what patterns apply to this specific problem.
+
+Use AI assistants for the right tasks: scaffolding, boilerplate, test case generation, prompt iteration. Reserve architectural decisions for yourself: which layer, which pattern, which contract, which governance hook. Review AI-generated code the same way you would review code from a contractor who writes fast but does not know your codebase's invariants.
+
+The framework is the architecture. The architect ensures the implementation realizes it faithfully.
+
+### 28.7 The Objective
+
+Governed AI systems that can be trusted in production. Reusable components that accumulate value across projects. Observable behavior that makes errors detectable and correctable. Enterprise-grade AI that organizations can depend on.
+
+These are the design objectives of K9-AIF. Every architectural decision in the framework — the ABB/OOB/SBB layers, the factory pattern, governance by construction, the squad flow, the inference pipeline — was made in service of those four objectives.
+
+When a decision in your project feels uncertain, test it against these objectives. A choice that makes your system less governed, less reusable, less observable, or less reliable than the framework allows is an architectural mistake, regardless of how elegantly it solves the immediate problem.
+
+Build systems you can trust. Govern what you deploy. Observe everything. Reuse deliberately.
+
+---
+
+## 29. Acknowledgements
 
 K9-AIF reflects the accumulated influence of several bodies of knowledge and practice.
 
@@ -3370,7 +3648,7 @@ Every architectural decision in K9-AIF reflects human architectural judgment. AI
 
 ---
 
-## 28. References
+## 30. References
 
 ### K9-AIF Project
 
