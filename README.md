@@ -286,7 +286,17 @@ An in-framework pattern for iterative hypothesis-validate-reason workflows — a
 
 ![K9-AIF Validation Loop Pattern](docs/diagrams/k9x-framework-validation-loop-pattern.png)
 
-Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. See [Skill 10 in SKILLS.md](SKILLS.md) for usage.
+Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. `K9ValidationLoopAgent` is the OOB LLM-driven implementation for confidence-convergence loops. `K9PlanningLoopAgent` (`k9_aif_abb/k9_agents/planning/`) is the dynamic-planning sibling — the agent builds and revises its own step plan each iteration, finalizing when the plan is complete. See [Skill 10 in SKILLS.md](SKILLS.md) for usage and the SA decision guide.
+
+### Prompt Evaluation Pattern
+
+A development-time pipeline for grading authored prompts — system prompts, agent instructions, and guided-flow templates — before they reach a workflow.
+
+`BasePromptEvaluator` defines the ABB contract: `evaluate()`, `compare()`, and `run_suite()`. `K9PromptEvaluator` is the OOB SBB — LLM-as-judge, five weighted dimensions (correctness 35%, completeness 25%, format compliance 15%, clarity 15%, relevance 10%), grade scale A–F, configurable PASS threshold. `EvaluationFactory.create(config)` provisions the right implementation.
+
+This is a **design-time and measurement-time tool**, not a runtime gate. Runtime quality enforcement is `K9ValidationLoopAgent`'s responsibility. The K9Chat reference application ships with an evaluation toggle that grades every response in real time during development.
+
+Implemented in `k9_aif_abb/k9_agents/evaluation/`. Config key: `evaluation.provider: k9`.
 
 ---
 
@@ -326,6 +336,7 @@ K9-AIF uses a **Provider Adapter** pattern to support multiple LLM backends with
 |---|---|---|
 | Ollama (local) | `ollama` | — |
 | OpenAI | `openai` | `OPENAI_API_KEY` |
+| Anthropic Claude | `claude` | `ANTHROPIC_API_KEY` |
 | Grok / xAI | `openai-compatible` | `GROK_API_KEY` |
 | Any OpenAI-compatible endpoint | `openai-compatible` | your choice |
 
@@ -616,22 +627,7 @@ K9-AIF draws inspiration from established software architecture and enterprise a
 
 The K9-AIF blog contains architecture discussions, design evaluations, and evolving ideas related to building governed agentic AI systems.
 
-Recent posts:
-
-• Build a K9-AIF Example App in Minutes Using Claude Code
-https://blog.k9x.ai/build-k9-aif-example-with-claude-code/
-
-• EOC — K9X Enterprise Insurance Operations Center
-https://blog.k9x.ai/eoc-enterprise-insurance-operations-center/
-
-• From Agents to Architecture: Integrating CrewAI into K9-AIF
-https://blog.k9x.ai/crewai-application-and-k9-aif/
-
-• Architectural Evaluation of K9-AIF
-https://blog.k9x.ai/k9-aif-architectural-evaluation-claude/
-
-More posts can be found at:
-https://blog.k9x.ai
+➡️ https://blog.k9x.ai
 
 ---
 
