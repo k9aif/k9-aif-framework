@@ -16,6 +16,7 @@
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
+   - [1.8 Developer Quick Start](#18-developer-quick-start)
 2. [Repository Orientation](#2-repository-orientation)
 3. [Core Architecture](#3-core-architecture)
 4. [ABB vs SBB Development Model](#4-abb-vs-sbb-development-model)
@@ -52,7 +53,7 @@
 
 ### 1.1 What K9-AIF Is
 
-K9-AIF (K9 Agentic Intelligence Framework) is an architecture-first Python framework for building governed, observable, multi-agent AI systems at enterprise scale. It provides a layered set of abstract contracts (Architecture Building Blocks) and ready-to-use implementations (Solution Building Blocks) that teams can extend to build domain-specific AI solutions without starting from scratch and without sacrificing governance or observability.
+K9-AIF (K9 Agent Integration Framework) is an architecture-first Python framework for building governed, observable, multi-agent AI systems at enterprise scale. It provides a layered set of abstract contracts (Architecture Building Blocks) and ready-to-use implementations (Solution Building Blocks) that teams can extend to build domain-specific AI solutions without starting from scratch and without sacrificing governance or observability.
 
 The framework does not attempt to be a general-purpose AI toolkit. It is deliberately opinionated about structure: agents are small and focused, orchestrators coordinate squads of agents, routers decide which orchestrator handles an event, and governance runs at every layer boundary.
 
@@ -139,6 +140,52 @@ These principles govern how K9-AIF is designed and how solutions built on it sho
 **Pattern-based development.** New domain behaviors emerge from extending established patterns — validation loop, actor-critic, squad orchestration, prompt evaluation — rather than from ad-hoc agent logic. When a new pattern is genuinely needed, formalize it as an ABB before building solutions with it.
 
 **Framework stability over feature growth.** The ABB layer changes infrequently by design. The cost of every addition to `k9_aif_abb/` is paid by every current and future SBB. Domain-specific behavior belongs in SBBs, not in the framework core.
+
+### 1.8 Developer Quick Start
+
+**Do you need CrewAI? LangChain? Any other framework?**
+
+No. K9-AIF is end-to-end. It provides the router, orchestrators, squads, agents, model routing, governance, messaging, persistence, and observability — out of the box, in one framework. You do not need to assemble these from separate libraries or integrate third-party orchestration tools to build a production-grade multi-agent AI system.
+
+CrewAI and LangChain are supported as optional execution backends for teams that already use them. They are not required.
+
+**The fastest path to a working system:**
+
+**Step 1 — Start with K9X Studio (online)**
+
+Go to [studio.k9x.ai](https://studio.k9x.ai). Upload a spec document or describe your system. Studio generates a governed K9-AIF architecture on the canvas — Router, Orchestrators, Squads, and Agents — wired together with governance from the start. Export the scaffold and start building.
+
+**Step 2 — Run Studio locally**
+
+```bash
+pip install k9x
+k9x studio
+```
+
+Studio runs at `http://localhost:5173`. Same canvas, same code generation, fully offline.
+
+**Step 3 — Install the framework**
+
+```bash
+pip install k9-aif
+```
+
+For a complete local stack with all optional dependencies:
+
+```bash
+pip install "k9-aif[all]"
+```
+
+**Step 4 — Explore the examples**
+
+The `examples/` directory contains working reference implementations. Start with the EOC (Enterprise Operations Center) — it demonstrates the full stack: Router → Orchestrators → Squads → Agents → Kafka → PostgreSQL → governance → telemetry, with a working web UI.
+
+```bash
+git clone https://github.com/k9aif/k9-aif-framework
+cd k9-aif-framework/examples/K9X_Enterprise_Insurance_OperationsCenter
+```
+
+See Chapter 2 for repository orientation and Chapter 5 onward for the development guides.
 
 ---
 
