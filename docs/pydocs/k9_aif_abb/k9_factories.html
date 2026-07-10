@@ -40,12 +40,14 @@
             <ul>
                     <li><a href="k9_factories/cache_factory.html">cache_factory</a></li>
                     <li><a href="k9_factories/connector_factory.html">connector_factory</a></li>
+                    <li><a href="k9_factories/embedding_factory.html">embedding_factory</a></li>
                     <li><a href="k9_factories/governance_factory.html">governance_factory</a></li>
                     <li><a href="k9_factories/llm_factory.html">llm_factory</a></li>
                     <li><a href="k9_factories/mcp_client_connection_factory.html">mcp_client_connection_factory</a></li>
                     <li><a href="k9_factories/message_factory.html">message_factory</a></li>
                     <li><a href="k9_factories/model_router_factory.html">model_router_factory</a></li>
                     <li><a href="k9_factories/monitor_factory.html">monitor_factory</a></li>
+                    <li><a href="k9_factories/object_storage_factory.html">object_storage_factory</a></li>
                     <li><a href="k9_factories/orchestration_factory.html">orchestration_factory</a></li>
                     <li><a href="k9_factories/persistence_factory.html">persistence_factory</a></li>
                     <li><a href="k9_factories/retriever_factory.html">retriever_factory</a></li>
@@ -105,6 +107,7 @@ decoupled design across the framework.</p>
 <li>message_factory</li>
 <li>model_router_factory</li>
 <li>monitor_factory</li>
+<li>object_storage_factory</li>
 <li>orchestration_factory</li>
 <li>persistence_factory</li>
 <li>retriever_factory</li>
@@ -195,54 +198,55 @@ while preserving strict separation between ABB contracts and SBB implementations
 </span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">- message_factory</span>
 </span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">- model_router_factory</span>
 </span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">- monitor_factory</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- orchestration_factory</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">- persistence_factory</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">- retriever_factory</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">- router_factory</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">- security_factory</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">- streaming_factory</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">- object_storage_factory</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">- orchestration_factory</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">- persistence_factory</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">- retriever_factory</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">- router_factory</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">- security_factory</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">- streaming_factory</span>
 </span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">## Architectural Positioning</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">The `k9_factories` package is part of the framework’s construction layer.</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">It operationalizes architectural building blocks by instantiating concrete</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">components while preserving abstraction boundaries and enabling flexible,</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">configuration-driven system behavior.</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">## Architectural Positioning</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">The `k9_factories` package is part of the framework’s construction layer.</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">It operationalizes architectural building blocks by instantiating concrete</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">components while preserving abstraction boundaries and enabling flexible,</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">configuration-driven system behavior.</span>
 </span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a><span class="sd">## Usage Example</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">    from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">    from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="sd">    # Example configuration</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">    config = {</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">        &quot;persistence&quot;: {</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">            &quot;backend&quot;: &quot;sqlite&quot;</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">        },</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        &quot;router&quot;: {</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">            &quot;type&quot;: &quot;default&quot;</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">        }</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">    }</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a><span class="sd">    # Create persistence backend</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    store = PersistenceFactory.create(config)</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="sd">    # Create router</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">    router = RouterFactory.create(config)</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">    # Use components</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">    route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">## Usage Example</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">    from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="sd">    from k9_aif_abb.k9_factories.router_factory import RouterFactory</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">    # Example configuration</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">    config = {</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">        &quot;persistence&quot;: {</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">            &quot;backend&quot;: &quot;sqlite&quot;</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">        },</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">        &quot;router&quot;: {</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">            &quot;type&quot;: &quot;default&quot;</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">        }</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">    }</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">    # Create persistence backend</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">    store = PersistenceFactory.create(config)</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">    # Create router</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="sd">    router = RouterFactory.create(config)</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">    # Use components</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="sd">    route = router.route({&quot;input&quot;: &quot;sample payload&quot;})</span>
 </span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">## Architectural Note</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">Factories are primarily consumed by SBB components (agents, orchestrators,</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">retrievers) rather than directly by end users. They enable runtime flexibility</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">while preserving strict separation between ABB contracts and SBB implementations.</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd">## Architectural Note</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="sd">Factories are primarily consumed by SBB components (agents, orchestrators,</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">retrievers) rather than directly by end users. They enable runtime flexibility</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">while preserving strict separation between ABB contracts and SBB implementations.</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

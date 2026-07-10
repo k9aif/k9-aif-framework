@@ -84,12 +84,12 @@
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.agent.base_agent</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseIoTAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseIoTAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;ABB: Abstract base class for IoT communication agents.</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">    Provides sync + async contracts for IoT operations.</span>
 </span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    &quot;&quot;&quot;</span>
@@ -151,13 +151,13 @@
 <div class="attr class">
             
     <span class="def">class</span>
-    <span class="name">BaseIoTAgent</span><wbr>(<span class="base"><a href="../agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></span>, <span class="base">abc.ABC</span>):
+    <span class="name">BaseIoTAgent</span><wbr>(<span class="base"><a href="../agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></span>):
 
                 <label class="view-source-button" for="BaseIoTAgent-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#BaseIoTAgent"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseIoTAgent-10"><a href="#BaseIoTAgent-10"><span class="linenos">10</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseIoTAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseIoTAgent-10"><a href="#BaseIoTAgent-10"><span class="linenos">10</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseIoTAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
 </span><span id="BaseIoTAgent-11"><a href="#BaseIoTAgent-11"><span class="linenos">11</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;ABB: Abstract base class for IoT communication agents.</span>
 </span><span id="BaseIoTAgent-12"><a href="#BaseIoTAgent-12"><span class="linenos">12</span></a><span class="sd">    Provides sync + async contracts for IoT operations.</span>
 </span><span id="BaseIoTAgent-13"><a href="#BaseIoTAgent-13"><span class="linenos">13</span></a><span class="sd">    &quot;&quot;&quot;</span>
