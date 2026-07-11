@@ -75,3 +75,7 @@ The `k9_agents` package works in conjunction with other ABB packages:
             }
 
 """
+
+from k9_aif_abb.k9_agents.agent_loader import AgentLoader
+
+__all__ = ["AgentLoader"]

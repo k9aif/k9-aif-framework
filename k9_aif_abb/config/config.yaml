@@ -13,6 +13,12 @@
 #   MUST define their own config.yaml in their SBB repositories.
 # ============================================================
 
+# Enterprise policy — keys listed here cannot be overridden by SBB config or agent YAML.
+# AgentLoader enforces this at merge time and logs a warning on any attempted override.
+# Override: N semantics — locked keys hold the ABB value regardless of what the SBB sets.
+_policy:
+  locked: []   # e.g. [enable_zero_trust, security.shield.enabled, governance.enforce]
+
 demo:
   # Default intent and query for sample/demo runs
   default_intent: "support"
