@@ -22,6 +22,49 @@ logger = logging.getLogger("ConfigLoader")
 
 
 # ---------------------------------------------------------------------
+# Policy enforcement helpers
+# ---------------------------------------------------------------------
+
+def _get_nested(d: Dict[str, Any], dot_path: str) -> Any:
+    """Return the value at dot_path inside d, or None if absent."""
+    for key in dot_path.split("."):
+        if not isinstance(d, dict):
+            return None
+        d = d.get(key)
+    return d
+
+
+def _set_nested(d: Dict[str, Any], dot_path: str, value: Any) -> None:
+    """Set the value at dot_path inside d, creating intermediate dicts."""
+    keys = dot_path.split(".")
+    for key in keys[:-1]:
+        d = d.setdefault(key, {})
+    d[keys[-1]] = value
+
+
+def _apply_policy(abb_cfg: Dict[str, Any], merged: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enforce _policy.locked keys from abb_cfg in the merged config.
+
+    Any key listed in abb_cfg['_policy']['locked'] is restored to its ABB
+    value if an SBB or flows config attempted to override it.  An audit
+    warning is logged for every rejected override.
+    """
+    locked = abb_cfg.get("_policy", {}).get("locked", [])
+    for key_path in locked:
+        abb_val = _get_nested(abb_cfg, key_path)
+        merged_val = _get_nested(merged, key_path)
+        if merged_val != abb_val:
+            logger.warning(
+                "[Policy] locked key '%s' override rejected "
+                "(attempted: %r  enforced: %r)",
+                key_path, merged_val, abb_val,
+            )
+            _set_nested(merged, key_path, abb_val)
+    return merged
+
+
+# ---------------------------------------------------------------------
 # Env var expansion
 # ---------------------------------------------------------------------
 _ENV_PATTERN = re.compile(r'\$\{([^}]+)\}')
@@ -157,6 +200,7 @@ def load_app_config(app_name: str,
     - flows_path: optional flows.yaml
     """
     cfg = load_yaml(abb_config)
+    abb_cfg = cfg.copy()   # snapshot ABB values before any SBB merge
 
     # Merge SBB config if provided
     if sbb_config is None:
@@ -171,6 +215,9 @@ def load_app_config(app_name: str,
     if Path(flows_path).exists():
         flows_cfg = load_yaml(flows_path)
         cfg = {**cfg, **flows_cfg}
+
+    # Enforce enterprise policy — restore any locked keys the SBB or flows overrode
+    cfg = _apply_policy(abb_cfg, cfg)
 
     # Ensure log dirs
     logs_dir = Path(cfg.get("runtime", {}).get("logs_dir", "./logs"))
