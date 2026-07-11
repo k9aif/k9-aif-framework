@@ -34,9 +34,27 @@ monitors:
     kwargs: {}
 
 security:
-  - name: mock
-    class: k9_aif_abb.k9_core.security.mock_auth.MockAuth
-    kwargs: {}
+  providers:
+    - name: mock
+      class: k9_aif_abb.k9_core.security.mock_auth.MockAuth
+      kwargs: {}
+
+  # k9x_Shield — Chain of Vulnerability Tests
+  # Disabled by default in ABB. SBBs enable and configure in their own config.yaml.
+  shield:
+    enabled: false
+    strict: false          # strict: true promotes FLAG → BLOCK across all checks
+    ingress:               # runs before the LLM — protect the model from what arrives
+      checks:
+        - InputSizeCheck
+        - PromptInjectionCheck
+        - PIIBoundaryCheck
+    egress:                # runs after the LLM — inspect output before any tool executes
+      checks:
+        - SemanticDriftCheck
+        - ToolArgumentCheck
+        - ExecutionGuardCheck
+        - PIIBoundaryCheck
 
 governance:
   enabled: true
