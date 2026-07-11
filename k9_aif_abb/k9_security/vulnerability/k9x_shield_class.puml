@@ -1,0 +1,137 @@
+@startuml k9x_shield_class
+skinparam monochrome false
+skinparam classBackgroundColor #FAFAF8
+skinparam classBorderColor #BBBBAA
+skinparam classHeaderBackgroundColor #F0ECE4
+skinparam ArrowColor #555544
+skinparam FontName Inter
+skinparam FontSize 13
+skinparam Padding 6
+skinparam Shadowing false
+skinparam roundcorner 6
+skinparam linetype ortho
+
+title k9x_Shield — Chain of Vulnerability Tests\n<size:11><color:#666055>GoF Chain of Responsibility applied to security checks</color></size>
+
+package "ABB Contract" <<Rectangle>> {
+
+  abstract class BaseVulnerabilityCheck {
+    +config: dict
+    +check_name: str
+    +set_next(handler): BaseVulnerabilityCheck
+    #{abstract} check(payload: dict): CheckResult
+  }
+
+  class VulnerabilityChain {
+    -_checks: list[BaseVulnerabilityCheck]
+    -_strict: bool
+    +add(check): VulnerabilityChain
+    +run(payload: dict): ChainResult
+    +__len__(): int
+  }
+
+  note right of VulnerabilityChain
+    strict=False: FLAG is non-blocking
+    strict=True: FLAG treated as BLOCK
+    BLOCK always halts the chain
+  end note
+
+}
+
+package "Result Models" <<Rectangle>> {
+
+  class CheckResult {
+    +check_name: str
+    +status: CheckStatus
+    +message: str
+    +severity: str
+    +metadata: dict
+    +passed: bool
+    +flagged: bool
+    +blocked: bool
+    {static} +pass_check(name): CheckResult
+    {static} +flag(name, msg, severity): CheckResult
+    {static} +block(name, msg, severity): CheckResult
+  }
+
+  class ChainResult {
+    +results: list[CheckResult]
+    +blocked_by: str
+    +passed: bool
+    +blocked: bool
+    +flags: list[CheckResult]
+    +blocks: list[CheckResult]
+    +summary(): dict
+  }
+
+  enum CheckStatus {
+    PASS
+    FLAG
+    BLOCK
+  }
+
+}
+
+package "OOB Checks — k9x_Shield" <<Rectangle>> {
+
+  class PromptInjectionCheck {
+    +check(payload): CheckResult
+    --
+    Detects instruction-override\nand jailbreak patterns
+    Returns: BLOCK
+  }
+
+  class HardcodedCredentialCheck {
+    +check(payload): CheckResult
+    --
+    Detects API keys, tokens,\npasswords, private keys
+    Returns: BLOCK (configurable FLAG)
+  }
+
+  class PIIBoundaryCheck {
+    +check(payload): CheckResult
+    --
+    Detects email, SSN,\ncredit card, phone
+    Returns: FLAG (configurable BLOCK)
+  }
+
+  class InputSizeCheck {
+    +check(payload): CheckResult
+    --
+    Enforces max char count\nand max key count limits
+    Returns: BLOCK (configurable FLAG)
+  }
+
+}
+
+' Inheritance
+BaseVulnerabilityCheck <|-- PromptInjectionCheck
+BaseVulnerabilityCheck <|-- HardcodedCredentialCheck
+BaseVulnerabilityCheck <|-- PIIBoundaryCheck
+BaseVulnerabilityCheck <|-- InputSizeCheck
+
+' Chain composition
+VulnerabilityChain o-- BaseVulnerabilityCheck : "contains 1..N"
+
+' Return types
+BaseVulnerabilityCheck ..> CheckResult : "check() returns"
+VulnerabilityChain ..> ChainResult : "run() returns"
+
+' Model relationships
+ChainResult o-- CheckResult : "results: list"
+CheckResult --> CheckStatus : "status"
+
+note bottom of BaseVulnerabilityCheck
+  SBBs implement check() only.
+  Chain wiring is handled by
+  VulnerabilityChain — never
+  call _next directly.
+end note
+
+note bottom of ChainResult
+  blocked_by = None → passed
+  blocked_by = "CheckName" → halted
+  flags[] → audit trail
+end note
+
+@enduml
