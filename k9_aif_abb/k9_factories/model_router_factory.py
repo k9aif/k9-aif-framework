@@ -12,7 +12,6 @@ from k9_aif_abb.k9_inference.routers.base_model_router import BaseModelRouter
 from k9_aif_abb.k9_inference.routers.default_model_router import DefaultModelRouter
 from k9_aif_abb.k9_inference.routers.k9_model_router import K9ModelRouter
 
-from k9_aif_abb.k9_core.persistence.base_persistence import MemoryPersistence
 from k9_aif_abb.k9_storage.sqlite_database_storage import SQLiteDatabaseStorage
 from k9_aif_abb.k9_storage.postgres_database_storage import PostgresDatabaseStorage
 from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
@@ -104,10 +103,17 @@ class ModelRouterFactory:
         provider = (persistence_cfg.get("provider") or "sqlite").lower()
 
         if not enabled:
+            # RoutingStateStore always operates through a SQLAlchemy
+            # engine/metadata pair (reflection, then OOB Table() creation on
+            # first use) — MemoryPersistence is a plain key-value ABB with
+            # neither, so passing it here raised AttributeError on the very
+            # first routed request regardless of provider. An in-memory
+            # SQLite engine satisfies the same contract with zero disk I/O,
+            # which is what "persistence disabled" actually means here.
             cls.logger.info(
-                "Model router persistence disabled; using MemoryPersistence."
+                "Model router persistence disabled; using in-memory SQLite."
             )
-            storage = MemoryPersistence()
+            storage = SQLiteDatabaseStorage(db_path=":memory:")
 
         elif provider == "sqlite":
             sqlite_cfg = persistence_cfg.get("sqlite", {})
@@ -123,8 +129,8 @@ class ModelRouterFactory:
             storage = PostgresDatabaseStorage(config=config)
 
         elif provider == "memory":
-            cls.logger.info("Model router persistence provider -> memory")
-            storage = MemoryPersistence()
+            cls.logger.info("Model router persistence provider -> in-memory SQLite")
+            storage = SQLiteDatabaseStorage(db_path=":memory:")
 
         else:
             raise ValueError(

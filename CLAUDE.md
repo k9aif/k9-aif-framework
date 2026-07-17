@@ -327,7 +327,7 @@ When changing a generated agent to iterative: replace `class MyAgent(BaseAgent)`
 
 All major components are provisioned through factories — never instantiated directly in application code:
 
-- `LLMFactory.bootstrap(config)` then `LLMFactory.get(alias)` — returns cached `OllamaLLM`
+- `LLMFactory.bootstrap(config)` then `LLMFactory.get(alias)` — returns a cached `BaseLLM` instance (`OllamaLLM`, `OpenAILLM`, `WatsonxLLM`, ...) resolved via `ProviderAdapterRegistry` from `inference.llm_factory.backend`
 - `ModelRouterFactory.get_router(config)` — returns cached `K9ModelRouter`
 - `AgentRegistry.register(name, cls)` / `create(name)` — instantiates agents by name
 - `OrchestratorRegistry` — same pattern for orchestrators
@@ -344,12 +344,18 @@ The multi-provider LLM pattern is applied consistently across infrastructure con
 | Secret Management | `BaseSecretManager` | `EnvSecretAdapter` (default), `VaultSecretAdapter`, `AwsSecretAdapter`, `IbmSecretAdapter` | `SecretManagerFactory` | `secrets.provider` |
 | Cache | `BaseCache` | `InMemoryAdapter` (default), `RedisAdapter` | `CacheFactory` | `cache.provider` |
 | Object Storage | `BaseObjectStorage` | `LocalObjectStorageAdapter` (default), `S3ObjectStorageAdapter` (OOB — S3/MinIO), `IbmCosObjectStorageAdapter` | `ObjectStorageFactory` | `object_storage.provider` |
+| LLM Inference | `BaseProviderAdapter` (`k9_core/inference/base_provider_adapter.py`) | `OllamaProviderAdapter` (default), `OpenAIProviderAdapter` (`openai` + `openai-compatible` — also covers Grok/xAI, any OpenAI-shaped endpoint), `WatsonxProviderAdapter` (IBM watsonx.ai — IAM token exchange + `project_id`) | `LLMFactory` (resolves via `ProviderAdapterRegistry`) | `inference.llm_factory.backend` (or legacy `.provider`) |
 
 **Design constraints (must be preserved in all adapter work):**
 - API keys and secrets NEVER in `config.yaml` — credentials come from environment variables only
 - Adapters that require optional packages use lazy imports and raise `RuntimeError` with install hint on first use
 - Factory `create(config)` always has a zero-config default (env adapter, in_memory cache) — no config key required for the common case
 - All new ABB code is purely additive — no modification to existing classes
+
+**LLM adapter gotchas (both were real, silent bugs found and fixed in this table's rollout):**
+- Every `BaseLLM.generate(prompt, system_prompt=None)` implementation **must** accept `system_prompt` — `K9ModelRouter.invoke()`/`ainvoke()` always pass it as a kwarg. `OpenAILLM.generate()` originally omitted it and would raise `TypeError` the instant a real call was attempted.
+- `K9ModelRouter.invoke()` bridges the sync `BaseAgent.execute()` contract to an async `BaseLLM.generate()` via `_run_coro_sync()` (`k9_inference/routers/k9_model_router.py`) — **never** call `asyncio.run()` directly here. Any solution embedding K9-AIF inside an async web framework (FastAPI, etc.) calls `invoke()` from an already-running event loop; `asyncio.run()` raises `RuntimeError: asyncio.run() cannot be called from a running event loop` in that case, and a broad `except Exception` in agent code will silently swallow it and fall back to stub output with no visible error.
+- `ModelRouterFactory._build_router_state_store()` must back `RoutingStateStore` with a SQLAlchemy-capable store (`SQLiteDatabaseStorage`, `PostgresDatabaseStorage`) — never `MemoryPersistence`. `RoutingStateStore._init_tables()` unconditionally reads `self.db.metadata`/`self.db.engine`, which `MemoryPersistence` (a plain key-value ABB) doesn't provide. `persistence.enabled: false` and `persistence.provider: memory` both now resolve to an in-memory SQLite engine (`SQLiteDatabaseStorage(db_path=":memory:")`) instead.
 
 ---
 

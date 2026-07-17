@@ -53,12 +53,16 @@ class OpenAILLM(BaseLLM):
         self._client = AsyncOpenAI(**client_kwargs)
         self.logger = logging.getLogger("OpenAILLM")
 
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         await self.log(f"Sending inference request to OpenAI ({self.model})", "DEBUG")
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
         try:
             response = await self._client.chat.completions.create(
                 model=self.model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=messages,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )

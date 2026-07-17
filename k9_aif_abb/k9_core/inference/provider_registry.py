@@ -17,14 +17,14 @@ class ProviderAdapterRegistry:
     ------------------------------------------------
     Central registry that maps backend/provider names to adapter classes.
 
-    OOB adapters (ollama, openai, openai-compatible) are registered
-    automatically on first use. Custom adapters can be registered by
-    solution code before LLMFactory.bootstrap() is called — no changes
-    to LLMFactory or any other ABB component are required.
+    OOB adapters (ollama, openai, openai-compatible, watsonx) are
+    registered automatically on first use. Custom adapters can be
+    registered by solution code before LLMFactory.bootstrap() is called —
+    no changes to LLMFactory or any other ABB component are required.
 
-    Usage (SBB custom adapter):
+    Usage (SBB custom adapter, e.g. a Claude or Grok-native adapter):
         from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegistry
-        ProviderAdapterRegistry.register("watsonx", WatsonxProviderAdapter)
+        ProviderAdapterRegistry.register("claude", ClaudeProviderAdapter)
     """
 
     _adapters: Dict[str, Type[BaseProviderAdapter]] = {}
@@ -62,14 +62,16 @@ class ProviderAdapterRegistry:
         """Lazily register the OOB adapters to avoid circular imports at module load."""
         from k9_aif_abb.k9_core.inference.ollama_provider_adapter import OllamaProviderAdapter
         from k9_aif_abb.k9_core.inference.openai_provider_adapter import OpenAIProviderAdapter
+        from k9_aif_abb.k9_core.inference.watsonx_provider_adapter import WatsonxProviderAdapter
         from k9_aif_abb.k9_core.inference.mock_provider_adapter import MockProviderAdapter
 
         cls._adapters.setdefault("ollama", OllamaProviderAdapter)
         cls._adapters.setdefault("openai", OpenAIProviderAdapter)
         cls._adapters.setdefault("openai-compatible", OpenAIProviderAdapter)
+        cls._adapters.setdefault("watsonx", WatsonxProviderAdapter)
         cls._adapters.setdefault("mock", MockProviderAdapter)
         cls._defaults_loaded = True
-        log.debug("Default provider adapters loaded: ollama, openai, openai-compatible, mock")
+        log.debug("Default provider adapters loaded: ollama, openai, openai-compatible, watsonx, mock")
 
     @classmethod
     def reset(cls) -> None:

@@ -4,14 +4,41 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import uuid
-from typing import Optional
+from typing import Any, Coroutine, Optional
 
 from ..models.inference_request import InferenceRequest
 from ..models.inference_response import InferenceResponse
 from ..models.route_decision import RouteDecision
 from ..catalog.model_catalog import ModelCatalog
 from .base_model_router import BaseModelRouter
+
+
+def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
+    """
+    Execute an async coroutine from synchronous code — safe whether or not
+    an event loop is already running on the calling thread.
+
+    BaseAgent.execute() (and therefore invoke()) is a synchronous contract,
+    but K9-AIF is commonly embedded inside async web frameworks (FastAPI,
+    etc.) whose request handlers run on an already-active event loop.
+    asyncio.run() refuses to nest inside a running loop — calling it from
+    such a request handler raises "asyncio.run() cannot be called from a
+    running event loop", which agents.py-style broad excepts turn into a
+    silent stub fallback with no indication the LLM was never actually
+    called.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        # No loop on this thread (plain script/CLI/test) — the common case.
+        return asyncio.run(coro)
+
+    # A loop is already running here — run the coroutine on a fresh loop in
+    # a separate thread instead, and block this thread until it completes.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
@@ -201,7 +228,7 @@ class K9ModelRouter(BaseModelRouter):
         if hasattr(llm, "invoke"):
             result = llm.invoke(request.prompt, system_prompt=sys_prompt)
         elif hasattr(llm, "generate"):
-            result = asyncio.run(llm.generate(request.prompt, system_prompt=sys_prompt))
+            result = _run_coro_sync(llm.generate(request.prompt, system_prompt=sys_prompt))
         elif hasattr(llm, "chat"):
             result = llm.chat(request.prompt)
         elif callable(llm):

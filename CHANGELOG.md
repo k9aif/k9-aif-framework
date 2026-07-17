@@ -4,6 +4,21 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.8.2] — 2026-07-17
+
+### Added
+
+- **`WatsonxLLM` + `WatsonxProviderAdapter`** (`k9_core/inference/watsonx_llm.py`, `watsonx_provider_adapter.py`) — OOB IBM watsonx.ai backend. IAM token exchange (cached per instance), `project_id`, region-specific base URL, real REST calls via `aiohttp`. Registered as a `ProviderAdapterRegistry` default alongside `ollama`/`openai`/`openai-compatible`.
+- **`openai` optional dependency extra** — `pip install k9-aif[openai]` for the `openai` SDK the `OpenAIProviderAdapter` lazily imports.
+
+### Fixed
+
+- **`OpenAILLM.generate()` missing `system_prompt` parameter** — `K9ModelRouter.invoke()`/`ainvoke()` always call `generate(prompt, system_prompt=...)`; `OpenAILLM` lacked the parameter and raised `TypeError` on every real call. Now accepts it and forwards it as a `system` role message.
+- **`K9ModelRouter.invoke()` crashed inside a running event loop** — `asyncio.run()` cannot nest inside an already-active loop, which is exactly the situation for any solution embedding K9-AIF inside an async web framework (FastAPI, etc.). Added `_run_coro_sync()`, which detects a running loop and falls back to a worker thread with its own loop. Silent failure mode previously: agent code's broad `except Exception` swallowed the `RuntimeError` and returned stub output with no visible error.
+- **`ModelRouterFactory._build_router_state_store()` incompatible with `MemoryPersistence`** — `persistence.enabled: false` and `persistence.provider: memory` both constructed `RoutingStateStore(MemoryPersistence())`, but `RoutingStateStore._init_tables()` unconditionally requires `.metadata`/`.engine` (SQLAlchemy), which `MemoryPersistence` doesn't provide — every call raised `AttributeError`. Both now resolve to an in-memory SQLite engine (`SQLiteDatabaseStorage(db_path=":memory:")`) instead, preserving the "no disk I/O" intent of disabled persistence.
+
+---
+
 ## [1.7.0] — 2026-07-05
 
 ### Added
