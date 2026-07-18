@@ -4,6 +4,25 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.9.0] — 2026-07-18
+
+### Added
+
+- **Five new OOB vulnerability checks** (`k9_security/vulnerability/checks/`) — `ToolAuthorizationCheck` (approved-tool/backend allowlist), `MemoryPoisoningCheck` (fabricated/contradicted session memory, cache-backed), `SystemPromptLeakageCheck` (agent echoing its own system prompt), `OutputSanitizationCheck` (HTML/JS/template injection in output), `RequestFrequencyCheck` (per-session rate limiting, cache-backed). All five were proven first as local checks in the K9x Satan adversarial test project, then generalized and promoted into the framework once verified — closing OWASP LLM03/04/05/07/10 and ASI02/04/06 coverage gaps. Registered in `ShieldGovernance`'s check registry; not enabled by default (each needs solution-specific config — see `k9_security/docs/06-configuration-guide.md`).
+- **`RoleBasedAuthorizationGuard`** + **`BaseAuthorizationGuard`** (`k9_security/zero_trust/guards.py`) — the Zero Trust layer's first identity/privilege evaluator. Reads `IdentityContext.roles` (previously captured but never evaluated) against a configurable `role_policy` mapping of `action_type -> [allowed roles]`. Wired into `DefaultZeroTrustGuard` via a new `authorization_guard` constructor parameter, evaluated right after the compromise guard. No policy configured for an `action_type` means allowed (opt-in restriction, not a new default-deny).
+- **`ShieldGovernance` per-check config threading** — `security.shield.check_config` in `config.yaml` now threads constructor overrides (`max_chars`, `block_on_match`, `extra_patterns`, etc.) into each OOB check, previously reachable only via direct Python instantiation.
+- **`VulnerabilityChain(fail_open=...)`** — a check that raises an exception now has a configurable policy: `fail_open=True` (default, unchanged behavior) converts it to a FLAG; `fail_open=False` converts it to a BLOCK instead, for deployments that consider a crashing security check a fail-closed event rather than a fail-open one.
+- **`K9EventBus` SASL/TLS support** — new `security_protocol`/`sasl_mechanism` constructor parameters (default `PLAINTEXT`/`PLAIN`, byte-identical to prior behavior). `MessageFactory` threads `messaging.security_protocol`/`messaging.sasl_mechanism` from config; credentials come from `KAFKA_SASL_USERNAME`/`KAFKA_SASL_PASSWORD` environment variables only.
+- **Security documentation set** (`k9_security/docs/`) — capability inventory, OWASP LLM Top 10 crosswalk, OWASP Agentic Top 10 crosswalk, gap analysis, architecture overview, configuration guide, extension guide, and design rationale for the full `k9_security` subsystem.
+
+### Fixed
+
+- **`ProfanityGovernance` contract shape** — `pre_process()`/`post_process()` returned `{"status": "BLOCKED"|"SAFE", ...}` instead of the payload dict every other `BaseGovernance` implementation returns; a BLOCKED verdict now raises `PermissionError` instead of silently replacing the payload.
+- **`ProfanityGovernance.__init__` crashed on construction** — `LLMFactory().create(...)` called a method that doesn't exist (`LLMFactory` has no `create`, only classmethods); fixed to `LLMFactory.get(...)`.
+- **`ProfanityGovernance.pre_process` never awaited its LLM call** — `self.llm.generate(...)` is `async def`; the missing `await` meant `result` was an unawaited coroutine, and `result.upper()` would have raised `AttributeError` the first time this path actually ran.
+
+---
+
 ## [1.8.2] — 2026-07-17
 
 ### Added
