@@ -30,6 +30,7 @@ Before committing or pushing any file, verify:
 - **`.env` is never staged** — it is in `.gitignore`; use `env-example` for the template
 - **No `__pycache__` or `.pyc` files** — ensure `.gitignore` is present before first commit
 - **Three-layer decoupling preserved** — Router knows only Orchestrators, Orchestrator knows only Squads, Squad knows only Agents
+- **pydoc regenerated after any `k9_aif_abb/` change** — run `./generate_pdoc.sh` and commit the resulting `docs/pydocs/` changes in the same commit as the code change. `generate_pdoc.sh` documents `./k9_aif_abb` (the local tree, not whatever `k9-aif` version happens to be pip-installed in `.venv`) — if that installed version is stale, running it without the `./` prefix silently regenerates docs for the wrong code.
 
 ---
 

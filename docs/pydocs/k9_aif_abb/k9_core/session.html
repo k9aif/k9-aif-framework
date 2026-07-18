@@ -178,27 +178,75 @@
                     <h1 class="modulename">
 <a href="./../../k9_aif_abb.html">k9_aif_abb</a><wbr>.<a href="./../k9_core.html">k9_core</a><wbr>.session    </h1>
 
-                        <div class="docstring"><p>K9-AIF Session Management ABB — core contracts and session lifecycle.</p>
+                        <div class="docstring"><p>k9_core.session — Session Management ABB.</p>
+
+<p>Provides durable, config-driven session state for multi-turn conversations
+and agentic workflows. Session management is opt-in via <code>session.enabled: true</code>
+in config.yaml — when enabled, <code><a href="#K9SessionManager">K9SessionManager</a></code> handles the full lifecycle:</p>
+
+<ul>
+<li><code>on_session_start(user_id)</code> — creates a new <code><a href="#K9Session">K9Session</a></code> with auto-generated UUID</li>
+<li><code>on_session_get(session_id)</code> — retrieves and touches (TTL refresh)</li>
+<li><code>on_session_update(session_id, delta)</code> — merges context changes</li>
+<li><code>on_session_expire / on_session_destroy</code> — lifecycle cleanup</li>
+<li><code>enrich_payload(session, payload)</code> — injects session context into agent payloads</li>
+</ul>
+
+<p>Storage is pluggable via <code>SessionFactory</code>:</p>
+
+<ul>
+<li><code>RedisSessionStore</code> — distributed, TTL-aware (production)</li>
+<li><code>SQLiteSessionStore</code> — single-node, persistent</li>
+<li><code>InMemorySessionStore</code> — process-local (testing)</li>
+</ul>
+
+<p>Switch backends with one config line — no code changes.</p>
+
+<p>For chat applications, combine with <code>CacheFactory</code> (Redis) to persist
+conversation message history per session_id. See Skill 14 in SKILLS.md.</p>
 </div>
 
                         <input id="mod-session-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-session-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;K9-AIF Session Management ABB — core contracts and session lifecycle.&quot;&quot;&quot;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.k9_session</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9Session</span><span class="p">,</span> <span class="n">SessionStatus</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.base_session_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSessionStore</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.k9_session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9SessionManager</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.session_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionRegistry</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="sd">k9_core.session — Session Management ABB.</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">Provides durable, config-driven session state for multi-turn conversations</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">and agentic workflows. Session management is opt-in via ``session.enabled: true``</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">in config.yaml — when enabled, ``K9SessionManager`` handles the full lifecycle:</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="s2">&quot;K9Session&quot;</span><span class="p">,</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="s2">&quot;SessionStatus&quot;</span><span class="p">,</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="s2">&quot;BaseSessionStore&quot;</span><span class="p">,</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="s2">&quot;K9SessionManager&quot;</span><span class="p">,</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="s2">&quot;SessionRegistry&quot;</span><span class="p">,</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="p">]</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">- ``on_session_start(user_id)`` — creates a new ``K9Session`` with auto-generated UUID</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">- ``on_session_get(session_id)`` — retrieves and touches (TTL refresh)</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">- ``on_session_update(session_id, delta)`` — merges context changes</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">- ``on_session_expire / on_session_destroy`` — lifecycle cleanup</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">- ``enrich_payload(session, payload)`` — injects session context into agent payloads</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">Storage is pluggable via ``SessionFactory``:</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">- ``RedisSessionStore`` — distributed, TTL-aware (production)</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">- ``SQLiteSessionStore`` — single-node, persistent</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">- ``InMemorySessionStore`` — process-local (testing)</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">Switch backends with one config line — no code changes.</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">For chat applications, combine with ``CacheFactory`` (Redis) to persist</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">conversation message history per session_id. See Skill 14 in SKILLS.md.</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.k9_session</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9Session</span><span class="p">,</span> <span class="n">SessionStatus</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.base_session_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSessionStore</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.k9_session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9SessionManager</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.session.session_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionRegistry</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="s2">&quot;K9Session&quot;</span><span class="p">,</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="s2">&quot;SessionStatus&quot;</span><span class="p">,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="s2">&quot;BaseSessionStore&quot;</span><span class="p">,</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="s2">&quot;K9SessionManager&quot;</span><span class="p">,</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="s2">&quot;SessionRegistry&quot;</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="p">]</span>
 </span></pre></div>
 
 

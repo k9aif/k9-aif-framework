@@ -39,6 +39,8 @@
                     <li><a href="inference/openai_llm.html">openai_llm</a></li>
                     <li><a href="inference/openai_provider_adapter.html">openai_provider_adapter</a></li>
                     <li><a href="inference/provider_registry.html">provider_registry</a></li>
+                    <li><a href="inference/watsonx_llm.html">watsonx_llm</a></li>
+                    <li><a href="inference/watsonx_provider_adapter.html">watsonx_provider_adapter</a></li>
             </ul>
 
 
@@ -55,13 +57,48 @@
                     <h1 class="modulename">
 <a href="./../../k9_aif_abb.html">k9_aif_abb</a><wbr>.<a href="./../k9_core.html">k9_core</a><wbr>.inference    </h1>
 
-                
+                        <div class="docstring"><p>k9_core.inference — LLM inference ABB contracts.</p>
+
+<p>BaseLLM
+    Abstract base for all LLM adapters. Defines the <code>generate(prompt, system_prompt=None)</code>
+    contract. The <code>system_prompt</code> parameter separates system-level instructions (agent role,
+    persona, constraints) from user-level content (the task payload). Providers that support
+    a dedicated system channel (Ollama <code>system</code>, Claude <code>system</code>, OpenAI <code>system</code> role)
+    use it directly; others prepend it to the prompt.</p>
+
+<pre><code>Keeping the system prompt separate enables prompt caching — the system portion is stable
+across calls and cacheable independently of per-request user content.
+</code></pre>
+
+<p>OllamaLLM
+    OOB adapter for Ollama. Passes <code>system_prompt</code> as the Ollama API's <code>system</code> field,
+    keeping it separate from the user <code>prompt</code>.</p>
+</div>
+
                         <input id="mod-inference-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-inference-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos">2</span></a><span class="c1"># K9-AIF Framework</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">k9_core.inference — LLM inference ABB contracts.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">BaseLLM</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">    Abstract base for all LLM adapters. Defines the ``generate(prompt, system_prompt=None)``</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">    contract. The ``system_prompt`` parameter separates system-level instructions (agent role,</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">    persona, constraints) from user-level content (the task payload). Providers that support</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">    a dedicated system channel (Ollama ``system``, Claude ``system``, OpenAI ``system`` role)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    use it directly; others prepend it to the prompt.</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">    Keeping the system prompt separate enables prompt caching — the system portion is stable</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    across calls and cacheable independently of per-request user content.</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">OllamaLLM</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">    OOB adapter for Ollama. Passes ``system_prompt`` as the Ollama API&#39;s ``system`` field,</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">    keeping it separate from the user ``prompt``.</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

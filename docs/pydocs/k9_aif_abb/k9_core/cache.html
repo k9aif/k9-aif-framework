@@ -69,12 +69,26 @@
 
                         <div class="docstring"><p>k9_core.cache — ABB cache contract layer.</p>
 
-<p>Provides the abstract <code><a href="#BaseCache">BaseCache</a></code> contract.
-Concrete adapters live in <code>k9_cache/adapters/</code>.</p>
+<p>Provides the abstract <code><a href="#BaseCache">BaseCache</a></code> contract with four methods:
+<code>get</code>, <code>set</code>, <code>delete</code>, <code>clear</code>.</p>
+
+<p>Concrete adapters:</p>
+
+<ul>
+<li><code>InMemoryAdapter</code> — thread-safe dict, no TTL (default, zero-config)</li>
+<li><code>RedisAdapter</code> — Redis / Valkey, TTL-aware (production)</li>
+</ul>
+
+<p>Provisioned via <code>CacheFactory.create(config)</code> — reads <code>config["cache"]["provider"]</code>.</p>
+
+<p>Used by chat agents to persist conversation history per session_id (see Skill 14),
+and by any component needing fast key-value storage with config-driven backend swap.</p>
 
 <p>Typical import::</p>
 
-<pre><code>from k9_aif_abb.k9_core.cache.base_cache import BaseCache
+<pre><code>from <a href="../k9_factories/cache_factory.html">k9_aif_abb.k9_factories.cache_factory</a> import CacheFactory
+cache = CacheFactory.create(config)
+cache.set("chat:session123", history_json, ttl=3600)
 </code></pre>
 </div>
 
@@ -88,17 +102,29 @@ Concrete adapters live in <code>k9_cache/adapters/</code>.</p>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">k9_core.cache — ABB cache contract layer.</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">Provides the abstract ``BaseCache`` contract.</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">Concrete adapters live in ``k9_cache/adapters/``.</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">Provides the abstract ``BaseCache`` contract with four methods:</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">``get``, ``set``, ``delete``, ``clear``.</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">Typical import::</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">Concrete adapters:</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    from k9_aif_abb.k9_core.cache.base_cache import BaseCache</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">- ``InMemoryAdapter`` — thread-safe dict, no TTL (default, zero-config)</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">- ``RedisAdapter`` — Redis / Valkey, TTL-aware (production)</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.cache.base_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCache</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">Provisioned via ``CacheFactory.create(config)`` — reads ``config[&quot;cache&quot;][&quot;provider&quot;]``.</span>
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BaseCache&quot;</span><span class="p">]</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">Used by chat agents to persist conversation history per session_id (see Skill 14),</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">and by any component needing fast key-value storage with config-driven backend swap.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">Typical import::</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">    from k9_aif_abb.k9_factories.cache_factory import CacheFactory</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">    cache = CacheFactory.create(config)</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">    cache.set(&quot;chat:session123&quot;, history_json, ttl=3600)</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.cache.base_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCache</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BaseCache&quot;</span><span class="p">]</span>
 </span></pre></div>
 
 

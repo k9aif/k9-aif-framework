@@ -39,6 +39,9 @@
             <li>
                     <a class="function" href="#llm_invoke">llm_invoke</a>
             </li>
+            <li>
+                    <a class="function" href="#llm_invoke_stream">llm_invoke_stream</a>
+            </li>
     </ul>
 
 
@@ -160,6 +163,61 @@
 </span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="n">elapsed_ms</span><span class="p">,</span>
 </span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="p">)</span>
 </span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="k">return</span> <span class="n">resp</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">llm_invoke_stream</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">InferenceRequest</span><span class="p">):</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="sd">    Invoke the LLM router and yield the response incrementally.</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="sd">    Streaming counterpart to :func:`llm_invoke`. Use when the caller wants</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="sd">    to forward text to a UI as it&#39;s generated (chat, live console) rather</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd">    than waiting for the complete response.</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="sd">    Args:</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">        config:  Application config dict (must contain ``inference`` section).</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">        request: :class:`InferenceRequest` describing the prompt and task type.</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a><span class="sd">    Yields:</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">        str: Incremental text chunks. If the underlying router/LLM doesn&#39;t</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a><span class="sd">            support true streaming, yields the complete response as a single</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="sd">            chunk — callers can always use this interface uniformly.</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="sd">    Note:</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">        Unlike :func:`llm_invoke`, this does not raise on ``[WARN]``-prefixed</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="sd">        output — streaming callers typically render chunks as they arrive</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">        and should check the accumulated text themselves if hard failure</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">        detection is needed.</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>    <span class="n">router</span> <span class="o">=</span> <span class="n">ModelRouterFactory</span><span class="o">.</span><span class="n">get_router</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>    <span class="n">full_output</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>    <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">router</span><span class="o">.</span><span class="n">ainvoke_stream</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a>        <span class="n">full_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>        <span class="k">yield</span> <span class="n">chunk</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>    <span class="n">elapsed_ms</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>            <span class="n">_trace_callback</span><span class="p">({</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>                <span class="s2">&quot;type&quot;</span><span class="p">:</span>       <span class="s2">&quot;LLMCall&quot;</span><span class="p">,</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>                <span class="s2">&quot;agent&quot;</span><span class="p">:</span>      <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>                <span class="s2">&quot;task_type&quot;</span><span class="p">:</span>  <span class="n">request</span><span class="o">.</span><span class="n">task_type</span> <span class="ow">or</span> <span class="s2">&quot;general&quot;</span><span class="p">,</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>                <span class="s2">&quot;model&quot;</span><span class="p">:</span>      <span class="n">request</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_alias&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>                <span class="s2">&quot;latency_ms&quot;</span><span class="p">:</span> <span class="n">elapsed_ms</span><span class="p">,</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>                <span class="s2">&quot;streamed&quot;</span><span class="p">:</span>   <span class="kc">True</span><span class="p">,</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>            <span class="p">})</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[llm_invoke_stream] trace callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a>        <span class="s2">&quot;[llm_invoke_stream] agent=</span><span class="si">%s</span><span class="s2"> task=</span><span class="si">%s</span><span class="s2"> latency_ms=</span><span class="si">%d</span><span class="s2"> chunks=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>        <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">),</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>        <span class="n">request</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>        <span class="n">elapsed_ms</span><span class="p">,</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>        <span class="nb">len</span><span class="p">(</span><span class="n">full_output</span><span class="p">),</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>    <span class="p">)</span>
 </span></pre></div>
 
 
@@ -288,6 +346,97 @@ a failing callback never breaks agent execution.</p>
 <p>Raises:
     RuntimeError: if the LLM backend is unreachable or returns an empty
         response (OllamaLLM signals this with a <code>[WARN]</code> prefix).</p>
+</div>
+
+
+                </section>
+                <section id="llm_invoke_stream">
+                            <input id="llm_invoke_stream-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">async def</span>
+        <span class="name">llm_invoke_stream</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">request</span><span class="p">:</span> <span class="n"><a href="../k9_inference/models/inference_request.html#InferenceRequest">k9_aif_abb.k9_inference.models.inference_request.InferenceRequest</a></span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="llm_invoke_stream-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#llm_invoke_stream"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="llm_invoke_stream-104"><a href="#llm_invoke_stream-104"><span class="linenos">104</span></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">llm_invoke_stream</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">InferenceRequest</span><span class="p">):</span>
+</span><span id="llm_invoke_stream-105"><a href="#llm_invoke_stream-105"><span class="linenos">105</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="llm_invoke_stream-106"><a href="#llm_invoke_stream-106"><span class="linenos">106</span></a><span class="sd">    Invoke the LLM router and yield the response incrementally.</span>
+</span><span id="llm_invoke_stream-107"><a href="#llm_invoke_stream-107"><span class="linenos">107</span></a>
+</span><span id="llm_invoke_stream-108"><a href="#llm_invoke_stream-108"><span class="linenos">108</span></a><span class="sd">    Streaming counterpart to :func:`llm_invoke`. Use when the caller wants</span>
+</span><span id="llm_invoke_stream-109"><a href="#llm_invoke_stream-109"><span class="linenos">109</span></a><span class="sd">    to forward text to a UI as it&#39;s generated (chat, live console) rather</span>
+</span><span id="llm_invoke_stream-110"><a href="#llm_invoke_stream-110"><span class="linenos">110</span></a><span class="sd">    than waiting for the complete response.</span>
+</span><span id="llm_invoke_stream-111"><a href="#llm_invoke_stream-111"><span class="linenos">111</span></a>
+</span><span id="llm_invoke_stream-112"><a href="#llm_invoke_stream-112"><span class="linenos">112</span></a><span class="sd">    Args:</span>
+</span><span id="llm_invoke_stream-113"><a href="#llm_invoke_stream-113"><span class="linenos">113</span></a><span class="sd">        config:  Application config dict (must contain ``inference`` section).</span>
+</span><span id="llm_invoke_stream-114"><a href="#llm_invoke_stream-114"><span class="linenos">114</span></a><span class="sd">        request: :class:`InferenceRequest` describing the prompt and task type.</span>
+</span><span id="llm_invoke_stream-115"><a href="#llm_invoke_stream-115"><span class="linenos">115</span></a>
+</span><span id="llm_invoke_stream-116"><a href="#llm_invoke_stream-116"><span class="linenos">116</span></a><span class="sd">    Yields:</span>
+</span><span id="llm_invoke_stream-117"><a href="#llm_invoke_stream-117"><span class="linenos">117</span></a><span class="sd">        str: Incremental text chunks. If the underlying router/LLM doesn&#39;t</span>
+</span><span id="llm_invoke_stream-118"><a href="#llm_invoke_stream-118"><span class="linenos">118</span></a><span class="sd">            support true streaming, yields the complete response as a single</span>
+</span><span id="llm_invoke_stream-119"><a href="#llm_invoke_stream-119"><span class="linenos">119</span></a><span class="sd">            chunk — callers can always use this interface uniformly.</span>
+</span><span id="llm_invoke_stream-120"><a href="#llm_invoke_stream-120"><span class="linenos">120</span></a>
+</span><span id="llm_invoke_stream-121"><a href="#llm_invoke_stream-121"><span class="linenos">121</span></a><span class="sd">    Note:</span>
+</span><span id="llm_invoke_stream-122"><a href="#llm_invoke_stream-122"><span class="linenos">122</span></a><span class="sd">        Unlike :func:`llm_invoke`, this does not raise on ``[WARN]``-prefixed</span>
+</span><span id="llm_invoke_stream-123"><a href="#llm_invoke_stream-123"><span class="linenos">123</span></a><span class="sd">        output — streaming callers typically render chunks as they arrive</span>
+</span><span id="llm_invoke_stream-124"><a href="#llm_invoke_stream-124"><span class="linenos">124</span></a><span class="sd">        and should check the accumulated text themselves if hard failure</span>
+</span><span id="llm_invoke_stream-125"><a href="#llm_invoke_stream-125"><span class="linenos">125</span></a><span class="sd">        detection is needed.</span>
+</span><span id="llm_invoke_stream-126"><a href="#llm_invoke_stream-126"><span class="linenos">126</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="llm_invoke_stream-127"><a href="#llm_invoke_stream-127"><span class="linenos">127</span></a>    <span class="n">router</span> <span class="o">=</span> <span class="n">ModelRouterFactory</span><span class="o">.</span><span class="n">get_router</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="llm_invoke_stream-128"><a href="#llm_invoke_stream-128"><span class="linenos">128</span></a>    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
+</span><span id="llm_invoke_stream-129"><a href="#llm_invoke_stream-129"><span class="linenos">129</span></a>    <span class="n">full_output</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="llm_invoke_stream-130"><a href="#llm_invoke_stream-130"><span class="linenos">130</span></a>
+</span><span id="llm_invoke_stream-131"><a href="#llm_invoke_stream-131"><span class="linenos">131</span></a>    <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">router</span><span class="o">.</span><span class="n">ainvoke_stream</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span id="llm_invoke_stream-132"><a href="#llm_invoke_stream-132"><span class="linenos">132</span></a>        <span class="n">full_output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</span><span id="llm_invoke_stream-133"><a href="#llm_invoke_stream-133"><span class="linenos">133</span></a>        <span class="k">yield</span> <span class="n">chunk</span>
+</span><span id="llm_invoke_stream-134"><a href="#llm_invoke_stream-134"><span class="linenos">134</span></a>
+</span><span id="llm_invoke_stream-135"><a href="#llm_invoke_stream-135"><span class="linenos">135</span></a>    <span class="n">elapsed_ms</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span id="llm_invoke_stream-136"><a href="#llm_invoke_stream-136"><span class="linenos">136</span></a>
+</span><span id="llm_invoke_stream-137"><a href="#llm_invoke_stream-137"><span class="linenos">137</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="llm_invoke_stream-138"><a href="#llm_invoke_stream-138"><span class="linenos">138</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="llm_invoke_stream-139"><a href="#llm_invoke_stream-139"><span class="linenos">139</span></a>            <span class="n">_trace_callback</span><span class="p">({</span>
+</span><span id="llm_invoke_stream-140"><a href="#llm_invoke_stream-140"><span class="linenos">140</span></a>                <span class="s2">&quot;type&quot;</span><span class="p">:</span>       <span class="s2">&quot;LLMCall&quot;</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-141"><a href="#llm_invoke_stream-141"><span class="linenos">141</span></a>                <span class="s2">&quot;agent&quot;</span><span class="p">:</span>      <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">),</span>
+</span><span id="llm_invoke_stream-142"><a href="#llm_invoke_stream-142"><span class="linenos">142</span></a>                <span class="s2">&quot;task_type&quot;</span><span class="p">:</span>  <span class="n">request</span><span class="o">.</span><span class="n">task_type</span> <span class="ow">or</span> <span class="s2">&quot;general&quot;</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-143"><a href="#llm_invoke_stream-143"><span class="linenos">143</span></a>                <span class="s2">&quot;model&quot;</span><span class="p">:</span>      <span class="n">request</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_alias&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-144"><a href="#llm_invoke_stream-144"><span class="linenos">144</span></a>                <span class="s2">&quot;latency_ms&quot;</span><span class="p">:</span> <span class="n">elapsed_ms</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-145"><a href="#llm_invoke_stream-145"><span class="linenos">145</span></a>                <span class="s2">&quot;streamed&quot;</span><span class="p">:</span>   <span class="kc">True</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-146"><a href="#llm_invoke_stream-146"><span class="linenos">146</span></a>            <span class="p">})</span>
+</span><span id="llm_invoke_stream-147"><a href="#llm_invoke_stream-147"><span class="linenos">147</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="llm_invoke_stream-148"><a href="#llm_invoke_stream-148"><span class="linenos">148</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[llm_invoke_stream] trace callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+</span><span id="llm_invoke_stream-149"><a href="#llm_invoke_stream-149"><span class="linenos">149</span></a>
+</span><span id="llm_invoke_stream-150"><a href="#llm_invoke_stream-150"><span class="linenos">150</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+</span><span id="llm_invoke_stream-151"><a href="#llm_invoke_stream-151"><span class="linenos">151</span></a>        <span class="s2">&quot;[llm_invoke_stream] agent=</span><span class="si">%s</span><span class="s2"> task=</span><span class="si">%s</span><span class="s2"> latency_ms=</span><span class="si">%d</span><span class="s2"> chunks=</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-152"><a href="#llm_invoke_stream-152"><span class="linenos">152</span></a>        <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">metadata</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;agent&quot;</span><span class="p">,</span> <span class="s2">&quot;?&quot;</span><span class="p">),</span>
+</span><span id="llm_invoke_stream-153"><a href="#llm_invoke_stream-153"><span class="linenos">153</span></a>        <span class="n">request</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-154"><a href="#llm_invoke_stream-154"><span class="linenos">154</span></a>        <span class="n">elapsed_ms</span><span class="p">,</span>
+</span><span id="llm_invoke_stream-155"><a href="#llm_invoke_stream-155"><span class="linenos">155</span></a>        <span class="nb">len</span><span class="p">(</span><span class="n">full_output</span><span class="p">),</span>
+</span><span id="llm_invoke_stream-156"><a href="#llm_invoke_stream-156"><span class="linenos">156</span></a>    <span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Invoke the LLM router and yield the response incrementally.</p>
+
+<p>Streaming counterpart to <code><a href="#llm_invoke">llm_invoke()</a></code>. Use when the caller wants
+to forward text to a UI as it's generated (chat, live console) rather
+than waiting for the complete response.</p>
+
+<p>Args:
+    config:  Application config dict (must contain <code>inference</code> section).
+    request: <code>InferenceRequest</code> describing the prompt and task type.</p>
+
+<p>Yields:
+    str: Incremental text chunks. If the underlying router/LLM doesn't
+        support true streaming, yields the complete response as a single
+        chunk — callers can always use this interface uniformly.</p>
+
+<p>Note:
+    Unlike <code><a href="#llm_invoke">llm_invoke()</a></code>, this does not raise on <code>[WARN]</code>-prefixed
+    output — streaming callers typically render chunks as they arrive
+    and should check the accumulated text themselves if hard failure
+    detection is needed.</p>
 </div>
 
 

@@ -51,6 +51,9 @@
                         <li>
                                 <a class="function" href="#BaseLLM.generate">generate</a>
                         </li>
+                        <li>
+                                <a class="function" href="#BaseLLM.generate_stream">generate_stream</a>
+                        </li>
                 </ul>
 
             </li>
@@ -134,12 +137,43 @@
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
 </span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>    <span class="c1"># Abstract inference contract</span>
 </span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a><span class="sd">        Generate a text completion or inference result for a given prompt.</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="sd">        Args:</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a><span class="sd">            system_prompt: Optional system-level instructions (role, persona,</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a><span class="sd">                constraints). Kept separate from the user prompt so providers</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="sd">                that support a dedicated system channel (Ollama ``system``,</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="sd">                Claude ``system``, etc.) can use it — and so the system portion</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a><span class="sd">                is cacheable independently of per-request content.</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a><span class="sd">        Yield response text incrementally as it becomes available.</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a><span class="sd">        Optional capability — not every adapter must implement this. The</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="sd">        default raises ``NotImplementedError`` so callers (``K9ModelRouter``)</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a><span class="sd">        can detect support via ``hasattr`` and fall back to ``generate()``</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a><span class="sd">        for adapters that don&#39;t override it.</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="sd">        Args:</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a><span class="sd">            system_prompt: Optional system-level instructions — same</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a><span class="sd">                separation as ``generate()``.</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a><span class="sd">        Yields:</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos">91</span></a><span class="sd">            str: Incremental text chunks as the model produces them.</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos">92</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos">93</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos">94</span></a>            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not implement generate_stream(). &quot;</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos">95</span></a>            <span class="s2">&quot;Override it to enable streaming for this adapter.&quot;</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos">96</span></a>        <span class="p">)</span>
 </span></pre></div>
 
 
@@ -203,12 +237,43 @@
 </span><span id="BaseLLM-58"><a href="#BaseLLM-58"><span class="linenos">58</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
 </span><span id="BaseLLM-59"><a href="#BaseLLM-59"><span class="linenos">59</span></a>    <span class="c1"># Abstract inference contract</span>
 </span><span id="BaseLLM-60"><a href="#BaseLLM-60"><span class="linenos">60</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
-</span><span id="BaseLLM-61"><a href="#BaseLLM-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="BaseLLM-61"><a href="#BaseLLM-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="BaseLLM-62"><a href="#BaseLLM-62"><span class="linenos">62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="BaseLLM-63"><a href="#BaseLLM-63"><span class="linenos">63</span></a><span class="sd">        Generate a text completion or inference result for a given prompt.</span>
-</span><span id="BaseLLM-64"><a href="#BaseLLM-64"><span class="linenos">64</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
-</span><span id="BaseLLM-65"><a href="#BaseLLM-65"><span class="linenos">65</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="BaseLLM-66"><a href="#BaseLLM-66"><span class="linenos">66</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
+</span><span id="BaseLLM-64"><a href="#BaseLLM-64"><span class="linenos">64</span></a>
+</span><span id="BaseLLM-65"><a href="#BaseLLM-65"><span class="linenos">65</span></a><span class="sd">        Args:</span>
+</span><span id="BaseLLM-66"><a href="#BaseLLM-66"><span class="linenos">66</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="BaseLLM-67"><a href="#BaseLLM-67"><span class="linenos">67</span></a><span class="sd">            system_prompt: Optional system-level instructions (role, persona,</span>
+</span><span id="BaseLLM-68"><a href="#BaseLLM-68"><span class="linenos">68</span></a><span class="sd">                constraints). Kept separate from the user prompt so providers</span>
+</span><span id="BaseLLM-69"><a href="#BaseLLM-69"><span class="linenos">69</span></a><span class="sd">                that support a dedicated system channel (Ollama ``system``,</span>
+</span><span id="BaseLLM-70"><a href="#BaseLLM-70"><span class="linenos">70</span></a><span class="sd">                Claude ``system``, etc.) can use it — and so the system portion</span>
+</span><span id="BaseLLM-71"><a href="#BaseLLM-71"><span class="linenos">71</span></a><span class="sd">                is cacheable independently of per-request content.</span>
+</span><span id="BaseLLM-72"><a href="#BaseLLM-72"><span class="linenos">72</span></a>
+</span><span id="BaseLLM-73"><a href="#BaseLLM-73"><span class="linenos">73</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
+</span><span id="BaseLLM-74"><a href="#BaseLLM-74"><span class="linenos">74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseLLM-75"><a href="#BaseLLM-75"><span class="linenos">75</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
+</span><span id="BaseLLM-76"><a href="#BaseLLM-76"><span class="linenos">76</span></a>
+</span><span id="BaseLLM-77"><a href="#BaseLLM-77"><span class="linenos">77</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="BaseLLM-78"><a href="#BaseLLM-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="BaseLLM-79"><a href="#BaseLLM-79"><span class="linenos">79</span></a><span class="sd">        Yield response text incrementally as it becomes available.</span>
+</span><span id="BaseLLM-80"><a href="#BaseLLM-80"><span class="linenos">80</span></a>
+</span><span id="BaseLLM-81"><a href="#BaseLLM-81"><span class="linenos">81</span></a><span class="sd">        Optional capability — not every adapter must implement this. The</span>
+</span><span id="BaseLLM-82"><a href="#BaseLLM-82"><span class="linenos">82</span></a><span class="sd">        default raises ``NotImplementedError`` so callers (``K9ModelRouter``)</span>
+</span><span id="BaseLLM-83"><a href="#BaseLLM-83"><span class="linenos">83</span></a><span class="sd">        can detect support via ``hasattr`` and fall back to ``generate()``</span>
+</span><span id="BaseLLM-84"><a href="#BaseLLM-84"><span class="linenos">84</span></a><span class="sd">        for adapters that don&#39;t override it.</span>
+</span><span id="BaseLLM-85"><a href="#BaseLLM-85"><span class="linenos">85</span></a>
+</span><span id="BaseLLM-86"><a href="#BaseLLM-86"><span class="linenos">86</span></a><span class="sd">        Args:</span>
+</span><span id="BaseLLM-87"><a href="#BaseLLM-87"><span class="linenos">87</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="BaseLLM-88"><a href="#BaseLLM-88"><span class="linenos">88</span></a><span class="sd">            system_prompt: Optional system-level instructions — same</span>
+</span><span id="BaseLLM-89"><a href="#BaseLLM-89"><span class="linenos">89</span></a><span class="sd">                separation as ``generate()``.</span>
+</span><span id="BaseLLM-90"><a href="#BaseLLM-90"><span class="linenos">90</span></a>
+</span><span id="BaseLLM-91"><a href="#BaseLLM-91"><span class="linenos">91</span></a><span class="sd">        Yields:</span>
+</span><span id="BaseLLM-92"><a href="#BaseLLM-92"><span class="linenos">92</span></a><span class="sd">            str: Incremental text chunks as the model produces them.</span>
+</span><span id="BaseLLM-93"><a href="#BaseLLM-93"><span class="linenos">93</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseLLM-94"><a href="#BaseLLM-94"><span class="linenos">94</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+</span><span id="BaseLLM-95"><a href="#BaseLLM-95"><span class="linenos">95</span></a>            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not implement generate_stream(). &quot;</span>
+</span><span id="BaseLLM-96"><a href="#BaseLLM-96"><span class="linenos">96</span></a>            <span class="s2">&quot;Override it to enable streaming for this adapter.&quot;</span>
+</span><span id="BaseLLM-97"><a href="#BaseLLM-97"><span class="linenos">97</span></a>        <span class="p">)</span>
 </span></pre></div>
 
 
@@ -335,23 +400,94 @@
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">generate</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
+        <span class="name">generate</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
 
                 <label class="view-source-button" for="BaseLLM.generate-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#BaseLLM.generate"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseLLM.generate-61"><a href="#BaseLLM.generate-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseLLM.generate-61"><a href="#BaseLLM.generate-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="BaseLLM.generate-62"><a href="#BaseLLM.generate-62"><span class="linenos">62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="BaseLLM.generate-63"><a href="#BaseLLM.generate-63"><span class="linenos">63</span></a><span class="sd">        Generate a text completion or inference result for a given prompt.</span>
-</span><span id="BaseLLM.generate-64"><a href="#BaseLLM.generate-64"><span class="linenos">64</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
-</span><span id="BaseLLM.generate-65"><a href="#BaseLLM.generate-65"><span class="linenos">65</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="BaseLLM.generate-66"><a href="#BaseLLM.generate-66"><span class="linenos">66</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
+</span><span id="BaseLLM.generate-64"><a href="#BaseLLM.generate-64"><span class="linenos">64</span></a>
+</span><span id="BaseLLM.generate-65"><a href="#BaseLLM.generate-65"><span class="linenos">65</span></a><span class="sd">        Args:</span>
+</span><span id="BaseLLM.generate-66"><a href="#BaseLLM.generate-66"><span class="linenos">66</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="BaseLLM.generate-67"><a href="#BaseLLM.generate-67"><span class="linenos">67</span></a><span class="sd">            system_prompt: Optional system-level instructions (role, persona,</span>
+</span><span id="BaseLLM.generate-68"><a href="#BaseLLM.generate-68"><span class="linenos">68</span></a><span class="sd">                constraints). Kept separate from the user prompt so providers</span>
+</span><span id="BaseLLM.generate-69"><a href="#BaseLLM.generate-69"><span class="linenos">69</span></a><span class="sd">                that support a dedicated system channel (Ollama ``system``,</span>
+</span><span id="BaseLLM.generate-70"><a href="#BaseLLM.generate-70"><span class="linenos">70</span></a><span class="sd">                Claude ``system``, etc.) can use it — and so the system portion</span>
+</span><span id="BaseLLM.generate-71"><a href="#BaseLLM.generate-71"><span class="linenos">71</span></a><span class="sd">                is cacheable independently of per-request content.</span>
+</span><span id="BaseLLM.generate-72"><a href="#BaseLLM.generate-72"><span class="linenos">72</span></a>
+</span><span id="BaseLLM.generate-73"><a href="#BaseLLM.generate-73"><span class="linenos">73</span></a><span class="sd">        Subclasses must override this method to connect to their backend LLM.</span>
+</span><span id="BaseLLM.generate-74"><a href="#BaseLLM.generate-74"><span class="linenos">74</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseLLM.generate-75"><a href="#BaseLLM.generate-75"><span class="linenos">75</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement generate()&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Generate a text completion or inference result for a given prompt.
-Subclasses must override this method to connect to their backend LLM.</p>
+            <div class="docstring"><p>Generate a text completion or inference result for a given prompt.</p>
+
+<p>Args:
+    prompt: The user prompt / task content.
+    system_prompt: Optional system-level instructions (role, persona,
+        constraints). Kept separate from the user prompt so providers
+        that support a dedicated system channel (Ollama <code>system</code>,
+        Claude <code>system</code>, etc.) can use it — and so the system portion
+        is cacheable independently of per-request content.</p>
+
+<p>Subclasses must override this method to connect to their backend LLM.</p>
+</div>
+
+
+                            </div>
+                            <div id="BaseLLM.generate_stream" class="classattr">
+                                        <input id="BaseLLM.generate_stream-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">async def</span>
+        <span class="name">generate_stream</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="BaseLLM.generate_stream-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#BaseLLM.generate_stream"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseLLM.generate_stream-77"><a href="#BaseLLM.generate_stream-77"><span class="linenos">77</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">system_prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="BaseLLM.generate_stream-78"><a href="#BaseLLM.generate_stream-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="BaseLLM.generate_stream-79"><a href="#BaseLLM.generate_stream-79"><span class="linenos">79</span></a><span class="sd">        Yield response text incrementally as it becomes available.</span>
+</span><span id="BaseLLM.generate_stream-80"><a href="#BaseLLM.generate_stream-80"><span class="linenos">80</span></a>
+</span><span id="BaseLLM.generate_stream-81"><a href="#BaseLLM.generate_stream-81"><span class="linenos">81</span></a><span class="sd">        Optional capability — not every adapter must implement this. The</span>
+</span><span id="BaseLLM.generate_stream-82"><a href="#BaseLLM.generate_stream-82"><span class="linenos">82</span></a><span class="sd">        default raises ``NotImplementedError`` so callers (``K9ModelRouter``)</span>
+</span><span id="BaseLLM.generate_stream-83"><a href="#BaseLLM.generate_stream-83"><span class="linenos">83</span></a><span class="sd">        can detect support via ``hasattr`` and fall back to ``generate()``</span>
+</span><span id="BaseLLM.generate_stream-84"><a href="#BaseLLM.generate_stream-84"><span class="linenos">84</span></a><span class="sd">        for adapters that don&#39;t override it.</span>
+</span><span id="BaseLLM.generate_stream-85"><a href="#BaseLLM.generate_stream-85"><span class="linenos">85</span></a>
+</span><span id="BaseLLM.generate_stream-86"><a href="#BaseLLM.generate_stream-86"><span class="linenos">86</span></a><span class="sd">        Args:</span>
+</span><span id="BaseLLM.generate_stream-87"><a href="#BaseLLM.generate_stream-87"><span class="linenos">87</span></a><span class="sd">            prompt: The user prompt / task content.</span>
+</span><span id="BaseLLM.generate_stream-88"><a href="#BaseLLM.generate_stream-88"><span class="linenos">88</span></a><span class="sd">            system_prompt: Optional system-level instructions — same</span>
+</span><span id="BaseLLM.generate_stream-89"><a href="#BaseLLM.generate_stream-89"><span class="linenos">89</span></a><span class="sd">                separation as ``generate()``.</span>
+</span><span id="BaseLLM.generate_stream-90"><a href="#BaseLLM.generate_stream-90"><span class="linenos">90</span></a>
+</span><span id="BaseLLM.generate_stream-91"><a href="#BaseLLM.generate_stream-91"><span class="linenos">91</span></a><span class="sd">        Yields:</span>
+</span><span id="BaseLLM.generate_stream-92"><a href="#BaseLLM.generate_stream-92"><span class="linenos">92</span></a><span class="sd">            str: Incremental text chunks as the model produces them.</span>
+</span><span id="BaseLLM.generate_stream-93"><a href="#BaseLLM.generate_stream-93"><span class="linenos">93</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseLLM.generate_stream-94"><a href="#BaseLLM.generate_stream-94"><span class="linenos">94</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+</span><span id="BaseLLM.generate_stream-95"><a href="#BaseLLM.generate_stream-95"><span class="linenos">95</span></a>            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> does not implement generate_stream(). &quot;</span>
+</span><span id="BaseLLM.generate_stream-96"><a href="#BaseLLM.generate_stream-96"><span class="linenos">96</span></a>            <span class="s2">&quot;Override it to enable streaming for this adapter.&quot;</span>
+</span><span id="BaseLLM.generate_stream-97"><a href="#BaseLLM.generate_stream-97"><span class="linenos">97</span></a>        <span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Yield response text incrementally as it becomes available.</p>
+
+<p>Optional capability — not every adapter must implement this. The
+default raises <code>NotImplementedError</code> so callers (<code>K9ModelRouter</code>)
+can detect support via <code>hasattr</code> and fall back to <code><a href="#BaseLLM.generate">generate()</a></code>
+for adapters that don't override it.</p>
+
+<p>Args:
+    prompt: The user prompt / task content.
+    system_prompt: Optional system-level instructions — same
+        separation as <code><a href="#BaseLLM.generate">generate()</a></code>.</p>
+
+<p>Yields:
+    str: Incremental text chunks as the model produces them.</p>
 </div>
 
 

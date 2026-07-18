@@ -36,30 +36,34 @@
 </ul>
 
 
-            <h2>Submodules</h2>
-            <ul>
-                    <li><a href="k9_agents/async_agent.html">async_agent</a></li>
-                    <li><a href="k9_agents/chat.html">chat</a></li>
-                    <li><a href="k9_agents/critic_actor.html">critic_actor</a></li>
-                    <li><a href="k9_agents/enrichment.html">enrichment</a></li>
-                    <li><a href="k9_agents/formatters.html">formatters</a></li>
-                    <li><a href="k9_agents/governance.html">governance</a></li>
-                    <li><a href="k9_agents/integration.html">integration</a></li>
-                    <li><a href="k9_agents/intent.html">intent</a></li>
-                    <li><a href="k9_agents/iot.html">iot</a></li>
-                    <li><a href="k9_agents/logging.html">logging</a></li>
-                    <li><a href="k9_agents/messaging.html">messaging</a></li>
-                    <li><a href="k9_agents/orchestration.html">orchestration</a></li>
-                    <li><a href="k9_agents/planning.html">planning</a></li>
-                    <li><a href="k9_agents/presentation.html">presentation</a></li>
-                    <li><a href="k9_agents/rag.html">rag</a></li>
-                    <li><a href="k9_agents/retrieval.html">retrieval</a></li>
-                    <li><a href="k9_agents/router.html">router</a></li>
-                    <li><a href="k9_agents/security.html">security</a></li>
-                    <li><a href="k9_agents/storage.html">storage</a></li>
-                    <li><a href="k9_agents/supporting.html">supporting</a></li>
-                    <li><a href="k9_agents/validation.html">validation</a></li>
-            </ul>
+
+            <h2>API Documentation</h2>
+                <ul class="memberlist">
+            <li>
+                    <a class="class" href="#AgentLoader">AgentLoader</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#AgentLoader.__init__">AgentLoader</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AgentLoader.yaml_dir">yaml_dir</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#AgentLoader.get_agent_yaml">get_agent_yaml</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#AgentLoader.merge_with_global">merge_with_global</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#AgentLoader.has_agent">has_agent</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#AgentLoader.list_classes">list_classes</a>
+                        </li>
+                </ul>
+
+            </li>
+    </ul>
 
 
 
@@ -233,10 +237,307 @@ class MyAgent(BaseAgent):
 </span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="sd">            }</span>
 </span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
 </span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_agents.agent_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentLoader</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;AgentLoader&quot;</span><span class="p">]</span>
 </span></pre></div>
 
 
             </section>
+                <section id="AgentLoader">
+                            <input id="AgentLoader-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">AgentLoader</span>:
+
+                <label class="view-source-button" for="AgentLoader-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader-70"><a href="#AgentLoader-70"><span class="linenos"> 70</span></a><span class="k">class</span><span class="w"> </span><span class="nc">AgentLoader</span><span class="p">:</span>
+</span><span id="AgentLoader-71"><a href="#AgentLoader-71"><span class="linenos"> 71</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="AgentLoader-72"><a href="#AgentLoader-72"><span class="linenos"> 72</span></a><span class="sd">    Loads per-agent YAML files from a directory and provides merged configs</span>
+</span><span id="AgentLoader-73"><a href="#AgentLoader-73"><span class="linenos"> 73</span></a><span class="sd">    for agent construction.</span>
+</span><span id="AgentLoader-74"><a href="#AgentLoader-74"><span class="linenos"> 74</span></a>
+</span><span id="AgentLoader-75"><a href="#AgentLoader-75"><span class="linenos"> 75</span></a><span class="sd">    Each YAML file must contain a ``class:`` field that matches the Python</span>
+</span><span id="AgentLoader-76"><a href="#AgentLoader-76"><span class="linenos"> 76</span></a><span class="sd">    class name exactly (e.g. ``class: ClaimsTriageAgent``).</span>
+</span><span id="AgentLoader-77"><a href="#AgentLoader-77"><span class="linenos"> 77</span></a>
+</span><span id="AgentLoader-78"><a href="#AgentLoader-78"><span class="linenos"> 78</span></a><span class="sd">    Usage inside an orchestrator&#39;s ``_load_squad()``::</span>
+</span><span id="AgentLoader-79"><a href="#AgentLoader-79"><span class="linenos"> 79</span></a>
+</span><span id="AgentLoader-80"><a href="#AgentLoader-80"><span class="linenos"> 80</span></a><span class="sd">        from k9_aif_abb.k9_agents.agent_loader import AgentLoader</span>
+</span><span id="AgentLoader-81"><a href="#AgentLoader-81"><span class="linenos"> 81</span></a>
+</span><span id="AgentLoader-82"><a href="#AgentLoader-82"><span class="linenos"> 82</span></a><span class="sd">        agents_yaml_dir = Path(__file__).parent.parent / &quot;agents&quot; / &quot;yaml&quot;</span>
+</span><span id="AgentLoader-83"><a href="#AgentLoader-83"><span class="linenos"> 83</span></a><span class="sd">        agent_loader = AgentLoader(agents_yaml_dir)</span>
+</span><span id="AgentLoader-84"><a href="#AgentLoader-84"><span class="linenos"> 84</span></a>
+</span><span id="AgentLoader-85"><a href="#AgentLoader-85"><span class="linenos"> 85</span></a><span class="sd">        agent_registry.register(</span>
+</span><span id="AgentLoader-86"><a href="#AgentLoader-86"><span class="linenos"> 86</span></a><span class="sd">            &quot;ClaimsTriageAgent&quot;,</span>
+</span><span id="AgentLoader-87"><a href="#AgentLoader-87"><span class="linenos"> 87</span></a><span class="sd">            lambda: ClaimsTriageAgent(</span>
+</span><span id="AgentLoader-88"><a href="#AgentLoader-88"><span class="linenos"> 88</span></a><span class="sd">                config=agent_loader.merge_with_global(&quot;ClaimsTriageAgent&quot;, self.config)</span>
+</span><span id="AgentLoader-89"><a href="#AgentLoader-89"><span class="linenos"> 89</span></a><span class="sd">            ),</span>
+</span><span id="AgentLoader-90"><a href="#AgentLoader-90"><span class="linenos"> 90</span></a><span class="sd">        )</span>
+</span><span id="AgentLoader-91"><a href="#AgentLoader-91"><span class="linenos"> 91</span></a>
+</span><span id="AgentLoader-92"><a href="#AgentLoader-92"><span class="linenos"> 92</span></a><span class="sd">    Parallel to ``SquadLoader`` in ``k9_aif_abb/k9_squad/squad_loader.py``.</span>
+</span><span id="AgentLoader-93"><a href="#AgentLoader-93"><span class="linenos"> 93</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="AgentLoader-94"><a href="#AgentLoader-94"><span class="linenos"> 94</span></a>
+</span><span id="AgentLoader-95"><a href="#AgentLoader-95"><span class="linenos"> 95</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="AgentLoader-96"><a href="#AgentLoader-96"><span class="linenos"> 96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">yaml_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">yaml_dir</span><span class="p">)</span>
+</span><span id="AgentLoader-97"><a href="#AgentLoader-97"><span class="linenos"> 97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="AgentLoader-98"><a href="#AgentLoader-98"><span class="linenos"> 98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_load_all</span><span class="p">()</span>
+</span><span id="AgentLoader-99"><a href="#AgentLoader-99"><span class="linenos"> 99</span></a>
+</span><span id="AgentLoader-100"><a href="#AgentLoader-100"><span class="linenos">100</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="AgentLoader-101"><a href="#AgentLoader-101"><span class="linenos">101</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_load_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="AgentLoader-102"><a href="#AgentLoader-102"><span class="linenos">102</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">yaml_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+</span><span id="AgentLoader-103"><a href="#AgentLoader-103"><span class="linenos">103</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;AgentLoader: yaml_dir not found: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">yaml_dir</span><span class="p">)</span>
+</span><span id="AgentLoader-104"><a href="#AgentLoader-104"><span class="linenos">104</span></a>            <span class="k">return</span>
+</span><span id="AgentLoader-105"><a href="#AgentLoader-105"><span class="linenos">105</span></a>        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">yaml_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.yaml&quot;</span><span class="p">)):</span>
+</span><span id="AgentLoader-106"><a href="#AgentLoader-106"><span class="linenos">106</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="AgentLoader-107"><a href="#AgentLoader-107"><span class="linenos">107</span></a>                <span class="k">with</span> <span class="n">path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+</span><span id="AgentLoader-108"><a href="#AgentLoader-108"><span class="linenos">108</span></a>                    <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="AgentLoader-109"><a href="#AgentLoader-109"><span class="linenos">109</span></a>                <span class="n">class_name</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;class&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="AgentLoader-110"><a href="#AgentLoader-110"><span class="linenos">110</span></a>                <span class="k">if</span> <span class="n">class_name</span><span class="p">:</span>
+</span><span id="AgentLoader-111"><a href="#AgentLoader-111"><span class="linenos">111</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="p">[</span><span class="n">class_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+</span><span id="AgentLoader-112"><a href="#AgentLoader-112"><span class="linenos">112</span></a>                    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AgentLoader: indexed </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="AgentLoader-113"><a href="#AgentLoader-113"><span class="linenos">113</span></a>                <span class="k">else</span><span class="p">:</span>
+</span><span id="AgentLoader-114"><a href="#AgentLoader-114"><span class="linenos">114</span></a>                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;AgentLoader: no &#39;class&#39; field in </span><span class="si">%s</span><span class="s2"> — skipped&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span id="AgentLoader-115"><a href="#AgentLoader-115"><span class="linenos">115</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="AgentLoader-116"><a href="#AgentLoader-116"><span class="linenos">116</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;AgentLoader: could not load </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+</span><span id="AgentLoader-117"><a href="#AgentLoader-117"><span class="linenos">117</span></a>
+</span><span id="AgentLoader-118"><a href="#AgentLoader-118"><span class="linenos">118</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="AgentLoader-119"><a href="#AgentLoader-119"><span class="linenos">119</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_agent_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="AgentLoader-120"><a href="#AgentLoader-120"><span class="linenos">120</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the raw YAML dict for the given agent class name, or None.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader-121"><a href="#AgentLoader-121"><span class="linenos">121</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+</span><span id="AgentLoader-122"><a href="#AgentLoader-122"><span class="linenos">122</span></a>
+</span><span id="AgentLoader-123"><a href="#AgentLoader-123"><span class="linenos">123</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">merge_with_global</span><span class="p">(</span>
+</span><span id="AgentLoader-124"><a href="#AgentLoader-124"><span class="linenos">124</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">global_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span><span id="AgentLoader-125"><a href="#AgentLoader-125"><span class="linenos">125</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="AgentLoader-126"><a href="#AgentLoader-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="AgentLoader-127"><a href="#AgentLoader-127"><span class="linenos">127</span></a><span class="sd">        Return a merged config dict for the named agent class.</span>
+</span><span id="AgentLoader-128"><a href="#AgentLoader-128"><span class="linenos">128</span></a>
+</span><span id="AgentLoader-129"><a href="#AgentLoader-129"><span class="linenos">129</span></a><span class="sd">        Agent YAML wins on key collision, except for keys listed in</span>
+</span><span id="AgentLoader-130"><a href="#AgentLoader-130"><span class="linenos">130</span></a><span class="sd">        ``global_config[&quot;_policy&quot;][&quot;locked&quot;]`` — those are always restored</span>
+</span><span id="AgentLoader-131"><a href="#AgentLoader-131"><span class="linenos">131</span></a><span class="sd">        from ``global_config`` and an audit warning is logged when an SBB</span>
+</span><span id="AgentLoader-132"><a href="#AgentLoader-132"><span class="linenos">132</span></a><span class="sd">        attempted to override them.</span>
+</span><span id="AgentLoader-133"><a href="#AgentLoader-133"><span class="linenos">133</span></a>
+</span><span id="AgentLoader-134"><a href="#AgentLoader-134"><span class="linenos">134</span></a><span class="sd">        The ``_policy`` block is stripped from the returned dict so agents</span>
+</span><span id="AgentLoader-135"><a href="#AgentLoader-135"><span class="linenos">135</span></a><span class="sd">        never see it.</span>
+</span><span id="AgentLoader-136"><a href="#AgentLoader-136"><span class="linenos">136</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="AgentLoader-137"><a href="#AgentLoader-137"><span class="linenos">137</span></a>        <span class="n">agent_yaml</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="AgentLoader-138"><a href="#AgentLoader-138"><span class="linenos">138</span></a>        <span class="n">merged</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">global_config</span><span class="p">,</span> <span class="o">**</span><span class="n">agent_yaml</span><span class="p">}</span>
+</span><span id="AgentLoader-139"><a href="#AgentLoader-139"><span class="linenos">139</span></a>
+</span><span id="AgentLoader-140"><a href="#AgentLoader-140"><span class="linenos">140</span></a>        <span class="c1"># Enforce enterprise policy locks</span>
+</span><span id="AgentLoader-141"><a href="#AgentLoader-141"><span class="linenos">141</span></a>        <span class="n">locked</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">global_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_policy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;locked&quot;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="AgentLoader-142"><a href="#AgentLoader-142"><span class="linenos">142</span></a>        <span class="k">for</span> <span class="n">key_path</span> <span class="ow">in</span> <span class="n">locked</span><span class="p">:</span>
+</span><span id="AgentLoader-143"><a href="#AgentLoader-143"><span class="linenos">143</span></a>            <span class="n">global_val</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">key_path</span><span class="p">)</span>
+</span><span id="AgentLoader-144"><a href="#AgentLoader-144"><span class="linenos">144</span></a>            <span class="n">merged_val</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">key_path</span><span class="p">)</span>
+</span><span id="AgentLoader-145"><a href="#AgentLoader-145"><span class="linenos">145</span></a>            <span class="k">if</span> <span class="n">merged_val</span> <span class="o">!=</span> <span class="n">global_val</span><span class="p">:</span>
+</span><span id="AgentLoader-146"><a href="#AgentLoader-146"><span class="linenos">146</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="AgentLoader-147"><a href="#AgentLoader-147"><span class="linenos">147</span></a>                    <span class="s2">&quot;AgentLoader: [POLICY] locked key &#39;</span><span class="si">%s</span><span class="s2">&#39; override rejected for </span><span class="si">%s</span><span class="s2"> &quot;</span>
+</span><span id="AgentLoader-148"><a href="#AgentLoader-148"><span class="linenos">148</span></a>                    <span class="s2">&quot;(attempted value: </span><span class="si">%r</span><span class="s2">, enforced value: </span><span class="si">%r</span><span class="s2">)&quot;</span><span class="p">,</span>
+</span><span id="AgentLoader-149"><a href="#AgentLoader-149"><span class="linenos">149</span></a>                    <span class="n">key_path</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">merged_val</span><span class="p">,</span> <span class="n">global_val</span><span class="p">,</span>
+</span><span id="AgentLoader-150"><a href="#AgentLoader-150"><span class="linenos">150</span></a>                <span class="p">)</span>
+</span><span id="AgentLoader-151"><a href="#AgentLoader-151"><span class="linenos">151</span></a>                <span class="n">_set_nested</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">key_path</span><span class="p">,</span> <span class="n">global_val</span><span class="p">)</span>
+</span><span id="AgentLoader-152"><a href="#AgentLoader-152"><span class="linenos">152</span></a>
+</span><span id="AgentLoader-153"><a href="#AgentLoader-153"><span class="linenos">153</span></a>        <span class="c1"># Strip _policy — agents must not see framework internals</span>
+</span><span id="AgentLoader-154"><a href="#AgentLoader-154"><span class="linenos">154</span></a>        <span class="n">merged</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_policy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span id="AgentLoader-155"><a href="#AgentLoader-155"><span class="linenos">155</span></a>
+</span><span id="AgentLoader-156"><a href="#AgentLoader-156"><span class="linenos">156</span></a>        <span class="k">return</span> <span class="n">merged</span>
+</span><span id="AgentLoader-157"><a href="#AgentLoader-157"><span class="linenos">157</span></a>
+</span><span id="AgentLoader-158"><a href="#AgentLoader-158"><span class="linenos">158</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">has_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="AgentLoader-159"><a href="#AgentLoader-159"><span class="linenos">159</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if a YAML file was found for the given class name.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader-160"><a href="#AgentLoader-160"><span class="linenos">160</span></a>        <span class="k">return</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span>
+</span><span id="AgentLoader-161"><a href="#AgentLoader-161"><span class="linenos">161</span></a>
+</span><span id="AgentLoader-162"><a href="#AgentLoader-162"><span class="linenos">162</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="AgentLoader-163"><a href="#AgentLoader-163"><span class="linenos">163</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all indexed agent class names.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader-164"><a href="#AgentLoader-164"><span class="linenos">164</span></a>        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Loads per-agent YAML files from a directory and provides merged configs
+for agent construction.</p>
+
+<p>Each YAML file must contain a <code>class:</code> field that matches the Python
+class name exactly (e.g. <code>class: ClaimsTriageAgent</code>).</p>
+
+<p>Usage inside an orchestrator's <code>_load_squad()</code>::</p>
+
+<pre><code>from k9_aif_abb.k9_agents.agent_loader import AgentLoader
+
+agents_yaml_dir = Path(__file__).parent.parent / "agents" / "yaml"
+agent_loader = AgentLoader(agents_yaml_dir)
+
+agent_registry.register(
+    "ClaimsTriageAgent",
+    lambda: ClaimsTriageAgent(
+        config=agent_loader.merge_with_global("ClaimsTriageAgent", self.config)
+    ),
+)
+</code></pre>
+
+<p>Parallel to <code>SquadLoader</code> in <code>k9_aif_abb/k9_squad/squad_loader.py</code>.</p>
+</div>
+
+
+                            <div id="AgentLoader.__init__" class="classattr">
+                                        <input id="AgentLoader.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">AgentLoader</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">yaml_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span></span>)</span>
+
+                <label class="view-source-button" for="AgentLoader.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader.__init__-95"><a href="#AgentLoader.__init__-95"><span class="linenos">95</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yaml_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="AgentLoader.__init__-96"><a href="#AgentLoader.__init__-96"><span class="linenos">96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">yaml_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">yaml_dir</span><span class="p">)</span>
+</span><span id="AgentLoader.__init__-97"><a href="#AgentLoader.__init__-97"><span class="linenos">97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span id="AgentLoader.__init__-98"><a href="#AgentLoader.__init__-98"><span class="linenos">98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_load_all</span><span class="p">()</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="AgentLoader.yaml_dir" class="classattr">
+                                <div class="attr variable">
+            <span class="name">yaml_dir</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AgentLoader.yaml_dir"></a>
+    
+    
+
+                            </div>
+                            <div id="AgentLoader.get_agent_yaml" class="classattr">
+                                        <input id="AgentLoader.get_agent_yaml-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_agent_yaml</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>:</span></span>
+
+                <label class="view-source-button" for="AgentLoader.get_agent_yaml-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader.get_agent_yaml"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader.get_agent_yaml-119"><a href="#AgentLoader.get_agent_yaml-119"><span class="linenos">119</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_agent_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="AgentLoader.get_agent_yaml-120"><a href="#AgentLoader.get_agent_yaml-120"><span class="linenos">120</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the raw YAML dict for the given agent class name, or None.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader.get_agent_yaml-121"><a href="#AgentLoader.get_agent_yaml-121"><span class="linenos">121</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return the raw YAML dict for the given agent class name, or None.</p>
+</div>
+
+
+                            </div>
+                            <div id="AgentLoader.merge_with_global" class="classattr">
+                                        <input id="AgentLoader.merge_with_global-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">merge_with_global</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">global_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="AgentLoader.merge_with_global-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader.merge_with_global"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader.merge_with_global-123"><a href="#AgentLoader.merge_with_global-123"><span class="linenos">123</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">merge_with_global</span><span class="p">(</span>
+</span><span id="AgentLoader.merge_with_global-124"><a href="#AgentLoader.merge_with_global-124"><span class="linenos">124</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">global_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</span><span id="AgentLoader.merge_with_global-125"><a href="#AgentLoader.merge_with_global-125"><span class="linenos">125</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="AgentLoader.merge_with_global-126"><a href="#AgentLoader.merge_with_global-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="AgentLoader.merge_with_global-127"><a href="#AgentLoader.merge_with_global-127"><span class="linenos">127</span></a><span class="sd">        Return a merged config dict for the named agent class.</span>
+</span><span id="AgentLoader.merge_with_global-128"><a href="#AgentLoader.merge_with_global-128"><span class="linenos">128</span></a>
+</span><span id="AgentLoader.merge_with_global-129"><a href="#AgentLoader.merge_with_global-129"><span class="linenos">129</span></a><span class="sd">        Agent YAML wins on key collision, except for keys listed in</span>
+</span><span id="AgentLoader.merge_with_global-130"><a href="#AgentLoader.merge_with_global-130"><span class="linenos">130</span></a><span class="sd">        ``global_config[&quot;_policy&quot;][&quot;locked&quot;]`` — those are always restored</span>
+</span><span id="AgentLoader.merge_with_global-131"><a href="#AgentLoader.merge_with_global-131"><span class="linenos">131</span></a><span class="sd">        from ``global_config`` and an audit warning is logged when an SBB</span>
+</span><span id="AgentLoader.merge_with_global-132"><a href="#AgentLoader.merge_with_global-132"><span class="linenos">132</span></a><span class="sd">        attempted to override them.</span>
+</span><span id="AgentLoader.merge_with_global-133"><a href="#AgentLoader.merge_with_global-133"><span class="linenos">133</span></a>
+</span><span id="AgentLoader.merge_with_global-134"><a href="#AgentLoader.merge_with_global-134"><span class="linenos">134</span></a><span class="sd">        The ``_policy`` block is stripped from the returned dict so agents</span>
+</span><span id="AgentLoader.merge_with_global-135"><a href="#AgentLoader.merge_with_global-135"><span class="linenos">135</span></a><span class="sd">        never see it.</span>
+</span><span id="AgentLoader.merge_with_global-136"><a href="#AgentLoader.merge_with_global-136"><span class="linenos">136</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="AgentLoader.merge_with_global-137"><a href="#AgentLoader.merge_with_global-137"><span class="linenos">137</span></a>        <span class="n">agent_yaml</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="p">{})</span>
+</span><span id="AgentLoader.merge_with_global-138"><a href="#AgentLoader.merge_with_global-138"><span class="linenos">138</span></a>        <span class="n">merged</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">global_config</span><span class="p">,</span> <span class="o">**</span><span class="n">agent_yaml</span><span class="p">}</span>
+</span><span id="AgentLoader.merge_with_global-139"><a href="#AgentLoader.merge_with_global-139"><span class="linenos">139</span></a>
+</span><span id="AgentLoader.merge_with_global-140"><a href="#AgentLoader.merge_with_global-140"><span class="linenos">140</span></a>        <span class="c1"># Enforce enterprise policy locks</span>
+</span><span id="AgentLoader.merge_with_global-141"><a href="#AgentLoader.merge_with_global-141"><span class="linenos">141</span></a>        <span class="n">locked</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">global_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_policy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;locked&quot;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span id="AgentLoader.merge_with_global-142"><a href="#AgentLoader.merge_with_global-142"><span class="linenos">142</span></a>        <span class="k">for</span> <span class="n">key_path</span> <span class="ow">in</span> <span class="n">locked</span><span class="p">:</span>
+</span><span id="AgentLoader.merge_with_global-143"><a href="#AgentLoader.merge_with_global-143"><span class="linenos">143</span></a>            <span class="n">global_val</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">key_path</span><span class="p">)</span>
+</span><span id="AgentLoader.merge_with_global-144"><a href="#AgentLoader.merge_with_global-144"><span class="linenos">144</span></a>            <span class="n">merged_val</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">key_path</span><span class="p">)</span>
+</span><span id="AgentLoader.merge_with_global-145"><a href="#AgentLoader.merge_with_global-145"><span class="linenos">145</span></a>            <span class="k">if</span> <span class="n">merged_val</span> <span class="o">!=</span> <span class="n">global_val</span><span class="p">:</span>
+</span><span id="AgentLoader.merge_with_global-146"><a href="#AgentLoader.merge_with_global-146"><span class="linenos">146</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="AgentLoader.merge_with_global-147"><a href="#AgentLoader.merge_with_global-147"><span class="linenos">147</span></a>                    <span class="s2">&quot;AgentLoader: [POLICY] locked key &#39;</span><span class="si">%s</span><span class="s2">&#39; override rejected for </span><span class="si">%s</span><span class="s2"> &quot;</span>
+</span><span id="AgentLoader.merge_with_global-148"><a href="#AgentLoader.merge_with_global-148"><span class="linenos">148</span></a>                    <span class="s2">&quot;(attempted value: </span><span class="si">%r</span><span class="s2">, enforced value: </span><span class="si">%r</span><span class="s2">)&quot;</span><span class="p">,</span>
+</span><span id="AgentLoader.merge_with_global-149"><a href="#AgentLoader.merge_with_global-149"><span class="linenos">149</span></a>                    <span class="n">key_path</span><span class="p">,</span> <span class="n">class_name</span><span class="p">,</span> <span class="n">merged_val</span><span class="p">,</span> <span class="n">global_val</span><span class="p">,</span>
+</span><span id="AgentLoader.merge_with_global-150"><a href="#AgentLoader.merge_with_global-150"><span class="linenos">150</span></a>                <span class="p">)</span>
+</span><span id="AgentLoader.merge_with_global-151"><a href="#AgentLoader.merge_with_global-151"><span class="linenos">151</span></a>                <span class="n">_set_nested</span><span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">key_path</span><span class="p">,</span> <span class="n">global_val</span><span class="p">)</span>
+</span><span id="AgentLoader.merge_with_global-152"><a href="#AgentLoader.merge_with_global-152"><span class="linenos">152</span></a>
+</span><span id="AgentLoader.merge_with_global-153"><a href="#AgentLoader.merge_with_global-153"><span class="linenos">153</span></a>        <span class="c1"># Strip _policy — agents must not see framework internals</span>
+</span><span id="AgentLoader.merge_with_global-154"><a href="#AgentLoader.merge_with_global-154"><span class="linenos">154</span></a>        <span class="n">merged</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_policy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span id="AgentLoader.merge_with_global-155"><a href="#AgentLoader.merge_with_global-155"><span class="linenos">155</span></a>
+</span><span id="AgentLoader.merge_with_global-156"><a href="#AgentLoader.merge_with_global-156"><span class="linenos">156</span></a>        <span class="k">return</span> <span class="n">merged</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return a merged config dict for the named agent class.</p>
+
+<p>Agent YAML wins on key collision, except for keys listed in
+<code>global_config["_policy"]["locked"]</code> — those are always restored
+from <code>global_config</code> and an audit warning is logged when an SBB
+attempted to override them.</p>
+
+<p>The <code>_policy</code> block is stripped from the returned dict so agents
+never see it.</p>
+</div>
+
+
+                            </div>
+                            <div id="AgentLoader.has_agent" class="classattr">
+                                        <input id="AgentLoader.has_agent-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">has_agent</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="AgentLoader.has_agent-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader.has_agent"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader.has_agent-158"><a href="#AgentLoader.has_agent-158"><span class="linenos">158</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">has_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="AgentLoader.has_agent-159"><a href="#AgentLoader.has_agent-159"><span class="linenos">159</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if a YAML file was found for the given class name.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader.has_agent-160"><a href="#AgentLoader.has_agent-160"><span class="linenos">160</span></a>        <span class="k">return</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return True if a YAML file was found for the given class name.</p>
+</div>
+
+
+                            </div>
+                            <div id="AgentLoader.list_classes" class="classattr">
+                                        <input id="AgentLoader.list_classes-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">list_classes</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="AgentLoader.list_classes-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AgentLoader.list_classes"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AgentLoader.list_classes-162"><a href="#AgentLoader.list_classes-162"><span class="linenos">162</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_classes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="AgentLoader.list_classes-163"><a href="#AgentLoader.list_classes-163"><span class="linenos">163</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all indexed agent class names.&quot;&quot;&quot;</span>
+</span><span id="AgentLoader.list_classes-164"><a href="#AgentLoader.list_classes-164"><span class="linenos">164</span></a>        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_by_class</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Return all indexed agent class names.</p>
+</div>
+
+
+                            </div>
+                </section>
     </main>
 <script>
     function escapeHTML(html) {

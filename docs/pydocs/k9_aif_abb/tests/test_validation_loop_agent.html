@@ -629,7 +629,7 @@ Guess = current iteration number. Finalizes when guess == target.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">generate_hypothesis</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopContext">k9_aif_abb.k9_agents.validation.ValidationLoopContext</a></span></span><span class="return-annotation">):</span></span>
+        <span class="name">generate_hypothesis</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopContext</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="ConvergingAgent.generate_hypothesis-view-source"><span>View Source</span></label>
 
@@ -654,7 +654,7 @@ passed unchanged to <code><a href="#ConvergingAgent.run_validation">run_validati
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">run_validation</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">hypothesis</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopContext">k9_aif_abb.k9_agents.validation.ValidationLoopContext</a></span></span><span class="return-annotation">):</span></span>
+        <span class="name">run_validation</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">hypothesis</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopContext</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="ConvergingAgent.run_validation-view-source"><span>View Source</span></label>
 
@@ -680,7 +680,7 @@ happens in <code><a href="#ConvergingAgent.evaluate_observation">evaluate_observ
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">evaluate_observation</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">tool_result</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopContext">k9_aif_abb.k9_agents.validation.ValidationLoopContext</a></span></span><span class="return-annotation">):</span></span>
+        <span class="name">evaluate_observation</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">tool_result</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopContext</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="ConvergingAgent.evaluate_observation-view-source"><span>View Source</span></label>
 
@@ -708,7 +708,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">should_continue</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">observation</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopContext">k9_aif_abb.k9_agents.validation.ValidationLoopContext</a></span></span><span class="return-annotation">):</span></span>
+        <span class="name">should_continue</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">observation</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopContext</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="ConvergingAgent.should_continue-view-source"><span>View Source</span></label>
 
@@ -737,7 +737,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopContext">k9_aif_abb.k9_agents.validation.ValidationLoopContext</a></span></span><span class="return-annotation">) -> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopResult">k9_aif_abb.k9_agents.validation.ValidationLoopResult</a></span>:</span></span>
+        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span><span class="p">:</span> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopContext</span></span><span class="return-annotation">) -> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopResult</span>:</span></span>
 
                 <label class="view-source-button" for="ConvergingAgent.finalize-view-source"><span>View Source</span></label>
 
@@ -936,7 +936,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopResult">k9_aif_abb.k9_agents.validation.ValidationLoopResult</a></span>:</span></span>
+        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopResult</span>:</span></span>
 
                 <label class="view-source-button" for="AlwaysEscalateAgent.finalize-view-source"><span>View Source</span></label>
 
@@ -1131,7 +1131,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopResult">k9_aif_abb.k9_agents.validation.ValidationLoopResult</a></span>:</span></span>
+        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopResult</span>:</span></span>
 
                 <label class="view-source-button" for="AlwaysFailAgent.finalize-view-source"><span>View Source</span></label>
 
@@ -1328,7 +1328,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopResult">k9_aif_abb.k9_agents.validation.ValidationLoopResult</a></span>:</span></span>
+        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopResult</span>:</span></span>
 
                 <label class="view-source-button" for="NeverConvergesAgent.finalize-view-source"><span>View Source</span></label>
 
@@ -1915,7 +1915,7 @@ signal.  Other keys are domain-specific.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n"><a href="../k9_agents/validation.html#ValidationLoopResult">k9_aif_abb.k9_agents.validation.ValidationLoopResult</a></span>:</span></span>
+        <span class="name">finalize</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">loop_ctx</span></span><span class="return-annotation">) -> <span class="n">k9_aif_abb</span><span class="o">.</span><span class="n">k9_agents</span><span class="o">.</span><span class="n">validation</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">validation_loop</span><span class="o">.</span><span class="n">ValidationLoopResult</span>:</span></span>
 
                 <label class="view-source-button" for="ErroringAgent.finalize-view-source"><span>View Source</span></label>
 
