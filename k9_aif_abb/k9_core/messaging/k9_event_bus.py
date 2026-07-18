@@ -17,6 +17,17 @@ class K9EventBus:
     --------------------
     Unified event bus abstraction for Redpanda / Kafka.
     Handles small governance/logging events and guards against oversize payloads.
+
+    Security is PLAINTEXT by default (backward compatible — existing
+    deployments are unaffected). To enable SASL_SSL, opt in explicitly:
+
+        security_protocol: SASL_SSL
+        sasl_mechanism:    PLAIN   # or SCRAM-SHA-256 / SCRAM-SHA-512
+
+    Credentials are never read from config.yaml — set them via environment
+    variables only:
+      KAFKA_SASL_USERNAME
+      KAFKA_SASL_PASSWORD
     """
 
     def __init__(
@@ -27,6 +38,8 @@ class K9EventBus:
         group_id: str = "k9aif-core",
         auto_create: bool = True,
         max_event_bytes: int = 512 * 1024,
+        security_protocol: str = "PLAINTEXT",
+        sasl_mechanism: str = "PLAIN",
         monitor: Optional[Any] = None,
         **kwargs,
     ):
@@ -36,6 +49,8 @@ class K9EventBus:
         self.group_id = group_id
         self.auto_create = auto_create
         self.max_event_bytes = max_event_bytes
+        self.security_protocol = security_protocol
+        self.sasl_mechanism = sasl_mechanism
         self.monitor = monitor
         self.log = logging.getLogger("K9EventBus")
         self._producer: Optional[KafkaProducer] = None
@@ -58,15 +73,35 @@ class K9EventBus:
                 max_request_size=max_request_size,
                 request_timeout_ms=request_timeout_ms,
                 connections_max_idle_ms=connections_max_idle_ms,
+                **self._security_kwargs(),
             )
 
             self.log.info(
-                f"[K9EventBus] Connected -> {self.broker_url} | topic={self.topic} | group={self.group_id}"
+                f"[K9EventBus] Connected -> {self.broker_url} | topic={self.topic} | group={self.group_id} "
+                f"| security_protocol={self.security_protocol}"
             )
 
         except Exception as e:
             self.log.error(f"[K9EventBus] failed to initialize: {e}", exc_info=False)
             self._producer = None
+
+    # ----------------------------------------------------------------------
+    # Security kwargs — shared by producer, sync consumer, and async consumer
+    # ----------------------------------------------------------------------
+    def _security_kwargs(self) -> Dict[str, Any]:
+        """
+        PLAINTEXT (default) adds nothing beyond security_protocol — identical
+        connection behavior to before this option existed. SASL_SSL pulls
+        credentials from environment variables only, never from config.yaml.
+        """
+        if self.security_protocol == "PLAINTEXT":
+            return {"security_protocol": "PLAINTEXT"}
+        return {
+            "security_protocol": self.security_protocol,
+            "sasl_mechanism": self.sasl_mechanism,
+            "sasl_plain_username": os.environ.get("KAFKA_SASL_USERNAME", ""),
+            "sasl_plain_password": os.environ.get("KAFKA_SASL_PASSWORD", ""),
+        }
 
     # ----------------------------------------------------------------------
     # Internal concise logger
@@ -125,6 +160,7 @@ class K9EventBus:
                 auto_offset_reset="latest",
                 enable_auto_commit=True,
                 value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                **self._security_kwargs(),
             )
             self.log.info(f"[K9EventBus] Listening -> topic={self.topic}")
             for msg in consumer:
@@ -179,6 +215,7 @@ class K9EventBus:
             session_timeout_ms=session_timeout_ms,
             heartbeat_interval_ms=heartbeat_interval_ms,
             max_poll_interval_ms=max_poll_interval_ms,
+            **self._security_kwargs(),
         )
 
         await consumer.start()

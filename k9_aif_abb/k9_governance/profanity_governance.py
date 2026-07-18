@@ -20,7 +20,7 @@ class ProfanityGovernance(BaseGovernance):
     def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None):
         super().__init__(config=config, monitor=monitor)
         self.logger = logging.getLogger("governance")
-        self.llm = LLMFactory().create("granite-guardian")  # Example inference model
+        self.llm = LLMFactory.get("granite-guardian")  # Example inference model
 
     @timed_stage("Governance PreCheck", logger=logging.getLogger("governance"))
     async def pre_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -28,16 +28,16 @@ class ProfanityGovernance(BaseGovernance):
         await self.log("Running Granite Guardian profanity check...", level="INFO")
 
         # Use inference engine
-        result = self.llm.generate(prompt=f"Analyze this text for profanity:\n{text}")
+        result = await self.llm.generate(prompt=f"Analyze this text for profanity:\n{text}")
 
         if "BLOCKED" in result.upper():
             await self.log("Guardian flagged content as BLOCKED", level="WARNING")
-            return {"status": "BLOCKED", "reason": result}
+            raise PermissionError(f"ProfanityGovernance blocked ingress: {result}")
 
         await self.log("Content passed governance checks (SAFE)", level="INFO")
-        return {"status": "SAFE", "reason": result}
+        return payload
 
     @timed_stage("Governance PostCheck", logger=logging.getLogger("governance"))
     async def post_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         await self.log("Performing post-processing validation...", level="DEBUG")
-        return {"status": "SAFE"}
+        return payload

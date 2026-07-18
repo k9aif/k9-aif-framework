@@ -21,9 +21,11 @@ from .guards import (
     BaseZeroTrustGuard,
     BaseCompromiseGuard,
     BaseDataLossGuard,
+    BaseAuthorizationGuard,
     DefaultZeroTrustGuard,
     PromptInjectionGuard,
     SensitiveDataLossGuard,
+    RoleBasedAuthorizationGuard,
 )
 from .enforcers import BasePolicyEnforcer, RuntimePolicyEnforcer
 
@@ -39,9 +41,11 @@ __all__ = [
     "BaseZeroTrustGuard",
     "BaseCompromiseGuard",
     "BaseDataLossGuard",
+    "BaseAuthorizationGuard",
     "DefaultZeroTrustGuard",
     "PromptInjectionGuard",
     "SensitiveDataLossGuard",
+    "RoleBasedAuthorizationGuard",
     "BasePolicyEnforcer",
     "RuntimePolicyEnforcer",
 ]

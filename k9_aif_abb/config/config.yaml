@@ -50,6 +50,9 @@ security:
   shield:
     enabled: false
     strict: false          # strict: true promotes FLAG → BLOCK across all checks
+    fail_open: true        # fail_open: false promotes a crashing check's result
+                            # from FLAG to BLOCK (fail-closed) instead of silently
+                            # letting a broken check pass the payload through
     ingress:               # runs before the LLM — protect the model from what arrives
       checks:
         - InputSizeCheck
@@ -61,6 +64,26 @@ security:
         - ToolArgumentCheck
         - ExecutionGuardCheck
         - PIIBoundaryCheck
+    # check_config:         # optional per-check constructor overrides, keyed by
+    #   InputSizeCheck:     # check class name — every OOB check accepts a config
+    #     max_chars: 50000  # dict (thresholds, extra_patterns, block_on_match, ...)
+
+    # Five additional OOB checks are registered but NOT enabled by default —
+    # each needs solution-specific config to be useful (an approved-tool
+    # allowlist, an agent's own system-prompt text, etc.), so adding them here
+    # unconfigured would silently change behavior for every SBB that copies
+    # this file. Opt in per solution by adding to ingress/egress checks above
+    # plus the matching check_config entry:
+    #   ToolAuthorizationCheck    — approved_tools / approved_backends allowlist
+    #                               (LLM03/ASI04 — defaults to empty = deny-all)
+    #   MemoryPoisoningCheck      — memory_ttl / tracked_fact_keys
+    #                               (LLM04/ASI06 — fabricated/contradicted session facts)
+    #   SystemPromptLeakageCheck  — system_prompt_fragments (your agents' own
+    #                               role/goal text) / leakage_min_chars (LLM07)
+    #   OutputSanitizationCheck   — block_on_output_markup (LLM05 — HTML/JS/
+    #                               template injection in agent output)
+    #   RequestFrequencyCheck     — max_requests_per_window / rate_limit_window_seconds
+    #                               (LLM10 — per-session rate limiting)
 
 governance:
   enabled: true

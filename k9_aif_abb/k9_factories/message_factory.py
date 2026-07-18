@@ -24,6 +24,9 @@ class MessageFactory:
           - 192.168.1.98:9092
         topic: acme-events
         group_id: acme-console
+        security_protocol: PLAINTEXT   # PLAINTEXT (default) | SASL_SSL
+        sasl_mechanism:    PLAIN       # PLAIN | SCRAM-SHA-256 | SCRAM-SHA-512
+        # Credentials: KAFKA_SASL_USERNAME / KAFKA_SASL_PASSWORD from env only
     """
 
     _singleton = None
@@ -50,6 +53,8 @@ class MessageFactory:
             if backend in ("redpanda", "kafka"):
                 brokers = mcfg.get("brokers", [])
                 broker_url = brokers[0] if brokers else mcfg.get("broker_url", "localhost:9092")
+                security_protocol = mcfg.get("security_protocol", "PLAINTEXT")
+                sasl_mechanism = mcfg.get("sasl_mechanism", "PLAIN")
 
                 bus = K9EventBus(
                     backend=backend,
@@ -57,6 +62,8 @@ class MessageFactory:
                     topic=topic,
                     group_id=group_id,
                     auto_create=auto_create,
+                    security_protocol=security_protocol,
+                    sasl_mechanism=sasl_mechanism,
                     monitor=monitor,
                 )
 

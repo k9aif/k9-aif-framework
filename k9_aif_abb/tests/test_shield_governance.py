@@ -9,17 +9,17 @@ from k9_aif_abb.k9_security.vulnerability import ShieldGovernance
 
 # ── config helpers ────────────────────────────────────────────────────────────
 
-def _cfg(enabled=True, strict=False, ingress=None, egress=None):
-    return {
-        "security": {
-            "shield": {
-                "enabled": enabled,
-                "strict": strict,
-                "ingress": {"checks": ingress or []},
-                "egress":  {"checks": egress or []},
-            }
-        }
+def _cfg(enabled=True, strict=False, ingress=None, egress=None, check_config=None, fail_open=None):
+    shield = {
+        "enabled": enabled,
+        "strict": strict,
+        "ingress": {"checks": ingress or []},
+        "egress":  {"checks": egress or []},
+        "check_config": check_config or {},
     }
+    if fail_open is not None:
+        shield["fail_open"] = fail_open
+    return {"security": {"shield": shield}}
 
 
 FULL_CONFIG = _cfg(
@@ -166,3 +166,55 @@ def test_injection_only_in_ingress_not_egress():
     gov = ShieldGovernance(cfg)
     clean_output = {"response": "Claim C001 approved for $4,200."}
     assert gov.post_process(clean_output) == clean_output
+
+
+# ── per-check config threading (G1) ───────────────────────────────────────────
+
+def test_check_config_overrides_max_chars():
+    """A tightened max_chars override should block a payload the default would pass."""
+    payload = {"text": "A" * 100}
+
+    default_cfg = _cfg(ingress=["InputSizeCheck"])
+    ShieldGovernance(default_cfg).pre_process(payload)  # passes under default 32_000 limit
+
+    tightened_cfg = _cfg(
+        ingress=["InputSizeCheck"],
+        check_config={"InputSizeCheck": {"max_chars": 50}},
+    )
+    with pytest.raises(PermissionError, match="ingress"):
+        ShieldGovernance(tightened_cfg).pre_process(payload)
+
+
+def test_check_config_is_per_check_not_global():
+    """check_config for one check must not affect a different check's defaults."""
+    cfg = _cfg(
+        ingress=["InputSizeCheck", "PromptInjectionCheck"],
+        check_config={"InputSizeCheck": {"max_chars": 50}},
+    )
+    gov = ShieldGovernance(cfg)
+    # Short, clean payload — under the tightened InputSizeCheck limit, no injection phrasing
+    payload = {"text": "Hi there"}
+    assert gov.pre_process(payload) == payload
+
+
+def test_missing_check_config_uses_check_defaults():
+    """A check with no entry in check_config falls back to its own defaults."""
+    cfg = _cfg(ingress=["InputSizeCheck"], check_config={"PIIBoundaryCheck": {"block_on_match": True}})
+    gov = ShieldGovernance(cfg)
+    payload = {"text": "A" * 100}
+    assert gov.pre_process(payload) == payload
+
+
+# ── fail_open threading (G6) ──────────────────────────────────────────────────
+
+def test_fail_open_defaults_to_true_on_both_chains():
+    gov = ShieldGovernance(_cfg(ingress=["InputSizeCheck"], egress=["ToolArgumentCheck"]))
+    assert gov._pre_chain._fail_open is True
+    assert gov._post_chain._fail_open is True
+
+
+def test_fail_open_false_threads_into_both_chains():
+    cfg = _cfg(ingress=["InputSizeCheck"], egress=["ToolArgumentCheck"], fail_open=False)
+    gov = ShieldGovernance(cfg)
+    assert gov._pre_chain._fail_open is False
+    assert gov._post_chain._fail_open is False
