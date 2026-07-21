@@ -29,23 +29,24 @@
 11. [Prompt Evaluation Pattern](#11-prompt-evaluation-pattern)
 12. [Model Routing and Inference](#12-model-routing-and-inference)
 13. [Governance and Zero Trust](#13-governance-and-zero-trust)
-14. [Messaging, Events, and Telemetry](#14-messaging-events-and-telemetry)
-15. [Persistence and Graph Integration](#15-persistence-and-graph-integration)
-16. [Configuration Standards](#16-configuration-standards)
-17. [Testing Standards](#17-testing-standards)
-18. [Developer Workflow](#18-developer-workflow)
-19. [K9X Studio Integration](#19-k9x-studio-integration)
-20. [K9X Enterprise Continuum](#20-k9x-enterprise-continuum)
-21. [Human-in-the-Loop Integration](#21-human-in-the-loop-integration)
-22. [Provider Adapter Pattern](#22-provider-adapter-pattern)
-23. [Using Claude Code with VSCode for K9-AIF Development](#23-using-claude-code-with-vscode-for-k9-aif-development)
-24. [Common Architectural Mistakes](#24-common-architectural-mistakes)
-25. [Author's Recommendations](#25-authors-recommendations)
-26. [Patterns Reference](#26-patterns-reference)
-27. [K9X Ecosystem](#27-k9x-ecosystem)
-28. [Architect's Mindset](#28-architects-mindset)
-29. [Acknowledgements](#29-acknowledgements)
-30. [References](#30-references)
+14. [K9X Security and Vulnerability Checks](#14-k9x-security-and-vulnerability-checks)
+15. [Messaging, Events, and Telemetry](#15-messaging-events-and-telemetry)
+16. [Persistence and Graph Integration](#16-persistence-and-graph-integration)
+17. [Configuration Standards](#17-configuration-standards)
+18. [Testing Standards](#18-testing-standards)
+19. [Developer Workflow](#19-developer-workflow)
+20. [K9X Studio Integration](#20-k9x-studio-integration)
+21. [K9X Enterprise Continuum](#21-k9x-enterprise-continuum)
+22. [Human-in-the-Loop Integration](#22-human-in-the-loop-integration)
+23. [Provider Adapter Pattern](#23-provider-adapter-pattern)
+24. [Using Claude Code with VSCode for K9-AIF Development](#24-using-claude-code-with-vscode-for-k9-aif-development)
+25. [Common Architectural Mistakes](#25-common-architectural-mistakes)
+26. [Author's Recommendations](#26-authors-recommendations)
+27. [Patterns Reference](#27-patterns-reference)
+28. [K9X Ecosystem](#28-k9x-ecosystem)
+29. [Architect's Mindset](#29-architects-mindset)
+30. [Acknowledgements](#30-acknowledgements)
+31. [References](#31-references)
 
 ---
 
@@ -671,7 +672,7 @@ Every SBB follows a lifecycle from initial design to reusable architectural know
 9. Promote    → If the pattern recurs across 3+ solutions, consider promoting to OOB or ABB
 ```
 
-Steps 1–6 are required for every SBB. Steps 7–9 enable organizational learning: validated domain realizations become reusable building blocks that future solutions can discover and build on. The K9X Enterprise Continuum (Chapter 22) provides the infrastructure for steps 7–9.
+Steps 1–6 are required for every SBB. Steps 7–9 enable organizational learning: validated domain realizations become reusable building blocks that future solutions can discover and build on. The K9X Enterprise Continuum (Chapter 21) provides the infrastructure for steps 7–9.
 
 ### 4.10 Architectural Decision Guide
 
@@ -2324,7 +2325,163 @@ The framework makes bypassing governance explicit and traceable. `NoopGovernance
 
 ---
 
-## 14. Messaging, Events, and Telemetry
+## 14. K9X Security and Vulnerability Checks
+
+### 14.1 What This Is
+
+`k9_aif_abb/k9_security/vulnerability/` implements **k9x_Shield** — a GoF Chain of Responsibility pattern applied to security checks. Every threat class is one handler; handlers assemble into an ordered chain that a payload passes through before it reaches an LLM (ingress) and again before the LLM's output reaches a tool or downstream consumer (egress).
+
+This is distinct from the Zero Trust layer covered in Chapter 13 — Zero Trust evaluates *execution context* (who is calling, what they are authorized to do); k9x_Shield evaluates *payload content* (does this specific message contain an attack). The two are complementary and can be enabled independently.
+
+k9x_Shield ships with 13 concrete OOB checks, covering prompt injection, PII (both directions — literal PII already present, and requests soliciting PII), tool-call sanitization and authorization, credential leakage, memory poisoning, system-prompt leakage, output sanitization, semantic drift/goal-hijacking, destructive-execution guarding, and request-rate limiting — mapped to the OWASP Top 10 for LLM Applications. The live, continuously-updated inventory (exact count, OWASP mapping, and which gate each check runs at) is published at **[k9x.ai/k9x-security](https://k9x.ai/k9x-security)** — treat that page as authoritative for the current list rather than this chapter, since new checks are added as new threat classes are found and proven.
+
+### 14.2 Core Contracts
+
+```python
+from k9_aif_abb.k9_security.vulnerability import (
+    BaseVulnerabilityCheck,   # ABB — one handler, one threat class
+    VulnerabilityChain,       # assembles + runs handlers in order
+    CheckResult,              # PASS / FLAG / BLOCK verdict from one handler
+    ChainResult,              # aggregate verdict from a full chain run
+    ShieldGovernance,         # BaseGovernance-compatible wrapper for agents
+)
+```
+
+`BaseVulnerabilityCheck` is the ABB contract every check implements:
+
+```python
+class BaseVulnerabilityCheck(ABC):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None: ...
+
+    @abstractmethod
+    def check(self, payload: Dict[str, Any]) -> CheckResult:
+        """
+        CheckResult.pass_check()  — no issue
+        CheckResult.flag(...)     — issue detected, non-blocking
+        CheckResult.block(...)    — issue detected, chain halts
+        """
+```
+
+Handlers never call the next handler themselves — chain traversal is owned by `VulnerabilityChain`, not by individual checks. This keeps each check a pure, independently testable unit, the same discipline as `BaseAgent.execute()`: one concern, no knowledge of what runs before or after it.
+
+### 14.3 Running a Chain
+
+```python
+chain = (
+    VulnerabilityChain()
+    .add(InputSizeCheck())
+    .add(PromptInjectionCheck())
+    .add(PIIBoundaryCheck())
+)
+
+result = chain.run(payload)
+if result.blocked:
+    raise PermissionError(f"k9x_Shield blocked by {result.blocked_by}")
+```
+
+`VulnerabilityChain` behavior (all configurable at construction):
+
+| Behavior | Default | What it means |
+|---|---|---|
+| On `BLOCK` | always | Chain halts immediately; remaining checks never run |
+| On `FLAG` | non-blocking | Recorded for audit; chain continues to the next check |
+| `strict=True` | off | Promotes every `FLAG` to a `BLOCK` — stop on any issue, not just severe ones |
+| `fail_open=True` | on | A check that raises an exception is recorded as a `FLAG`, not a crash — one buggy check does not take down the chain |
+| `fail_open=False` | opt-in | A crashing check is recorded as a `BLOCK` instead — fail-closed; a deliberate availability-vs-security tradeoff, not a "more correct" default |
+
+### 14.4 Wiring Into an Agent — ShieldGovernance
+
+`ShieldGovernance` is a `BaseGovernance`-shaped wrapper: it exposes `pre_process()` / `post_process()`, exactly the interface `BaseAgent.apply_pre_governance()` / `apply_post_governance()` expect, so wiring it in requires no change to agent code — only construction:
+
+```python
+from k9_aif_abb.k9_security.vulnerability import ShieldGovernance
+
+agent = MyAgent(config=config, governance=ShieldGovernance(config))
+```
+
+Configure the two gates independently in `config.yaml`:
+
+```yaml
+security:
+  shield:
+    enabled: true
+    strict: false
+    fail_open: true
+    ingress:
+      checks:
+        - InputSizeCheck
+        - PromptInjectionCheck
+        - PIIRequestCheck
+    egress:
+      checks:
+        - SemanticDriftCheck
+        - ToolArgumentCheck
+        - ExecutionGuardCheck
+        - PIIBoundaryCheck
+    check_config:               # optional per-check constructor overrides
+      PIIBoundaryCheck:
+        block_on_match: true
+      InputSizeCheck:
+        max_chars: 50000
+```
+
+**Ingress** (`pre_process`) runs before the payload reaches the LLM — it protects the model from what arrives. **Egress** (`post_process`) runs after the LLM responds, before any tool executes — it inspects what the LLM produced before it can act on it. The same check class can appear in both gates with different intent: `ToolArgumentCheck` at ingress catches attacker-supplied tool arguments already present in the payload; at egress it catches a tool call the LLM itself generated mid-execution — a fundamentally different origin the ingress copy cannot see.
+
+Both gates raise `PermissionError` on `BLOCK` — the same exception `BaseAgent.enforce_governance()` already expects, so no new exception-handling path is needed in agent code.
+
+### 14.5 The 13 OOB Checks
+
+| Check | Threat Class (OWASP LLM Top 10 2025) |
+|---|---|
+| `InputSizeCheck` | Unbounded Consumption (LLM10) — token-stuffing, runaway cost |
+| `PromptInjectionCheck` | Prompt Injection (LLM01) — known injection phrases in any string value |
+| `PIIBoundaryCheck` | Sensitive Information Disclosure (LLM02) — literal PII already present in the payload |
+| `PIIRequestCheck` | Sensitive Information Disclosure (LLM02) — a request/instruction *soliciting* PII disclosure, distinct from PIIBoundaryCheck's literal-value detection |
+| `ToolArgumentCheck` | Excessive Agency / Insecure Output Handling — sanitizes LLM-generated tool arguments before execution |
+| `ToolAuthorizationCheck` | Excessive Agency — validates a tool call's identity against an approved allowlist |
+| `SemanticDriftCheck` | Excessive Agency — goal hijacking and reasoning-loop traps |
+| `ExecutionGuardCheck` | Excessive Agency — final guardrail catching definitive destructive-execution payloads |
+| `HardcodedCredentialCheck` | Supply Chain (LLM03) — secrets (API keys, tokens, passwords) in payload values |
+| `MemoryPoisoningCheck` | Data & Model / Memory & Context Poisoning (LLM04) — fabricated or contradicted session memory |
+| `SystemPromptLeakageCheck` | System Prompt Leakage (LLM07) — verbatim fragments of the agent's own role/goal text in output |
+| `OutputSanitizationCheck` | Improper Output Handling (LLM05) — markup/script injection safe in JSON but dangerous once rendered downstream |
+| `RequestFrequencyCheck` | Unbounded Consumption (LLM10) — per-session request budget within a rolling window |
+
+This table reflects the framework as of this writing. Treat **[k9x.ai/k9x-security](https://k9x.ai/k9x-security)** as authoritative for the current count and any check added since.
+
+### 14.6 Adding a New Check
+
+Same ABB/SBB discipline as everywhere else in the framework — a new threat class is a new `BaseVulnerabilityCheck` subclass, never a change to `VulnerabilityChain` or the Router/Orchestrator that wires it in.
+
+```python
+from k9_aif_abb.k9_security.vulnerability import BaseVulnerabilityCheck, CheckResult
+
+class MyThreatCheck(BaseVulnerabilityCheck):
+    def check(self, payload: dict) -> CheckResult:
+        if self._is_suspicious(payload):
+            return CheckResult.block(
+                check_name=self.check_name,
+                message="Explain what was detected",
+                severity="high",
+            )
+        return CheckResult.pass_check(self.check_name)
+```
+
+Register the new check name in `ShieldGovernance`'s check registry so `config.yaml` can reference it by name, or — for a threat class specific to one solution rather than general-purpose — wire it directly into that solution's own `VulnerabilityChain` without touching the framework at all. See 14.7 for how a solution-local check earns promotion into the framework.
+
+### 14.7 Proving It Holds — K9X SATAN
+
+An architectural claim that a security layer holds is not evidence. **K9X SATAN** (`k9x-ecosystem/k9x_satan/`) is an adversarial validation tool, built using these same ABB contracts, that fires structured attacks — prompt injection, memory poisoning, tool abuse, PII exfiltration, and more — at a live pipeline and reports one of three outcomes per attack: `BLOCKED` at ingress, `BLOCKED` at egress, or a `FINDING` (the attack reached the agent layer uncaught). A live public instance runs at [satan.k9x.ai](https://satan.k9x.ai); `pip install k9x-satan` runs it locally.
+
+Several of the framework's current OOB checks — `ToolAuthorizationCheck`, `MemoryPoisoningCheck`, `SystemPromptLeakageCheck`, `OutputSanitizationCheck`, and `RequestFrequencyCheck` — were proven this way: built first as project-local checks in SATAN's own test harness, attacked directly, and only promoted into `k9_aif_abb` once verified against a real pipeline under real attack. This is the same Enterprise Continuum harvesting path covered in Chapter 21 (SBB → ABB promotion) applied to security specifically — a check earns its place in the framework by surviving an attack, not by design review alone. See [k9x.ai/k9x-security](https://k9x.ai/k9x-security) for the full harvesting history and the current attack-to-check mapping.
+
+### 14.8 Guardian — Semantic Governance (Complementary, Not a Replacement)
+
+Every check in this chapter is deterministic pattern-matching — fast, free, and explainable, but structurally limited to what it already knows to look for. A paraphrased injection or a disguised goal-hijack worded just differently enough will not trip a literal pattern.
+
+Semantic screening — an LLM call (e.g. IBM Granite Guardian) wrapping an agent's pre/post hooks — is the complementary layer for exactly this gap: it catches what pattern matching structurally cannot, at the cost of an LLM call. The two layers are additive, never substitutes for each other — k9x_Shield's deterministic checks stay in place regardless (cheap, catching the obvious cases before any semantic call is even made), and a semantic layer is opt-in on top. This mirrors the Provider Adapter Pattern's own additive principle from Chapter 23: a new capability is added, existing behavior is never replaced by it.
+
+## 15. Messaging, Events, and Telemetry
 
 ### 14.1 publish_event()
 
@@ -2436,7 +2593,7 @@ messaging:
 
 ---
 
-## 15. Persistence and Graph Integration
+## 16. Persistence and Graph Integration
 
 ### 15.1 BasePersistence
 
@@ -2549,7 +2706,7 @@ persistence = PersistenceFactory.create(config)
 
 ---
 
-## 16. Configuration Standards
+## 17. Configuration Standards
 
 ### 16.1 YAML Structure
 
@@ -2660,7 +2817,7 @@ export KAFKA_BROKER=localhost:9092
 
 ---
 
-## 17. Testing Standards
+## 18. Testing Standards
 
 ### 17.1 Testing Philosophy
 
@@ -2814,7 +2971,7 @@ pytest tests/test_k9_validation_loop_agent.py -v
 
 ---
 
-## 18. Developer Workflow
+## 19. Developer Workflow
 
 ### 18.1 Environment Setup
 
@@ -2907,7 +3064,7 @@ bash run_eoc_pod.sh
 
 ---
 
-## 19. K9X Studio Integration
+## 20. K9X Studio Integration
 
 ### 19.1 What Studio Does
 
@@ -2954,7 +3111,7 @@ Every stub extends the correct ABB. Squad YAML is pre-wired. Configuration is po
 
 ---
 
-## 20. K9X Enterprise Continuum
+## 21. K9X Enterprise Continuum
 
 ### 20.1 What the Continuum Does
 
@@ -3007,7 +3164,7 @@ GET /api/abbs/{id}/sbbs                # SBBs implementing this ABB
 
 ---
 
-## 21. Human-in-the-Loop Integration
+## 22. Human-in-the-Loop Integration
 
 ### 21.1 When to Use HIL
 
@@ -3072,7 +3229,7 @@ pip install k9x-hil
 
 ---
 
-## 22. Provider Adapter Pattern
+## 23. Provider Adapter Pattern
 
 Provider lock-in is one of the most costly problems in enterprise AI infrastructure. When domain code imports a specific vendor SDK directly, every infrastructure change — a model upgrade, a cloud migration, a shift from one secret manager to another — requires changes in domain code. In a multi-agent system with dozens of agents, that cost compounds rapidly.
 
@@ -3145,7 +3302,7 @@ secrets:
 
 ---
 
-## 23. Using Claude Code with VSCode for K9-AIF Development
+## 24. Using Claude Code with VSCode for K9-AIF Development
 
 ### 23.1 Overview
 
@@ -3344,7 +3501,7 @@ A useful discipline: write the YAML specification files yourself, then let Claud
 
 ---
 
-## 24. Common Architectural Mistakes
+## 25. Common Architectural Mistakes
 
 This chapter collects the framework-level mistakes that appear most frequently in K9-AIF development. Each one is an architectural mistake, not just a code mistake — every entry produces a system that is harder to govern, test, observe, or extend.
 
@@ -3383,7 +3540,7 @@ router = K9ModelRouter(catalog=..., state_store=...)
 
 **Consequence:** Breaks the three-level decoupling. Agents become aware of the messaging topology, making them non-portable across squads and orchestrators.
 
-**Correction:** In standard K9-AIF solutions, only the Router and Orchestrator are wired with a message bus. Agents share context sequentially through the squad flow. See Chapter 14 (Messaging).
+**Correction:** In standard K9-AIF solutions, only the Router and Orchestrator are wired with a message bus. Agents share context sequentially through the squad flow. See Chapter 15 (Messaging).
 
 ### 24.5 Cross-Layer References
 
@@ -3415,11 +3572,11 @@ router = K9ModelRouter(catalog=..., state_store=...)
 
 **Consequence:** Generated code reliably violates framework boundaries — agents reference squads, direct LLM calls appear, governance is omitted, squad YAML uses plain strings instead of dicts.
 
-**Correction:** Generate one component at a time. YAML before Python. Review each generated file before moving to the next. See Chapter 23 for the incremental generation pattern.
+**Correction:** Generate one component at a time. YAML before Python. Review each generated file before moving to the next. See Chapter 24 for the incremental generation pattern.
 
 ---
 
-## 25. Author's Recommendations
+## 26. Author's Recommendations
 
 ### 25.1 Keep ABBs Small and Stable
 
@@ -3455,7 +3612,7 @@ Design agents and squads to be composable — an agent in one squad should work 
 
 ---
 
-## 26. Patterns Reference
+## 27. Patterns Reference
 
 ### 26.1 Classic Software Patterns in K9-AIF
 
@@ -3551,9 +3708,9 @@ Each layer depends only on the layer below it. No upward dependencies.
 
 ---
 
-## 27. K9X Ecosystem
+## 28. K9X Ecosystem
 
-The K9-AIF framework is part of a four-product ecosystem. Each product is independently installable and deployable.
+The K9-AIF framework is part of a five-product ecosystem. Each product is independently installable and deployable.
 
 | Product | Purpose | Install | Dependency |
 |---|---|---|---|
@@ -3561,6 +3718,7 @@ The K9-AIF framework is part of a four-product ecosystem. Each product is indepe
 | **K9X Studio** | Visual architecture designer | `pip install k9x` | Framework |
 | **K9X Enterprise Continuum** | SBB/ABB catalog & governance | `pip install k9x-continuum` | PostgreSQL |
 | **K9X HIL** | Human-in-the-loop case management | `pip install k9x-hil` | PostgreSQL, Kafka |
+| **K9X SATAN** | Adversarial validation — proves k9x_Shield holds under attack | `pip install k9x-satan` | Framework |
 
 ### Quick Start
 
@@ -3572,8 +3730,12 @@ pip install k9-aif
 pip install k9-aif k9x
 k9x studio
 
+# Framework + adversarial validation
+pip install k9-aif k9x-satan
+k9x-satan
+
 # Full ecosystem (self-hosted)
-pip install k9-aif k9x k9x-continuum k9x-hil
+pip install k9-aif k9x k9x-continuum k9x-hil k9x-satan
 ```
 
 ### Product Relationships
@@ -3581,6 +3743,7 @@ pip install k9-aif k9x k9x-continuum k9x-hil
 - **Studio** generates K9-AIF scaffolds and queries the Continuum for existing SBBs
 - **Continuum** stores published SBBs and ABBs; validates compliance via `k9aif inspect`
 - **HIL** receives tasks from orchestrators via Kafka; responds to `reply_to` topics
+- **SATAN** fires structured attacks at a live pipeline built from framework ABBs (see Chapter 14) and proves containment rather than asserting it — see [k9x.ai/k9x-security](https://k9x.ai/k9x-security)
 - **Framework** is self-sufficient — runs without any other product
 
 ### Links
@@ -3588,11 +3751,13 @@ pip install k9-aif k9x k9x-continuum k9x-hil
 - **Website:** [https://k9x.ai](https://k9x.ai)
 - **Studio:** [https://studio.k9x.ai](https://studio.k9x.ai)
 - **Continuum:** [https://continuum.k9x.ai](https://continuum.k9x.ai)
+- **SATAN:** [https://satan.k9x.ai](https://satan.k9x.ai)
+- **Security check inventory:** [https://k9x.ai/k9x-security](https://k9x.ai/k9x-security)
 - **GitHub:** [https://github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework)
 
 ---
 
-## 28. The Architect's Mindset
+## 29. The Architect's Mindset
 
 This chapter is not about code. It is about how to think when building AI systems with K9-AIF.
 
@@ -3668,7 +3833,7 @@ Build systems you can trust. Govern what you deploy. Observe everything. Reuse d
 
 ---
 
-## 29. Acknowledgements
+## 30. Acknowledgements
 
 K9-AIF reflects the accumulated influence of several bodies of knowledge and practice.
 
@@ -3688,14 +3853,14 @@ The validation loop and actor-critic refinement patterns are informed by the bro
 Ollama, Redpanda, Neo4j, ChromaDB, and the broader Python AI ecosystem provide the infrastructure that K9-AIF orchestrates. The framework is intentionally backend-agnostic at the ABB level.
 
 **Claude Code and AI-Assisted Development**  
-Several K9-AIF components — including `BaseValidationLoopAgent`, `BaseCriticActorAgent`, and their OOB implementations — were developed with Claude Code as an accelerator. The experience directly informed Chapter 23 and the guidance on maintaining architecture authority while using AI coding assistants.
+Several K9-AIF components — including `BaseValidationLoopAgent`, `BaseCriticActorAgent`, and their OOB implementations — were developed with Claude Code as an accelerator. The experience directly informed Chapter 24 and the guidance on maintaining architecture authority while using AI coding assistants.
 
 **Human-Guided Architecture**  
 Every architectural decision in K9-AIF reflects human architectural judgment. AI tools accelerated implementation; they did not make structural choices. The framework is a record of those choices, not an artifact of automated generation.
 
 ---
 
-## 30. References
+## 31. References
 
 ### K9-AIF Project
 
