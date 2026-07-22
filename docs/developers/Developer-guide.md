@@ -6,6 +6,7 @@
 **Author:** Ravi Natarajan  
 **Project:** K9-AIF Framework, K9X Ecosystem  
 **Last Updated:** 2026-07-21  
+**New here?** Start with the [Quick Start Guide](Quick-Start-Guide.pdf) — zero to a running agent in 15 minutes using K9X Studio  
 **Website:** [https://k9x.ai](https://k9x.ai)  
 **Architecture Graph:** [https://graph.k9x.ai](https://graph.k9x.ai)  
 **Blog:** [https://blog.k9x.ai](https://blog.k9x.ai)  
