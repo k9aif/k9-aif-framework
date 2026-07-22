@@ -4,7 +4,7 @@
 ---
 
 **Author:** Ravi Natarajan  
-**Project:** K9-AIF Framework  
+**Project:** K9-AIF Framework, K9X Ecosystem  
 **Last Updated:** 2026-07-21  
 **Website:** [https://k9x.ai](https://k9x.ai)  
 **Architecture Graph:** [https://graph.k9x.ai](https://graph.k9x.ai)  
