@@ -19,25 +19,31 @@ The Developer Guide is a 31-chapter reference manual — architecture rationale,
 
 This guide is that first document. It uses **K9X Studio** — the visual drag-and-drop builder — instead of hand-writing YAML or running the CLI generator, because designing on a canvas makes the four-layer hierarchy visible before you have to reason about it in code. By the end you will have a real, runnable K9-AIF application on your machine, and you'll know exactly which Developer Guide chapter to open next for whatever you want to do to it.
 
+Fast is not the same as shallow-by-design, though. K9-AIF is built on pure Object-Oriented principles — abstract contracts (ABBs) separated from concrete implementations (SBBs), Liskov substitution, open/closed — and on TOGAF's Architecture Building Block discipline. That is what makes the four boxes you drag onto the canvas in Step 3 flexible and extensible rather than a fixed template: every node maps to a real ABB contract with a stable interface, so the system you get after 15 minutes here is architecturally identical in kind to a production system with 40 agents. Nothing about going fast cuts a corner on that. This guide just doesn't dwell on *why* the architecture is shaped this way — that reasoning is Developer Guide Chapter 1 (*Why Architecture-First Agentic AI Matters*) and CLAUDE.md's *Architecture & Design Discipline* section, both worth reading once the app in front of you is running.
+
 If a step here says "for the full picture, see Chapter N" — that's not filler. This guide deliberately stays shallow; the Developer Guide is where the depth lives.
 
 ---
 
-## 2. Prerequisites
+## 2. The Ecosystem in Three Installs
+
+Three packages, all on PyPI:
+
+```bash
+pip install k9x          # K9X Studio — the visual builder this guide walks through
+pip install k9-aif       # the framework itself — pulled in automatically as a dependency of k9x
+pip install k9x-satan    # adversarial validation — optional for now, see Section 11
+```
+
+You only need `k9x` to get through this guide. `k9-aif` comes along for the ride (Studio's backend reads the live ABB library to populate its palette). `k9x-satan` is for later — proving your Shield configuration actually blocks attacks — and isn't part of the 15-minute walkthrough.
+
+---
+
+## 3. Prerequisites
 
 Check these off before you start the clock:
 
-- **Python 3.11 or 3.12** (avoid 3.14 — `venv`/`ensurepip` have known issues)
-- **Node.js 18+** — only needed if running Studio locally; skip if using the hosted instance
-- **A `k9-aif-framework` checkout with its virtual environment already created** — Studio's local launcher shares this venv rather than creating its own:
-
-  ```bash
-  cd k9-aif-framework
-  python3.11 -m venv .venv
-  source .venv/bin/activate
-  pip install -r requirements.txt
-  ```
-
+- **Python 3.10+** for `pip install k9x` (3.11 or 3.12 recommended — avoid 3.14, `venv`/`ensurepip` have known issues)
 - **Ollama** (recommended, optional) — running locally with two small models pulled. Everything below works without an LLM too (Studio falls back to rule-based suggestions and templated agents), but the "AI-assisted" path in Step 3 needs this:
 
   ```bash
@@ -45,17 +51,29 @@ Check these off before you start the clock:
   ollama pull granite3-dense:2b  # "reasoning" model
   ```
 
+- **A `k9-aif-framework` git checkout** — not needed to design in Studio, but needed in Step 6 when you actually *run* the app you export. `setup.sh` in your exported scaffold will clone one for you if you don't already have it, so you can skip this until you get there.
+
 ---
 
-## 3. Step 1 — Get K9X Studio Running
+## 4. Step 1 — Get K9X Studio Running
 
 **Fastest path — no install:** open [studio.k9x.ai](https://studio.k9x.ai) in a browser and skip to Step 2. This is the hosted instance; `localhost`/`127.0.0.1` are blocked there for LLM endpoints (it would point at the server's own resources), so if you want AI-assisted suggestions against your own Ollama, use your machine's LAN IP instead of `localhost` when configuring the LLM endpoint (Step 3).
 
-**Local install** (needed if you want to write scaffolds straight to disk instead of downloading a ZIP):
+**Local — via pip (recommended):**
+
+```bash
+pip install k9x
+k9x config       # writes .env-example — fill in your LLM endpoint, save as .env (optional)
+k9x studio       # starts Studio on http://localhost:12999 and opens your browser
+```
+
+Run `k9x studio --bg` to run it in the background, `k9x studio --stop` to stop it, or `k9x studio --port <N>` to use a different port.
+
+**Local — from an ecosystem checkout** (only if you're developing Studio itself, not just using it):
 
 ```bash
 cd k9x-ecosystem/k9x_studio
-./run.sh
+./run.sh    # starts backend :8090 + frontend dev server :5173
 ```
 
 `run.sh` activates the shared framework venv, installs Studio's own backend and frontend dependencies on first run, and starts two processes:
@@ -69,7 +87,7 @@ Open `http://localhost:5173`. If `run.sh` exits immediately complaining the shar
 
 ---
 
-## 4. Step 2 — Project Setup
+## 5. Step 2 — Project Setup
 
 The landing screen asks for four things:
 
@@ -84,7 +102,7 @@ The description matters more than it looks — it's what the AI-assisted archite
 
 ---
 
-## 5. Step 3 — Design the Architecture
+## 6. Step 3 — Design the Architecture
 
 You have two ways to get from a blank canvas to a wired Router → Orchestrator → Squad → Agent graph. Use (a) for your first run — it's faster and shows you a correct topology to learn from. Use (b) once you already know what you're building.
 
@@ -112,7 +130,7 @@ Drag one **Router**, one **Orchestrator**, one **Squad**, and one **Agent** onto
 
 ---
 
-## 6. Step 4 — Configure Your Agent
+## 7. Step 4 — Configure Your Agent
 
 Select the Agent node. In the **Inspector** panel, fill in:
 
@@ -124,7 +142,7 @@ This is the same `role` / `goal` / `model` triplet that ends up in the agent's Y
 
 ---
 
-## 7. Step 5 — Export Your Scaffold
+## 8. Step 5 — Export Your Scaffold
 
 Click **Generate** (or **Export**). You'll get a ZIP download containing:
 
@@ -143,7 +161,7 @@ If you're running Studio locally with `K9X_PROJECTS_ROOT` set, you can write dir
 
 ---
 
-## 8. Step 6 — Run It
+## 9. Step 6 — Run It
 
 ```bash
 unzip <your-app-name>.zip
@@ -160,7 +178,7 @@ If your Agent's model calls out to Ollama, make sure it's running (`ollama serve
 
 ---
 
-## 9. What You Just Built
+## 10. What You Just Built
 
 ```
 Event → Router (K9EventRouter)
@@ -173,7 +191,7 @@ Every box in that diagram is a concrete instance of a framework ABB contract —
 
 ---
 
-## 10. Where to Go Next
+## 11. Where to Go Next
 
 This guide stops here on purpose. Everything past this point is Developer Guide territory:
 
@@ -184,22 +202,26 @@ This guide stops here on purpose. Everything past this point is Developer Guide 
 | Add actor/critic self-review to an agent | Chapter 9 (Critic-Actor Pattern) |
 | Enforce governance before/after an agent runs | Chapter 13 (Governance and Zero Trust) |
 | Harden the pipeline against prompt injection, PII leakage, etc. | Chapter 14 (K9X Security and Vulnerability Checks) |
+| Prove your Shield configuration actually blocks attacks | `pip install k9x-satan` — Chapter 14, [k9x.ai/k9x-security](https://k9x.ai/k9x-security) |
 | Connect a real LLM provider (Claude, Bedrock, OpenAI) instead of Ollama | Chapter 23 (Provider Adapter Pattern), SKILLS.md Skill 13 |
 | Understand everything Studio's canvas can do | Chapter 20 (K9X Studio Integration) |
 | Publish your SBB for reuse across projects | Chapter 21 (K9X Enterprise Continuum) |
+| Understand *why* the architecture is shaped this way — OO principles, TOGAF ABBs, why this pays off at scale | Chapter 1 (Introduction), CLAUDE.md's Architecture & Design Discipline |
 | See the whole framework, end to end | The full [Developer Guide](Developer-guide.pdf) |
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `run.sh` exits: "shared venv not found" | Create `k9-aif-framework/.venv` first — see Prerequisites |
-| "Generate Architecture" gives a generic result | No LLM configured — see the Studio README's LLM Configuration section |
+| `k9x: command not found` after `pip install k9x` | Confirm the install went into the Python environment on your `PATH` — check with `pip show k9x` |
+| `run.sh` exits: "shared venv not found" (ecosystem-checkout path only) | Create `k9-aif-framework/.venv` first — see Prerequisites |
+| "Generate Architecture" gives a generic result | No LLM configured — run `k9x config`, fill in the LLM endpoint, save as `.env` |
 | LLM endpoint rejected on studio.k9x.ai | `localhost`/`127.0.0.1` are blocked on the hosted instance — use your machine's IP or hostname |
 | `Connection refused` calling the model | Ollama isn't running — `ollama serve`, then confirm the models are pulled |
-| Port 8090 or 5173 already in use | Stop whatever's using it, or edit the port in `run.sh` |
+| Port 12999 (pip path) or 8090/5173 (ecosystem-checkout path) already in use | `k9x studio --port <N>`, or stop whatever's using the port |
+| `setup.sh` (Step 6) can't find `k9_aif_abb/` at `K9_FRAMEWORK_PATH` | Point it at (or let it clone) an actual `k9-aif-framework` checkout — a pip-installed `k9-aif` package alone isn't enough for this step |
 | Exported app runs but agent output looks like a stub | Confirm the model alias in the Agent's YAML matches an entry in `config.yaml`'s `model_catalog` |
 
 ---
@@ -207,6 +229,7 @@ This guide stops here on purpose. Everything past this point is Developer Guide 
 ## References
 
 - K9-AIF Developer Guide — the full reference manual: `Developer-guide.pdf` (this folder)
-- K9X Studio: [studio.k9x.ai](https://studio.k9x.ai) · [github.com/k9aif/k9x-studio](https://github.com/k9aif/k9x-studio)
-- K9-AIF Framework: [github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework)
+- K9X Studio: [studio.k9x.ai](https://studio.k9x.ai) · [github.com/k9aif/k9x-studio](https://github.com/k9aif/k9x-studio) · `pip install k9x`
+- K9-AIF Framework: [github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework) · `pip install k9-aif`
+- K9X SATAN — adversarial validation: [satan.k9x.ai](https://satan.k9x.ai) · `pip install k9x-satan`
 - K9X Security — full vulnerability check inventory: [k9x.ai/k9x-security](https://k9x.ai/k9x-security)
