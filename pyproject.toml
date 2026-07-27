@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9-aif"
-version = "1.9.0"
+version = "1.10.0"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -31,6 +31,7 @@ kafka     = ["aiokafka>=0.10", "kafka-python>=2.0"]
 postgres  = ["psycopg2-binary>=2.9"]
 neo4j     = ["neo4j>=5.14"]
 crewai    = ["crewai>=1.14"]
+claude-agent-sdk = ["claude-agent-sdk>=0.2.0"]
 chromadb  = ["chromadb>=1.0"]
 server    = ["fastapi>=0.110", "uvicorn>=0.29"]
 s3        = ["boto3>=1.28"]
@@ -42,6 +43,7 @@ all       = [
     "psycopg2-binary>=2.9",
     "neo4j>=5.14",
     "crewai>=1.14",
+    "claude-agent-sdk>=0.2.0",
     "chromadb>=1.0",
     "fastapi>=0.110",
     "uvicorn>=0.29",

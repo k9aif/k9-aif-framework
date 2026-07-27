@@ -4,6 +4,20 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.10.0] — 2026-07-27
+
+### Added
+
+- **Claude Agent SDK adapter** (`k9_adapters/claude_agent_sdk/`) — OOB adapter parallel to `k9_adapters/crewai/`, built against the installed SDK's own source rather than assumed behavior. Conformance tier is action-governed, not fully-governed (deliberate — documented in the package's own `CLAUDE.md`). The adapter owns tool registration: the SDK receives only adapter-wrapped tools via one `create_sdk_mcp_server()` call — it never accepts a pre-built `ClaudeAgentOptions` the way `CrewAIOrchestratorAdapter` accepts a pre-built crew. Every tool call routes through `can_use_tool` into `apply_post_governance()` (k9x_Shield's egress chain when configured), confirmed live with a real per-tool-call egress event firing before the tool handler executes. New `claude-agent-sdk` optional-dependency extra (`pip install k9-aif[claude-agent-sdk]`), following the same lazy-import pattern as the `crewai` extra.
+
+### Fixed
+
+- **`CrewAIOrchestratorAdapter`-parallel `ClaudeAgentSdkOrchestratorAdapter` publish call** — used `publish_event(event)`, a `BaseAgent`-only method; `BaseOrchestrator` only has `publish_status(status, context)`. Raised `AttributeError` on the first live call.
+- **`query()` string-prompt path was never actually reachable** — the SDK requires `prompt` as an `AsyncIterable[dict]`, not `str`, whenever `can_use_tool` is set, and this adapter always sets it. Fixed by building the same single-message streaming shape the SDK's own string-prompt branch constructs internally.
+- **Per-tool-call governance gate was silently bypassed** — `allowed_tools` containing a tool's bare qualified name (`mcp__<server>__<tool>`, no `(...)` specifier) is a whole-tool allow rule that the SDK auto-approves before `can_use_tool` is ever consulted. The adapter's core claim — "every tool call is gated" — was false in the shipped code; the first live run showed no per-tool-call egress event, only the final-output one. Fixed by dropping `allowed_tools` from `_build_options()` entirely: `mcp_servers` alone makes a tool exist/callable, and with no whole-tool rule present every call correctly falls through to `can_use_tool`.
+
+---
+
 ## [1.9.0] — 2026-07-18
 
 ### Added
