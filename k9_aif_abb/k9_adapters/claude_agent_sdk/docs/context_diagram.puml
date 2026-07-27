@@ -1,0 +1,96 @@
+@startuml context_diagram
+skinparam rectangleStyle rounded
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam dpi 160
+skinparam noteBackgroundColor #FFFDEB
+skinparam noteBorderColor #999999
+skinparam packageBackgroundColor white
+skinparam packageBorderColor #666666
+skinparam rectangleBackgroundColor #F8FAFC
+skinparam rectangleBorderColor #666666
+skinparam arrowColor #555555
+skinparam titleFontColor #111111
+
+title Claude Agent SDK Adapter — Context / Block Diagram\n<size:11><color:#666666>Action governance: full. Inference governance: out of reach, shown not hidden.</color></size>
+
+rectangle "K9-AIF Caller\n(Squad step, Orchestrator, or\ndirect facade call)" as Caller
+
+package "K9ClaudeAgentSDKAdapter (facade)" as Facade {
+  rectangle "ClaudeAgentSDKPayloadMapper\nto_sdk_input() / from_sdk_output()" as Mapper
+}
+
+package "ClaudeAgentSDKOrchestratorAdapter\n(sole capability broker)" as OrchAdapter {
+  rectangle "Zero Trust\napply_zero_trust()" as ZT
+  rectangle "Ingress governance\napply_pre_governance()" as Ingress
+  rectangle "Tool / MCP server registry\n(_capabilities, adapter-owned)" as ToolRegistry
+  rectangle "can_use_tool\n(egress gate, every tool call,\ntop-level AND subagent)" as CanUseTool
+  rectangle "Subagent definitions\n(tools subset of _capabilities,\nvalidated at construction)" as Subagents
+  rectangle "Final-output egress\napply_post_governance()" as FinalEgress
+  rectangle "Audit trail\npublish_event()" as Audit
+}
+
+package "k9x_Shield (ShieldGovernance)" as Shield {
+  rectangle "Ingress chain\nInputSizeCheck, PromptInjectionCheck,\nPIIBoundaryCheck" as IngressChain
+  rectangle "Egress chain\nSemanticDriftCheck, ToolArgumentCheck,\nExecutionGuardCheck, PIIBoundaryCheck" as EgressChain
+}
+
+package "Claude Agent SDK (external, Claude-only)" as SDK {
+  rectangle "query() / ClaudeSDKClient\nagent loop" as Loop
+  rectangle "bundled 'claude' CLI subprocess\n(owns its own inference end to end)" as CLI
+}
+
+cloud "Anthropic API\n(or Bedrock / Vertex / Azure Foundry,\nstill Claude, different hosting)" as Anthropic
+
+rectangle "K9ModelRouter\nllm_invoke() -> LLMFactory -> backend\n(Ollama, OpenAI, Watsonx, Claude-direct, ...)" as ModelRouter
+
+Caller --> Facade
+Facade --> Mapper
+Mapper --> OrchAdapter
+
+ZT --> Ingress
+Ingress --> IngressChain
+Ingress --> ToolRegistry
+ToolRegistry --> CanUseTool
+Subagents --> CanUseTool
+CanUseTool --> EgressChain
+CanUseTool --> Loop : allow / deny\nper tool call
+Loop --> CLI
+CLI --> Anthropic
+Loop --> FinalEgress
+FinalEgress --> EgressChain
+FinalEgress --> Audit
+Audit --> Caller : governed result
+
+CLI ..[#CC3333,thickness=2]..> ModelRouter : "**NOT CONNECTED**\nSDK's own model calls never\nreach llm_invoke, a structural\nSDK limitation, not an adapter gap"
+
+note right of ModelRouter
+  This is where a native K9-AIF agent,
+  or a CrewAI agent behind
+  K9XLiteLLMBridgeAdapter, would be:
+  provider-agnostic, swappable by config.
+
+  The Claude Agent SDK's own loop
+  cannot be routed here. Solutions
+  needing that should use a direct-API
+  BaseLLM adapter instead (Pet Store
+  Agentic's DirectApiDiagnosisAgent
+  pattern), fully governed on both
+  axes, at the cost of writing the
+  tool-use loop yourself instead of
+  getting Claude's autonomous loop
+  for free.
+end note
+
+note bottom of OrchAdapter
+  CONFORMANCE TIER: action-governed, not fully-governed.
+  Verified from the SDK's own source: every can_use_tool
+  control request, top-level agent or any subagent,
+  carries ToolPermissionContext.agent_id and hits this
+  one callback. No separate, bypassing path exists.
+end note
+
+@enduml

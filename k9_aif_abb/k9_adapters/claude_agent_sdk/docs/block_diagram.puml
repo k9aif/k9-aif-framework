@@ -1,0 +1,55 @@
+@startuml block_diagram
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam roundcorner 8
+skinparam ArrowColor #555555
+skinparam FontName Inter
+skinparam FontSize 13
+skinparam dpi 160
+
+skinparam rectangle {
+  BorderColor #999999
+}
+
+title Claude Agent SDK Adapter — Simple Block View
+
+rectangle "K9-AIF FRAMEWORK" as Framework #E8F0FE {
+  rectangle "Caller\n(Squad / Orchestrator)" as Caller #FFFFFF
+  rectangle "Shield Governance\n(pre_process / post_process)" as Shield2 #FFFFFF
+}
+
+rectangle "ADAPTER (capability broker)" as Adapter #FFF3E0 {
+  rectangle "Pre-check\n(ingress, before query())" as Pre #FFFFFF
+  rectangle "Post-check\n(egress, every tool call\n+ final output)" as Post #FFFFFF
+}
+
+rectangle "CLAUDE AGENT SDK" as SDKBox #F3E8FD {
+  rectangle "Agent loop\n(tools, subagents)" as AgentLoop #FFFFFF
+}
+
+rectangle "LLM BACKEND\n(Claude only)" as Backend #E8FDEA
+
+Caller -down-> Pre : 1. request
+Pre -down-> Shield2 : checks input
+Pre -right-> AgentLoop : 2. allowed prompt
+AgentLoop -down-> Backend : 3. model call\n(never governed)
+AgentLoop -left-> Post : 4. every tool call
+Post -up-> Shield2 : checks tool / output
+Post -up-> Caller : 5. governed result
+
+note bottom of Backend
+  Claude Agent SDK talks to this
+  backend directly. K9ModelRouter
+  / llm_invoke is not in this path:
+  Claude only, not provider-agnostic.
+end note
+
+note bottom of Adapter
+  Pre runs once, before the SDK starts.
+  Post runs once per tool call, AND once
+  more on the final output before it
+  reaches the caller.
+end note
+
+@enduml

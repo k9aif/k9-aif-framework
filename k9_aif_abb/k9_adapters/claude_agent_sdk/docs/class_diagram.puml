@@ -1,0 +1,151 @@
+@startuml class_diagram
+skinparam monochrome false
+skinparam classBackgroundColor #FAFAF8
+skinparam classBorderColor #BBBBAA
+skinparam classHeaderBackgroundColor #F0ECE4
+skinparam ArrowColor #555544
+skinparam FontName Inter
+skinparam FontSize 13
+skinparam Padding 6
+skinparam Shadowing false
+skinparam roundcorner 6
+skinparam linetype ortho
+
+title Claude Agent SDK Adapter — Class Diagram\n<size:11><color:#666055>Strong encapsulation: sole capability broker for tools, permissions, and subagents</color></size>
+
+package "K9-AIF Core ABBs" <<Rectangle>> {
+
+  abstract class BaseAdapter {
+    +adapter_name: str
+    +metadata: dict
+    +validate_payload(payload): None
+    #{abstract} adapt_input(payload): dict
+    #{abstract} adapt_output(result): dict
+    +get_adapter_metadata(): dict
+  }
+
+  abstract class BaseOrchestrator {
+    +config: dict
+    +governance: BaseGovernance
+    #{abstract} execute_flow(payload): dict
+    +execute_squads(squads, payload, parallel): dict
+    +apply_pre_governance(payload, ctx): dict
+    +apply_post_governance(payload, ctx): dict
+    +apply_zero_trust(payload, ctx): dict
+    +publish_event(event): None
+  }
+
+}
+
+package "Claude Agent SDK Adapter" <<Rectangle>> {
+
+  class ToolCapability {
+    +name: str
+    +description: str
+    +input_schema: Any
+    +handler: Callable
+    --
+    One capability this adapter is\nwilling to broker to the SDK.
+    Immutable (frozen dataclass).
+  }
+
+  class ClaudeAgentSDKOrchestratorAdapter {
+    -_capabilities: dict[str, ToolCapability]
+    -_registered_tool_names: frozenset
+    -_agent_definitions: dict[str, AgentDefinition]
+    -_mcp_server: McpSdkServerConfig
+    --
+    +execute_flow(payload): dict
+    +execute_flow_async(payload): dict
+    -_execute_flow_governed(payload): list
+    -_build_agent_definitions(subagents): dict
+    -_build_mcp_server(): McpSdkServerConfig
+    -_build_options(): ClaudeAgentOptions
+    -_can_use_tool(name, input, ctx): PermissionResult
+    -_run_query(prompt): list
+    -{static} _extract_final_text(messages): str
+  }
+  note right of ClaudeAgentSDKOrchestratorAdapter
+    Sole capability broker:
+    - tools only enter via _capabilities
+    - can_use_tool routes every call
+      (top-level AND subagent) through
+      apply_post_governance()
+    - subagent tools validated against
+      _capabilities at construction --
+      ValueError if not a subset
+    - never accepts a pre-built
+      ClaudeAgentOptions
+  end note
+
+  class ClaudeAgentSDKPayloadMapper {
+    +to_sdk_input(payload): dict
+    +from_sdk_output(messages): dict
+  }
+
+  class K9ClaudeAgentSDKAdapter {
+    +mapper: ClaudeAgentSDKPayloadMapper
+    +orchestrator_adapter: ClaudeAgentSDKOrchestratorAdapter
+    --
+    +execute(payload): dict
+    +execute_async(payload): dict
+  }
+
+}
+
+package "Governance (used via composition, not extended)" <<Rectangle>> {
+  abstract class BaseGovernance {
+    #{abstract} pre_process(payload, ctx): dict
+    #{abstract} post_process(payload, ctx): dict
+  }
+
+  class ShieldGovernance {
+    +pre_process(payload, ctx): dict
+    +post_process(payload, ctx): dict
+    --
+    Ingress chain: InputSizeCheck,\nPromptInjectionCheck, PIIBoundaryCheck
+    Egress chain: SemanticDriftCheck,\nToolArgumentCheck, ExecutionGuardCheck
+  }
+
+  BaseGovernance <|-- ShieldGovernance
+}
+
+package "Claude Agent SDK (external package)" <<Rectangle>> {
+  class ClaudeAgentOptions {
+    +mcp_servers: dict
+    +allowed_tools: list[str]
+    +can_use_tool: Callable
+    +agents: dict[str, AgentDefinition]
+  }
+  class AgentDefinition {
+    +description: str
+    +prompt: str
+    +tools: list[str]
+  }
+  class "query()" as query_fn
+}
+
+' Inheritance
+BaseAdapter <|-- ClaudeAgentSDKOrchestratorAdapter
+BaseOrchestrator <|-- ClaudeAgentSDKOrchestratorAdapter
+
+' Composition
+K9ClaudeAgentSDKAdapter *-- ClaudeAgentSDKOrchestratorAdapter
+K9ClaudeAgentSDKAdapter *-- ClaudeAgentSDKPayloadMapper
+ClaudeAgentSDKOrchestratorAdapter o-- ToolCapability : "capabilities: 1..N"
+
+' Dependency / usage
+ClaudeAgentSDKOrchestratorAdapter ..> BaseGovernance : "apply_pre/post_governance()\n(inherited from BaseOrchestrator)"
+ClaudeAgentSDKOrchestratorAdapter ..> ClaudeAgentOptions : "builds, every call"
+ClaudeAgentSDKOrchestratorAdapter ..> AgentDefinition : "builds from subagents=,\nvalidated against capabilities"
+ClaudeAgentSDKOrchestratorAdapter ..> query_fn : "invokes"
+
+note bottom of ClaudeAgentSDKOrchestratorAdapter
+  CONFORMANCE TIER: action-governed, not fully-governed.
+  Tool calls, subagent spawns, ingress, egress, zero-trust,
+  and audit trail are all real. Model inference stays
+  outside llm_invoke/K9ModelRouter -- a permanent, structural
+  property of the Claude Agent SDK (see context_diagram.puml).
+end note
+
+@enduml

@@ -18,6 +18,7 @@ certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.5
 chromadb==1.1.1
+claude-agent-sdk==0.2.128
 click==8.1.8
 cohere==5.20.7
 crewai==1.10.1
