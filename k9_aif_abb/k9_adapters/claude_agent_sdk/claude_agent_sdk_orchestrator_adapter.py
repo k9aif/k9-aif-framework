@@ -35,7 +35,15 @@ registry:
    same callback: the SDK's internal control protocol (_internal/query.py)
    routes every ``can_use_tool`` control request -- top-level agent or any
    subagent -- through one handler, and ``ToolPermissionContext.agent_id``
-   identifies which one issued it. There is no separate, bypassing path.
+   identifies which one issued it. That is the routing guarantee, and it
+   is verified. A *separate* bypass exists for the top-level agent: a
+   whole-tool entry in ``allowed_tools`` skips can_use_tool entirely
+   (CanUseToolShadowedWarning) -- this is why ``_build_options()`` below
+   deliberately never populates ``allowed_tools``. Whether
+   ``AgentDefinition.tools`` has the same shadowing behavior for a
+   subagent's own grants is NOT yet verified either way -- see CLAUDE.md
+   "Verified facts" before trusting subagent containment at the same
+   level as the now-confirmed top-level path.
 
 3. Subagent spawning — if ``subagents`` is supplied, each subagent's tool
    list is validated against this adapter's own registered tool names at
@@ -62,8 +70,9 @@ Beyond tool-call egress, this adapter also applies:
   ``apply_post_governance()`` a second time (OutputSanitizationCheck,
   PIIBoundaryCheck, ...) before being returned, catching anything in the
   finished response that individual tool-call checks wouldn't see.
-- **Audit trail** — ``publish_event()`` (inherited) fires at session start
-  and completion, same as any other K9-AIF Router/Orchestrator.
+- **Audit trail** — ``publish_status()`` (inherited from ``BaseOrchestrator``
+  -- *not* ``publish_event()``, which is a ``BaseAgent``-only method;
+  ``BaseRouter`` has neither) fires at session start and completion.
 
 CONFORMANCE TIER — read this before assuming parity with a native K9-AIF
 agent. This adapter provides full **action governance**: every tool call
@@ -123,7 +132,6 @@ re-verify before revisiting this.
 from __future__ import annotations
 
 import asyncio
-import logging
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
@@ -140,8 +148,6 @@ from claude_agent_sdk import (
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-
-log = logging.getLogger("ClaudeAgentSDKOrchestratorAdapter")
 
 _MCP_SERVER_NAME = "k9x_adapter_tools"
 
@@ -236,7 +242,7 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
                 model=spec.get("model"),
                 maxTurns=spec.get("maxTurns"),
             )
-            log.info(
+            self.logger.info(
                 "[ClaudeAgentSDKOrchestratorAdapter] subagent '%s' confined to tools=%s",
                 sub_name, requested_tools,
             )
@@ -271,7 +277,7 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         try:
             await self.apply_post_governance(payload)
         except PermissionError as exc:
-            log.warning(
+            self.logger.warning(
                 "[ClaudeAgentSDKOrchestratorAdapter] egress DENIED tool=%s: %s",
                 tool_name, exc,
             )
@@ -282,9 +288,17 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
     # ── options construction (never accepts a pre-built options object) ─
 
     def _build_options(self) -> ClaudeAgentOptions:
+        # NOTE: allowed_tools deliberately does NOT list these tool names.
+        # A bare "mcp__server__tool" entry (no "(...)" specifier) is a
+        # *whole-tool* allow rule -- the SDK auto-approves it before
+        # can_use_tool is ever consulted (CanUseToolShadowedWarning, verified
+        # live: the callback silently never fired). mcp_servers alone is what
+        # makes the tool exist/callable; leaving allowed_tools empty is what
+        # makes every call actually fall through to can_use_tool instead of
+        # being pre-approved. Do not "fix" the missing-looking allowed_tools
+        # entry without re-reading this note.
         return ClaudeAgentOptions(
             mcp_servers={_MCP_SERVER_NAME: self._mcp_server},
-            allowed_tools=[f"mcp__{_MCP_SERVER_NAME}__{name}" for name in self._registered_tool_names],
             can_use_tool=self._can_use_tool,
             agents=self._agent_definitions or None,
             system_prompt=self._system_prompt,
@@ -363,21 +377,17 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
 
         governed_input = await self.apply_pre_governance(sdk_input)
 
-        self.publish_event({
-            "type": "ClaudeAgentSDKSessionStarted",
-            "adapter": self.adapter_name,
-        })
+        self.publish_status("ClaudeAgentSDKSessionStarted", {"adapter": self.adapter_name})
 
         messages = await self._run_query(governed_input["prompt"])
 
         output_text = self._extract_final_text(messages)
         await self.apply_post_governance({"output_text": output_text})
 
-        self.publish_event({
-            "type": "ClaudeAgentSDKSessionCompleted",
-            "adapter": self.adapter_name,
-            "message_count": len(messages),
-        })
+        self.publish_status(
+            "ClaudeAgentSDKSessionCompleted",
+            {"adapter": self.adapter_name, "message_count": len(messages)},
+        )
 
         return messages
 
@@ -396,8 +406,26 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         return output_text
 
     async def _run_query(self, prompt: str) -> List[Any]:
+        """
+        query() requires prompt as an AsyncIterable[dict] whenever
+        can_use_tool is set (_internal/client.py raises ValueError on a
+        plain str otherwise) -- and this adapter always sets can_use_tool,
+        so this is not optional here. The single-message shape below is
+        exactly what the SDK's own string-prompt path builds internally
+        (_internal/client.py's isinstance(prompt, str) branch) -- verified
+        by reading that code, not guessed.
+        """
         options = self._build_options()
+
+        async def _single_turn(p: str):
+            yield {
+                "type": "user",
+                "session_id": "",
+                "message": {"role": "user", "content": p},
+                "parent_tool_use_id": None,
+            }
+
         messages: List[Any] = []
-        async for message in query(prompt=prompt, options=options):
+        async for message in query(prompt=_single_turn(prompt), options=options):
             messages.append(message)
         return messages
