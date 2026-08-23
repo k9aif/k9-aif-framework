@@ -15,7 +15,7 @@ IMAGE_NAME="k9-aif-eoc:latest"
 POD_NAME="eoc-dev"
 ENV_FILE="$EOC_DIR/.env"
 
-HOST_IP="192.168.1.98"
+HOST_IP="${HOST_IP:?Set HOST_IP to the host LAN IP before running (e.g. HOST_IP=10.0.0.5 ./run_eoc_pod.sh)}"
 HOST_PORT=8010
 
 VOLUME_BASE="/home/container_storage/volumes/eoc-dev"

@@ -5,13 +5,14 @@
 # ├── eoc_router       EOCRouter — consumes eoc-events, routes to domain topics
 # └── eoc_orchestrator EOCOrchestrator — consumes domain topics, runs squads
 #
-# External services (on RHEL host at 192.168.1.98):
+# External services (on the RHEL host — see hostAliases below):
 #   Ollama    → rhel-host:11434
 #   Kafka     → rhel-host:9092
 #   PostgreSQL → rhel-host:5432
 #   Neo4j     → rhel-host:7687
 #
 # SETUP (run once on RHEL):
+#   # 0. Replace <RHEL_HOST_IP> in hostAliases below with this host's LAN IP
 #   # 1. Build the image
 #   podman build -t k9-aif-eoc:latest \
 #     -f examples/K9X_Enterprise_Insurance_OperationsCenter/Containerfile .
@@ -50,7 +51,7 @@ spec:
   restartPolicy: OnFailure
 
   hostAliases:
-  - ip: "192.168.1.98"
+  - ip: "<RHEL_HOST_IP>"  # replace with this host's LAN IP before deploying
     hostnames:
     - "rhel-host"
 

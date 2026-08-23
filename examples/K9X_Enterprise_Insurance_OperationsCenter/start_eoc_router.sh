@@ -5,7 +5,7 @@
 # to the correct domain topic (eoc-claims, eoc-fraud, …) via EOCRouter.
 #
 # Prerequisites:
-#   - Kafka running at 192.168.1.98:9092 (RHEL host, configured in config.yaml)
+#   - Kafka running (broker address configured in config.yaml / K9_KAFKA_BROKERS)
 #   - app_backend running (so events arrive on eoc-events)
 #
 # Run:
@@ -30,7 +30,7 @@ export PYTHONPATH="$REPO_ROOT"
 export K9_ENV="${K9_ENV:-development}"
 
 # Override broker if you need to point at a different host
-# export K9_KAFKA_BROKERS="192.168.1.98:9092"
+# export K9_KAFKA_BROKERS="10.0.0.5:9092"
 
 echo "------------------------------------------------------------"
 echo " K9-AIF EOC — eoc_router"
@@ -40,7 +40,7 @@ import yaml, os
 cfg = yaml.safe_load(open('$REPO_ROOT/examples/K9X_Enterprise_Insurance_OperationsCenter/config/config.yaml'))
 brokers = cfg.get('messaging', {}).get('brokers', ['?'])
 print(','.join(brokers))
-" 2>/dev/null || echo "192.168.1.98:9092")"
+" 2>/dev/null || echo "see config.yaml")"
 echo " Consuming  : eoc-events"
 echo " Routing to : eoc-claims, eoc-documents, eoc-fraud, eoc-policy,"
 echo "              eoc-catastrophe, eoc-customer, eoc-audit"

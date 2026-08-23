@@ -1409,7 +1409,7 @@ chat:
 
 ```bash
 # .env
-REDIS_HOST=192.168.1.98
+REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=redis
 ```

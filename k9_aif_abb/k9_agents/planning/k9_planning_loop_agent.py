@@ -17,9 +17,9 @@ generate_hypothesis  — builds a prompt from the payload, agent YAML role/goal,
                         observations
 run_validation       — calls llm_invoke(); the LLM is the validation tool
 evaluate_observation — parses JSON from the LLM response; updates
-                        loop_ctx.remaining_steps / loop_ctx.notes in place and
-                        extracts confidence, conclusion, reasoning,
-                        plan_complete
+                        loop_ctx.metadata["remaining_steps"] /
+                        loop_ctx.metadata["notes"] in place and extracts
+                        confidence, conclusion, reasoning, plan_complete
 should_continue      — FINALIZE if the LLM explicitly returned an empty
                         remaining_steps (plan_complete) or confidence reaches
                         confidence_threshold; otherwise CONTINUE/ESCALATE per
@@ -106,9 +106,12 @@ class K9PlanningLoopAgent(BaseValidationLoopAgent):
         role = self.config.get("role", _DEFAULT_ROLE)
         goal = self.config.get("goal", _DEFAULT_GOAL)
 
-        if loop_ctx.remaining_steps:
+        remaining_steps = loop_ctx.metadata.get("remaining_steps", [])
+        notes           = loop_ctx.metadata.get("notes", {})
+
+        if remaining_steps:
             plan_section = "\n\nCurrent plan (remaining steps):\n" + "\n".join(
-                f"  {i}. {step}" for i, step in enumerate(loop_ctx.remaining_steps, 1)
+                f"  {i}. {step}" for i, step in enumerate(remaining_steps, 1)
             )
         elif loop_ctx.iteration == 1:
             plan_section = "\n\nNo plan yet — propose one as part of your response."
@@ -120,8 +123,8 @@ class K9PlanningLoopAgent(BaseValidationLoopAgent):
 
         notes_section = (
             f"\n\nScratchpad (notes carried from prior iterations):\n"
-            f"{json.dumps(loop_ctx.notes, indent=2)}"
-            if loop_ctx.notes else ""
+            f"{json.dumps(notes, indent=2)}"
+            if notes else ""
         )
 
         prior_context = ""
@@ -163,17 +166,17 @@ class K9PlanningLoopAgent(BaseValidationLoopAgent):
 
         plan_provided = isinstance(data.get("remaining_steps"), list)
         if plan_provided:
-            loop_ctx.remaining_steps = [str(s) for s in data["remaining_steps"]]
+            loop_ctx.metadata["remaining_steps"] = [str(s) for s in data["remaining_steps"]]
 
         notes = data.get("notes")
         if isinstance(notes, dict):
-            loop_ctx.notes = notes
+            loop_ctx.metadata["notes"] = notes
 
         return {
             "conclusion":     data.get("conclusion", str(tool_result)[:200]),
             "confidence":     data.get("confidence", 0.5),
             "reasoning":      data.get("reasoning", ""),
-            "plan_complete":  plan_provided and not loop_ctx.remaining_steps,
+            "plan_complete":  plan_provided and not loop_ctx.metadata.get("remaining_steps"),
         }
 
     def should_continue(self, observation: Dict[str, Any], loop_ctx: ValidationLoopContext) -> ValidationDisposition:
@@ -198,9 +201,11 @@ class K9PlanningLoopAgent(BaseValidationLoopAgent):
         return ValidationLoopResult(
             disposition      = ValidationDisposition.FINALIZE,
             output           = {
-                "conclusion": obs.get("conclusion", ""),
-                "confidence": last.confidence if last else 0.0,
-                "reasoning":  obs.get("reasoning", ""),
+                "conclusion":      obs.get("conclusion", ""),
+                "confidence":      last.confidence if last else 0.0,
+                "reasoning":       obs.get("reasoning", ""),
+                "remaining_steps": loop_ctx.metadata.get("remaining_steps", []),
+                "notes":           loop_ctx.metadata.get("notes", {}),
             },
             steps            = loop_ctx.steps,
             iterations       = loop_ctx.iteration,
@@ -209,8 +214,6 @@ class K9PlanningLoopAgent(BaseValidationLoopAgent):
                 s.observation.get("reasoning", str(s.observation)[:120])
                 for s in loop_ctx.steps
             ],
-            remaining_steps  = loop_ctx.remaining_steps,
-            notes            = loop_ctx.notes,
         )
 
     # ------------------------------------------------------------------

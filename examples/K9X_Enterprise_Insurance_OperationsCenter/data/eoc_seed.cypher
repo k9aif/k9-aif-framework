@@ -5,7 +5,7 @@
 // Run once against your Neo4j instance before starting the EOC application.
 //
 // Usage (cypher-shell):
-//   cypher-shell -a bolt://192.168.1.98:7687 \
+//   cypher-shell -a bolt://<your-neo4j-host>:7687 \
 //                -u neo4j -p <password> \
 //                --file eoc_seed.cypher
 //

@@ -6,7 +6,7 @@
 # publishes the result to `eoc-results`.
 #
 # Prerequisites:
-#   - Kafka running at 192.168.1.98:9092
+#   - Kafka running (see K9_KAFKA_BROKERS / config.yaml for the broker address)
 #   - PostgreSQL, Neo4j, Ollama running on RHEL host
 #   - eoc_router running (so domain topics receive events)
 #
@@ -34,7 +34,7 @@ export K9_ENV="${K9_ENV:-development}"
 echo "------------------------------------------------------------"
 echo " K9-AIF EOC — eoc_orchestrator"
 echo " PYTHONPATH : $REPO_ROOT"
-echo " Kafka      : 192.168.1.98:9092"
+echo " Kafka      : ${K9_KAFKA_BROKERS:-see config.yaml}"
 echo " Consuming  : eoc-claims, eoc-documents, eoc-fraud, eoc-policy,"
 echo "              eoc-catastrophe, eoc-customer, eoc-audit"
 echo " Publishing : eoc-results"

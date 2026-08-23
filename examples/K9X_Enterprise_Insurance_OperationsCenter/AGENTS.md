@@ -65,7 +65,7 @@ Two-stage fraud detection: rule-based keyword/amount signals first, then LLM dee
 OCR and structured extraction pipeline. Accepts raw text, file path (Tesseract OCR), or a document payload routed to the Docling MCP server. Uses extraction-capable model (Granite) to produce validated JSON. Low hallucination tolerance required.
 
 - **Phase 1 OCR:** Tesseract subprocess (when `file_path` provided and Tesseract is installed)
-- **Phase 2 OCR (MCP):** `MCPHttpConnector` (ABB) → POST to Docling at `http://192.168.1.98:5001/v1/parse` → returns clean Markdown (PDFs, DOCX, images, tables)
+- **Phase 2 OCR (MCP):** `MCPHttpConnector` (ABB) → POST to Docling at `${DOCLING_URL:-http://localhost:5001}/v1/parse` → returns clean Markdown (PDFs, DOCX, images, tables)
 - **MCP ABB:** `k9_core/integration/mcp_http_connector.py` — swap connector type in config without touching squad or orchestrator code
 - **Extracts:** document_type, claimant_name, policy_number, claim_number, incident_date, amount, provider, description, signatures_present
 - **Output:** extracted_fields (JSON), validation_status, ocr_applied, document_id
@@ -84,7 +84,7 @@ Purely deterministic — no LLM. Confidence gate that packages a structured Esca
 ### GraphSyncAgent
 Neo4j MERGE operations for entity graph. Creates/updates Claimant, Policy, Claim, Document nodes and typed relationships. Fully idempotent (MERGE not CREATE). Degrades gracefully when Neo4j is unavailable — returns `status: skipped`, never raises.
 
-- **Tools:** Neo4j driver (bolt://192.168.1.98:7687)
+- **Tools:** Neo4j driver (`${NEO4J_URI:-bolt://localhost:7687}`)
 - **Nodes:** Claimant, Claim, Policy, Document
 - **Relationships:** Claimant→[FILED]→Claim, Claim→[COVERED_BY]→Policy, Claim→[HAS_DOCUMENT]→Document
 - **Config gate:** `eoc.graph_sync_enabled` — set to false to disable without code change

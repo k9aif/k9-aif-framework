@@ -21,7 +21,7 @@ class MessageFactory:
       messaging:
         backend: redpanda
         brokers:
-          - 192.168.1.98:9092
+          - localhost:9092
         topic: acme-events
         group_id: acme-console
         security_protocol: PLAINTEXT   # PLAINTEXT (default) | SASL_SSL

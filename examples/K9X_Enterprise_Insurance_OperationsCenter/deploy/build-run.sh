@@ -61,7 +61,7 @@ case "$cmd" in
     ;;
 
   seed-neo4j)
-    NEO4J_URI="${NEO4J_URI:-bolt://192.168.1.98:7687}"
+    NEO4J_URI="${NEO4J_URI:-bolt://localhost:7687}"
     NEO4J_USER="${NEO4J_USER:-neo4j}"
     echo "Seeding Neo4j at $NEO4J_URI ..."
     cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" \
@@ -117,11 +117,12 @@ case "$cmd" in
   dev)
     # Quick dev run — single container, direct mode (no Kafka), live reload.
     # All external services are accessed via --add-host.
+    RHEL_HOST_IP="${RHEL_HOST_IP:?Set RHEL_HOST_IP to the host LAN IP before running dev (e.g. RHEL_HOST_IP=10.0.0.5 ./build-run.sh dev)}"
     echo "Starting dev server (direct mode, no Kafka) ..."
     podman run --rm \
       -p 8000:8000 \
       --env-file "$EOC_DIR/.env" \
-      --add-host rhel-host:192.168.1.98 \
+      --add-host "rhel-host:${RHEL_HOST_IP}" \
       -v "$REPO_ROOT:/app:ro,z" \
       -e PYTHONPATH=/app \
       -e K9_ENV=development \

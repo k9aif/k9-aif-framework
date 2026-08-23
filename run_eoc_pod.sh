@@ -9,10 +9,7 @@
 #   eoc-router         — Kafka router: eoc-events → domain topics
 #
 # Prerequisites (running on RHEL host):
-#   - Kafka at 192.168.1.98:9092
-#   - PostgreSQL at 192.168.1.98:5432
-#   - Neo4j at 192.168.1.98:7687
-#   - Ollama at 192.168.1.98:11434
+#   - Kafka, PostgreSQL, Neo4j, Ollama (see config/.env for connection settings)
 #
 # Usage:
 #   cd ~/k9-aif-framework
@@ -29,7 +26,7 @@ EOC_DIR="$REPO_ROOT/examples/K9X_Enterprise_Insurance_OperationsCenter"
 IMAGE_NAME="k9-aif-eoc:latest"
 POD_NAME="eoc-dev"
 
-HOST_IP="192.168.1.98"
+HOST_IP="${HOST_IP:?Set HOST_IP to the host LAN IP before running (e.g. HOST_IP=10.0.0.5 bash run_eoc_pod.sh)}"
 HOST_PORT=8010
 
 VOLUME_BASE="/home/container_storage/volumes/eoc-dev"

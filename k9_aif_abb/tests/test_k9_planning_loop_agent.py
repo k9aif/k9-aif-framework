@@ -73,7 +73,7 @@ def test_finalizes_when_plan_complete_even_below_confidence_threshold():
         result = agent.execute({"input": "task"})
     assert result["disposition"] == ValidationDisposition.FINALIZE
     assert result["iterations"] == 1
-    assert result["remaining_steps"] == []
+    assert result["output"]["remaining_steps"] == []
 
 
 def test_finalizes_on_confidence_threshold_even_with_remaining_plan():
@@ -98,8 +98,8 @@ def test_continues_with_multi_step_plan_and_carries_notes_forward():
 
     assert result["disposition"] == ValidationDisposition.FINALIZE
     assert result["iterations"] == 3
-    assert result["remaining_steps"] == []
-    assert result["notes"] == {"found": "a", "more": "b", "done": True}
+    assert result["output"]["remaining_steps"] == []
+    assert result["output"]["notes"] == {"found": "a", "more": "b", "done": True}
 
     # iteration 1: no plan yet
     assert "No plan yet" in prompts[0]
@@ -146,7 +146,7 @@ def test_unparseable_llm_output_falls_back_to_confidence_continuation():
     # no remaining_steps in output → plan_complete False; default confidence 0.5
     # below threshold, hits max_iterations → FINALIZE
     assert result["disposition"] == ValidationDisposition.FINALIZE
-    assert result["remaining_steps"] == []
+    assert result["output"]["remaining_steps"] == []
 
 
 # ── Output contract ──────────────────────────────────────────────────────────
@@ -157,8 +157,13 @@ def test_execute_returns_full_contract_including_plan_fields():
     with _patch_llm(_llm_response("ok", confidence=0.9, remaining_steps=[])):
         result = agent.execute({})
     for key in ("agent", "disposition", "output", "iterations", "final_confidence",
-                "evidence", "steps", "remaining_steps", "notes"):
+                "evidence", "steps"):
         assert key in result, f"missing key: {key}"
+    # Plan-tracking fields are K9PlanningLoopAgent-specific — carried in the
+    # generic `output` payload, not as top-level keys on the shared
+    # BaseValidationLoopAgent result contract (see finalize()).
+    for key in ("remaining_steps", "notes"):
+        assert key in result["output"], f"missing output key: {key}"
 
 
 # ── _parse_llm_json — nested objects (notes) ──────────────────────────────────

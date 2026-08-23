@@ -99,7 +99,7 @@ All deployment scripts are in this folder. Edit these values before running:
 **`run_eoc_pod.sh`**
 
 ```bash
-HOST_IP="192.168.1.98"        # IP where the pod is reachable
+HOST_IP="10.0.0.5"             # replace with the IP where the pod is reachable
 HOST_PORT=8010                 # host port mapped to container port 8000
 VOLUME_BASE="/home/container_storage/volumes/eoc-dev"  # volume root on host
 ```
@@ -152,9 +152,9 @@ sudo podman logs eoc-router
 Endpoints (using `HOST_IP` and `HOST_PORT` from the script):
 
 ```
-Web UI  : http://192.168.1.98:8010/webui/
-API     : http://192.168.1.98:8010/docs
-Health  : http://192.168.1.98:8010/health
+Web UI  : http://<HOST_IP>:8010/webui/
+API     : http://<HOST_IP>:8010/docs
+Health  : http://<HOST_IP>:8010/health
 ```
 
 ---

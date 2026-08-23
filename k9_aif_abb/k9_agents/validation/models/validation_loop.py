@@ -32,19 +32,32 @@ class ValidationLoopStep:
 
 @dataclass
 class ValidationLoopContext:
-    """Mutable state carried across iterations — the agent's working memory."""
+    """
+    Mutable state carried across iterations — the agent's working memory.
+
+    ``metadata`` is the generic extension point for subclass-specific state
+    (e.g. K9PlanningLoopAgent's ``remaining_steps``/``notes`` plan-tracking
+    fields). It is not a fixed schema — the base loop never reads or writes
+    it; only subclasses that need extra carried state do.
+    """
 
     payload:         Dict[str, Any]
     steps:           List[ValidationLoopStep] = field(default_factory=list)
     iteration:       int = 0
     metadata:        Dict[str, Any] = field(default_factory=dict)
-    remaining_steps: List[str] = field(default_factory=list)
-    notes:           Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class ValidationLoopResult:
-    """Final output produced by finalize(), escalate(), or fail()."""
+    """
+    Final output produced by finalize(), escalate(), or fail().
+
+    ``output`` is the generic per-subclass payload — subclasses that carry
+    extra finalized state (e.g. K9PlanningLoopAgent's final plan/notes)
+    include it there rather than as dedicated fields on this shared
+    dataclass, so the base ABB's result contract doesn't grow fields that
+    only one subclass populates.
+    """
 
     disposition:      ValidationDisposition
     output:           Dict[str, Any]
@@ -52,5 +65,3 @@ class ValidationLoopResult:
     iterations:       int
     final_confidence: float
     evidence:         List[str] = field(default_factory=list)
-    remaining_steps:  List[str] = field(default_factory=list)
-    notes:            Dict[str, Any] = field(default_factory=dict)

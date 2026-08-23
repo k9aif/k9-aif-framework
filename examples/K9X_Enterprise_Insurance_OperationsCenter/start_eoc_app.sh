@@ -6,10 +6,8 @@
 #
 # Prerequisites:
 #   - .venv activated OR this script activates it automatically
-#   - Kafka running at 192.168.1.98:9092 (RHEL host)
-#   - PostgreSQL running at 192.168.1.98:5432
-#   - Neo4j running at 192.168.1.98:7687
-#   - Ollama running at 192.168.1.98:11434
+#   - Kafka, PostgreSQL, Neo4j, and Ollama running (see .env / config.yaml
+#     for connection settings — defaults to a RHEL host on the LAN)
 #
 # Run:
 #   ./start_eoc_app.sh
