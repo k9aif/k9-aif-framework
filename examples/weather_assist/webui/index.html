@@ -185,7 +185,6 @@
       button.disabled = true;
       button.textContent = "Asking CrewAI...";
       resultBox.className = "";
-      resultBox.style.display = "none";
 
       try {
         const resp = await fetch("/api/weather", {
