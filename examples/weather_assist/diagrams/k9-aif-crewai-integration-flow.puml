@@ -1,0 +1,38 @@
+@startuml crewai-adapter-class-diagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam arrowColor #6366F1
+skinparam packageBackgroundColor #F8FAFC
+skinparam packageBorderColor #94A3B8
+
+title K9-AIF + CrewAI Integration (Class Diagram)
+
+package "Adapter Layer" {
+  class "K9CrewAIAdapter" as K9A
+  class "CrewAIOrchestratorAdapter" as COA
+}
+
+package "K9-AIF ABB" {
+  abstract class "BaseAdapter" as BA
+  abstract class "BaseOrchestrator" as BO
+  class "WeatherAssistOrchestrator" as WAO
+}
+
+package "CrewAI Application" {
+  class "Crew" as CR
+  class "WeatherAgent" as WA
+  class "WeatherSummaryAgent" as WSA
+}
+
+K9A --> COA : delegates to
+COA --|> BA
+COA --|> BO
+WAO --|> BO
+WAO ..> K9A : uses
+COA --> CR : wraps
+CR *-- WA
+CR *-- WSA
+
+@enduml

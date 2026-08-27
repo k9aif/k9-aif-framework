@@ -1580,3 +1580,40 @@ class ClaudeLLM(BaseLLM):
 ```
 
 `K9ModelRouter.ainvoke_stream()` detects `generate_stream()` automatically via `hasattr()` — no router changes needed when adding a new provider.
+
+---
+
+## Skill 16 — Add an external framework or vendor adapter
+
+This is a different shape from Skill 11 (internal infra concerns: cache, secret management) and Skill 13 (LLM providers, which plug into the inference chain specifically). This skill is for wrapping something K9-AIF doesn't own at all — a whole external agent framework, or a third-party enterprise tool (identity provider, SIEM, ITSM) — so it operates inside K9-AIF's governance boundary instead of beside it.
+
+**Two shipped precedents exist. Read the code, not just this skill, before building a third.**
+
+- `k9_aif_abb/k9_adapters/crewai/` — wraps an unmodified CrewAI `Crew` at the **Orchestrator** layer, because a `Crew` is itself a multi-agent orchestrating construct with its own `kickoff()`.
+- `k9_aif_abb/k9_adapters/claude_agent_sdk/` — wraps the Claude Agent SDK's own autonomous tool-use loop at the **Agent** layer, because its natural unit of encapsulation is one session, not a crew. Also documents the harder, more honest case: this substrate can be action-governed (every tool call routed through `apply_post_governance()`) but not inference-governed (no model-injection seam exists in the SDK — verified from its source, not assumed). See that package's own `CLAUDE.md` for the full conformance-tier reasoning.
+
+### Step 1: Find the framework's natural unit of encapsulation
+
+Ask what the external thing's own internal delegation/session concept is — a crew of agents, a single autonomous session, a single tool call — before deciding which K9-AIF layer it should extend alongside `BaseAdapter`. Wrapping at the wrong layer (e.g., treating a single-session SDK as if it were a crew) forces an awkward contract on both sides. This is the same rule of thumb documented independently in the Pet Store Agentic reference implementation (`k9-aif-examples/Work-In-Progress/K9-AIF-and-Claude-Agent-SDK/Architecture_Guide.md`, Principle 1) — two unrelated projects converging on the same answer is a good sign the rule is real, not local preference.
+
+### Step 2: Build the three-piece shape
+
+Both precedents use the same three classes:
+
+```
+K9<Framework>Adapter            ← facade: accept a K9-AIF payload, return a K9-AIF result
+<Framework>OrchestratorAdapter  ← extends BaseAdapter + BaseOrchestrator (or BaseAgent,
+                                   per Step 1); owns the actual wrapped session/crew/loop
+<Framework>PayloadMapper        ← to_<framework>_input() / from_<framework>_output(),
+                                   called exactly once, at the facade layer only
+```
+
+The facade never accepts a pre-built framework-native options object — it constructs one itself from its own capability registry, every call. Accepting a caller-supplied one (the way `CrewAIOrchestratorAdapter` accepts a pre-built `crew`, deliberately, since a `Crew`'s internal task graph isn't a security boundary the way an SDK's tool grants are) means trusting whatever was already wired into it — which defeats the reason to wrap the framework at all when the wrapped thing's own delegation or tool-grant mechanism *is* the boundary you're trying to close. Match the stricter precedent (`claude_agent_sdk`), not the looser one, unless you have the same reason `crewai` had for the looser choice.
+
+Route every governed action through the adapter's inherited `apply_pre_governance()` / `apply_post_governance()` — never a bespoke check local to the new adapter. If the wrapped framework has its own fan-out/delegation concept (subagents, internal task chaining), disable it at the wrapping boundary or prove every path through it is independently routed through the same governance calls — an untracked second delegation path is not a smaller version of the problem, it's the whole problem, because K9-AIF's provenance graph will silently under-report rather than error.
+
+### Step 3: Vendor/security-tool adapters — a target shape, not shipped code
+
+The Zero Trust Execution Layer's `VERIFY → EVALUATE → DECIDE → ENFORCE → OBSERVE` pipeline is designed to accept exactly this kind of external adapter at each stage — an identity provider feeding `VERIFY`, a policy engine feeding `EVALUATE`, a SIEM or ITSM tool consuming `OBSERVE`'s audit stream. **As of this writing, none of these are built.** No Zscaler, Okta, ServiceNow, or Microsoft Defender/Purview/Sentinel adapter exists anywhere in this repository — grep `k9_aif_abb/` before assuming otherwise. What exists is the pattern this skill documents, proven twice for external *agent* frameworks, and a target-architecture diagram (`docs/diagrams/k9-aif-consumers-producers.png`) showing where such adapters would sit if an organization builds them.
+
+If you are the organization building one: it is a fourth instance of the same three-piece shape above, wrapping whichever stage of the Zero Trust pipeline the vendor tool feeds — not a new pattern. Do not present a vendor name in documentation or diagrams as an implemented capability until an adapter under `k9_aif_abb/k9_adapters/<vendor>/` actually exists and is tested; a target diagram is a floor plan, not a certificate of occupancy.

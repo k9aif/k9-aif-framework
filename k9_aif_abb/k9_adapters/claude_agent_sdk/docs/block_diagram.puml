@@ -1,12 +1,11 @@
-@startuml block_diagram
+@startuml claude-agent-sdk-block-diagram
 skinparam backgroundColor white
 skinparam shadowing false
 skinparam defaultTextAlignment center
 skinparam roundcorner 8
 skinparam ArrowColor #555555
-skinparam FontName Inter
 skinparam FontSize 13
-skinparam dpi 160
+skinparam dpi 300
 
 skinparam rectangle {
   BorderColor #999999

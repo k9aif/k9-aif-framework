@@ -153,18 +153,14 @@ class TestApplyGovernance:
         gov = RealGovernance()
         agent = MinimalAgent(governance=gov)
         payload = {"x": 1}
-        result = asyncio.get_event_loop().run_until_complete(
-            agent.apply_pre_governance(payload)
-        )
+        result = asyncio.run(agent.apply_pre_governance(payload))
         assert result["_governed"] is True
 
     def test_apply_post_governance_calls_post_process(self):
         gov = RealGovernance()
         agent = MinimalAgent(governance=gov)
         payload = {"x": 1}
-        result = asyncio.get_event_loop().run_until_complete(
-            agent.apply_post_governance(payload)
-        )
+        result = asyncio.run(agent.apply_post_governance(payload))
         assert result["_post_governed"] is True
 
     def test_apply_pre_governance_handles_async_governance(self):
@@ -177,9 +173,7 @@ class TestApplyGovernance:
 
         agent = MinimalAgent(governance=AsyncGovernance())
         payload = {}
-        result = asyncio.get_event_loop().run_until_complete(
-            agent.apply_pre_governance(payload)
-        )
+        result = asyncio.run(agent.apply_pre_governance(payload))
         assert result["_async"] is True
 
 

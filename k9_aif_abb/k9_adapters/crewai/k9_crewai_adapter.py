@@ -26,9 +26,13 @@ class K9CrewAIAdapter:
         crew: Any,
         mapper: Optional[CrewAIPayloadMapper] = None,
         orchestrator_adapter: Optional[CrewAIOrchestratorAdapter] = None,
+        config: Optional[Dict[str, Any]] = None,
+        governance: Optional[Any] = None,
     ) -> None:
         self.mapper = mapper or CrewAIPayloadMapper()
-        self.orchestrator_adapter = orchestrator_adapter or CrewAIOrchestratorAdapter(crew=crew)
+        self.orchestrator_adapter = orchestrator_adapter or CrewAIOrchestratorAdapter(
+            crew=crew, config=config, governance=governance
+        )
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """

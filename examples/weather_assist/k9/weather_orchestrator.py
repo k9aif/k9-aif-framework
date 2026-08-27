@@ -1,20 +1,34 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+import os
+from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_adapters.crewai import K9CrewAIAdapter
+from k9_aif_abb.k9_utils.config_loader import load_yaml
 from examples.weather_assist.crewai.crew import build_weather_assist_crew
+from examples.weather_assist.k9.governance import make_governance
+
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "config.yaml")
 
 
 class WeatherAssistOrchestrator(BaseOrchestrator):
     """
     K9-AIF application orchestrator for the Weather Assist demo.
+
+    Loads config.yaml (governance.provider, security.shield) and constructs
+    the matching governance instance, then passes it through to
+    K9CrewAIAdapter so the CrewAI-wrapped agents are genuinely governed —
+    not just structurally eligible to be. With the default config.yaml
+    shipped here (governance.provider: shield), this is real enforcement:
+    ShieldGovernance raises PermissionError on a BLOCK from either
+    configured check.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        cfg = config if config is not None else load_yaml(_CONFIG_PATH)
+        super().__init__(config=cfg, governance=make_governance(cfg))
+
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         city = (
             payload.get("city")
@@ -41,12 +55,13 @@ class WeatherAssistOrchestrator(BaseOrchestrator):
                 role = getattr(agent, "role", f"Agent-{idx}")
                 print(f"  {idx}. {role}")
 
-        adapter = K9CrewAIAdapter(crew=crew)
+        adapter = K9CrewAIAdapter(crew=crew, config=self.config, governance=self.governance)
         print(f"K9 Adapter         : {adapter.__class__.__name__}")
 
         orchestrator_adapter = getattr(adapter, "orchestrator_adapter", None)
         if orchestrator_adapter is not None:
             print(f"CrewAI Bridge      : {orchestrator_adapter.__class__.__name__}")
+        print(f"Governance         : {self.governance.__class__.__name__}")
 
         print("----------------------------\n")
 

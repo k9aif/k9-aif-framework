@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Weather Assist (CrewAI Integration) — config
+
+# LLM backend. Credentials/host details live in .env (see env-example);
+# this file only references them via ${VAR:-default} expansion.
+ollama:
+  base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+  model: "${OLLAMA_MODEL:-granite3.3:2b}"
+
+# governance.provider selects what K9CrewAIAdapter's execute_flow() actually
+# enforces on every call (real code, not documentation): "noop" leaves the
+# framework's default NoopGovernance in place (pass-through, K9_ENV-gated
+# warning only); "shield" wires in ShieldGovernance
+# (k9_aif_abb.k9_security.vulnerability), a framework OOB class, which runs
+# the checks configured under security.shield below and raises
+# PermissionError on a real BLOCK. See k9/governance.py.
+governance:
+  provider: shield   # noop | shield
+
+# Checks appropriate to a weather query/response — deliberately lighter than
+# a PII- or document-heavy domain like EOC's, since weather queries carry no
+# sensitive data. This is a real, enforced pipeline, not illustrative
+# configuration: ShieldGovernance raises PermissionError on BLOCK.
+security:
+  shield:
+    enabled: true
+    strict: false
+    ingress:
+      checks:
+        - PromptInjectionCheck
+    egress:
+      checks:
+        - OutputSanitizationCheck
