@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import os
 
+import requests
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from examples.weather_assist.k9.weather_orchestrator import WeatherAssistOrchestrator
+from k9_aif_abb.k9_utils.config_loader import load_yaml
+from examples.weather_assist.k9.weather_orchestrator import (
+    WeatherAssistOrchestrator,
+    _CONFIG_PATH,
+    _ENV_PATH,
+)
 
 app = FastAPI(title="K9-AIF Weather Assist (CrewAI Integration)")
 
@@ -23,6 +29,52 @@ class WeatherQuery(BaseModel):
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(os.path.join(_STATIC_DIR, "index.html"))
+
+
+@app.get("/api/health")
+def health() -> JSONResponse:
+    """
+    Pre-flight check: is the configured Ollama backend actually reachable,
+    and does it have the configured model pulled? Checked before the UI
+    ever lets a request through to crew.kickoff() -- a connection refused
+    or missing-model error is much more informative here, with the exact
+    base_url and model this app actually resolved, than as a stack trace
+    from three layers down inside CrewAI/litellm after the user clicks
+    "Get Weather".
+    """
+    cfg = load_yaml(_CONFIG_PATH)
+    ollama_cfg = cfg.get("ollama", {})
+    base_url = ollama_cfg.get("base_url", "http://localhost:11434")
+    model = ollama_cfg.get("model", "granite3.3:2b")
+
+    try:
+        resp = requests.get(f"{base_url}/api/tags", timeout=3)
+        resp.raise_for_status()
+        available = {m.get("name") for m in resp.json().get("models", [])}
+        model_present = any(
+            model == name or name.startswith(f"{model}") for name in available
+        )
+        if not model_present:
+            return JSONResponse({
+                "ok": False,
+                "reason": (
+                    f"Ollama is reachable at {base_url}, but model '{model}' "
+                    f"is not pulled. Run: ollama pull {model}"
+                ),
+                "base_url": base_url,
+                "model": model,
+            })
+        return JSONResponse({"ok": True, "base_url": base_url, "model": model})
+    except requests.RequestException as exc:
+        return JSONResponse({
+            "ok": False,
+            "reason": (
+                f"Cannot reach Ollama at {base_url}: {exc}. "
+                f"Check {_ENV_PATH} (OLLAMA_BASE_URL) and that Ollama is running."
+            ),
+            "base_url": base_url,
+            "model": model,
+        })
 
 
 @app.post("/api/weather")

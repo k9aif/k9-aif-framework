@@ -1,20 +1,33 @@
 from __future__ import annotations
 
-import os
+from typing import Any, Dict, Optional
 
 from crewai import Agent, Crew, Process, Task, LLM
 
 from .tools import get_weather_for_city
 
 
-def _build_llm() -> LLM:
-    model = os.getenv("OLLAMA_MODEL", "ollama/llama3.2:1b")
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://192.168.1.98:11434")
+def _build_llm(config: Optional[Dict[str, Any]] = None) -> LLM:
+    """
+    Reads from the already-resolved config.yaml (ollama.base_url/model,
+    expanded from .env by k9_utils.config_loader.load_yaml()) rather than
+    calling os.getenv() a second time here with its own separate default --
+    two independent lookups is exactly how this previously drifted (a
+    hardcoded LAN IP fallback here that no other part of the app used or
+    even knew about). No hardcoded host default: config.yaml's own
+    ${OLLAMA_BASE_URL:-http://localhost:11434} is the single place that
+    default lives.
+    """
+    ollama_cfg = (config or {}).get("ollama", {})
+    model = ollama_cfg.get("model", "llama3.2:1b")
+    base_url = ollama_cfg.get("base_url", "http://localhost:11434")
+    if not model.startswith("ollama/"):
+        model = f"ollama/{model}"
     return LLM(model=model, base_url=base_url)
 
 
-def build_weather_assist_crew(city: str) -> Crew:
-    llm = _build_llm()
+def build_weather_assist_crew(city: str, config: Optional[Dict[str, Any]] = None) -> Crew:
+    llm = _build_llm(config)
 
     weather_agent = Agent(
         role="Weather Agent",

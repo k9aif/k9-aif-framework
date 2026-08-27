@@ -5,7 +5,7 @@
 # this file only references them via ${VAR:-default} expansion.
 ollama:
   base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
-  model: "${OLLAMA_MODEL:-granite3.3:2b}"
+  model: "${OLLAMA_MODEL:-llama3.2:1b}"
 
 # governance.provider selects what K9CrewAIAdapter's execute_flow() actually
 # enforces on every call (real code, not documentation): "noop" leaves the

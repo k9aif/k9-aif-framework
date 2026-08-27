@@ -68,6 +68,26 @@
   .checks { font-size: 0.88rem; }
   .checks code { margin-right: 0.25rem; }
   a { color: #4f46e5; }
+  .health-banner {
+    display: none;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .health-banner.bad {
+    display: block;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+  .health-banner.ok {
+    display: block;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+  }
 </style>
 </head>
 <body>
@@ -83,9 +103,10 @@
   </div>
 
   <div id="tab-weather" class="tab-panel active">
+    <div id="health-banner" class="health-banner"></div>
     <div class="row">
-      <input type="text" id="city" placeholder="Enter a city, e.g. Atlanta" value="Atlanta" />
-      <button class="primary" id="go">Get Weather</button>
+      <input type="text" id="city" placeholder="Enter a city, e.g. Atlanta" value="Atlanta" disabled />
+      <button class="primary" id="go" disabled>Checking LLM backend...</button>
     </div>
     <div id="result"></div>
   </div>
@@ -199,6 +220,50 @@
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") run();
     });
+
+    // ── Pre-flight LLM backend check ──────────────────────────────────
+    // Ollama unreachable (or the configured model not pulled) is by far
+    // the most common failure mode running this demo. Check it before
+    // the input is even usable, rather than letting the user submit and
+    // get a 500 three stack frames deep inside CrewAI/litellm.
+    const healthBanner = document.getElementById("health-banner");
+
+    async function checkHealth() {
+      healthBanner.className = "health-banner";
+      healthBanner.textContent = "";
+      input.disabled = true;
+      button.disabled = true;
+      button.textContent = "Checking LLM backend...";
+
+      try {
+        const resp = await fetch("/api/health");
+        const data = await resp.json();
+
+        if (data.ok) {
+          healthBanner.className = "health-banner ok";
+          healthBanner.textContent =
+            `LLM backend OK — ${data.base_url} (${data.model})`;
+          input.disabled = false;
+          button.disabled = false;
+          button.textContent = "Get Weather";
+        } else {
+          healthBanner.className = "health-banner bad";
+          healthBanner.innerHTML =
+            data.reason.replace(/\n/g, "<br>") +
+            ' <a href="#" id="retry-health">Retry</a>';
+          document.getElementById("retry-health").addEventListener(
+            "click", (e) => { e.preventDefault(); checkHealth(); }
+          );
+          button.textContent = "LLM backend unavailable";
+        }
+      } catch (err) {
+        healthBanner.className = "health-banner bad";
+        healthBanner.textContent = "Health check failed: " + err;
+        button.textContent = "LLM backend unavailable";
+      }
+    }
+
+    checkHealth();
   </script>
 </body>
 </html>
