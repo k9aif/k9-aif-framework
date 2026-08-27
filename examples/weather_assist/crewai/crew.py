@@ -17,13 +17,25 @@ def _build_llm(config: Optional[Dict[str, Any]] = None) -> LLM:
     even knew about). No hardcoded host default: config.yaml's own
     ${OLLAMA_BASE_URL:-http://localhost:11434} is the single place that
     default lives.
+
+    Sets both base_url and api_base: CrewAI's LLM class keeps these as two
+    independent constructor parameters, not aliases of each other, and
+    litellm's actual Ollama handler (litellm/llms/ollama/common_utils.py,
+    completion/transformation.py) reads ONLY api_base -- base_url is never
+    consulted for the ollama provider. Setting base_url alone (the
+    previous version of this function) silently configured nothing:
+    litellm fell through to its own OLLAMA_API_BASE env var or hardcoded
+    "http://localhost:11434" default regardless of what config.yaml said,
+    which only ever looked correct here because that hardcoded default
+    happened to match. Confirmed by reading both files directly, not
+    assumed from CrewAI/litellm's docs.
     """
     ollama_cfg = (config or {}).get("ollama", {})
     model = ollama_cfg.get("model", "llama3.2:1b")
     base_url = ollama_cfg.get("base_url", "http://localhost:11434")
     if not model.startswith("ollama/"):
         model = f"ollama/{model}"
-    return LLM(model=model, base_url=base_url)
+    return LLM(model=model, base_url=base_url, api_base=base_url)
 
 
 def build_weather_assist_crew(city: str, config: Optional[Dict[str, Any]] = None) -> Crew:
