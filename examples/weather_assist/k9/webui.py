@@ -4,6 +4,7 @@ import os
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from examples.weather_assist.k9.weather_orchestrator import WeatherAssistOrchestrator
@@ -11,6 +12,8 @@ from examples.weather_assist.k9.weather_orchestrator import WeatherAssistOrchest
 app = FastAPI(title="K9-AIF Weather Assist (CrewAI Integration)")
 
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "webui")
+_DIAGRAMS_DIR = os.path.join(os.path.dirname(__file__), "..", "diagrams")
+app.mount("/diagrams", StaticFiles(directory=_DIAGRAMS_DIR), name="diagrams")
 
 
 class WeatherQuery(BaseModel):
