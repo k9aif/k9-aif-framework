@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>K9-AIF Weather Assist — CrewAI Integration</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 640px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+    color: #1e293b;
+    background: #f8fafc;
+  }
+  h1 { font-size: 1.35rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; }
+  .row { display: flex; gap: 0.5rem; }
+  input[type=text] {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    background: #6366f1;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:disabled { background: #a5b4fc; cursor: default; }
+  button:hover:not(:disabled) { background: #4f46e5; }
+  #result {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 8px;
+    display: none;
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  #result.ok { display: block; background: #ecfdf5; border: 1px solid #a7f3d0; }
+  #result.blocked { display: block; background: #fef2f2; border: 1px solid #fecaca; }
+  #result.error { display: block; background: #fef2f2; border: 1px solid #fecaca; }
+  .trace { margin-top: 0.75rem; font-size: 0.8rem; color: #64748b; }
+</style>
+</head>
+<body>
+  <h1>K9-AIF Weather Assist</h1>
+  <div class="subtitle">
+    CrewAI wrapped inside K9-AIF's adapter pattern — every request is
+    governed on the way in and the way out (ShieldGovernance).
+  </div>
+
+  <div class="row">
+    <input type="text" id="city" placeholder="Enter a city, e.g. Atlanta" value="Atlanta" />
+    <button id="go">Get Weather</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const button = document.getElementById("go");
+    const input = document.getElementById("city");
+    const resultBox = document.getElementById("result");
+
+    async function run() {
+      const city = input.value.trim();
+      if (!city) return;
+
+      button.disabled = true;
+      button.textContent = "Asking CrewAI...";
+      resultBox.className = "";
+      resultBox.style.display = "none";
+
+      try {
+        const resp = await fetch("/api/weather", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ city }),
+        });
+        const data = await resp.json();
+
+        if (data.blocked) {
+          resultBox.className = "blocked";
+          resultBox.textContent = "Blocked by K9-AIF governance:\n" + data.reason;
+        } else if (data.ok) {
+          const outputText =
+            data.result?.result?.output_text ?? JSON.stringify(data.result, null, 2);
+          resultBox.className = "ok";
+          resultBox.textContent = outputText;
+        } else {
+          resultBox.className = "error";
+          resultBox.textContent = "Unexpected response:\n" + JSON.stringify(data, null, 2);
+        }
+      } catch (err) {
+        resultBox.className = "error";
+        resultBox.textContent = "Request failed: " + err;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Get Weather";
+      }
+    }
+
+    button.addEventListener("click", run);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") run();
+    });
+  </script>
+</body>
+</html>
