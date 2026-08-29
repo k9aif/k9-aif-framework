@@ -88,6 +88,11 @@ A2A messaging. `publish_event()` on an agent reaches the logger/monitor only.
 
 ## Pre-Push Checklist
 
+- Every new `.py` file starts with the two-line header
+  `# SPDX-License-Identifier: Apache-2.0` / `# K9-AIF Framework`, before any
+  module docstring. Nearly universal in `k9_aif_abb/` but not enforced by
+  any hook — check new files by hand; a whole adapter package (CrewAI) went
+  missing it for a full release cycle before anyone noticed.
 - No hardcoded IPs (`192.168.x.x` etc.) — env vars with localhost defaults:
   `"${POSTGRES_HOST:-localhost}"`, `"${OLLAMA_BASE_URL:-http://localhost:11434}"`
 - No credentials in `config.yaml` — secrets in `.env` (gitignored) only
