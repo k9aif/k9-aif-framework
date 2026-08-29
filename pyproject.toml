@@ -32,6 +32,7 @@ postgres  = ["psycopg2-binary>=2.9"]
 neo4j     = ["neo4j>=5.14"]
 crewai    = ["crewai>=1.14"]
 claude-agent-sdk = ["claude-agent-sdk>=0.2.0"]
+langgraph = ["langgraph>=1.2"]
 chromadb  = ["chromadb>=1.0"]
 server    = ["fastapi>=0.110", "uvicorn>=0.29"]
 s3        = ["boto3>=1.28"]
@@ -44,6 +45,7 @@ all       = [
     "neo4j>=5.14",
     "crewai>=1.14",
     "claude-agent-sdk>=0.2.0",
+    "langgraph>=1.2",
     "chromadb>=1.0",
     "fastapi>=0.110",
     "uvicorn>=0.29",
