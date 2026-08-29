@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """K9-AIF RAG agents — document preprocessing, embedding, and retrieval."""
 
 from k9_aif_abb.k9_agents.rag.k9_doc_preprocessor import K9DocPreprocessor

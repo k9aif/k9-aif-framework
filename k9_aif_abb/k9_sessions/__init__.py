@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """K9-AIF Session Store SBB implementations."""
 
 from k9_aif_abb.k9_sessions.in_memory_session_store import InMemorySessionStore

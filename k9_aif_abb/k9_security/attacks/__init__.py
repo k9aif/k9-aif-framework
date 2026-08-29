@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """k9_security.attacks — ABB contracts for red-team attack implementations."""
 
 from .base_attack import (

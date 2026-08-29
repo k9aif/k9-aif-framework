@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """
 K9-AIF Integration Adapters — deterministic, non-agentic connectors to external
 enterprise systems. These are ABB contracts; SBBs are registered via

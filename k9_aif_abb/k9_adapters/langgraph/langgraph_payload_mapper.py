@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """
 Payload mapping utilities for adapting K9-AIF payloads to LangGraph-friendly
 inputs. Mirrors k9_adapters/crewai/crewai_payload_mapper.py exactly -- same

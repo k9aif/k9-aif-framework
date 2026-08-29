@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from .context import ExecutionContext
 from .decisions import TrustDecision, TrustDecisionType
 

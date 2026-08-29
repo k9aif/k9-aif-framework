@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """
 Primary K9-AIF facade for CrewAI integration.
 """

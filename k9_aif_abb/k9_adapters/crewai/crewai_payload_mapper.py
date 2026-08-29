@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """
 Payload mapping utilities for adapting K9-AIF payloads to CrewAI-friendly inputs.
 """

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 """K9-AIF Enterprise Context Fabric ABB — stream contracts and event envelope."""
 
 from k9_aif_abb.k9_core.streams.event_envelope import EventEnvelope
