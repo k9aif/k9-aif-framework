@@ -1,0 +1,38 @@
+@startuml langgraph-adapter-class-diagram
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam arrowColor #6366F1
+skinparam packageBackgroundColor #F8FAFC
+skinparam packageBorderColor #94A3B8
+
+title K9-AIF + LangGraph Integration (Class Diagram)
+
+package "Adapter Layer" {
+  class "K9LangGraphAdapter" as K9A
+  class "LangGraphOrchestratorAdapter" as LOA
+}
+
+package "K9-AIF ABB" {
+  abstract class "BaseAdapter" as BA
+  abstract class "BaseOrchestrator" as BO
+  class "WeatherAssistLangOrchestrator" as WALO
+}
+
+package "LangGraph Application" {
+  class "CompiledStateGraph" as CSG
+  class "fetch_weather (node)" as FW
+  class "summarize_weather (node)" as SW
+}
+
+K9A --> LOA : delegates to
+LOA --|> BA
+LOA --|> BO
+WALO --|> BO
+WALO ..> K9A : uses
+LOA --> CSG : wraps
+CSG *-- FW
+CSG *-- SW
+
+@enduml
