@@ -55,7 +55,15 @@ class GuardAgent(BaseAgent):
         try:
             resp = llm_invoke(self.config, req)
             verdict = (resp.output or "").strip().lower()
-            flagged = verdict.startswith("yes")
+            # granite-family guardian models wrap their verdict as
+            # "<score> yes </score>" / "<score> no </score>", not a bare
+            # yes/no -- verified 2026-09-03 (dow-k9-aif's GuardianGovernance,
+            # same model family) against real benign and clearly-harmful
+            # test content. startswith("yes") never matches "<score> yes
+            # </score>", so this was a dormant no-op bug: currently
+            # harmless since guardrails.enabled defaults to false here,
+            # but would have silently never flagged anything once enabled.
+            flagged = "yes" in verdict
             return {
                 "agent": "GuardAgent",
                 "passed": not flagged,
