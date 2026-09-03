@@ -142,6 +142,8 @@ class LLMFactory:
             extra_kwargs = {
                 "temperature": model_cfg.get("temperature"),
                 "max_tokens": model_cfg.get("max_tokens"),
+                "num_ctx": model_cfg.get("num_ctx"),
+                "think": model_cfg.get("think"),
             }
             extra_kwargs = {k: v for k, v in extra_kwargs.items() if v is not None}
 

@@ -462,7 +462,7 @@ class TestLlmInvokeUtility:
         finally:
             mod._trace_callback = original
 
-    def test_raises_on_warn_response(self):
+    def test_raises_on_warn_response_after_exhausting_retries(self):
         import k9_aif_abb.k9_utils.llm_invoke as mod
         from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
         from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
@@ -471,11 +471,45 @@ class TestLlmInvokeUtility:
         mock_resp.output = "[WARN] connection refused"
         mock_resp.model_alias = "test-model"
 
-        with patch("k9_aif_abb.k9_utils.llm_invoke.ModelRouterFactory") as mock_factory:
+        with patch("k9_aif_abb.k9_utils.llm_invoke.ModelRouterFactory") as mock_factory, \
+             patch("k9_aif_abb.k9_utils.llm_invoke.time.sleep") as mock_sleep:
             mock_router = MagicMock()
             mock_router.invoke.return_value = mock_resp
             mock_factory.get_router.return_value = mock_router
 
             req = InferenceRequest(prompt="test", task_type="general")
             with pytest.raises(RuntimeError, match="LLM backend unavailable"):
-                mod.llm_invoke({}, req)
+                mod.llm_invoke({}, req, max_retries=3, retry_delay_s=60)
+
+            # every attempt failed -> retried up to the limit, not just once
+            assert mock_router.invoke.call_count == 3
+            assert mock_sleep.call_count == 2  # waits between attempts, not after the last
+
+    def test_retries_then_succeeds_on_transient_empty_response(self):
+        import k9_aif_abb.k9_utils.llm_invoke as mod
+        from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+        from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
+
+        failed_resp = MagicMock(spec=InferenceResponse)
+        failed_resp.output = "[WARN] No response from model."
+        failed_resp.model_alias = "test-model"
+
+        ok_resp = MagicMock(spec=InferenceResponse)
+        ok_resp.output = "Hello world"
+        ok_resp.model_alias = "test-model"
+        ok_resp.provider = "ollama"
+        ok_resp.latency_ms = 42
+        ok_resp.token_usage = {}
+
+        with patch("k9_aif_abb.k9_utils.llm_invoke.ModelRouterFactory") as mock_factory, \
+             patch("k9_aif_abb.k9_utils.llm_invoke.time.sleep") as mock_sleep:
+            mock_router = MagicMock()
+            mock_router.invoke.side_effect = [failed_resp, ok_resp]
+            mock_factory.get_router.return_value = mock_router
+
+            req = InferenceRequest(prompt="test", task_type="general")
+            resp = mod.llm_invoke({}, req, max_retries=3, retry_delay_s=60)
+
+            assert resp.output == "Hello world"
+            assert mock_router.invoke.call_count == 2
+            assert mock_sleep.call_count == 1

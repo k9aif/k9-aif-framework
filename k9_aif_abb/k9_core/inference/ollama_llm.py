@@ -36,6 +36,26 @@ class OllamaLLM(BaseLLM):
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self.kwargs = kwargs
 
+    def _build_options(self) -> dict:
+        """Translate K9-AIF's config keys (temperature, max_tokens, num_ctx)
+        into Ollama's `options` object. Previously self.kwargs was stored
+        here and never read again -- every app's configured temperature/
+        max_tokens silently had zero effect and Ollama ran on its own raw
+        defaults the whole time. Confirmed 2026-09-03 via a real DAS
+        PackageBuilderAgent report that truncated mid-sentence despite a
+        configured max_tokens: 4096."""
+        options = {}
+        temperature = self.kwargs.get("temperature")
+        if temperature is not None:
+            options["temperature"] = temperature
+        max_tokens = self.kwargs.get("max_tokens")
+        if max_tokens is not None:
+            options["num_predict"] = max_tokens
+        num_ctx = self.kwargs.get("num_ctx")
+        if num_ctx is not None:
+            options["num_ctx"] = num_ctx
+        return options
+
     # ----------------------------------------------------------
     async def generate(self, prompt: str, system_prompt: str = None) -> str:
         await self.log(f"Sending inference request to Ollama ({self.model})", "DEBUG")
@@ -43,6 +63,19 @@ class OllamaLLM(BaseLLM):
         payload = {"model": self.model, "prompt": prompt, "stream": False}
         if system_prompt:
             payload["system"] = system_prompt
+        options = self._build_options()
+        if options:
+            payload["options"] = options
+        # `think` is a top-level Ollama field, not part of `options`. Hybrid
+        # reasoning models (Qwen3 family included) spend part of num_predict
+        # on an invisible "thinking" field before the real "response" even
+        # starts -- confirmed live: num_predict=15 against qwen3.8:27b spent
+        # all 15 tokens on thinking and returned an EMPTY response with
+        # done_reason="length". think: false skips that phase entirely, so
+        # the full token budget goes to the actual answer.
+        think = self.kwargs.get("think")
+        if think is not None:
+            payload["think"] = think
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
@@ -77,6 +110,12 @@ class OllamaLLM(BaseLLM):
         payload = {"model": self.model, "prompt": prompt, "stream": True}
         if system_prompt:
             payload["system"] = system_prompt
+        options = self._build_options()
+        if options:
+            payload["options"] = options
+        think = self.kwargs.get("think")
+        if think is not None:
+            payload["think"] = think
 
         try:
             async with aiohttp.ClientSession(timeout=self.timeout) as session:

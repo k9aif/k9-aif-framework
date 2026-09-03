@@ -46,32 +46,77 @@ def register_trace_callback(fn: Callable[[Dict[str, Any]], None]) -> None:
     log.info("[llm_invoke] trace callback registered: %s", fn)
 
 
-def llm_invoke(config: Dict[str, Any], request: InferenceRequest) -> InferenceResponse:
+def llm_invoke(
+    config: Dict[str, Any],
+    request: InferenceRequest,
+    max_retries: int = 3,
+    retry_delay_s: float = 60.0,
+) -> InferenceResponse:
     """
     Invoke the LLM router and return the response.
+
+    Retries up to ``max_retries`` times (default 3, ``retry_delay_s`` seconds
+    apart, default 60s) on a failed/empty response before raising. A failed
+    call here is often just an unlucky sample -- e.g. a hybrid-reasoning
+    model spending its whole token budget on invisible "thinking" and
+    returning zero real output on one attempt -- so retrying the identical
+    request can succeed outright with no other change. Caught live in DAS
+    production: OllamaLLM logged "Ollama responded (0 chars)" after 19s of
+    genuine GPU work, which this function turned into a hard failure that
+    took down the whole job with no retry at all.
 
     Args:
         config:  Application config dict (must contain ``inference`` section).
         request: :class:`InferenceRequest` describing the prompt and task type.
+        max_retries: total attempts before giving up (1 = no retry).
+        retry_delay_s: seconds to wait between attempts.
 
     Returns:
         :class:`InferenceResponse` with model output and metadata.
 
     Raises:
-        RuntimeError: if the LLM backend is unreachable or returns an empty
+        RuntimeError: if every attempt is unreachable or returns an empty
             response (OllamaLLM signals this with a ``[WARN]`` prefix).
     """
     router = ModelRouterFactory.get_router(config)
+    agent = (request.metadata or {}).get("agent", "?")
+
+    resp = None
+    last_error: Optional[Exception] = None
     t0 = time.monotonic()
-    resp = router.invoke(request)
+    for attempt in range(1, max(1, max_retries) + 1):
+        last_error = None
+        try:
+            resp = router.invoke(request)
+        except Exception as exc:
+            last_error = exc
+            resp = None
+
+        if resp is not None and resp.output and not resp.output.startswith("[WARN]"):
+            break
+
+        if attempt < max_retries:
+            log.warning(
+                "[llm_invoke] attempt %d/%d failed (agent=%s): %s -- retrying in %.0fs",
+                attempt, max_retries, agent,
+                last_error if last_error else getattr(resp, "output", "empty response"),
+                retry_delay_s,
+            )
+            time.sleep(retry_delay_s)
+
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-    # OllamaLLM silently returns "[WARN]..." on connection failure — fail hard.
+    if last_error is not None:
+        raise RuntimeError(
+            f"LLM backend unavailable (agent={agent}) after {max_retries} attempt(s): {last_error}"
+        )
+    # OllamaLLM signals a failure by returning a "[WARN]..." string rather
+    # than raising -- fail hard once retries are exhausted.
     if not resp.output or resp.output.startswith("[WARN]"):
         raise RuntimeError(
             f"LLM backend unavailable "
-            f"(agent={(request.metadata or {}).get('agent', '?')} "
-            f"model={resp.model_alias}): {resp.output}"
+            f"(agent={agent} "
+            f"model={resp.model_alias}) after {max_retries} attempt(s): {resp.output}"
         )
 
     if _trace_callback is not None:
