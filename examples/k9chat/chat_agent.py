@@ -63,9 +63,39 @@ class ChatAgent(BaseAgent):
     def clear_history(self, session_id: str) -> None:
         self._cache.delete(self._history_key(session_id))
 
-    def _format_prompt(self, history: list, new_message: str) -> str:
-        """Render prior turns + the new message into a single prompt string."""
+    def _format_prompt(
+        self,
+        history: list,
+        new_message: str,
+        project_instructions: str = "",
+        project_context: list | None = None,
+    ) -> str:
+        """Render project instructions/context + prior turns + the new
+        message into a single prompt string.
+
+        Project context is always supplementary, never a replacement for
+        conversation history -- same principle as dow-k9-aif's
+        ViewGeneratorAgent fix earlier tonight: the thing the user is
+        actually asking about (their own conversation) must never be
+        displaced by retrieved reference material, and the model is told
+        explicitly not to confuse the two.
+        """
         lines = []
+        if project_instructions:
+            lines.append(f"Project instructions: {project_instructions}")
+            lines.append("")
+
+        if project_context:
+            lines.append(
+                "Reference material from this project's uploaded files "
+                "(supplementary -- use only if relevant to the question; "
+                "the conversation below is what the user is actually "
+                "asking about):"
+            )
+            for chunk in project_context:
+                lines.append(f"- {chunk['text']}")
+            lines.append("")
+
         for turn in history:
             role = "User" if turn["role"] == "user" else "Assistant"
             lines.append(f"{role}: {turn['content']}")
@@ -79,6 +109,8 @@ class ChatAgent(BaseAgent):
     def execute(self, request):
         message = request.get("text") or request.get("prompt", "")
         session_id = request.get("session_id", "default")
+        project_instructions = request.get("project_instructions", "")
+        project_context = request.get("project_context")
 
         guard_result = self.guard_agent.execute({"text": message})
         if not guard_result["passed"]:
@@ -90,7 +122,7 @@ class ChatAgent(BaseAgent):
             return {"text": reply, "model": None, "session_id": session_id, "blocked": True}
 
         history = self._get_history(session_id)
-        prompt = self._format_prompt(history, message)
+        prompt = self._format_prompt(history, message, project_instructions, project_context)
 
         inf_req = InferenceRequest(prompt=prompt, task_type="chat")
         response = self.router.invoke(inf_req)
@@ -120,6 +152,8 @@ class ChatAgent(BaseAgent):
         """
         message = request.get("text") or request.get("prompt", "")
         session_id = request.get("session_id", "default")
+        project_instructions = request.get("project_instructions", "")
+        project_context = request.get("project_context")
 
         guard_result = self.guard_agent.execute({"text": message})
         if not guard_result["passed"]:
@@ -132,7 +166,7 @@ class ChatAgent(BaseAgent):
             return
 
         history = self._get_history(session_id)
-        prompt = self._format_prompt(history, message)
+        prompt = self._format_prompt(history, message, project_instructions, project_context)
 
         inf_req = InferenceRequest(prompt=prompt, task_type="chat")
 

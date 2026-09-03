@@ -18,6 +18,18 @@
       <button id="new-chat-btn" class="new-chat-btn">+ New Chat</button>
       <div id="session-list" class="session-list"></div>
 
+      <div class="projects-block">
+        <div class="projects-header">
+          <span class="projects-title">Projects</span>
+          <button id="project-new-btn" class="icon-btn" title="New project">+</button>
+        </div>
+        <div id="project-new-form" class="project-new-form" style="display:none">
+          <input id="project-new-name" type="text" placeholder="Project name" />
+          <button id="project-new-create" class="secondary small" type="button">Add</button>
+        </div>
+        <div id="project-list" class="project-list"></div>
+      </div>
+
       <div class="settings-block">
         <button id="settings-toggle" class="settings-toggle">⚙ Provider Settings</button>
         <div id="settings-panel" class="settings-panel" style="display:none">
@@ -47,6 +59,8 @@
           <div id="settings-status" class="settings-status"></div>
         </div>
       </div>
+
+      <div class="sidebar-footer">Built on K9-AIF Framework</div>
     </aside>
 
     <div class="main-area">
@@ -65,6 +79,9 @@
           <div class="badge">Provider: <span id="badge-provider">{{ provider }}</span></div>
           <div class="badge">Model: <span id="badge-model">{{ model }}</span></div>
           <div class="badge">Host: <span id="badge-host">{{ base_url }}</span></div>
+          {% if display_name %}
+          <div class="badge badge-host-name" id="badge-host-name-wrap">{{ display_name }}</div>
+          {% endif %}
         </div>
       </header>
 
@@ -76,6 +93,7 @@
       </nav>
 
       <main id="tab-chat" class="tab-panel chat-panel">
+        <div id="active-project-bar" class="active-project-bar" style="display:none"></div>
         <div id="chat-history" class="chat-history"></div>
 
         <div class="input-panel">
@@ -162,12 +180,49 @@
             <p>Every agent receives a governance pipeline via require_governance() — Noop in dev, enforced in production.</p>
           </div>
         </div>
+
+        <h2 style="margin-top: 36px;">Projects</h2>
+        <p style="color: var(--text-muted)">
+          A Project groups a name, optional custom instructions, and a set of uploaded files — the
+          same shape as Claude Desktop's Projects. When a project is active, its files become
+          supplementary context for that message; the model's own knowledge and the conversation
+          history always stay primary, and retrieved file content is clearly labeled as reference
+          material rather than allowed to overwrite what the model already knows.
+        </p>
+        <div class="pipeline">
+          <div class="pipeline-step">File upload</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">ProjectRetriever chunking</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">EmbeddingServiceFactory (Ollama)</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">VectorDBFactory (ChromaDB)</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">K9Retriever.retrieve()</div>
+          <div class="pipeline-arrow">→</div>
+          <div class="pipeline-step">ChatAgent prompt</div>
+        </div>
+        <div class="arch-grid">
+          <div class="arch-card">
+            <h3>ProjectManager</h3>
+            <p>CRUD for project records (name, instructions, file membership) via PersistenceFactory/SQLitePersistence — durable across restarts, unlike session chat history.</p>
+          </div>
+          <div class="arch-card">
+            <h3>ProjectRetriever</h3>
+            <p>One ChromaDB collection per project for structural isolation — a file in Project A can never leak into Project B's retrieval results.</p>
+          </div>
+          <div class="arch-card">
+            <h3>K9Retriever + VectorDBFactory</h3>
+            <p>Same retrieval ABBs the framework uses elsewhere (e.g. dow-k9-aif's DAS), just pointed at ChromaDB instead of pgvector.</p>
+          </div>
+        </div>
       </section>
     </div>
   </div>
 
   <script src="/static/js/message_list.js"></script>
   <script src="/static/js/session_sidebar.js"></script>
+  <script src="/static/js/project_panel.js"></script>
   <script src="/static/js/chat_input.js"></script>
   <script src="/static/js/architecture_trace.js"></script>
   <script src="/static/js/app.js"></script>

@@ -13,7 +13,15 @@ from k9_aif_abb.k9_core.persistence.base_persistence import BasePersistence
 class SQLitePersistence(BasePersistence):
     """SBB: SQLite persistence for durable state storage (persistent connection)."""
 
-    def __init__(self, db_path: str | Path = "k9_aif_state.db", monitor=None):
+    def __init__(self, db_path: str | Path = "k9_aif_state.db", monitor=None, config: Optional[Dict[str, Any]] = None):
+        # PersistenceFactory.create() calls this as cls(config=config,
+        # monitor=monitor) -- previously an unconditional TypeError for the
+        # only provider registered in that factory, silently swallowed by
+        # its own broad except-and-log-None. config_loader.py's
+        # _wire_persistence() calls this positionally (db_path only) and
+        # must keep working unchanged.
+        if config is not None:
+            db_path = config.get("persistence", {}).get("db_path", db_path)
         super().__init__(name="SQLitePersistence", monitor=monitor)
         self.db_path = Path(db_path)
         self._lock = threading.Lock()

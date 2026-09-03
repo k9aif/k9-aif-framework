@@ -6,6 +6,7 @@ runtime/
 .env
 *.egg-info/
 .venv/
+.chroma/
 
 k9_projects/
 k9_recycle_bin/

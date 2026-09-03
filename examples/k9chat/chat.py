@@ -4,6 +4,7 @@
 import copy
 import os
 import sys
+import uuid
 
 from dotenv import load_dotenv
 
@@ -25,9 +26,12 @@ from k9_aif_abb.k9_utils.config_loader import load_yaml
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
+from k9_aif_abb.k9_factories.cache_factory import CacheFactory
 from examples.k9chat.chat_agent import ChatAgent
 from examples.k9chat.health_check import check_ollama_model, run_startup_check
 from examples.k9chat import provider_settings
+from examples.k9chat.project_manager import ProjectManager, ProjectNotFoundError, build_persistence
+from examples.k9chat.project_retriever import ProjectRetriever
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +40,8 @@ _CONFIG = None
 _LLM_OVERRIDES = None  # set via apply_settings() — never persisted to disk
 _EVAL_ENABLED = False
 _EVALUATOR = None
+_PROJECT_MANAGER = None
+_PROJECT_RETRIEVER = None
 
 
 def load_config() -> dict:
@@ -65,9 +71,48 @@ def build_chat_agent():
     return _AGENT
 
 
-def send_message(text: str, session_id: str = "default") -> str:
+def get_project_manager() -> ProjectManager:
+    global _PROJECT_MANAGER
+    if _PROJECT_MANAGER is None:
+        persistence = build_persistence(load_config())
+        _PROJECT_MANAGER = ProjectManager(persistence)
+    return _PROJECT_MANAGER
+
+
+def get_project_retriever() -> ProjectRetriever:
+    global _PROJECT_RETRIEVER
+    if _PROJECT_RETRIEVER is None:
+        _PROJECT_RETRIEVER = ProjectRetriever(load_config())
+    return _PROJECT_RETRIEVER
+
+
+def _resolve_project_context(project_id: str | None, message: str) -> tuple[str, list]:
+    """Look up a project's instructions + retrieve relevant file chunks
+    for this message. Returns ("", []) if no project_id, the project
+    doesn't exist, or nothing relevant is found -- callers always get a
+    safe pair to pass straight into ChatAgent, never need to branch on
+    project_id being present themselves."""
+    if not project_id:
+        return "", []
+    project = get_project_manager().get_project(project_id)
+    if project is None:
+        return "", []
+    instructions = project.get("instructions", "")
+    context = []
+    if project.get("file_ids"):
+        context = get_project_retriever().retrieve_context(project_id, message, top_k=5)
+    return instructions, context
+
+
+def send_message(text: str, session_id: str = "default", project_id: str | None = None) -> str:
     agent = build_chat_agent()
-    result = agent.execute({"text": text, "session_id": session_id})
+    instructions, context = _resolve_project_context(project_id, text)
+    result = agent.execute({
+        "text": text,
+        "session_id": session_id,
+        "project_instructions": instructions,
+        "project_context": context,
+    })
     return result.get("text", "")
 
 
@@ -76,16 +121,77 @@ def is_streaming_enabled() -> bool:
     return bool(config.get("chat", {}).get("stream", False))
 
 
-async def send_message_stream(text: str, session_id: str = "default"):
+async def send_message_stream(text: str, session_id: str = "default", project_id: str | None = None):
     """Yield response chunks as they arrive — used when chat.stream: true."""
     agent = build_chat_agent()
-    async for chunk in agent.execute_stream({"text": text, "session_id": session_id}):
+    instructions, context = _resolve_project_context(project_id, text)
+    async for chunk in agent.execute_stream({
+        "text": text,
+        "session_id": session_id,
+        "project_instructions": instructions,
+        "project_context": context,
+    }):
         yield chunk
 
 
 def clear_session(session_id: str) -> None:
     agent = build_chat_agent()
     agent.clear_history(session_id)
+
+
+# ── Projects ─────────────────────────────────────────────────────────────────
+
+def create_project(name: str, instructions: str = "") -> dict:
+    return get_project_manager().create_project(name, instructions)
+
+
+def list_projects() -> list:
+    return get_project_manager().list_projects()
+
+
+def get_project(project_id: str) -> dict | None:
+    return get_project_manager().get_project(project_id)
+
+
+def update_project(project_id: str, name: str | None = None, instructions: str | None = None) -> dict:
+    return get_project_manager().update_project(project_id, name, instructions)
+
+
+def delete_project(project_id: str) -> dict:
+    """Delete the project record, then every file's chunks/embeddings --
+    in that order would orphan vectors if this crashed mid-way, so do
+    retrieval-store cleanup first, metadata second: an orphaned metadata
+    record pointing at deleted vectors is a visible, harmless no-op on
+    next read; orphaned vectors with no metadata record are invisible and
+    unrecoverable clutter that would just sit in ChromaDB's collection
+    forever, so eliminating the vectors is the fail-safe side."""
+    manager = get_project_manager()
+    file_chunk_counts = manager.delete_project(project_id)
+    if file_chunk_counts:
+        get_project_retriever().delete_project(project_id, file_chunk_counts)
+    return {"deleted": project_id}
+
+
+def add_project_file(project_id: str, filename: str, text: str) -> dict:
+    """Chunk + embed + store the file's content, then record it against
+    the project. Raises ProjectNotFoundError if project_id doesn't exist
+    (checked via get_project up front, before doing any embedding work --
+    no point calling Ollama for a project that isn't there)."""
+    manager = get_project_manager()
+    if manager.get_project(project_id) is None:
+        raise ProjectNotFoundError(project_id)
+
+    file_id = str(uuid.uuid4())
+    retriever = get_project_retriever()
+    chunk_count = retriever.add_file(project_id, file_id, filename, text)
+    return manager.add_file(project_id, file_id, filename, chunk_count)
+
+
+def remove_project_file(project_id: str, file_id: str) -> dict:
+    manager = get_project_manager()
+    chunk_count = manager.remove_file(project_id, file_id)
+    get_project_retriever().remove_file(project_id, file_id, chunk_count)
+    return manager.get_project(project_id)
 
 
 def list_models_for(provider: str, base_url: str, api_key: str = "") -> list:
@@ -121,6 +227,10 @@ def get_chat_runtime_info() -> dict:
         "provider": llm_factory_cfg.get("provider", "unknown"),
         "base_url": llm_factory_cfg.get("base_url", "unknown"),
         "model": models.get("general", "unknown"),
+        # Friendly name for the inference host, e.g. "PowerAI-5090" --
+        # purely cosmetic (never used for routing/connection), same
+        # OLLAMA_DISPLAY_NAME convention dow-k9-aif's DAS already uses.
+        "display_name": os.environ.get("OLLAMA_DISPLAY_NAME", ""),
     }
 
 

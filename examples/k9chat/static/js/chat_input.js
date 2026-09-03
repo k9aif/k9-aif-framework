@@ -39,7 +39,7 @@ const ChatInput = (() => {
         const response = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, session_id: sessionId }),
+          body: JSON.stringify({ message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId }),
         });
         const data = await response.json();
         MessageList.removeNode(thinkingNode);
@@ -69,7 +69,7 @@ const ChatInput = (() => {
     const response = await fetch("/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, session_id: sessionId }),
+      body: JSON.stringify({ message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId }),
     });
 
     const reader = response.body.getReader();

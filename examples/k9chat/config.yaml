@@ -22,8 +22,8 @@ inference:
     base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
 
     models:
-      general: llama3.2:1b
-      reasoning: "${K9CHAT_REASONING_MODEL:-llama3.2:1b}"
+      general: "${K9CHAT_GENERAL_MODEL:-qwen3.8:27b}"
+      reasoning: "${K9CHAT_REASONING_MODEL:-qwen3.8:27b}"
       guardian: "${K9CHAT_GUARDIAN_MODEL:-granite3-guardian:2b}"
 
   model_catalog:
@@ -42,3 +42,22 @@ inference:
         provider: ollama
         llm_ref: guardian
         capabilities: [guardrails]
+
+# Per-project file storage for the Projects feature (project_retriever.py).
+# ChromaDB is embedded/local (persists under ./​.chroma, no external server)
+# -- fits this example's "lightweight" framing better than standing up a
+# separate vector DB just for file context. One collection per project,
+# not a shared collection filtered by metadata -- see project_retriever.py
+# for why (real cross-project leakage risk otherwise).
+vectordb:
+  provider: chromadb
+  path: "${K9CHAT_CHROMA_PATH:-./.chroma}"
+  embedding_provider: ollama
+  embedding_model: nomic-embed-text
+  embedding_endpoint: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+
+# Project metadata (name, instructions, file list) -- see project_manager.py.
+# db_path defaults to k9chat_projects.db alongside this config file if
+# omitted here.
+projects:
+  db_path: "${K9CHAT_PROJECTS_DB:-}"
