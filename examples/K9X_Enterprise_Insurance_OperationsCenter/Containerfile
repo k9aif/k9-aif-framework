@@ -6,7 +6,7 @@
 #     -f examples/K9X_Enterprise_Insurance_OperationsCenter/Containerfile .
 #
 # Run standalone (dev):
-#   podman run --rm -p 8001:8001 \
+#   podman run --rm -p 8010:8010 \
 #     --env-file examples/K9X_Enterprise_Insurance_OperationsCenter/.env \
 #     k9-aif-eoc:latest
 #
@@ -39,10 +39,10 @@ ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     K9_ENV=production
 
-EXPOSE 8001
+EXPOSE 8010
 
 HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8010/health')" \
       || exit 1
 
 # Drop to non-root (UBI default non-root UID)
@@ -51,6 +51,6 @@ USER 1001
 CMD ["uvicorn", \
      "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app", \
      "--host", "0.0.0.0", \
-     "--port", "8001", \
+     "--port", "8010", \
      "--workers", "2", \
      "--log-level", "info"]

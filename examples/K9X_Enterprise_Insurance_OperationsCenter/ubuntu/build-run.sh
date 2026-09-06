@@ -77,9 +77,9 @@ case "$cmd" in
     podman ps --filter "pod=$POD_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Command}}"
     echo ""
     HOST_IP=$(hostname -I | awk '{print $1}')
-    echo "  Web UI:      http://${HOST_IP}:8001/"
-    echo "  API spec:    http://${HOST_IP}:8001/docs"
-    echo "  Health:      http://${HOST_IP}:8001/health"
+    echo "  Web UI:      http://${HOST_IP}:8010/"
+    echo "  API spec:    http://${HOST_IP}:8010/docs"
+    echo "  Health:      http://${HOST_IP}:8010/health"
     echo ""
     echo "Logs:"
     echo "  podman logs -f ${POD_NAME}-app-backend"
@@ -120,7 +120,7 @@ case "$cmd" in
     RHEL_HOST_IP="${RHEL_HOST_IP:?Set RHEL_HOST_IP to the host LAN IP before running dev (e.g. RHEL_HOST_IP=10.0.0.5 ./build-run.sh dev)}"
     echo "Starting dev server (direct mode, no Kafka) ..."
     podman run --rm \
-      -p 8001:8001 \
+      -p 8010:8010 \
       --env-file "$EOC_DIR/.env" \
       --add-host "rhel-host:${RHEL_HOST_IP}" \
       -v "$REPO_ROOT:/app:ro,z" \
@@ -130,7 +130,7 @@ case "$cmd" in
       python:3.11-slim \
       uvicorn \
         "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app" \
-        --host 0.0.0.0 --port 8001 --reload
+        --host 0.0.0.0 --port 8010 --reload
     ;;
 
   all)
