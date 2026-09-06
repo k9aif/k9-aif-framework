@@ -8,23 +8,23 @@ inference:
     base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
       general:
-        model: "llama3.2:1b"
+        model: "qwen2.5:32b"
         temperature: 0.3
         max_tokens: 2048
       reasoning:
-        model: "granite3-dense:2b"
+        model: "qwen2.5:32b"
         temperature: 0.2
         max_tokens: 4096
       guardian:
-        model: "granite3-guardian:latest"
+        model: "granite4.1-guardian:8b"
         temperature: 0.0
         max_tokens: 1024
       extraction:
-        model: "granite3-dense:2b"
+        model: "qwen2.5:32b"
         temperature: 0.1
         max_tokens: 2048
       code:
-        model: "granite3-dense:2b"
+        model: "qwen2.5:32b"
         temperature: 0.1
         max_tokens: 4096
 
