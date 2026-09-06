@@ -1017,7 +1017,7 @@ async function loadGraphView(view) {
 
   if (data.empty || !data.nodes?.length) {
     const hint = view === 'architecture'
-      ? 'Run the seed: <code>deploy/build-run.sh seed-neo4j</code>'
+      ? 'Run the seed: <code>ubuntu/build-run.sh seed-neo4j</code>'
       : 'Run a few scenarios first — GraphSyncAgent will write entity nodes to Neo4j.';
     container.innerHTML =
       `<div class="trace-empty" style="padding:24px;line-height:1.8">

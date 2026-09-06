@@ -26,10 +26,10 @@
 #     <(grep K9_PG_PASSWORD examples/K9X_Enterprise_Insurance_OperationsCenter/.env | cut -d= -f2-)
 #
 # DEPLOY:
-#   podman play kube deploy/eoc-pod.yaml --replace
+#   podman play kube ubuntu/eoc-pod.yaml --replace
 #
 # STOP:
-#   podman play kube deploy/eoc-pod.yaml --down
+#   podman play kube ubuntu/eoc-pod.yaml --down
 #
 # LOGS:
 #   podman logs -f k9-eoc-pod-app-backend

@@ -11,7 +11,7 @@
 #     k9-aif-eoc:latest
 #
 # Run in pod (production):
-#   see deploy/eoc-pod.yaml
+#   see ubuntu/eoc-pod.yaml
 
 FROM registry.access.redhat.com/ubi9/python-311:latest
 
