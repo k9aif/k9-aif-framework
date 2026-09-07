@@ -1057,13 +1057,31 @@ async def get_architecture():
             "no_fallback_compliance": {"enabled": True,                       "description": "Guardian is a hard requirement for policy checks — no fallback"},
             "zero_trust":             {"enabled": True,  "deny": 0.85, "approve": 0.75, "description": "K9 Zero Trust execution layer on all flows"},
         },
-        "model_routing": {
-            "general":    {"provider": "ollama", "model": "llama3.2:1b",           "capabilities": ["chat", "summarization", "customer_intent"]},
-            "reasoning":  {"provider": "ollama", "model": "granite3-dense:2b",     "capabilities": ["reasoning", "adjudication", "fraud", "audit_report"]},
-            "guardian":   {"provider": "ollama", "model": "granite3-guardian",     "capabilities": ["guardrails", "pii_detection", "policy_compliance"]},
-            "extraction": {"provider": "ollama", "model": "granite3-dense:2b",     "capabilities": ["extraction", "structured_output", "ocr_post_processing"]},
-        },
+        "model_routing": _build_model_routing(),
     }
+
+
+def _build_model_routing() -> Dict[str, Any]:
+    """
+    Built from the live config.yaml (inference.llm_factory.models for the
+    actual model_id/provider, inference.model_catalog.models for
+    capabilities) rather than a hardcoded copy -- a hardcoded second source
+    of truth here previously drifted to a completely different, unrelated
+    model set (llama3.2:1b/granite3-dense:2b/granite3-guardian) that never
+    matched what config.yaml actually configured, which is exactly the kind
+    of silent staleness this avoids going forward.
+    """
+    llm_models = ((_config or {}).get("inference", {}) or {}).get("llm_factory", {}).get("models", {})
+    catalog_models = ((_config or {}).get("inference", {}) or {}).get("model_catalog", {}).get("models", {})
+    routing = {}
+    for name, cat_entry in catalog_models.items():
+        llm_entry = llm_models.get(cat_entry.get("llm_ref", name), {})
+        routing[name] = {
+            "provider": cat_entry.get("provider", "ollama"),
+            "model": llm_entry.get("model", "?"),
+            "capabilities": cat_entry.get("capabilities", []),
+        }
+    return routing
 
 
 @app.get("/api/eoc/config-summary", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
