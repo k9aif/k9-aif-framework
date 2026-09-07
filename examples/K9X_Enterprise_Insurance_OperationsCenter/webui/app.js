@@ -1073,11 +1073,16 @@ async function renderGraphTab() {
                 onclick="setGraphView('fraud_network',this)">🚨 Fraud Network</button>
       </div>
       <span class="graph-source-badge" id="graph-source-badge"></span>
+      <button class="btn-link" onclick="openGraphFullscreen()">⛶ Full Screen</button>
     </div>
     <div id="graph-container" style="height:430px"></div>
     <div class="graph-legend" id="graph-legend"></div>`;
 
   await loadGraphView(graphView);
+}
+
+function openGraphFullscreen() {
+  window.open(`graph-fullscreen.html?view=${graphView}`, '_blank');
 }
 
 async function setGraphView(view, btn) {

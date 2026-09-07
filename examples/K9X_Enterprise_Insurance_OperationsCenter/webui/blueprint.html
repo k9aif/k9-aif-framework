@@ -508,7 +508,7 @@
               <div class="node yellow">
                 <div class="node-icon">🤖</div>
                 <div class="node-name">LLM Call</div>
-                <div class="node-sub">Ollama · Granite 3<br>or llama3.2:1b</div>
+                <div class="node-sub">Ollama · qwen3.8:27b</div>
               </div>
               <div class="mr-note" style="color:var(--yellow)">routed per task type</div>
             </div>
@@ -518,7 +518,7 @@
               <div class="node red" style="border-color:rgba(250,77,86,0.6)">
                 <div class="node-icon">🛡️</div>
                 <div class="node-name">GuardAgent</div>
-                <div class="node-sub">granite3-guardian<br>PII + compliance</div>
+                <div class="node-sub">granite4.1-guardian:8b<br>PII + compliance</div>
               </div>
               <div class="mr-note" style="color:var(--red);font-weight:600">HARD GATE — no fallback<br>no bypass possible</div>
             </div>
@@ -606,7 +606,7 @@
       <div class="mr-rule-desc">When the task touches PII, policy, or compliance — Guardian is mandatory. No other model is acceptable, no fallback permitted.</div>
       <div class="mr-divider"></div>
       <div class="mr-model-label">Model selected</div>
-      <div class="mr-model-val c-red">granite3-guardian</div>
+      <div class="mr-model-val c-red">granite4.1-guardian:8b</div>
       <div class="mr-tasks">
         <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">pii_detection</span>
         <span class="mr-task-chip" style="border-color:rgba(250,77,86,0.4);color:var(--red)">policy</span>
@@ -624,7 +624,7 @@
       <div class="mr-rule-desc">Chat, summarization, and customer interactions are frequent and don't need heavy reasoning. Route to the smallest capable model.</div>
       <div class="mr-divider"></div>
       <div class="mr-model-label">Model selected</div>
-      <div class="mr-model-val c-green">llama3.2:1b</div>
+      <div class="mr-model-val c-green">qwen3.8:27b</div>
       <div class="mr-tasks">
         <span class="mr-task-chip">chat</span>
         <span class="mr-task-chip">summarization</span>
@@ -642,7 +642,7 @@
       <div class="mr-rule-desc">Adjudication, fraud analysis, and extraction require a model with specific capabilities. The router looks up the catalog and selects the best match.</div>
       <div class="mr-divider"></div>
       <div class="mr-model-label">Model selected</div>
-      <div class="mr-model-val c-yellow">granite3-dense:2b</div>
+      <div class="mr-model-val c-yellow">qwen3.8:27b</div>
       <div class="mr-tasks">
         <span class="mr-task-chip" style="border-color:rgba(165,110,255,0.4);color:var(--purple)">adjudication</span>
         <span class="mr-task-chip" style="border-color:rgba(165,110,255,0.4);color:var(--purple)">reasoning</span>
@@ -650,7 +650,7 @@
         <span class="mr-task-chip" style="border-color:rgba(0,180,216,0.4);color:var(--cyan)">extraction</span>
         <span class="mr-task-chip" style="border-color:rgba(0,180,216,0.4);color:var(--cyan)">ocr</span>
       </div>
-      <div class="mr-rationale">Fallback to llama3.2:1b if capability unavailable</div>
+      <div class="mr-rationale">Fallback to qwen3.8:27b if capability unavailable</div>
     </div>
 
     <!-- Rule 4 -->
@@ -661,7 +661,7 @@
       <div class="mr-rule-desc">If no rule matched, fall back to the default model configured in config.yaml. The router always resolves — it never leaves a task unhandled.</div>
       <div class="mr-divider"></div>
       <div class="mr-model-label">Model selected</div>
-      <div class="mr-model-val c-green">llama3.2:1b</div>
+      <div class="mr-model-val c-green">qwen3.8:27b</div>
       <div class="mr-tasks">
         <span class="mr-task-chip">any unmatched task</span>
       </div>
@@ -688,7 +688,7 @@
         <tr>
           <td><div class="at-agent">ClaimsTriageAgent</div><div class="at-squad">ClaimsProcessingSquad</div></td>
           <td><span class="at-task">reasoning</span></td>
-          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-model bg-yellow c-yellow">qwen3.8:27b</span></td>
           <td><span class="at-fallback">general</span></td>
           <td><span class="at-gov bg-cyan c-cyan">pre-guard</span></td>
           <td><span class="at-rationale">Priority scoring + completeness check needs reasoning</span></td>
@@ -696,7 +696,7 @@
         <tr>
           <td><div class="at-agent">AdjudicationAgent</div><div class="at-squad">ClaimsProcessingSquad</div></td>
           <td><span class="at-task">adjudication</span></td>
-          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-model bg-yellow c-yellow">qwen3.8:27b</span></td>
           <td><span class="at-fallback">general</span></td>
           <td><span class="at-gov bg-cyan c-cyan">pre + post</span></td>
           <td><span class="at-rationale">Domain-specific, high accuracy required</span></td>
@@ -704,7 +704,7 @@
         <tr>
           <td><div class="at-agent">FraudDetectionAgent</div><div class="at-squad">RiskAssessmentSquad</div></td>
           <td><span class="at-task">fraud / reasoning</span></td>
-          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-model bg-yellow c-yellow">qwen3.8:27b</span></td>
           <td><span class="at-fallback">general</span></td>
           <td><span class="at-gov bg-cyan c-cyan">pre + post</span></td>
           <td><span class="at-rationale">Multi-signal correlation — complex reasoning required</span></td>
@@ -712,7 +712,7 @@
         <tr>
           <td><div class="at-agent">DocumentExtractorAgent</div><div class="at-squad">DocumentIntelligenceSquad</div></td>
           <td><span class="at-task">extraction</span></td>
-          <td><span class="at-model bg-yellow c-yellow">granite3-dense:2b</span></td>
+          <td><span class="at-model bg-yellow c-yellow">qwen3.8:27b</span></td>
           <td><span class="at-fallback">general</span></td>
           <td><span class="at-gov bg-muted" style="color:var(--muted)">none</span></td>
           <td><span class="at-rationale">Structured JSON output — extraction capability required</span></td>
@@ -720,7 +720,7 @@
         <tr style="background:rgba(250,77,86,0.04)">
           <td><div class="at-agent" style="color:var(--red)">GuardAgent</div><div class="at-squad">all squads</div></td>
           <td><span class="at-task">guardrails · pii_detection</span></td>
-          <td><span class="at-model bg-red c-red">granite3-guardian</span></td>
+          <td><span class="at-model bg-red c-red">granite4.1-guardian:8b</span></td>
           <td><span class="at-fallback c-red" style="font-weight:700">NONE — hard requirement</span></td>
           <td><span class="at-gov bg-red c-red">IS the guard</span></td>
           <td><span class="at-rationale">Compliance gate — purpose-built safety model, no substitution</span></td>
@@ -728,7 +728,7 @@
         <tr>
           <td><div class="at-agent">AuditAgent</div><div class="at-squad">all squads</div></td>
           <td><span class="at-task">general / audit</span></td>
-          <td><span class="at-model bg-green c-green">llama3.2:1b</span></td>
+          <td><span class="at-model bg-green c-green">qwen3.8:27b</span></td>
           <td><span class="at-fallback">—</span></td>
           <td><span class="at-gov bg-muted" style="color:var(--muted)">none</span></td>
           <td><span class="at-rationale">Structured record write — no LLM reasoning needed, minimal cost</span></td>
@@ -789,7 +789,7 @@
       <div class="zt-card" style="border-color:rgba(250,77,86,0.5);background:rgba(250,77,86,0.05)">
         <div class="ztc-hdr"><div class="ztc-dot" style="background:var(--red)"></div><div class="ztc-label c-red">GuardAgent — Hard Gate</div></div>
         <div class="ztc-val c-red" style="font-size:20px;font-weight:700;margin-bottom:10px">Always runs</div>
-        <div class="ztc-desc">GuardAgent (granite3-guardian) runs on every flow regardless of confidence score. It is not a threshold check — it is a mandatory compliance checkpoint. No bypass, no fallback, no exceptions.</div>
+        <div class="ztc-desc">GuardAgent (granite4.1-guardian:8b) runs on every flow regardless of confidence score. It is not a threshold check — it is a mandatory compliance checkpoint. No bypass, no fallback, no exceptions.</div>
       </div>
     </div>
   </div>
@@ -809,7 +809,7 @@
       <div class="gov-src">governance.yaml → policies.pii_guard</div>
       <div class="gov-desc">Detect and mask personally identifiable information before any payload reaches an LLM endpoint. Runs at pre-process and post-process on every guarded agent.</div>
       <div class="gov-params">
-        <div class="gov-param"><span class="gov-key">model</span><span class="gov-val c-yellow">granite3-guardian</span></div>
+        <div class="gov-param"><span class="gov-key">model</span><span class="gov-val c-yellow">granite4.1-guardian:8b</span></div>
         <div class="gov-param"><span class="gov-key">pre + post process</span><span class="gov-val c-green">enabled</span></div>
         <div class="gov-param"><span class="gov-key">fields scanned</span><span class="gov-val" style="color:var(--muted)">ssn · dob · bank · cc · phone · email</span></div>
       </div>
