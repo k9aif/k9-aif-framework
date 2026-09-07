@@ -57,9 +57,18 @@ HEALTHCHECK --interval=30s --timeout=8s --start-period=30s --retries=3 \
 # Drop to non-root (UBI default non-root UID)
 USER 1001
 
+# --workers must stay 1: /api/eoc/run's Kafka-mode wait-for-result
+# (_pending_results, api/app.py) is an in-memory dict keyed by
+# correlation_id, resolved by a background consumer thread reading
+# eoc-results. With >1 uvicorn workers, each is a separate process with
+# its own copy of that dict AND its own consumer in the same Kafka
+# consumer group -- Kafka splits eoc-results' partitions across them, so
+# a request's future can land on a worker whose consumer never receives
+# the matching partition. Confirmed live: requests timed out at 180s
+# despite the orchestrator publishing the correct result in ~6s.
 CMD ["uvicorn", \
      "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app", \
      "--host", "0.0.0.0", \
      "--port", "8010", \
-     "--workers", "2", \
+     "--workers", "1", \
      "--log-level", "info"]

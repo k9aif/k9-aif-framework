@@ -70,6 +70,12 @@ spec:
       hostPort: 8010
       protocol: TCP
 
+    # --workers must stay 1 -- see the matching comment on the
+    # Containerfile's own CMD. Each worker would be a separate process
+    # with its own in-memory _pending_results dict and its own eoc-results
+    # Kafka consumer in the same group, so a run's result can land on a
+    # worker other than the one holding its waiting future -> false
+    # 180s timeouts despite the orchestrator completing in seconds.
     command: ["uvicorn"]
     args:
     - "examples.K9X_Enterprise_Insurance_OperationsCenter.api.app:app"
@@ -78,7 +84,7 @@ spec:
     - "--port"
     - "8010"
     - "--workers"
-    - "2"
+    - "1"
     - "--log-level"
     - "info"
 
