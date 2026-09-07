@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # K9-AIF EOC — Podman build and deploy helper
-# Run from the k9-aif-framework repo root on RHEL.
+# Run from the k9-aif-framework repo root on the Podman host.
 #
 # Commands:
 #   build        — build the k9-aif-eoc container image
@@ -32,12 +32,12 @@ json_escape() {
 
 create_k8s_secret() {
   local name="$1" key="$2" value="$3"
-  if podman secret exists "$name" 2>/dev/null; then
-    podman secret rm "$name"
+  if sudo podman secret exists "$name" 2>/dev/null; then
+    sudo podman secret rm "$name"
   fi
   printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s"},"type":"Opaque","stringData":{"%s":"%s"}}' \
     "$(json_escape "$name")" "$(json_escape "$key")" "$(json_escape "$value")" \
-    | podman secret create "$name" -
+    | sudo podman secret create "$name" -
 }
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,7 +52,7 @@ case "$cmd" in
 
   build)
     echo "Building $IMAGE from $REPO_ROOT ..."
-    podman build -t "$IMAGE" \
+    sudo podman build -t "$IMAGE" \
       -f "$EOC_DIR/Containerfile" \
       "$REPO_ROOT"
     echo "Build complete: $IMAGE"
@@ -87,11 +87,20 @@ case "$cmd" in
     ;;
 
   up)
-    echo "Deploying pod: $POD_NAME (3 containers) ..."
-    podman play kube "$SCRIPT_DIR/eoc-pod.yaml" --replace
+    # <RHEL_HOST_IP> is substituted into a throwaway rendered copy on every
+    # deploy, never into the tracked eoc-pod.yaml — a one-time manual sed
+    # on the tracked file is an uncommitted local edit that a fresh clone/
+    # pull/reset can silently wipe out (this bit DAS's das-pod.yaml
+    # repeatedly). PODMAN_HOST_IP env var overrides auto-detection.
+    PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
+    RENDERED_YAML="$(mktemp /tmp/eoc-pod.XXXXXX.yaml)"
+    trap 'rm -f "$RENDERED_YAML"' EXIT
+    sed "s/<RHEL_HOST_IP>/${PODMAN_HOST_IP}/g" "$SCRIPT_DIR/eoc-pod.yaml" > "$RENDERED_YAML"
+    echo "Deploying pod: $POD_NAME (3 containers, host IP ${PODMAN_HOST_IP}) ..."
+    sudo podman play kube "$RENDERED_YAML" --replace
     echo ""
     echo "Pod running. Containers:"
-    podman ps --filter "pod=$POD_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Command}}"
+    sudo podman ps --filter "pod=$POD_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Command}}"
     echo ""
     HOST_IP=$(hostname -I | awk '{print $1}')
     echo "  Web UI:      http://${HOST_IP}:8010/"
@@ -99,47 +108,51 @@ case "$cmd" in
     echo "  Health:      http://${HOST_IP}:8010/health"
     echo ""
     echo "Logs:"
-    echo "  podman logs -f ${POD_NAME}-app-backend"
-    echo "  podman logs -f ${POD_NAME}-eoc-router"
-    echo "  podman logs -f ${POD_NAME}-eoc-orchestrator"
+    echo "  sudo podman logs -f ${POD_NAME}-app-backend"
+    echo "  sudo podman logs -f ${POD_NAME}-eoc-router"
+    echo "  sudo podman logs -f ${POD_NAME}-eoc-orchestrator"
     ;;
 
   down)
     echo "Stopping pod: $POD_NAME ..."
-    podman play kube "$SCRIPT_DIR/eoc-pod.yaml" --down || true
+    PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
+    RENDERED_YAML="$(mktemp /tmp/eoc-pod.XXXXXX.yaml)"
+    trap 'rm -f "$RENDERED_YAML"' EXIT
+    sed "s/<RHEL_HOST_IP>/${PODMAN_HOST_IP}/g" "$SCRIPT_DIR/eoc-pod.yaml" > "$RENDERED_YAML"
+    sudo podman play kube "$RENDERED_YAML" --down || true
     echo "Pod stopped."
     ;;
 
   status)
     echo "=== Pod ==="
-    podman pod ps --filter "name=$POD_NAME"
+    sudo podman pod ps --filter "name=$POD_NAME"
     echo ""
     echo "=== Containers ==="
-    podman ps -a --filter "pod=$POD_NAME" \
+    sudo podman ps -a --filter "pod=$POD_NAME" \
       --format "table {{.Names}}\t{{.Status}}\t{{.RestartCount}}\t{{.Command}}"
     ;;
 
   logs)
-    podman logs -f "${POD_NAME}-app-backend"
+    sudo podman logs -f "${POD_NAME}-app-backend"
     ;;
 
   logs-router)
-    podman logs -f "${POD_NAME}-eoc-router"
+    sudo podman logs -f "${POD_NAME}-eoc-router"
     ;;
 
   logs-orch)
-    podman logs -f "${POD_NAME}-eoc-orchestrator"
+    sudo podman logs -f "${POD_NAME}-eoc-orchestrator"
     ;;
 
   dev)
     # Quick dev run — single container, direct mode (no Kafka), live reload.
     # All external services are accessed via --add-host.
-    RHEL_HOST_IP="${RHEL_HOST_IP:?Set RHEL_HOST_IP to the host LAN IP before running dev (e.g. RHEL_HOST_IP=10.0.0.5 ./build-run.sh dev)}"
+    PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
     echo "Starting dev server (direct mode, no Kafka) ..."
-    podman run --rm \
+    sudo podman run --rm \
       -p 8010:8010 \
       --env-file "$EOC_DIR/.env" \
-      --add-host "rhel-host:${RHEL_HOST_IP}" \
+      --add-host "rhel-host:${PODMAN_HOST_IP}" \
       -v "$REPO_ROOT:/app:ro,z" \
       -e PYTHONPATH=/app \
       -e K9_ENV=development \
