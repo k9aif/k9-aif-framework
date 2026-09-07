@@ -228,7 +228,6 @@ function bizLabel(technicalName) {
 // ─── Intro bar ────────────────────────────────────────────────────────────────
 function renderIntroBar() {
   const c = state.config;
-  setText('cfg-backend',    `${c.inference?.backend || '?'} · ${c.inference?.models?.join(', ') || '?'}`);
   setText('cfg-messaging',  `${c.messaging?.backend || '?'} · ${(c.messaging?.brokers||[]).join(', ')}`);
   setText('cfg-governance', c.governance?.enabled ? 'enabled' : 'disabled');
 
