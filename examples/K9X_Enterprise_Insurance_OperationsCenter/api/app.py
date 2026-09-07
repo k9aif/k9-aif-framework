@@ -31,7 +31,9 @@ try:
 except ImportError:
     pass
 
-from fastapi import FastAPI, HTTPException, Query
+import secrets
+
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -62,6 +64,7 @@ from examples.K9X_Enterprise_Insurance_OperationsCenter.api.models import (
     ScenarioRunRequest,
     ScenarioRunResponse,
     TraceStep,
+    LoginRequest,
 )
 
 log = logging.getLogger(__name__)
@@ -271,6 +274,49 @@ app.add_middleware(
 
 
 # ============================================================
+# Auth — demo/demo gate on the Operations Dashboard (index.html +
+# /api/eoc/* + the operational event/audit/escalation endpoints).
+# landing.html, blueprint.html, /health, and the API docs stay public.
+# In-memory session set is intentional here: single-process demo
+# deployment, no need for a real user store or JWT for a "for now" gate.
+# ============================================================
+_DEMO_USERNAME = "demo"
+_DEMO_PASSWORD = "demo"
+_SESSION_COOKIE = "eoc_session"
+_valid_sessions: set = set()
+
+
+@app.post("/api/auth/login", tags=["Auth"])
+async def login(payload: LoginRequest, response: Response):
+    if payload.username != _DEMO_USERNAME or payload.password != _DEMO_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    token = secrets.token_urlsafe(32)
+    _valid_sessions.add(token)
+    response.set_cookie(
+        _SESSION_COOKIE, token, httponly=True, samesite="lax", max_age=12 * 3600
+    )
+    return {"status": "ok"}
+
+
+@app.post("/api/auth/logout", tags=["Auth"])
+async def logout(response: Response, eoc_session: Optional[str] = Cookie(None)):
+    if eoc_session:
+        _valid_sessions.discard(eoc_session)
+    response.delete_cookie(_SESSION_COOKIE)
+    return {"status": "ok"}
+
+
+@app.get("/api/auth/check", tags=["Auth"])
+async def auth_check(eoc_session: Optional[str] = Cookie(None)):
+    return {"authenticated": bool(eoc_session) and eoc_session in _valid_sessions}
+
+
+def require_session(eoc_session: Optional[str] = Cookie(None)) -> None:
+    if not eoc_session or eoc_session not in _valid_sessions:
+        raise HTTPException(status_code=401, detail="Login required")
+
+
+# ============================================================
 # Helpers
 # ============================================================
 def _push_sse(event: Dict[str, Any]):
@@ -315,7 +361,7 @@ async def health():
 # ============================================================
 # Event Submission
 # ============================================================
-@app.post("/events/submit", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/submit", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_event(event: EOCEvent):
     """
     Submit any enterprise event to the EOC pipeline.
@@ -390,37 +436,37 @@ async def submit_event(event: EOCEvent):
     return _build_response(result, payload["event_id"], payload["correlation_id"])
 
 
-@app.post("/events/claim", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/claim", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_claim(event: ClaimSubmittedEvent):
     """Submit a typed ClaimSubmitted event with field validation."""
     return await submit_event(event)
 
 
-@app.post("/events/document", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/document", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_document(event: DocumentReceivedEvent):
     """Submit a typed DocumentReceived event with field validation."""
     return await submit_event(event)
 
 
-@app.post("/events/fraud-signal", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/fraud-signal", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_fraud_signal(event: FraudSignalEvent):
     """Submit a typed FraudSignalRaised event with field validation."""
     return await submit_event(event)
 
 
-@app.post("/events/policy-change", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/policy-change", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_policy_change(event: PolicyChangeEvent):
     """Submit a typed PolicyChangeRequested event with field validation."""
     return await submit_event(event)
 
 
-@app.post("/events/catastrophe", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/catastrophe", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_catastrophe(event: CatastropheAlertEvent):
     """Submit a typed CatastropheAlertIssued event with field validation."""
     return await submit_event(event)
 
 
-@app.post("/events/customer-interaction", response_model=EOCEventResponse, tags=["Events"])
+@app.post("/events/customer-interaction", response_model=EOCEventResponse, tags=["Events"], dependencies=[Depends(require_session)])
 async def submit_customer_interaction(event: CustomerInteractionEvent):
     """Submit a typed CustomerInteractionLogged event with field validation."""
     return await submit_event(event)
@@ -429,7 +475,7 @@ async def submit_customer_interaction(event: CustomerInteractionEvent):
 # ============================================================
 # Audit
 # ============================================================
-@app.get("/audit/query", tags=["Audit"])
+@app.get("/audit/query", tags=["Audit"], dependencies=[Depends(require_session)])
 async def query_audit(
     correlation_id: Optional[str] = Query(None, description="Filter by correlation ID"),
     event_id: Optional[str] = Query(None, description="Filter by event ID"),
@@ -502,7 +548,7 @@ def _db_resolve_ticket(ticket_id: str, resolution: str, operator_id: str) -> boo
         return False
 
 
-@app.get("/escalation/queue", tags=["Escalation"])
+@app.get("/escalation/queue", tags=["Escalation"], dependencies=[Depends(require_session)])
 async def get_escalation_queue(status: str = "open"):
     """
     Return HITL escalation tickets from the eoc.escalation_tickets table.
@@ -518,7 +564,7 @@ async def get_escalation_queue(status: str = "open"):
     return {"count": len(tickets), "tickets": tickets}
 
 
-@app.post("/escalation/{ticket_id}/resolve", tags=["Escalation"])
+@app.post("/escalation/{ticket_id}/resolve", tags=["Escalation"], dependencies=[Depends(require_session)])
 async def resolve_escalation(ticket_id: str, body: EscalationResolveRequest):
     """
     Mark a HITL escalation ticket as resolved.
@@ -561,7 +607,7 @@ async def resolve_escalation(ticket_id: str, body: EscalationResolveRequest):
 # ============================================================
 # SSE Live Event Stream
 # ============================================================
-@app.get("/events/stream", tags=["Dashboard"])
+@app.get("/events/stream", tags=["Dashboard"], dependencies=[Depends(require_session)])
 async def event_stream():
     """
     Server-Sent Events stream for the EOC Operations Dashboard.
@@ -591,7 +637,7 @@ async def event_stream():
 # ============================================================
 # Recent Events (for dashboard polling fallback)
 # ============================================================
-@app.get("/events/recent", tags=["Dashboard"])
+@app.get("/events/recent", tags=["Dashboard"], dependencies=[Depends(require_session)])
 async def recent_events(limit: int = Query(50, ge=1, le=200)):
     """Return the most recent N events from the in-process event log."""
     return {
@@ -847,7 +893,7 @@ def _extract_trace(event_type: str, result: Dict[str, Any]) -> List[Dict[str, An
 # Architecture Demo Endpoints
 # ============================================================
 
-@app.get("/api/eoc/scenarios", tags=["Architecture Demo"])
+@app.get("/api/eoc/scenarios", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
 async def get_scenarios():
     """
     Return all seven EOC event scenarios with metadata and sample payloads.
@@ -862,7 +908,7 @@ async def get_scenarios():
     }
 
 
-@app.post("/api/eoc/run", response_model=ScenarioRunResponse, tags=["Architecture Demo"])
+@app.post("/api/eoc/run", response_model=ScenarioRunResponse, tags=["Architecture Demo"], dependencies=[Depends(require_session)])
 async def run_scenario(body: ScenarioRunRequest):
     """
     Execute a named scenario through the full K9-AIF pipeline.
@@ -961,7 +1007,7 @@ async def run_scenario(body: ScenarioRunRequest):
     )
 
 
-@app.get("/api/eoc/architecture", tags=["Architecture Demo"])
+@app.get("/api/eoc/architecture", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
 async def get_architecture():
     """
     Return the full K9-AIF EOC architecture metadata.
@@ -1020,7 +1066,7 @@ async def get_architecture():
     }
 
 
-@app.get("/api/eoc/config-summary", tags=["Architecture Demo"])
+@app.get("/api/eoc/config-summary", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
 async def get_config_summary():
     """Return a sanitised summary of the runtime configuration."""
     return {
@@ -1046,7 +1092,7 @@ async def get_config_summary():
     }
 
 
-@app.get("/api/eoc/graph", tags=["Architecture Demo"])
+@app.get("/api/eoc/graph", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
 async def get_execution_graph(
     event_type: Optional[str] = Query(None, description="Event type filter for execution-path view"),
     view: Optional[str] = Query(None, description="Graph view: architecture | entities | fraud_network"),

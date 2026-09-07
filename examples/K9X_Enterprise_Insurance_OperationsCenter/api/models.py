@@ -201,3 +201,13 @@ class ScenarioRunResponse(BaseModel):
     trace: List[TraceStep]
     result: Dict[str, Any]
     error: Optional[str] = None
+
+
+# ============================================================
+# Auth (Operations Dashboard gate — landing/architecture pages stay public)
+# ============================================================
+
+class LoginRequest(BaseModel):
+    """Credentials for POST /api/auth/login."""
+    username: str
+    password: str
