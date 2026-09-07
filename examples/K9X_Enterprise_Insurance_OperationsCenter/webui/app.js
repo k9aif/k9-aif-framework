@@ -229,7 +229,6 @@ function bizLabel(technicalName) {
 function renderIntroBar() {
   const c = state.config;
   setText('cfg-messaging',  `${c.messaging?.backend || '?'} · ${(c.messaging?.brokers||[]).join(', ')}`);
-  setText('cfg-governance', c.governance?.enabled ? 'enabled' : 'disabled');
 
   // Header: server + representative model (general — the primary alias
   // most agents use), sourced live from config-summary so this can't go
@@ -237,6 +236,10 @@ function renderIntroBar() {
   const host = (c.inference?.base_url || '').replace(/^https?:\/\//, '');
   const modelIds = c.inference?.model_ids || {};
   const primaryModel = modelIds.general || Object.values(modelIds)[0] || '?';
+
+  setText('cfg-governance', c.governance?.enabled
+    ? `enabled (${modelIds.guardian || 'granite4.1-guardian:8b'})`
+    : 'disabled');
   setText('header-ollama-val', host ? `${host} · ${primaryModel}` : primaryModel);
 }
 
