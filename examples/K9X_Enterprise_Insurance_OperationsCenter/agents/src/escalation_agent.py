@@ -17,6 +17,7 @@ from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.pg import pg_conne
 
 
 DEFAULT_CONFIDENCE_THRESHOLD = 0.75
+DEFAULT_RISK_THRESHOLD = 0.8
 
 
 class EscalationAgent(BaseAgent):
@@ -33,7 +34,13 @@ class EscalationAgent(BaseAgent):
         super().__init__(config or {}, monitor=monitor, **kwargs)
         eoc_cfg = self.config.get("eoc", {})
         self._threshold = float(eoc_cfg.get("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD))
-        self.logger.info(f"[{self.layer}] Threshold={self._threshold}")
+        # Matches RiskAssessmentSquad's own stated escalation_risk_threshold
+        # (squads.yaml config: blocks are descriptive only, never read by
+        # SquadLoader — this is the actual enforcement point).
+        self._risk_threshold = float(eoc_cfg.get("escalation_risk_threshold", DEFAULT_RISK_THRESHOLD))
+        self.logger.info(
+            f"[{self.layer}] confidence_threshold={self._threshold} risk_threshold={self._risk_threshold}"
+        )
 
     # ------------------------------------------------------------------
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -56,14 +63,23 @@ class EscalationAgent(BaseAgent):
 
         force_escalate = payload.get("force_escalate", False)
 
+        # risk_score comes from FraudDetectionAgent's result_key ("fraud_assessment")
+        # in RiskAssessmentSquad, but read a flat fallback too so any other squad
+        # that surfaces a top-level risk_score is covered without a code change.
+        fraud = payload.get("fraud_assessment") or {}
+        risk_score_raw = fraud.get("risk_score", payload.get("risk_score"))
+        risk_score = float(risk_score_raw) if risk_score_raw is not None else None
+        high_risk = risk_score is not None and risk_score >= self._risk_threshold
+
         should_escalate = (
             force_escalate
             or confidence < self._threshold
             or guard_failed
+            or high_risk
         )
 
         ticket_id = None
-        escalation_reason = self._build_reason(confidence, guard_failed, force_escalate)
+        escalation_reason = self._build_reason(confidence, guard_failed, force_escalate, risk_score, high_risk)
 
         if should_escalate:
             ticket_id = f"ESC-{uuid.uuid4().hex[:8].upper()}"
@@ -77,7 +93,7 @@ class EscalationAgent(BaseAgent):
                 "confidence_score": confidence,
                 "context_payload": json.dumps(self._safe_context(payload)),
                 "agent_rationale": payload.get("rationale", ""),
-                "priority": self._derive_priority(confidence, guard_failed),
+                "priority": self._derive_priority(confidence, guard_failed, risk_score),
                 "status": "open",
                 "correlation_id": correlation_id,
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -95,12 +111,14 @@ class EscalationAgent(BaseAgent):
 
             self.logger.warning(
                 f"[{self.layer}] ESCALATION raised: ticket={ticket_id} "
-                f"confidence={confidence:.2f} guard_failed={guard_failed} priority={ticket['priority']}"
+                f"confidence={confidence:.2f} guard_failed={guard_failed} "
+                f"risk_score={risk_score} priority={ticket['priority']}"
             )
         else:
             ticket = {}
             self.logger.info(
-                f"[{self.layer}] No escalation needed: confidence={confidence:.2f} >= {self._threshold}"
+                f"[{self.layer}] No escalation needed: confidence={confidence:.2f} >= {self._threshold}, "
+                f"risk_score={risk_score}"
             )
 
         return {
@@ -136,7 +154,10 @@ class EscalationAgent(BaseAgent):
         except Exception as exc:
             self.logger.warning(f"[{self.layer}] PG persist failed: {exc}")
 
-    def _build_reason(self, confidence: float, guard_failed: bool, forced: bool) -> str:
+    def _build_reason(
+        self, confidence: float, guard_failed: bool, forced: bool,
+        risk_score: Optional[float], high_risk: bool,
+    ) -> str:
         reasons = []
         if forced:
             reasons.append("forced escalation requested")
@@ -144,12 +165,14 @@ class EscalationAgent(BaseAgent):
             reasons.append(f"confidence {confidence:.2f} below threshold {self._threshold}")
         if guard_failed:
             reasons.append("guard check failed (PII or policy violation)")
+        if high_risk:
+            reasons.append(f"risk score {risk_score:.2f} at/above threshold {self._risk_threshold}")
         return "; ".join(reasons) if reasons else "unknown"
 
-    def _derive_priority(self, confidence: float, guard_failed: bool) -> str:
-        if guard_failed or confidence < 0.3:
+    def _derive_priority(self, confidence: float, guard_failed: bool, risk_score: Optional[float] = None) -> str:
+        if guard_failed or confidence < 0.3 or (risk_score is not None and risk_score >= 0.9):
             return "critical"
-        if confidence < 0.5:
+        if confidence < 0.5 or (risk_score is not None and risk_score >= self._risk_threshold):
             return "high"
         if confidence < self._threshold:
             return "normal"

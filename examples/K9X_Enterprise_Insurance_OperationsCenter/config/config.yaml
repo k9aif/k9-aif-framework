@@ -149,6 +149,10 @@ flows:
 
 eoc:
   confidence_threshold: 0.75
+  # Read by EscalationAgent (matches RiskAssessmentSquad's own stated intent
+  # in squads.yaml -- that squad-level config: block is descriptive only and
+  # never enforced by SquadLoader, so this is the actual threshold in effect).
+  escalation_risk_threshold: 0.8
   escalation_enabled: true
   audit_all_actions: true
   pii_guard_enabled: true
