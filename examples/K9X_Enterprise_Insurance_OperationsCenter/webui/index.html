@@ -10,6 +10,28 @@
 <body>
 
 <!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║  LOGIN GATE — Operations Dashboard requires a session ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<div id="login-overlay" style="position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;background:var(--bg-base)">
+  <div style="width:320px;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;padding:28px">
+    <div style="font-size:15px;font-weight:700;color:var(--blue-lt);margin-bottom:2px">K9-AIF EOC</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:18px">Operations Dashboard — sign in required</div>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <input id="login-username" type="text" placeholder="Username" autocomplete="username" value="demo"
+             style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:5px;padding:8px 10px;color:var(--text-primary);font-size:12px;margin-bottom:8px;box-sizing:border-box">
+      <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" value="demo"
+             style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:5px;padding:8px 10px;color:var(--text-primary);font-size:12px;margin-bottom:12px;box-sizing:border-box">
+      <button type="submit" class="btn-link" style="width:100%;text-align:center;background:var(--blue);color:#fff;border:none;padding:9px;border-radius:5px;font-size:12px;cursor:pointer">Sign In</button>
+      <div id="login-error" style="color:var(--red);font-size:11px;margin-top:8px"></div>
+    </form>
+    <div style="margin-top:16px;padding:10px 12px;background:rgba(15,98,254,0.08);border:1px solid rgba(15,98,254,0.2);border-radius:6px;font-size:11px;color:var(--text-secondary);line-height:1.7">
+      <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px">Try it out:</div>
+      <span style="font-family:monospace;color:var(--cyan)">demo</span> / <span style="font-family:monospace;color:var(--cyan)">demo</span>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
 <!-- ║  HEADER                                              ║ -->
 <!-- ╚══════════════════════════════════════════════════════╝ -->
 <header class="site-header">
@@ -28,6 +50,7 @@
   </div>
 
   <div class="header-actions">
+    <div class="intro-kv" id="header-ollama" style="white-space:nowrap"><span class="k">Ollama:</span><span class="v" id="header-ollama-val">—</span></div>
     <div class="mode-toggle">
       <button class="mode-btn active" id="mode-arch" onclick="setMode('arch')">ARCH</button>
       <button class="mode-btn" id="mode-biz" onclick="setMode('biz')">BIZ</button>
@@ -39,6 +62,7 @@
     <button class="btn-link" onclick="window.location.href='/webui/blueprint.html'">Architecture ↗</button>
     <button class="btn-link" onclick="window.open('/docs','_blank')">API Docs ↗</button>
     <button class="btn-link" onclick="window.open('/redoc','_blank')">ReDoc ↗</button>
+    <button class="btn-link" onclick="handleLogout()">Log out</button>
   </div>
 </header>
 

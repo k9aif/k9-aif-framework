@@ -1092,6 +1092,10 @@ async def get_config_summary():
             "backend": _config.get("inference", {}).get("llm_factory", {}).get("backend", "ollama"),
             "base_url": _config.get("inference", {}).get("llm_factory", {}).get("base_url", ""),
             "models": list((_config.get("inference", {}).get("llm_factory", {}).get("models", {}) or {}).keys()),
+            "model_ids": {
+                name: entry.get("model", "?")
+                for name, entry in (_config.get("inference", {}).get("llm_factory", {}).get("models", {}) or {}).items()
+            },
         },
         "messaging": {
             "backend": _config.get("messaging", {}).get("backend", "kafka"),

@@ -85,6 +85,21 @@ const BIZ_VOCAB = {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
+  // /health is public; safe to run regardless of auth state.
+  checkHealth();
+  try {
+    const auth = await apiFetch('/api/auth/check');
+    if (auth.authenticated) {
+      document.getElementById('login-overlay').style.display = 'none';
+      await loadDashboard();
+    }
+    // else: leave the login overlay showing; handleLogin() takes it from here.
+  } catch (e) {
+    console.error('Auth check failed:', e);
+  }
+}
+
+async function loadDashboard() {
   try {
     const [scenarios, arch, cfg] = await Promise.all([
       apiFetch('/api/eoc/scenarios'),
@@ -98,15 +113,46 @@ async function init() {
 
     renderScenarioList();
     renderIntroBar();
-    checkHealth();
     connectSSE();
     renderTab('router');
 
     if (state.scenarios.length > 0) selectScenario(state.scenarios[0].id);
   } catch (e) {
-    console.error('Init failed:', e);
+    console.error('Dashboard load failed:', e);
     setHealth('error', 'Backend unreachable');
   }
+}
+
+async function handleLogout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (e) { /* best-effort */ }
+  window.location.reload();
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({ detail: r.statusText }));
+      errEl.textContent = e.detail || 'Login failed';
+      return false;
+    }
+    document.getElementById('login-overlay').style.display = 'none';
+    await loadDashboard();
+  } catch (e) {
+    errEl.textContent = 'Network error — please try again';
+  }
+  return false;
 }
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -153,6 +199,14 @@ function renderIntroBar() {
   setText('cfg-backend',    `${c.inference?.backend || '?'} · ${c.inference?.models?.join(', ') || '?'}`);
   setText('cfg-messaging',  `${c.messaging?.backend || '?'} · ${(c.messaging?.brokers||[]).join(', ')}`);
   setText('cfg-governance', c.governance?.enabled ? 'enabled' : 'disabled');
+
+  // Header: server + representative model (general — the primary alias
+  // most agents use), sourced live from config-summary so this can't go
+  // stale the way the old hardcoded Model Routing tab did.
+  const host = (c.inference?.base_url || '').replace(/^https?:\/\//, '');
+  const modelIds = c.inference?.model_ids || {};
+  const primaryModel = modelIds.general || Object.values(modelIds)[0] || '?';
+  setText('header-ollama-val', host ? `${host} · ${primaryModel}` : primaryModel);
 }
 
 // ─── Scenario list ────────────────────────────────────────────────────────────
