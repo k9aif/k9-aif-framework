@@ -186,7 +186,11 @@ async function handleLogin(event) {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 async function apiFetch(url, opts = {}) {
   const r = await fetch(url, opts);
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${url}`);
+  if (!r.ok) {
+    const err = new Error(`${r.status} ${r.statusText} — ${url}`);
+    err.status = r.status;
+    throw err;
+  }
   return r.json();
 }
 
@@ -350,6 +354,18 @@ async function runScenario() {
       body: JSON.stringify({ event_type: state.selected.id, payload }),
     });
   } catch (e) {
+    if (e.status === 401) {
+      // Session went stale server-side (e.g. a container restart wipes the
+      // in-memory session store) without the client knowing yet -- self-heal
+      // instead of surfacing a raw network error, since "Log out (demo)" in
+      // the header would otherwise keep lying about being signed in.
+      state.authenticated = false;
+      updateAuthUI();
+      state.isRunning = false;
+      setRunBtn(false);
+      openLoginModal();
+      return;
+    }
     appendTrace({ step: 1, component: 'Network', layer: 'error', status: 'error',
                   message: `Request failed: ${e.message}`, final: true });
     state.isRunning = false;
