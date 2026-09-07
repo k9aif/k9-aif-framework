@@ -102,7 +102,7 @@ spec:
     - name: K9_PG_DB
       value: "eoc"
     - name: K9_PG_USER
-      value: "eoc_user"
+      value: "postgres"
     - name: K9_PG_PASSWORD
       valueFrom:
         secretKeyRef:
@@ -196,7 +196,7 @@ spec:
     - name: K9_PG_DB
       value: "eoc"
     - name: K9_PG_USER
-      value: "eoc_user"
+      value: "postgres"
     - name: K9_PG_PASSWORD
       valueFrom:
         secretKeyRef:
