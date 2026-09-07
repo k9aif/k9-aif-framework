@@ -7,26 +7,35 @@ inference:
     provider: "ollama"
     base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
+      # qwen3.8:27b is a hybrid reasoning model that can spend its *entire*
+      # max_tokens budget on an invisible "thinking" field before any real
+      # "response" text is produced -- think: false skips that phase and
+      # puts the full budget into the actual answer instead (same issue
+      # and fix already confirmed for DAS against this exact model).
       general:
-        model: "qwen2.5:32b"
+        model: "qwen3.8:27b"
         temperature: 0.3
         max_tokens: 2048
+        think: false
       reasoning:
-        model: "qwen2.5:32b"
+        model: "qwen3.8:27b"
         temperature: 0.2
         max_tokens: 4096
+        think: false
       guardian:
         model: "granite4.1-guardian:8b"
         temperature: 0.0
         max_tokens: 1024
       extraction:
-        model: "qwen2.5:32b"
+        model: "qwen3.8:27b"
         temperature: 0.1
         max_tokens: 2048
+        think: false
       code:
-        model: "qwen2.5:32b"
+        model: "qwen3.8:27b"
         temperature: 0.1
         max_tokens: 4096
+        think: false
 
   router:
     type: k9_model_router
