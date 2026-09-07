@@ -18,6 +18,7 @@
 #   K9_KAFKA_BROKERS  — comma-separated broker list (default: localhost:9092)
 
 import asyncio
+import json
 import logging
 import os
 from pathlib import Path
@@ -78,6 +79,22 @@ def _publish_hil_escalation(
     priority = ticket.get("priority", "high")
     priority = _HIL_PRIORITY_MAP.get(priority, priority)
 
+    # ticket["context_payload"] is a JSON *string* (that's the shape
+    # eoc.escalation_tickets needs) -- publish it parsed back into a dict so
+    # HIL's UI renders real fields instead of one big escaped JSON blob
+    # inside a JSON blob.
+    try:
+        context = json.loads(ticket.get("context_payload") or "{}")
+    except (TypeError, ValueError):
+        context = {}
+
+    hil_payload = {
+        "ticket_id": ticket.get("ticket_id"),
+        "agent_name": ticket.get("agent_name"),
+        "confidence_score": ticket.get("confidence_score"),
+        **context,
+    }
+
     message = {
         "title": f"Escalated {event_type} — {ticket.get('ticket_id', 'unknown')}",
         "description": escalation.get("escalation_reason") or "Escalated by EscalationAgent",
@@ -85,7 +102,7 @@ def _publish_hil_escalation(
         "reply_to": HIL_REPLY_TO,
         "correlation_id": corr or event_id,
         "priority": priority,
-        "payload": ticket,
+        "payload": hil_payload,
         "pii": bool(guard.get("pii_detected", False)),
         "pii_fields": [f.get("type") for f in pii_findings] or None,
     }
