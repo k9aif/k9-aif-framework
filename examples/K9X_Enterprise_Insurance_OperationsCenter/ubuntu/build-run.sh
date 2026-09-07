@@ -17,6 +17,29 @@
 
 set -euo pipefail
 
+# `podman play kube`'s secretKeyRef resolution reads the Podman secret's
+# raw content and unmarshals it as a full Kubernetes Secret manifest (not
+# a bare value) — a secret created via `podman secret create name -` with
+# just the plaintext password fails at deploy time with "not valid
+# JSON/YAML ... cannot unmarshal string into Go value of type v1.Secret".
+# This builds the actual expected shape instead.
+json_escape() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  printf '%s' "$s"
+}
+
+create_k8s_secret() {
+  local name="$1" key="$2" value="$3"
+  if podman secret exists "$name" 2>/dev/null; then
+    podman secret rm "$name"
+  fi
+  printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s"},"type":"Opaque","stringData":{"%s":"%s"}}' \
+    "$(json_escape "$name")" "$(json_escape "$key")" "$(json_escape "$value")" \
+    | podman secret create "$name" -
+}
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 EOC_DIR="$REPO_ROOT/examples/K9X_Enterprise_Insurance_OperationsCenter"
@@ -41,19 +64,13 @@ case "$cmd" in
 
     # Neo4j password
     NEO4J_PW=$(grep -E '^NEO4J_PASSWORD=' "$ENV_FILE" | cut -d= -f2- | tr -d '[:space:]')
-    if podman secret exists neo4j-password 2>/dev/null; then
-      podman secret rm neo4j-password
-    fi
-    printf '%s' "$NEO4J_PW" | podman secret create neo4j-password -
+    create_k8s_secret neo4j-password neo4j-password "$NEO4J_PW"
     echo "Secret 'neo4j-password' stored."
 
     # Postgres password
     PG_PW=$(grep -E '^K9_PG_PASSWORD=' "$ENV_FILE" | cut -d= -f2- | tr -d '[:space:]')
     if [[ -n "$PG_PW" ]]; then
-      if podman secret exists pg-password 2>/dev/null; then
-        podman secret rm pg-password
-      fi
-      printf '%s' "$PG_PW" | podman secret create pg-password -
+      create_k8s_secret pg-password pg-password "$PG_PW"
       echo "Secret 'pg-password' stored."
     else
       echo "Warning: K9_PG_PASSWORD not found in .env — pg-password secret not created"
