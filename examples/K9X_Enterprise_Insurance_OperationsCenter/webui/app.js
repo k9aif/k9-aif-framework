@@ -17,6 +17,7 @@ const state = {
   sseSource:    null,
   lastTrace:    [],
   bizMode:      false,
+  authenticated: false,
 };
 
 // Indexed trace data for drawer lookup: stepNum → step object
@@ -85,18 +86,32 @@ const BIZ_VOCAB = {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 async function init() {
-  // /health is public; safe to run regardless of auth state.
+  // Everything on this page (scenarios, architecture, model routing,
+  // governance, etc.) is public/read-only -- only the actual Run Scenario
+  // action requires login, gated separately in runScenario().
   checkHealth();
   try {
     const auth = await apiFetch('/api/auth/check');
-    if (auth.authenticated) {
-      document.getElementById('login-overlay').style.display = 'none';
-      await loadDashboard();
-    }
-    // else: leave the login overlay showing; handleLogin() takes it from here.
+    state.authenticated = !!auth.authenticated;
   } catch (e) {
-    console.error('Auth check failed:', e);
+    state.authenticated = false;
   }
+  updateLoginPromptVisibility();
+  await loadDashboard();
+}
+
+function updateLoginPromptVisibility() {
+  const banner = document.getElementById('login-prompt-banner');
+  if (banner) banner.style.display = state.authenticated ? 'none' : 'block';
+}
+
+function openLoginModal() {
+  document.getElementById('login-modal-overlay').style.display = 'flex';
+}
+
+function closeLoginModal() {
+  document.getElementById('login-modal-overlay').style.display = 'none';
+  document.getElementById('login-error').textContent = '';
 }
 
 async function loadDashboard() {
@@ -127,7 +142,8 @@ async function handleLogout() {
   try {
     await fetch('/api/auth/logout', { method: 'POST' });
   } catch (e) { /* best-effort */ }
-  window.location.reload();
+  state.authenticated = false;
+  updateLoginPromptVisibility();
 }
 
 async function handleLogin(event) {
@@ -147,8 +163,9 @@ async function handleLogin(event) {
       errEl.textContent = e.detail || 'Login failed';
       return false;
     }
-    document.getElementById('login-overlay').style.display = 'none';
-    await loadDashboard();
+    state.authenticated = true;
+    closeLoginModal();
+    updateLoginPromptVisibility();
   } catch (e) {
     errEl.textContent = 'Network error — please try again';
   }
@@ -287,6 +304,11 @@ function resetPayload() {
 // ─── Run scenario ─────────────────────────────────────────────────────────────
 async function runScenario() {
   if (!state.selected || state.isRunning) return;
+
+  if (!state.authenticated) {
+    openLoginModal();
+    return;
+  }
 
   let payload;
   try {

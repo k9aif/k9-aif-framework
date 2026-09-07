@@ -475,7 +475,7 @@ async def submit_customer_interaction(event: CustomerInteractionEvent):
 # ============================================================
 # Audit
 # ============================================================
-@app.get("/audit/query", tags=["Audit"], dependencies=[Depends(require_session)])
+@app.get("/audit/query", tags=["Audit"])
 async def query_audit(
     correlation_id: Optional[str] = Query(None, description="Filter by correlation ID"),
     event_id: Optional[str] = Query(None, description="Filter by event ID"),
@@ -548,7 +548,7 @@ def _db_resolve_ticket(ticket_id: str, resolution: str, operator_id: str) -> boo
         return False
 
 
-@app.get("/escalation/queue", tags=["Escalation"], dependencies=[Depends(require_session)])
+@app.get("/escalation/queue", tags=["Escalation"])
 async def get_escalation_queue(status: str = "open"):
     """
     Return HITL escalation tickets from the eoc.escalation_tickets table.
@@ -607,7 +607,7 @@ async def resolve_escalation(ticket_id: str, body: EscalationResolveRequest):
 # ============================================================
 # SSE Live Event Stream
 # ============================================================
-@app.get("/events/stream", tags=["Dashboard"], dependencies=[Depends(require_session)])
+@app.get("/events/stream", tags=["Dashboard"])
 async def event_stream():
     """
     Server-Sent Events stream for the EOC Operations Dashboard.
@@ -637,7 +637,7 @@ async def event_stream():
 # ============================================================
 # Recent Events (for dashboard polling fallback)
 # ============================================================
-@app.get("/events/recent", tags=["Dashboard"], dependencies=[Depends(require_session)])
+@app.get("/events/recent", tags=["Dashboard"])
 async def recent_events(limit: int = Query(50, ge=1, le=200)):
     """Return the most recent N events from the in-process event log."""
     return {
@@ -893,7 +893,7 @@ def _extract_trace(event_type: str, result: Dict[str, Any]) -> List[Dict[str, An
 # Architecture Demo Endpoints
 # ============================================================
 
-@app.get("/api/eoc/scenarios", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
+@app.get("/api/eoc/scenarios", tags=["Architecture Demo"])
 async def get_scenarios():
     """
     Return all seven EOC event scenarios with metadata and sample payloads.
@@ -1007,7 +1007,7 @@ async def run_scenario(body: ScenarioRunRequest):
     )
 
 
-@app.get("/api/eoc/architecture", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
+@app.get("/api/eoc/architecture", tags=["Architecture Demo"])
 async def get_architecture():
     """
     Return the full K9-AIF EOC architecture metadata.
@@ -1084,7 +1084,7 @@ def _build_model_routing() -> Dict[str, Any]:
     return routing
 
 
-@app.get("/api/eoc/config-summary", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
+@app.get("/api/eoc/config-summary", tags=["Architecture Demo"])
 async def get_config_summary():
     """Return a sanitised summary of the runtime configuration."""
     return {
@@ -1114,7 +1114,7 @@ async def get_config_summary():
     }
 
 
-@app.get("/api/eoc/graph", tags=["Architecture Demo"], dependencies=[Depends(require_session)])
+@app.get("/api/eoc/graph", tags=["Architecture Demo"])
 async def get_execution_graph(
     event_type: Optional[str] = Query(None, description="Event type filter for execution-path view"),
     view: Optional[str] = Query(None, description="Graph view: architecture | entities | fraud_network"),
