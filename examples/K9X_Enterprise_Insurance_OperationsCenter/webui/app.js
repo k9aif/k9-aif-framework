@@ -96,13 +96,24 @@ async function init() {
   } catch (e) {
     state.authenticated = false;
   }
-  updateLoginPromptVisibility();
+  updateAuthUI();
   await loadDashboard();
 }
 
-function updateLoginPromptVisibility() {
+function updateAuthUI() {
   const banner = document.getElementById('login-prompt-banner');
   if (banner) banner.style.display = state.authenticated ? 'none' : 'block';
+
+  const btn = document.getElementById('auth-status-btn');
+  if (btn) btn.textContent = state.authenticated ? 'Log out (demo)' : 'Login';
+}
+
+function handleAuthStatusClick() {
+  if (state.authenticated) {
+    handleLogout();
+  } else {
+    openLoginModal();
+  }
 }
 
 function openLoginModal() {
@@ -143,7 +154,7 @@ async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
   } catch (e) { /* best-effort */ }
   state.authenticated = false;
-  updateLoginPromptVisibility();
+  updateAuthUI();
 }
 
 async function handleLogin(event) {
@@ -165,7 +176,7 @@ async function handleLogin(event) {
     }
     state.authenticated = true;
     closeLoginModal();
-    updateLoginPromptVisibility();
+    updateAuthUI();
   } catch (e) {
     errEl.textContent = 'Network error — please try again';
   }
