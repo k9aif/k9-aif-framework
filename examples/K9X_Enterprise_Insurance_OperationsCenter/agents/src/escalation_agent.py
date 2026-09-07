@@ -47,8 +47,13 @@ class EscalationAgent(BaseAgent):
         correlation_id = payload.get("correlation_id") or str(uuid.uuid4())
         event_id = payload.get("event_id") or str(uuid.uuid4())
 
-        # read confidence from flat payload or from accumulated adjudication/intent result
-        adj = payload.get("adjudication") or payload.get("intent") or {}
+        # read confidence from flat payload or from accumulated adjudication/intent/
+        # fraud_assessment result (FraudDetectionAgent sets confidence == risk_score —
+        # "risk score is the confidence signal for fraud", see fraud_detection_agent.py).
+        # Falling back to 1.0 when none apply previously made every fraud-only
+        # escalation ticket show a misleadingly "fully confident" 1.0.
+        fraud = payload.get("fraud_assessment") or {}
+        adj = payload.get("adjudication") or payload.get("intent") or fraud or {}
         confidence = float(
             payload["confidence"] if "confidence" in payload
             else adj.get("confidence", 1.0)
@@ -66,7 +71,6 @@ class EscalationAgent(BaseAgent):
         # risk_score comes from FraudDetectionAgent's result_key ("fraud_assessment")
         # in RiskAssessmentSquad, but read a flat fallback too so any other squad
         # that surfaces a top-level risk_score is covered without a code change.
-        fraud = payload.get("fraud_assessment") or {}
         risk_score_raw = fraud.get("risk_score", payload.get("risk_score"))
         risk_score = float(risk_score_raw) if risk_score_raw is not None else None
         high_risk = risk_score is not None and risk_score >= self._risk_threshold
@@ -79,7 +83,9 @@ class EscalationAgent(BaseAgent):
         )
 
         ticket_id = None
-        escalation_reason = self._build_reason(confidence, guard_failed, force_escalate, risk_score, high_risk)
+        escalation_reason = self._build_reason(
+            confidence, guard_failed, force_escalate, risk_score, high_risk, fraud
+        )
 
         if should_escalate:
             ticket_id = f"ESC-{uuid.uuid4().hex[:8].upper()}"
@@ -88,11 +94,11 @@ class EscalationAgent(BaseAgent):
                 "event_id": event_id,
                 "event_type": payload.get("event_type", "unknown"),
                 "squad_id": payload.get("squad_id", "unknown"),
-                "agent_name": payload.get("source_agent", "unknown"),
+                "agent_name": payload.get("source_agent") or self._infer_source_agent(payload),
                 "reason": escalation_reason,
                 "confidence_score": confidence,
-                "context_payload": json.dumps(self._safe_context(payload)),
-                "agent_rationale": payload.get("rationale", ""),
+                "context_payload": json.dumps(self._safe_context(payload, fraud)),
+                "agent_rationale": payload.get("rationale") or fraud.get("rationale", ""),
                 "priority": self._derive_priority(confidence, guard_failed, risk_score),
                 "status": "open",
                 "correlation_id": correlation_id,
@@ -157,6 +163,7 @@ class EscalationAgent(BaseAgent):
     def _build_reason(
         self, confidence: float, guard_failed: bool, forced: bool,
         risk_score: Optional[float], high_risk: bool,
+        fraud: Optional[Dict[str, Any]] = None,
     ) -> str:
         reasons = []
         if forced:
@@ -166,7 +173,11 @@ class EscalationAgent(BaseAgent):
         if guard_failed:
             reasons.append("guard check failed (PII or policy violation)")
         if high_risk:
-            reasons.append(f"risk score {risk_score:.2f} at/above threshold {self._risk_threshold}")
+            signals = (fraud or {}).get("signals") or []
+            signal_str = f" [{', '.join(signals[:3])}]" if signals else ""
+            reasons.append(
+                f"risk score {risk_score:.2f} at/above threshold {self._risk_threshold}{signal_str}"
+            )
         return "; ".join(reasons) if reasons else "unknown"
 
     def _derive_priority(self, confidence: float, guard_failed: bool, risk_score: Optional[float] = None) -> str:
@@ -178,10 +189,35 @@ class EscalationAgent(BaseAgent):
             return "normal"
         return "low"
 
-    def _safe_context(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _infer_source_agent(self, payload: Dict[str, Any]) -> str:
+        """Best-effort attribution when the flow didn't set source_agent explicitly."""
+        if "fraud_assessment" in payload:
+            return "FraudDetectionAgent"
+        if "adjudication" in payload:
+            return "AdjudicationAgent"
+        if "intent" in payload:
+            return "ClaimsTriageAgent"
+        return "unknown"
+
+    def _safe_context(self, payload: Dict[str, Any], fraud: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        # Flat event fields — includes both amount spellings scenarios use
+        # (amount / amount_claimed) plus the fields that actually explain a
+        # fraud alert (severity, alert_source, description). Without these a
+        # ticket only ever showed "risk score 0.98" with no supporting
+        # narrative for a human reviewer to act on.
         safe_keys = [
-            "claim_id", "event_id", "event_type", "squad_id",
-            "priority", "claim_type", "decision", "confidence",
-            "completeness_score", "coverage_match", "correlation_id",
+            "claim_id", "claimant_id", "policy_id", "event_id", "event_type",
+            "squad_id", "priority", "claim_type", "amount", "amount_claimed",
+            "severity", "alert_source", "description",
+            "decision", "confidence", "completeness_score", "coverage_match",
+            "correlation_id",
         ]
-        return {k: payload[k] for k in safe_keys if k in payload}
+        ctx = {k: payload[k] for k in safe_keys if k in payload}
+
+        fraud = fraud if fraud is not None else (payload.get("fraud_assessment") or {})
+        if fraud:
+            ctx["risk_score"] = fraud.get("risk_score")
+            ctx["fraud_signals"] = fraud.get("signals")
+            ctx["fraud_recommendation"] = fraud.get("recommendation")
+            ctx["fraud_rationale"] = fraud.get("rationale")
+        return ctx
