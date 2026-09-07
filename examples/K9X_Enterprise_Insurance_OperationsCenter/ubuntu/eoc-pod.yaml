@@ -45,7 +45,7 @@ metadata:
     component: operations-center
     version: "0.1"
   annotations:
-    description: "K9-AIF Enterprise Insurance Operations Center — 3-container pod"
+    description: "K9-AIF EOC — Insurance Operations Center (3 containers)"
 
 spec:
   restartPolicy: OnFailure
