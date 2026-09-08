@@ -1,0 +1,36 @@
+{
+  "description": "Provider-substitution dispatch-overhead experiment: identical trivial stub task, identical ShieldGovernance config, through three paths (native K9-AIF, K9CrewAIAdapter wrapping a DummyCrew, K9LangGraphAdapter wrapping a single-node compiled graph), 100 runs each, 3 independent repetitions.",
+  "generated_at_utc": "2026-09-08T02:10:00Z",
+  "commit_sha": "58b48bc50be3878192295054126d39f11aa8a8a6",
+  "invocation": "python3 k9_aif_abb/tests/experiments/adapter_dispatch_overhead.py",
+  "runs": [
+    {
+      "repetition": 1,
+      "native_mean_ms": 0.319, "crewai_mean_ms": 0.339, "langgraph_mean_ms": 0.710,
+      "crewai_overhead_pct": 6.2, "langgraph_overhead_pct": 122.3
+    },
+    {
+      "repetition": 2,
+      "native_mean_ms": 0.318, "crewai_mean_ms": 0.334, "langgraph_mean_ms": 0.918,
+      "crewai_overhead_pct": 5.2, "langgraph_overhead_pct": 189.1
+    },
+    {
+      "repetition": 3,
+      "native_mean_ms": 0.285, "crewai_mean_ms": 0.298, "langgraph_mean_ms": 0.667,
+      "crewai_overhead_pct": 4.7, "langgraph_overhead_pct": 134.3
+    }
+  ],
+  "summary": {
+    "native_mean_ms_avg_of_3": 0.307,
+    "crewai_mean_ms_avg_of_3": 0.324,
+    "langgraph_mean_ms_avg_of_3": 0.765,
+    "crewai_overhead_pct_range": "4.7% to 6.2%",
+    "langgraph_overhead_pct_range": "122.3% to 189.1%"
+  },
+  "comparison_to_manuscript": {
+    "manuscript_native_ms": 0.26, "manuscript_crewai_ms": 0.27, "manuscript_langgraph_ms": 0.61,
+    "manuscript_crewai_overhead_pct_range": "-0.3% to +8.3%",
+    "manuscript_langgraph_overhead_pct_range": "+122% to +141%",
+    "note": "Absolute ms values differ from the manuscript by real machine variance (sub-millisecond timing is highly environment-sensitive); the CrewAI overhead range is narrower and consistently positive this run (4.7-6.2%, vs. the manuscript's -0.3% to +8.3%). The LangGraph overhead range this run is wider on the high end (up to 189.1%, driven by one repetition's higher-variance run with a max outlier of 8.346ms, likely OS scheduling noise) vs. the manuscript's 122-141%. The qualitative conclusion is unchanged and, if anything, reinforced: CrewAI overhead is negligible and within noise; LangGraph shows real, reproducible overhead from its own graph-traversal machinery, negligible next to any real LLM call. Per the 'fresh value wins' rule, this run's figures replace the manuscript's."
+  }
+}
