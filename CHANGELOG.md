@@ -4,6 +4,81 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.10.7] — 2026-09-19
+
+### Fixed
+
+- **k9x_Shield was configured but never invoked on the two most commonly
+  generated agent patterns.** `BaseValidationLoopAgent.execute()` and
+  `BaseCriticActorAgent.execute()` never called `apply_pre_governance()`/
+  `apply_post_governance()` — every generated agent constructs
+  `ShieldGovernance` in `__init__` and it simply sat there, configured and
+  inert, regardless of `security.shield.enabled`. `execute()` on both
+  classes renamed to `_execute_loop()` (logic unchanged) and wrapped with
+  real governance calls; a blocked payload never enters the loop (zero LLM
+  cost); egress scans only the agent's actual output, never the full
+  result dict — `steps[]`/`evidence[]` legitimately duplicate content
+  across iterations by design (audit trail) and made
+  `SemanticDriftCheck`'s loop-trap heuristic false-positive on completely
+  benign multi-iteration runs, confirmed against a real generated
+  scaffold, not a hypothetical.
+- **`ProfanityGovernance` replaced outright, not patched again.** Already
+  had three rounds of fixes in 1.9.0 (await bug, wrong `LLMFactory`
+  method, contract shape) that didn't catch the deeper problem: it read
+  `payload.get("text", "")` (generated agents use `"query"`, so it always
+  saw an empty string) and checked for a `"SAFE"`/`"BLOCKED"` free-text
+  response format that `granite4.1-guardian:8b` never actually produces —
+  confirmed the real model always answers `<score>yes|no</score>`
+  regardless of prompt wording. Its own test suite mocked exactly those
+  wrong assumptions, so it kept passing while remaining non-functional
+  against the real model. Now an alias for the new `GuardianGovernance`
+  (see Added below) — every existing call site (both generator templates,
+  every already-generated scaffold) keeps working unchanged and starts
+  actually working.
+- **PyPI package shipped zero `.md` files, ever, including the entire
+  `k9_security/docs/` set and the Claude Agent SDK adapter's own
+  `CLAUDE.md`.** `package-data` only listed `**/*.yaml`/`**/*.json`/
+  `**/*.sql`. Confirmed by inspecting the already-published 1.10.6 wheel
+  directly — 0 `.md` files present. Added `**/*.md`. Root-level
+  `CLAUDE.md`/`SKILLS.md` are outside the `k9_aif_abb` package tree
+  entirely (so no `package-data` glob could ever reach them) — added as
+  symlinks (`k9_aif_abb/CLAUDE.md` → `../CLAUDE.md`,
+  `k9_aif_abb/SKILLS.md` → `../SKILLS.md`), verified the build correctly
+  dereferences them to real content, not broken links. A `pip install
+  k9-aif` now carries the same context a git checkout does — the point
+  being a Solutions Architect opening a generated scaffold in an IDE with
+  a coding assistant gets the framework's own governance/security
+  documentation automatically, not just the source.
+
+### Added
+
+- **`GuardianGovernance`** (`k9_governance/guardian_governance.py`) — real
+  semantic governance via Granite Guardian (`granite4.1-guardian:8b`),
+  promoted from `k9x-ecosystem/k9x_satan` where it was built and proven
+  first against a real attack suite (same one-way harvesting process
+  already used for 5 vulnerability checks in 1.9.0). Correctly parses the
+  model's actual `<score>yes|no</score>` output format. Proper
+  `on_unavailable` policy (`fail_closed` default | `fail_open` |
+  `inconclusive`) — a timeout/HTTP-error/unreachable Ollama never silently
+  becomes "SAFE." Verified live against a real endpoint: a fully
+  paraphrased social-engineering attempt with zero Shield regex keywords
+  was correctly blocked — the paraphrase-evasion coverage pattern-matching
+  structurally cannot provide.
+- **`BaseOrchestrator.apply_shield()`** — mirrors `apply_zero_trust()`'s
+  shape. Most generated scaffolds have no Router layer at all (confirmed
+  absent in a real generated AP scaffold); the Orchestrator is the actual
+  outermost boundary, and previously had no Shield gate of its own, only
+  Zero Trust's.
+- **`k9_utils/guardian_check.py`** — startup-time check: is the
+  configured Guardian model actually pulled on the configured Ollama
+  endpoint? Doesn't raise on its own (callers decide what "not available"
+  means for them) but is meant to be the first thing a solution's entry
+  point checks, before anything else runs.
+- **`test_framework.sh`** (renamed from `test_squads.sh`, which already
+  ran the full suite despite its name) — `pytest k9_aif_abb/tests -v`.
+
+---
+
 ## [1.10.0] — 2026-07-27
 
 ### Added
