@@ -20,30 +20,20 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
+from k9_aif_abb.k9_utils.trace_events import register_trace_callback, emit_trace_event
 
 log = logging.getLogger(__name__)
 
-# Optional trace callback — registered by the application at startup.
-# Signature: (event: dict) -> None
-_trace_callback: Optional[Callable[[Dict[str, Any]], None]] = None
-
-
-def register_trace_callback(fn: Callable[[Dict[str, Any]], None]) -> None:
-    """
-    Register a callback that receives an LLMCall event dict after every
-    successful invocation.  Call once at application startup.
-
-    The callback is fire-and-forget: exceptions are caught and logged so
-    a failing callback never breaks agent execution.
-    """
-    global _trace_callback
-    _trace_callback = fn
-    log.info("[llm_invoke] trace callback registered: %s", fn)
+# register_trace_callback/emit_trace_event now live in trace_events.py (a
+# shared bus also used by ShieldGovernance/GuardianGovernance/apply_zero_trust)
+# — re-exported here for backward compatibility with existing callers doing
+# `from k9_aif_abb.k9_utils.llm_invoke import register_trace_callback`.
+__all__ = ["register_trace_callback", "emit_trace_event", "llm_invoke", "llm_invoke_stream"]
 
 
 def llm_invoke(
@@ -119,21 +109,29 @@ def llm_invoke(
             f"model={resp.model_alias}) after {max_retries} attempt(s): {resp.output}"
         )
 
-    if _trace_callback is not None:
-        try:
-            tokens = (resp.token_usage or {}) if resp.token_usage else {}
-            _trace_callback({
-                "type":       "LLMCall",
-                "agent":      (request.metadata or {}).get("agent", "unknown"),
-                "task_type":  request.task_type or "general",
-                "model":      resp.model_alias or "?",
-                "provider":   resp.provider or "unknown",
-                "latency_ms": resp.latency_ms or elapsed_ms,
-                "tokens_in":  tokens.get("prompt", tokens.get("input")),
-                "tokens_out": tokens.get("completion", tokens.get("output")),
-            })
-        except Exception as exc:
-            log.warning("[llm_invoke] trace callback failed: %s", exc)
+    tokens = (resp.token_usage or {}) if resp.token_usage else {}
+    # resp.model_alias is the router's catalog key (e.g. "reasoning"), not the
+    # literal model name — resolve the real model string from config so the
+    # trace event says "granite3-dense:8b", not just "reasoning".
+    model_catalog = config.get("inference", {}).get("llm_factory", {}).get("models", {})
+    catalog_entry = model_catalog.get(resp.model_alias) if resp.model_alias else None
+    if isinstance(catalog_entry, dict):
+        real_model = catalog_entry.get("model")
+    elif isinstance(catalog_entry, str):
+        real_model = catalog_entry
+    else:
+        real_model = None
+    emit_trace_event({
+        "type":       "LLMCall",
+        "agent":      (request.metadata or {}).get("agent", "unknown"),
+        "task_type":  request.task_type or "general",
+        "model":      real_model or resp.model_alias or "?",
+        "model_alias": resp.model_alias,
+        "provider":   resp.provider or "unknown",
+        "latency_ms": resp.latency_ms or elapsed_ms,
+        "tokens_in":  tokens.get("prompt", tokens.get("input")),
+        "tokens_out": tokens.get("completion", tokens.get("output")),
+    })
 
     log.info(
         "[llm_invoke] agent=%s task=%s model=%s latency_ms=%d",
@@ -178,18 +176,14 @@ async def llm_invoke_stream(config: Dict[str, Any], request: InferenceRequest):
 
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 
-    if _trace_callback is not None:
-        try:
-            _trace_callback({
-                "type":       "LLMCall",
-                "agent":      (request.metadata or {}).get("agent", "unknown"),
-                "task_type":  request.task_type or "general",
-                "model":      request.metadata.get("model_alias") if request.metadata else None,
-                "latency_ms": elapsed_ms,
-                "streamed":   True,
-            })
-        except Exception as exc:
-            log.warning("[llm_invoke_stream] trace callback failed: %s", exc)
+    emit_trace_event({
+        "type":       "LLMCall",
+        "agent":      (request.metadata or {}).get("agent", "unknown"),
+        "task_type":  request.task_type or "general",
+        "model":      request.metadata.get("model_alias") if request.metadata else None,
+        "latency_ms": elapsed_ms,
+        "streamed":   True,
+    })
 
     log.info(
         "[llm_invoke_stream] agent=%s task=%s latency_ms=%d chunks=%d",

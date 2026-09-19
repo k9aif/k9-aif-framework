@@ -421,21 +421,27 @@ class TestLlmInvokeUtility:
         assert callable(register_trace_callback)
 
     def test_register_trace_callback_stores_fn(self):
+        # register_trace_callback/_trace_callback now live in trace_events.py
+        # (a shared bus also used by ShieldGovernance/GuardianGovernance/
+        # apply_zero_trust) — llm_invoke.py re-exports register_trace_callback
+        # for backward compatibility but no longer owns the module attribute.
         import k9_aif_abb.k9_utils.llm_invoke as mod
-        original = mod._trace_callback
+        import k9_aif_abb.k9_utils.trace_events as events_mod
+        original = events_mod._trace_callback
         try:
             cb = MagicMock()
             mod.register_trace_callback(cb)
-            assert mod._trace_callback is cb
+            assert events_mod._trace_callback is cb
         finally:
-            mod._trace_callback = original
+            events_mod._trace_callback = original
 
     def test_callback_is_called_on_successful_invoke(self):
         import k9_aif_abb.k9_utils.llm_invoke as mod
+        import k9_aif_abb.k9_utils.trace_events as events_mod
         from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
         from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 
-        original = mod._trace_callback
+        original = events_mod._trace_callback
         try:
             cb = MagicMock()
             mod.register_trace_callback(cb)
@@ -460,7 +466,7 @@ class TestLlmInvokeUtility:
             assert event["type"] == "LLMCall"
             assert event["model"] == "test-model"
         finally:
-            mod._trace_callback = original
+            events_mod._trace_callback = original
 
     def test_raises_on_warn_response_after_exhausting_retries(self):
         import k9_aif_abb.k9_utils.llm_invoke as mod

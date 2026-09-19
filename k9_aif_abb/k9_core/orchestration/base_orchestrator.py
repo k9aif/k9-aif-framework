@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
+from k9_aif_abb.k9_utils.trace_events import emit_trace_event
 
 
 def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
@@ -228,6 +229,10 @@ class BaseOrchestrator(ABC):
         """
 
         if not self.enable_zero_trust:
+            emit_trace_event({
+                "type": "ZeroTrust", "agent": self.layer, "decision": "BYPASSED",
+                "allowed": True, "risk": 0.0, "reason": "Zero Trust disabled",
+            })
             return {
                 "allowed": True,
                 "decision": "BYPASSED",
@@ -241,6 +246,10 @@ class BaseOrchestrator(ABC):
             self.logger.warning(
                 "[ZeroTrust] Enabled but zero trust package is unavailable. Bypassing."
             )
+            emit_trace_event({
+                "type": "ZeroTrust", "agent": self.layer, "decision": "UNAVAILABLE_BYPASS",
+                "allowed": True, "risk": 0.0, "reason": "Zero Trust package unavailable",
+            })
             return {
                 "allowed": True,
                 "decision": "UNAVAILABLE_BYPASS",
@@ -262,6 +271,10 @@ class BaseOrchestrator(ABC):
             decision.risk_score,
             decision.reason,
         )
+        emit_trace_event({
+            "type": "ZeroTrust", "agent": self.layer, "decision": decision.decision.value,
+            "allowed": decision.allowed, "risk": decision.risk_score, "reason": decision.reason,
+        })
 
         return {
             "allowed": decision.allowed,

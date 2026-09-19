@@ -55,11 +55,13 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 from typing import Any, Dict, Optional
 
 import requests
 
 from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
+from k9_aif_abb.k9_utils.trace_events import emit_trace_event
 
 log = logging.getLogger("governance.guardian")
 
@@ -134,7 +136,7 @@ class GuardianGovernance(BaseGovernance):
             self._model, self._base, self._on_unavailable,
         )
 
-    def _call_guardian(self, system_prompt: str, content: str) -> tuple:
+    def _call_guardian(self, system_prompt: str, content: str, phase: str, agent: str) -> tuple:
         """POST to Ollama's guardian model. Returns (verdict, reason) where
         verdict is one of "SAFE", "UNSAFE", "UNAVAILABLE" — connection
         failure, non-2xx, or an unparseable response all return
@@ -142,6 +144,7 @@ class GuardianGovernance(BaseGovernance):
         check to "SAFE" would let a payload through on the strength of a
         check that never actually ran."""
         prompt = f"{system_prompt}\n\nContent to assess:\n{content[:4000]}"
+        t0 = time.monotonic()
         try:
             resp = requests.post(
                 f"{self._base}/api/generate",
@@ -150,10 +153,14 @@ class GuardianGovernance(BaseGovernance):
             )
         except requests.exceptions.RequestException as exc:
             log.warning("[GuardianGovernance] unreachable: %s — Guardian unavailable", exc)
+            self._emit_call_event(phase, agent, int((time.monotonic() - t0) * 1000), "UNAVAILABLE")
             return "UNAVAILABLE", f"guardian offline: {exc}"
+
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
 
         if not resp.ok:
             log.warning("[GuardianGovernance] HTTP %d — Guardian unavailable", resp.status_code)
+            self._emit_call_event(phase, agent, elapsed_ms, "UNAVAILABLE")
             return "UNAVAILABLE", f"guardian HTTP {resp.status_code}"
 
         text = resp.json().get("response", "").strip()
@@ -161,9 +168,23 @@ class GuardianGovernance(BaseGovernance):
         match = _SCORE_PATTERN.search(text)
         if match:
             risky = match.group(1).lower() == "yes"
-            return ("UNSAFE" if risky else "SAFE"), f"guardian score={match.group(1).lower()}"
+            verdict = "UNSAFE" if risky else "SAFE"
+            self._emit_call_event(phase, agent, elapsed_ms, verdict)
+            return verdict, f"guardian score={match.group(1).lower()}"
         log.warning("[GuardianGovernance] unparseable response: %r — Guardian unavailable", text[:200])
+        self._emit_call_event(phase, agent, elapsed_ms, "UNAVAILABLE")
         return "UNAVAILABLE", f"unparseable guardian response: {text[:100]!r}"
+
+    def _emit_call_event(self, phase: str, agent: str, latency_ms: int, verdict: str) -> None:
+        emit_trace_event({
+            "type": "LLMCall",
+            "agent": agent,
+            "task_type": f"guardian_{phase}",
+            "model": self._model,
+            "provider": "ollama",
+            "latency_ms": latency_ms,
+            "verdict": verdict,
+        })
 
     def pre_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  # type: ignore[override]
         """Screen incoming payload before the agent invokes the LLM."""
@@ -171,7 +192,7 @@ class GuardianGovernance(BaseGovernance):
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] pre_process agent=%s chars=%d", agent, len(text))
 
-        verdict, reason = self._call_guardian(_SYSTEM_PRE, text)
+        verdict, reason = self._call_guardian(_SYSTEM_PRE, text, phase="pre", agent=agent)
 
         if verdict == "UNSAFE":
             log.warning("[GuardianGovernance] PRE BLOCKED agent=%s — %s", agent, reason)
@@ -196,7 +217,7 @@ class GuardianGovernance(BaseGovernance):
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] post_process agent=%s chars=%d", agent, len(text))
 
-        verdict, reason = self._call_guardian(_SYSTEM_POST, text)
+        verdict, reason = self._call_guardian(_SYSTEM_POST, text, phase="post", agent=agent)
 
         if verdict == "UNSAFE":
             log.warning("[GuardianGovernance] POST BLOCKED agent=%s — %s", agent, reason)

@@ -136,24 +136,28 @@ already used independently in `k9_inference/routers/k9_model_router.py`
 and the CrewAI/LangGraph adapters. The framework doesn't share this helper
 from one place today; don't assume importing it from elsewhere will work.
 
-## Known false positives — one fixed, one open
+## Known false positives — both fixed
 
-1. **Fixed** (see above): `SemanticDriftCheck` on the full result dict
-   including `steps[]`/`evidence[]`.
+1. **Fixed**: `SemanticDriftCheck` on the full result dict including
+   `steps[]`/`evidence[]`.
 
-2. **Open, not yet fixed**: `ToolArgumentCheck`'s "Subshell injection"
-   pattern (`k9_security/vulnerability/checks/tool_argument_check.py`,
-   `` \$\(.*\)|`[^`]+` ``) matches **any pair of backticks**, including a
-   markdown code fence. LLM output routinely wraps JSON/code in
-   ` ```json ... ``` ` — confirmed this trips the pattern
-   (`` `[^`]+` `` matches the opening backtick of ` ```json`, everything up
-   to the next backtick, as "content between two backticks"). This is
-   intermittent — only fires on the runs where the LLM happens to use a
-   code fence — which makes it easy to miss in ad-hoc testing. Fix
-   direction agreed but not yet implemented: require backtick-quoted
-   content to look command-like (space + shell-like token), or exclude
-   triple-backtick fences specifically, rather than matching any backtick
-   pair.
+2. **Fixed 2026-09-19** (found live via the demo UI, on a real Anomaly
+   Detection run — `k9_security/vulnerability/checks/tool_argument_check.py`):
+   the old `` \$\(.*\)|`[^`]+` `` "Subshell injection" pattern matched
+   **any pair of backticks**, including a markdown code fence — LLM output
+   wrapping JSON/code in ` ```json ... ``` ` was flagged as a subshell
+   injection attempt (`` `[^`]+` `` matched the opening backtick of the
+   fence, everything up to the next backtick, as "content between two
+   backticks"). Fix: triple-backtick fenced blocks (`_CODE_FENCE`) are now
+   stripped before any pattern in the check runs; single/double backtick
+   content is still checked, but only when it looks command-like
+   (`_SHELL_HINT` — a known shell command word, or a `;`/`&`/`|`
+   metacharacter), not on any arbitrary backtick-quoted text. `$(...)`
+   subshell detection is unchanged. Regression tests:
+   `tests/test_tool_argument_check.py` — covers the exact fenced-JSON
+   shape that caused the live false positive, multiple fenced blocks,
+   benign inline-backtick identifiers (must pass), and real `$(...)` /
+   backtick-command / semicolon injection (must still block).
 
 ## Guardian (Granite Guardian, semantic LLM screening) — promoted, real, mandatory
 
