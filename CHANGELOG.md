@@ -4,6 +4,43 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.10.8] — 2026-09-19
+
+### Added
+
+- **`k9_utils/trace_events.py`** — a shared observability event bus
+  (`register_trace_callback`/`emit_trace_event`). Generalizes what was
+  previously a private, LLM-call-only callback inside `llm_invoke.py`
+  (kept as a backward-compatible re-export) so `ShieldGovernance` (full
+  per-check pass/flag/block/not-reached breakdown, previously computed
+  then discarded after logging), `GuardianGovernance` (pre/post LLM
+  calls, with verdict), and `BaseOrchestrator.apply_zero_trust()` all
+  emit through it too. Built for an application to get a real, structured
+  trace of a run — no log-scraping required.
+- `VulnerabilityChain.check_names` — names of every check configured in
+  a chain, in run order, including ones that never ran because an earlier
+  check blocked. Lets a trace consumer distinguish "ran and passed" from
+  "never reached."
+
+### Fixed
+
+- **`ToolArgumentCheck`'s "Subshell injection" pattern matched any pair of
+  backticks, including a markdown code fence** — LLM output wrapping
+  JSON/code in ` ```json ... ``` ` was flagged as a subshell injection
+  attempt, blocking completely benign runs. Fenced blocks are now
+  stripped before matching; real backtick/`$(...)` command injection
+  still blocks. Confirmed live against a real generated scaffold's
+  Anomaly Detection flow, not just a unit test.
+- `llm_invoke`'s `LLMCall` trace event now resolves the actual model name
+  from config (e.g. `granite3-dense:8b`) instead of the router's catalog
+  alias (`"reasoning"`), handling both the dict-shaped and flat-string
+  model-catalog config formats.
+
+546 → 549 framework tests pass (2 new since 1.10.7: `test_tool_argument_check.py`,
+plus 3 new `ShieldGovernance` trace-event tests).
+
+---
+
 ## [1.10.7] — 2026-09-19
 
 ### Fixed
