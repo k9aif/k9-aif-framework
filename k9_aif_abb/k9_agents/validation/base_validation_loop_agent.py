@@ -28,9 +28,11 @@ escalate_on_tool_error    : bool  — default False; if True, ESCALATE on run_va
                                     exception instead of FAIL
 """
 
+import asyncio
+import concurrent.futures
 import logging
 from abc import abstractmethod
-from typing import Any, Dict
+from typing import Any, Coroutine, Dict
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_agents.validation.models.validation_loop import (
@@ -45,6 +47,20 @@ log = logging.getLogger(__name__)
 _DEFAULT_MAX_ITERATIONS            = 5
 _DEFAULT_CONFIDENCE_THRESHOLD      = 0.8
 _DEFAULT_FINALIZE_ON_MAX           = True
+
+
+def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
+    """Run an async coroutine from sync code, safe whether or not a loop is
+    already running on this thread. Same pattern as
+    k9_inference/routers/k9_model_router.py's own _run_coro_sync — kept
+    local rather than imported since the framework doesn't share it from
+    one place today (three independent copies already exist)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 class BaseValidationLoopAgent(BaseAgent):
@@ -74,6 +90,69 @@ class BaseValidationLoopAgent(BaseAgent):
     # ------------------------------------------------------------------
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Governance-wrapped entry point. Applies Shield/governance
+        pre_process() to the incoming payload and post_process() to the
+        final result — the actual loop logic is unchanged, in
+        _execute_loop() below. A blocked payload never enters the loop (no
+        LLM calls spent); a blocked result never reaches the caller
+        un-redacted. See k9-aif-framework/CLAUDE.md's Security /
+        Vulnerability section for what "blocked" means here.
+        """
+        try:
+            payload = _run_coro_sync(self.apply_pre_governance(payload))
+        except PermissionError as exc:
+            self._emit("governance_blocked", {"phase": "pre", "reason": str(exc)})
+            return self._shield_blocked_dict(exc, phase="pre")
+
+        result = self._execute_loop(payload)
+
+        # Egress scans only the agent's actual output (its conclusion),
+        # never the full result dict. steps[]/evidence[] legitimately
+        # duplicate observation text across iterations by design (audit
+        # trail) — passing the whole dict to a naive repetition-detecting
+        # check (SemanticDriftCheck's loop-trap heuristic) produces false
+        # positives on completely benign multi-iteration runs, confirmed
+        # empirically. "Egress: after the LLM, before any tool executes"
+        # means the answer leaving the agent, not its internal bookkeeping.
+        try:
+            result["output"] = _run_coro_sync(self.apply_post_governance(result.get("output", {})))
+        except PermissionError as exc:
+            self._emit("governance_blocked", {"phase": "post", "reason": str(exc)})
+            # Redact only the output — iterations/steps/evidence/disposition
+            # from the real run are preserved for audit, matching k9x_satan's
+            # own established redaction pattern (agents.py's _post()).
+            result["disposition"] = ValidationDisposition.FAIL.value
+            result["output"] = {"governance_blocked": True, "phase": "post", "reason": str(exc)}
+
+        return result
+
+    def _shield_blocked_dict(self, exc: PermissionError, phase: str) -> Dict[str, Any]:
+        """Same shape _to_dict() produces, for a payload governance rejected
+        before the loop ever ran (no iterations happened, so there's
+        nothing real to preserve — unlike a post-phase block, see
+        execute()). Reuses FAIL rather than adding a new disposition value
+        — a governance block is a specific case of "the loop could not
+        produce a usable result." The check name that blocked it is already
+        embedded in `str(exc)` (Shield's own PermissionError message), not
+        re-parsed here."""
+        return {
+            "agent":            self.layer,
+            "disposition":      ValidationDisposition.FAIL.value,
+            "output":           {"governance_blocked": True, "phase": phase, "reason": str(exc)},
+            "iterations":       0,
+            "final_confidence": 0.0,
+            "evidence":         [],
+            "steps":            [],
+        }
+
+    # ------------------------------------------------------------------
+    # Internal — the loop itself, unchanged from before governance wrapping
+    # was added. Only renamed from execute() to _execute_loop(); no logic
+    # inside this method was touched.
+    # ------------------------------------------------------------------
+
+    def _execute_loop(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         max_iterations      = int(self.config.get("max_iterations", _DEFAULT_MAX_ITERATIONS))
         finalize_on_max     = self._parse_bool(
             self.config.get("finalize_on_max_iterations"), _DEFAULT_FINALIZE_ON_MAX

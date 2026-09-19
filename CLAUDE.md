@@ -70,6 +70,78 @@ Every agent gets a governance pipeline via `require_governance()` at init.
 `self.enforce_governance()` in `execute()` silently runs `NoopGovernance`
 even in production — the most common real bug in new agent code.
 
+**`enforce_governance()` does not run any checks.** It only asserts that
+governance isn't `NoopGovernance` — a "did anyone configure real governance
+at all" guard. The methods that actually run checks are
+`apply_pre_governance(payload)` / `apply_post_governance(result)`
+(`BaseAgent`, and identically on `BaseOrchestrator`/`BaseRouter` — separate,
+duplicated methods, not inherited from one place), which call
+`self.governance.pre_process`/`post_process`. **Neither is called
+automatically by any base class** — every concern (agent, orchestrator,
+router) must call them itself, same as `enforce_governance()`. Calling only
+`enforce_governance()` gives zero content-level protection even though it
+looks like "governance is on."
+
+## Security / Vulnerability (k9x_Shield) and Zero Trust
+
+Two independent, non-overlapping security layers ship in the framework —
+know which one a question is actually about before answering it:
+
+**k9x_Shield** (`k9_security/vulnerability/`) — 13 concrete
+`BaseVulnerabilityCheck` subclasses (`checks/`: `InputSizeCheck`,
+`PromptInjectionCheck`, `PIIBoundaryCheck`, `PIIRequestCheck`,
+`SemanticDriftCheck`, `ToolArgumentCheck`, `ToolAuthorizationCheck`,
+`ExecutionGuardCheck`, `HardcodedCredentialCheck`, `MemoryPoisoningCheck`,
+`SystemPromptLeakageCheck`, `OutputSanitizationCheck`,
+`RequestFrequencyCheck`), run in order by `VulnerabilityChain`
+(`vulnerability_chain.py`), wrapped by `ShieldGovernance`
+(`shield_governance.py`) — a concrete `pre_process`/`post_process`
+implementation, i.e. a drop-in `governance=` value for any `BaseAgent`/
+`BaseOrchestrator`/`BaseRouter`. A `BLOCK`-status check (or a `FLAG` when
+`strict=True`) makes `ShieldGovernance` **raise `PermissionError`** — that
+raise is the only block signal; there is no return-value sentinel. A `FLAG`
+under `strict=False` (the common config) just logs and lets the payload
+through unmodified — `ShieldGovernance` never mutates a passing payload.
+`fail_open` (default `True`) controls what happens if a check itself
+raises: `True` → treated as FLAG, `False` → treated as BLOCK.
+
+**The checks are correct and well-tested** (`tests/test_shield_governance.py`).
+**What is not automatic: nothing calls `apply_pre_governance`/
+`apply_post_governance` for you.** `BaseValidationLoopAgent.execute()` and
+`BaseCriticActorAgent.execute()` — the two most commonly generated agent
+patterns — do not call them anywhere in their loop. A generated agent that
+constructs `ShieldGovernance(config=config)` in `__init__` and passes it as
+`governance=` gets **zero enforcement** unless its own `execute()` (or an
+override) explicitly calls the hooks. Don't assume "this agent has
+`ShieldGovernance` wired" means anything is actually being checked — verify
+the hooks are called, not just that the object was constructed.
+
+**Zero Trust** (`k9_security/zero_trust/`) — a separate mechanism,
+identity/risk/authorization-based rather than pattern-matching-based:
+`ExecutionContext` → `BaseZeroTrustGuard.evaluate()` (default
+`DefaultZeroTrustGuard`: compromise check → role-based authorization →
+data-loss/masking → risk scoring) → `TrustDecision`. Lives on
+`BaseOrchestrator` only (`apply_zero_trust()`, not on `BaseAgent`/
+`BaseRouter`), gated by `enable_zero_trust` (config key, **defaults
+`False`** — `apply_zero_trust()` returns an unconditional
+`{"allowed": True, "decision": "BYPASSED", ...}` bypass when off, so
+calling it costs nothing when disabled but also protects nothing).
+`DefaultZeroTrustGuard`'s built-in `PromptInjectionGuard` is a **plain
+substring match** against 6 fixed phrases (`k9_security/zero_trust/guards.py`)
+— materially weaker than Shield's regex-based `PromptInjectionCheck`
+(handles `ignore (all|any) previous instructions`, `PromptInjectionGuard`
+only matches the literal phrase `"ignore previous instructions"` — inserting
+one word defeats it). Treat Zero Trust and Shield as additive, not
+redundant: Zero Trust's real value is its authorization/risk-scoring/
+data-masking machinery (`RoleBasedAuthorizationGuard`,
+`SensitiveDataLossGuard`), not its compromise check.
+
+**k9x_satan** (`k9x-ecosystem/k9x_satan`) is the reference implementation
+proving these layers actually contain a real attack end-to-end — read its
+own `CLAUDE.md` for the full Router-ingress/Orchestrator-egress containment
+contract before assuming a generated app gets that containment "for free."
+It doesn't, without explicit wiring — satan builds its own.
+
 ## Everything is provisioned through factories
 
 Never instantiate directly in application code: `LLMFactory`,

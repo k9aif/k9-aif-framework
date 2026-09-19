@@ -1,43 +1,33 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
-# File: k9_aif_abb/k9_agents/governance/profanity_governance.py
+"""
+ProfanityGovernance — retired in place, 2026-09-19.
 
-import logging
-from typing import Dict, Any, Optional
-from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
-from k9_aif_abb.k9_utils.timer import timed_stage
-from k9_aif_abb.k9_factories.llm_factory import LLMFactory  # Example ABB
+The original implementation here was example/placeholder code (its own
+docstring said so) and was confirmed non-functional against the real
+model: it read payload["text"] (generated agents use "query"), used a
+prompt instructing the model to answer "SAFE"/"BLOCKED" free text, and
+granite4.1-guardian:8b never actually produces that format — it always
+answers "<score>yes</score>"/"<score>no</score>" regardless of prompt
+wording (confirmed empirically, see k9x_satan/target/guardian_governance.py,
+where this was first discovered and correctly handled). Against the real
+model, the old pre_process()'s `"BLOCKED" in result.upper()` check could
+never match, so it would silently pass every payload, safe or not,
+forever — while looking like semantic governance was active.
 
-class ProfanityGovernance(BaseGovernance):
-    """
-    K9-AIF Governance SBB - ProfanityGovernance
-    -------------------------------------------
-    Uses either local keyword rules or an external inference engine
-    (e.g., Granite Guardian LLM) to detect profanity or policy violations.
-    """
+Both generator templates (studiox_v2's and studiox_ibm's
+agent_base.py.j2/agent_critic_actor.py.j2/agent_validation_loop.py.j2) and
+every scaffold either has already generated construct this exact class by
+name — `from k9_aif_abb.k9_governance.profanity_governance import
+ProfanityGovernance`. Rather than rename the class and require touching
+every generator template and already-generated scaffold, this file now
+re-exports the real, fixed implementation under the same name — every
+existing call site keeps working unchanged, and starts actually working
+correctly instead of silently doing nothing. See guardian_governance.py
+for the real implementation and its full docstring.
+"""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, monitor=None):
-        super().__init__(config=config, monitor=monitor)
-        self.logger = logging.getLogger("governance")
-        self.llm = LLMFactory.get("granite-guardian")  # Example inference model
+from k9_aif_abb.k9_governance.guardian_governance import GuardianGovernance
 
-    @timed_stage("Governance PreCheck", logger=logging.getLogger("governance"))
-    async def pre_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        text = payload.get("text", "")
-        await self.log("Running Granite Guardian profanity check...", level="INFO")
-
-        # Use inference engine
-        result = await self.llm.generate(prompt=f"Analyze this text for profanity:\n{text}")
-
-        if "BLOCKED" in result.upper():
-            await self.log("Guardian flagged content as BLOCKED", level="WARNING")
-            raise PermissionError(f"ProfanityGovernance blocked ingress: {result}")
-
-        await self.log("Content passed governance checks (SAFE)", level="INFO")
-        return payload
-
-    @timed_stage("Governance PostCheck", logger=logging.getLogger("governance"))
-    async def post_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        await self.log("Performing post-processing validation...", level="DEBUG")
-        return payload
+ProfanityGovernance = GuardianGovernance

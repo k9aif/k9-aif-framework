@@ -4,12 +4,28 @@
 # K9-AIF - Base Orchestrator
 # Abstract orchestrator foundation for coordinating multiple agents.
 
+import asyncio
+import concurrent.futures
 import inspect
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
+
+
+def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
+    """Run an async coroutine from sync code, safe whether or not a loop is
+    already running on this thread. Same pattern as
+    k9_inference/routers/k9_model_router.py's own _run_coro_sync — kept
+    local rather than imported since the framework doesn't share it from
+    one place today."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 # Optional Zero Trust runtime enforcement layer
 try:
@@ -255,6 +271,40 @@ class BaseOrchestrator(ABC):
             "obligations": decision.obligations,
             "payload": execution_context.payload,
         }
+
+    # ------------------------------------------------------------------
+    def apply_shield(
+        self,
+        payload: Dict[str, Any],
+        ctx: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Applies k9x_Shield (whatever `self.governance` resolves to — e.g.
+        ShieldGovernance) at the Orchestrator boundary, ingress-style: this
+        is the outermost gate in an app with no Router layer (most
+        generated scaffolds — see CLAUDE.md's Security / Vulnerability
+        section). Mirrors apply_zero_trust()'s ergonomics deliberately —
+        same {"allowed", "payload", "reason"} shape — so a generated
+        orchestrator's execute_flow() can call both the same way:
+
+            sh = self.apply_shield(payload)
+            if not sh["allowed"]:
+                return {"status": "denied", "reason": sh["reason"]}
+            payload = sh["payload"]
+
+        Sync wrapper around the async apply_pre_governance() — execute_flow()
+        is a sync contract. NoopGovernance makes this a true no-op (always
+        allowed); a governance backend that can't BLOCK (only annotates)
+        never raises here and is silently treated as always-allowed, same
+        caveat as apply_pre_governance() itself.
+        """
+        try:
+            checked_payload = _run_coro_sync(self.apply_pre_governance(payload, ctx))
+        except PermissionError as exc:
+            self.logger.warning("[%s] Shield DENIED reason=%s", self.layer, exc)
+            return {"allowed": False, "reason": str(exc), "payload": payload}
+
+        return {"allowed": True, "reason": "Shield check passed", "payload": checked_payload}
 
     # ------------------------------------------------------------------
     def _zero_trust_context(
