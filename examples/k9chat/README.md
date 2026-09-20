@@ -67,3 +67,21 @@ The above scipt runs:
 uvicorn examples.k9chat.app:app --reload
 ```
 
+## Running K9Chat (Ubuntu / Podman container)
+
+Deployment scripts live at `scripts/ubuntu/k9chat/` (repo root), not in this
+directory, since the build context is the whole repo (k9_aif_abb/ +
+examples/k9chat/ together).
+
+```bash
+cp examples/k9chat/.env.example examples/k9chat/.env   # fill in your own values
+scripts/ubuntu/k9chat/build-run.sh all                  # build + start, port 7777
+scripts/ubuntu/k9chat/build-run.sh seed                 # one-time: seed the knowledge base
+scripts/ubuntu/k9chat/build-run.sh logs
+scripts/ubuntu/k9chat/build-run.sh stop
+```
+
+`.chroma/` and the Projects sqlite db persist across rebuilds via a bind
+mount at `examples/k9chat/data/` on the host. Override the published port
+with `HOST_PORT=<port> scripts/ubuntu/k9chat/build-run.sh start`.
+
