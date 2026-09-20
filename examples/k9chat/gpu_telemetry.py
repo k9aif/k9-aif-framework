@@ -2,9 +2,9 @@
 # K9-AIF Framework
 
 """
-GPU/CPU telemetry -- proxies the real nvidia-smi-backed server at
-K9CHAT_GPU_TELEMETRY_URL (see /Users/ravinatarajan/ai/RTX-5090/opt/
-gpu-telemetry/gpu-server.js), not a fake/simulated readout. Cached
+GPU/CPU telemetry -- proxies a real nvidia-smi-backed server (Node/
+Express, GET /gpu) at K9CHAT_GPU_TELEMETRY_URL, not a fake/simulated
+readout. Cached
 briefly so k9chat's own polling (queue admission checks + the UI's
 telemetry panel, both independently on ~2s intervals) doesn't hammer
 nvidia-smi harder than the standalone dashboard already does.
