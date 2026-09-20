@@ -11,7 +11,7 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <a href="http://k9x.ai" target="_blank" rel="noopener" class="brand-link" title="K9X ecosystem">
-          <span class="brand">K9Chat</span>
+          <span class="brand">K9X <span class="brand-domain">(k9x.ai)</span></span>
         </a>
         <button id="theme-toggle" class="icon-btn" title="Toggle dark / light">🌙</button>
         <button id="sidebar-collapse-btn" class="icon-btn" title="Collapse sidebar">«</button>
@@ -131,7 +131,10 @@
         <div id="chat-history" class="chat-history"></div>
 
         <div class="input-panel">
+          <div id="attachment-chip" class="attachment-chip" style="display:none"></div>
           <div class="input-row">
+            <input type="file" id="attach-file-input" accept=".txt,.md,.py,.js,.json,.yaml,.yml,.csv,.log,.html,.css,.sh" style="display:none" />
+            <button id="attach-btn" class="attach-btn" title="Attach a text file to this message">+</button>
             <textarea id="message-input" placeholder="Type your message here... (Enter to send, Shift+Enter for newline)"></textarea>
             <button id="send-btn" class="send-btn" title="Send">➤</button>
           </div>
