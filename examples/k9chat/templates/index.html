@@ -167,11 +167,37 @@
             Total time to finish is usually about the same either way.
           </p>
           <p>
-            Controlled by <code>chat.stream</code> in <code>config.yaml</code>. Technically: streamed
-            requests go to <code>/chat/stream</code> over Server-Sent Events and call
+            Defaults from <code>chat.stream</code> in <code>config.yaml</code>, but clicking the badge
+            flips a runtime override (<code>POST /chat/stream/toggle</code>) without touching the
+            file -- resets to the file's default on restart. Technically: streamed requests go to
+            <code>/chat/stream</code> over Server-Sent Events and call
             <code>OllamaLLM.generate_stream()</code>; non-streamed requests go to <code>/chat</code>
             and call <code>generate()</code> once. The "Presentation Layer" row in the trace above
             shows which path your last message took.
+          </p>
+        </div>
+
+        <div class="explainer-card">
+          <h3>What does the "Eval" badge mean?</h3>
+          <p>
+            <strong>Not</strong> a validation loop -- it doesn't regenerate or refine the answer.
+            <code>K9ValidationLoopAgent</code>'s iterative-convergence pattern is a different, unrelated
+            part of the framework. This is grading, not refining.
+          </p>
+          <p>
+            <strong>ON</strong> — after the model finishes its actual answer, that answer (plus your
+            original question) gets sent to a <em>separate</em> LLM-as-judge call
+            (<code>EvaluationFactory</code>), scored against a fixed rubric ("respond helpfully,
+            accurately, and clearly... stay on topic, be concise, avoid irrelevant content"). The result
+            — score, grade, verdict, rationale — is the colored pill on the assistant's bubble. One
+            extra LLM call per turn, after the real answer, never before it.
+          </p>
+          <p>
+            <strong>OFF</strong> (default) — no judge call at all, zero extra cost per message.
+          </p>
+          <p>
+            Implemented in <code>evaluate_response()</code> (<code>chat.py</code>); toggled at
+            runtime via <code>POST /chat/evaluation/toggle</code>, same override pattern as Streaming.
           </p>
         </div>
 
