@@ -6,17 +6,20 @@ It demonstrates how a simple chat experience can be implemented using K9-AIF bui
 
 This example showcases:
 
-- ABB / SBB architectural separation
-- Squad and Agent structure
+- ABB / SBB architectural separation (`ChatAgent`/`GuardAgent` extend `BaseAgent`; composed directly, not dispatched via a Squad/Orchestrator — see the class diagram note)
 - Model routing via **ModelRouterFactory** and the default **K9ModelRouter**
 - Integration with LLM providers (for example **Ollama**)
-- A reusable backend service shared by both **CLI** and **browser UI**
+- Real-time knowledge grounding (ChromaDB, `knowledge_retriever.py`/`seed_knowledge_base.py`) plus per-visitor **Projects** (own document collections, `project_manager.py`/`project_retriever.py`)
+- Guest identity with no password (`auth.py`) — every visitor gets a display name/codename, scoping Projects per-visitor without gating access
+- A real concurrency + GPU-thermal admission guard (`queue_control.py`/`gpu_telemetry.py`) protecting the backing GPU host from being overrun
+- Toggleable "fun dials" (Unhinged/Profanity/Length), an LLM-as-judge **Eval** toggle, and a **Streaming** toggle — all genuinely wired, not decorative
+- Ubuntu/Podman container deployment (`scripts/ubuntu/k9chat/`)
 
 ---
 
 ## Class Diagram
 
-The following class diagram illustrates the core K9Chat object-oriented structure and shows how the example uses K9-AIF abstractions such as `BaseAgent`, `ModelRouterFactory`, `BaseModelRouter`, and `InferenceRequest`.
+The following class diagram illustrates the core K9Chat object-oriented structure and shows how the example uses K9-AIF abstractions such as `BaseAgent`, `ModelRouterFactory`, `BaseModelRouter`, `InferenceRequest`, and `BasePromptEvaluator`. PlantUML source: [`../diagrams/k9-chat-class-diagram.puml`](../diagrams/k9-chat-class-diagram.puml).
 
 ![K9Chat Class Diagram](../diagrams/k9-chat-class-diagram.png)
 
@@ -25,15 +28,26 @@ The following class diagram illustrates the core K9Chat object-oriented structur
 
 ## Contents
 
-- `chat.py` — Shared chat backend logic used by both CLI and web UI
-- `app.py` — FastAPI-based browser UI for K9Chat
-- `chat_agent.py` — Agent implementation handling chat prompts
-- `chat_squad.py` — Defines the squad containing the chat agent
-- `config.yaml` — Configuration for LLM provider, model routing, and runtime settings
-- `squad.yaml` — Squad definition for `k9chat`
-- `templates/index.html` — Browser UI template
-- `static/style.css` — Styling for the web interface
+- `chat.py` — Shared chat backend logic (session/history, Projects wiring, Eval/Streaming toggles); builds `ChatAgent` directly (see `build_chat_agent()`'s docstring for why)
+- `app.py` — FastAPI browser UI: routes, SSE streaming, `QueueSlot`-guarded `/chat` endpoints
+- `chat_agent.py` — `ChatAgent`, the one real agent in this example; composes `GuardAgent` and applies the fun-dial/scope prompt instructions
+- `guard_agent.py` — `GuardAgent`, pre-inference content-safety check via a guardian model
+- `auth.py` — No-password guest identity (display name / generated codename), session-scoped `owner_id`
+- `queue_control.py` — Concurrency semaphore (`QueueSlot`) + model-switch cooldown, backing the waitlist widget
+- `gpu_telemetry.py` — Real GPU/CPU telemetry proxy + thermal admission guard (default 85°C limit)
+- `project_manager.py` / `project_retriever.py` — Per-visitor Projects: metadata (sqlite) and per-project ChromaDB document collections
+- `knowledge_retriever.py` / `seed_knowledge_base.py` — The always-on K9-AIF/K9X knowledge base (ChromaDB, `k9x_knowledge_base` collection)
+- `provider_settings.py` — Runtime Settings-panel overrides (model, OpenAI-compatible endpoint + key)
+- `health_check.py` — `/health` route backing
+- `config.yaml` — Configuration for LLM provider, model routing, evaluation, and guardrails
+- `squad.yaml` / `chat_squad.py` — **Dead code**, not loaded by anything today; left over from before the Settings-panel override feature required constructing `ChatAgent` directly (bypasses `SquadLoader`/`AgentRegistry`, which would silently drop config overrides)
+- `templates/index.html`, `templates/login.html` — Browser UI templates
+- `static/js/`, `static/style.css` — Frontend JS (`app.js`, `message_list.js`, `chat_input.js`) and styling
+- `knowledge/` — Seed documents for the knowledge base (e.g. `glossary.md`)
 - `doc/` — Supporting documentation for the example
+- `.env.example` — Full environment template (copy to `.env`, gitignored)
+
+Deployment scripts (`scripts/ubuntu/k9chat/Containerfile`/`build-run.sh`) live at the repo root, not in this directory — see below.
 
 ---
 
