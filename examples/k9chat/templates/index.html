@@ -21,14 +21,16 @@
 
       <div class="projects-block">
         <div class="projects-header">
-          <span class="projects-title">Projects</span>
+          <button id="projects-toggle-btn" class="projects-toggle" type="button">
+            <span id="projects-toggle-arrow">▸</span> Projects
+          </button>
           <button id="project-new-btn" class="icon-btn" title="New project">+</button>
         </div>
         <div id="project-new-form" class="project-new-form" style="display:none">
           <input id="project-new-name" type="text" placeholder="Project name" />
           <button id="project-new-create" class="secondary small" type="button">Add</button>
         </div>
-        <div id="project-list" class="project-list"></div>
+        <div id="project-list" class="project-list" style="display:none"></div>
       </div>
 
       <div class="settings-block">
@@ -88,7 +90,7 @@
               {% endfor %}
             </select>
           </div>
-          <div class="badge">Host: <span id="badge-host">{{ base_url }}</span></div>
+          <div class="badge" id="badge-host-wrap" style="display:none">Host: <span id="badge-host">{{ base_url }}</span></div>
           {% if display_name %}
           <div class="badge badge-host-name" id="badge-host-name-wrap">{{ display_name }}</div>
           {% endif %}

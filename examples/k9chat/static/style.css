@@ -266,6 +266,35 @@ body {
   color: var(--text-muted);
 }
 
+.projects-toggle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.projects-toggle:hover {
+  color: var(--text);
+}
+
+#projects-toggle-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 0.7rem;
+}
+
+.projects-block.expanded #projects-toggle-arrow {
+  transform: rotate(90deg);
+}
+
 .project-new-form {
   display: flex;
   gap: 6px;

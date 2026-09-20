@@ -31,6 +31,23 @@
   sidebarCollapseBtn.addEventListener("click", () => setSidebarCollapsed(true));
   sidebarExpandBtn.addEventListener("click", () => setSidebarCollapsed(false));
 
+  // Projects list -- collapsed by default (not just "last state"), so
+  // project names (which can be sensitive -- e.g. an owner's own private
+  // project titles) aren't shown on-screen just by opening the app.
+  const projectsBlock = document.querySelector(".projects-block");
+  const projectsToggleBtn = document.getElementById("projects-toggle-btn");
+  const projectList = document.getElementById("project-list");
+
+  function setProjectsExpanded(expanded) {
+    projectsBlock.classList.toggle("expanded", expanded);
+    projectList.style.display = expanded ? "flex" : "none";
+    localStorage.setItem("k9chat_projects_expanded", expanded ? "1" : "0");
+  }
+  setProjectsExpanded(localStorage.getItem("k9chat_projects_expanded") === "1");
+  projectsToggleBtn.addEventListener("click", () => {
+    setProjectsExpanded(!projectsBlock.classList.contains("expanded"));
+  });
+
   // Two independent fun dials -- style/register only (see chat_agent.py's
   // UNHINGED_INSTRUCTIONS/PROFANITY_INSTRUCTIONS). Read directly off the
   // slider elements by chat_input.js at send time, same pattern as
