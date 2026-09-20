@@ -7,6 +7,53 @@
 const MessageList = (() => {
   const chatHistoryEl = document.getElementById("chat-history");
 
+  // Starter prompts -- 5 picked at random from this pool on every empty/
+  // new chat, clickable straight into ChatInput.send() so there's no
+  // typing needed to get a first real answer out of the knowledge base.
+  const STARTER_PROMPTS = [
+    "What does ABB stand for, and how is it different from an SBB?",
+    "Explain the Router → Orchestrator → Squad → Agent hierarchy.",
+    "What is k9x_Shield and what does it actually check?",
+    "What's the difference between k9x_Shield and Zero Trust?",
+    "Show me a minimal BaseAgent subclass.",
+    "When should I use K9ValidationLoopAgent instead of BaseAgent?",
+    "What does K9ModelRouter actually do?",
+    "What is K9-AIF's stance on TOGAF and OOD?",
+    "What does 'Not just agents. Architecture.' actually mean?",
+    "How does K9-AIF handle governance for an agent?",
+    "What's the difference between K9-AIF and a framework like LangChain?",
+    "What is a Squad, and why doesn't it know about its Orchestrator?",
+  ];
+
+  function pickStarterPrompts(n = 5) {
+    const pool = [...STARTER_PROMPTS];
+    const picked = [];
+    while (picked.length < n && pool.length > 0) {
+      const i = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(i, 1)[0]);
+    }
+    return picked;
+  }
+
+  function renderStarterPrompts() {
+    const wrap = document.createElement("div");
+    wrap.className = "starter-prompts";
+    pickStarterPrompts(5).forEach(q => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "starter-chip";
+      chip.textContent = q;
+      chip.addEventListener("click", () => {
+        const input = document.getElementById("message-input");
+        input.value = q;
+        wrap.remove();
+        ChatInput.send();
+      });
+      wrap.appendChild(chip);
+    });
+    chatHistoryEl.appendChild(wrap);
+  }
+
   function loadMessages(sessionId) {
     return JSON.parse(localStorage.getItem("k9chat_msgs_" + sessionId) || "[]");
   }
@@ -35,8 +82,38 @@ const MessageList = (() => {
     }).catch(() => {});
   }
 
-  // MessageBubble — builds one message DOM node (user or assistant)
-  function addBubble(role, text, meta = {}) {
+  // Edit-and-resubmit: drops everything from `index` onward, on both
+  // sides -- the visible/local transcript AND the server's own memory of
+  // the conversation (ChatAgent.truncate_history()), or the model would
+  // still answer as if the erased turns actually happened. Refills the
+  // input with the original text rather than auto-resending, so it can
+  // actually be edited, not just replayed.
+  async function editMessage(index, text) {
+    const sessionId = SessionSidebar.activeId;
+    saveMessages(sessionId, loadMessages(sessionId).slice(0, index));
+    try {
+      await fetch(`/chat/session/${sessionId}/truncate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keep_count: index }),
+      });
+    } catch (err) {
+      // Local history is already truncated regardless; a failed server
+      // call here just means the model might still recall the erased
+      // turns for its next reply -- not ideal, not worth blocking on.
+    }
+    renderHistory(sessionId);
+    const input = document.getElementById("message-input");
+    input.value = text;
+    input.focus();
+  }
+
+  // MessageBubble — builds one message DOM node (user or assistant).
+  // `index` is this message's position in the session's stored array --
+  // only meaningful for the edit button, so callers appending a message
+  // (rather than replaying stored history) that never gets edited don't
+  // strictly need to pass it, but appendMessage always does.
+  function addBubble(role, text, meta = {}, index = null) {
     const wrapper = document.createElement("div");
     wrapper.className = `message ${role}`;
 
@@ -55,6 +132,15 @@ const MessageList = (() => {
     timeSpan.className = "msg-time";
     if (meta.ts) timeSpan.textContent = formatTime(meta.ts);
     metaRow.appendChild(timeSpan);
+
+    if (role === "user" && index != null) {
+      const editBtn = document.createElement("button");
+      editBtn.className = "msg-edit";
+      editBtn.title = "Edit and resubmit";
+      editBtn.textContent = "✎";
+      editBtn.addEventListener("click", () => editMessage(index, text));
+      metaRow.appendChild(editBtn);
+    }
 
     let elapsedSpan = null;
     if (role === "assistant") {
@@ -118,8 +204,9 @@ const MessageList = (() => {
 
   function appendMessage(sessionId, role, text, meta = {}) {
     const ts = meta.ts || Date.now();
-    addBubble(role, text, { ...meta, ts });
-    return persistMessage(sessionId, role, text, { ...meta, ts });
+    const messages = persistMessage(sessionId, role, text, { ...meta, ts });
+    addBubble(role, text, { ...meta, ts }, messages.length - 1);
+    return messages;
   }
 
   function renderHistory(sessionId) {
@@ -127,9 +214,10 @@ const MessageList = (() => {
     chatHistoryEl.innerHTML = "";
     if (messages.length === 0) {
       addBubble("assistant", "Hello. K9Chat is ready.", {});
+      renderStarterPrompts();
       return;
     }
-    messages.forEach(m => addBubble(m.role, m.content, m));
+    messages.forEach((m, i) => addBubble(m.role, m.content, m, i));
   }
 
   function clear(sessionId) {

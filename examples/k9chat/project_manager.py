@@ -14,10 +14,11 @@ via PersistenceFactory, not CacheFactory's in_memory adapter. Project data
 is the kind of thing a user expects to survive an app restart -- unlike
 chat_agent.py's session history (deliberately ephemeral, TTL-bound), so
 in_memory was the wrong fit. Considered and declined for this same reason:
-- Redis (CacheFactory's other option): a real instance exists at
-  192.168.1.98:6379, but requires a password not documented anywhere in
-  this workspace (checked: only placeholder "changeme"/"redis" values in
-  .env.sample templates) -- not guessing at a live service's credentials.
+- Redis (CacheFactory's other option): a real instance exists on this
+  deployment's own infrastructure, but requires a password not documented
+  anywhere in this workspace (checked: only placeholder "changeme"/"redis"
+  values in .env.sample templates) -- not guessing at a live service's
+  credentials.
 - PostgreSQL: no Postgres-backed persistence adapter exists in the
   framework at all (PersistenceFactory only has "sqlite" registered) --
   would mean building a new adapter from scratch for marginal benefit
@@ -104,13 +105,16 @@ class ProjectManager:
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
-    def create_project(self, name: str, instructions: str = "") -> Dict[str, Any]:
+    def create_project(
+        self, name: str, instructions: str = "", owner_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         project_id = str(uuid.uuid4())
         now = time.time()
         record = {
             "project_id": project_id,
             "name": name,
             "instructions": instructions,
+            "owner_id": owner_id,
             "created_at": now,
             "updated_at": now,
             "file_ids": [],
@@ -127,12 +131,33 @@ class ProjectManager:
     def get_project(self, project_id: str) -> Optional[Dict[str, Any]]:
         return self._store.load_state(_project_key(project_id))
 
-    def list_projects(self) -> List[Dict[str, Any]]:
+    def get_project_for_owner(self, project_id: str, owner_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Same as get_project(), but returns None if the project belongs
+        to a different visitor. A project with owner_id=None (created
+        before per-visitor scoping existed, or with login disabled) is
+        legacy/shared -- visible to everyone, never hidden by this check."""
+        record = self.get_project(project_id)
+        if record is None:
+            return None
+        record_owner = record.get("owner_id")
+        if record_owner is not None and record_owner != owner_id:
+            return None
+        return record
+
+    def list_projects(self, owner_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """owner_id=None (login disabled, or caller wants everything) lists
+        every project unfiltered. Otherwise: a visitor's own projects, plus
+        any legacy/shared project with no owner_id at all -- never another
+        visitor's."""
         projects = []
         for project_id in self._read_index():
             record = self.get_project(project_id)
-            if record is not None:
-                projects.append(record)
+            if record is None:
+                continue
+            record_owner = record.get("owner_id")
+            if owner_id is not None and record_owner is not None and record_owner != owner_id:
+                continue
+            projects.append(record)
         return projects
 
     def update_project(

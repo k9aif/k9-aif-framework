@@ -39,7 +39,11 @@ const ChatInput = (() => {
         const response = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId }),
+          body: JSON.stringify({
+            message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId,
+            unhinged_level: Number(document.getElementById("unhinged-slider")?.value || 0),
+            profanity_level: Number(document.getElementById("profanity-slider")?.value || 0),
+          }),
         });
         const data = await response.json();
         MessageList.removeNode(thinkingNode);
@@ -69,7 +73,11 @@ const ChatInput = (() => {
     const response = await fetch("/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId }),
+      body: JSON.stringify({
+            message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId,
+            unhinged_level: Number(document.getElementById("unhinged-slider")?.value || 0),
+            profanity_level: Number(document.getElementById("profanity-slider")?.value || 0),
+          }),
     });
 
     const reader = response.body.getReader();
@@ -89,6 +97,14 @@ const ChatInput = (() => {
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const data = JSON.parse(line.slice(6));
+
+        if (data.queued) {
+          const bubbleEl = thinkingNode.querySelector(".bubble");
+          if (bubbleEl) {
+            bubbleEl.classList.remove("thinking");
+            bubbleEl.textContent = `Waiting for a free slot — ${data.position} ahead of you...`;
+          }
+        }
 
         if (data.chunk) {
           if (!bubbleRef) {

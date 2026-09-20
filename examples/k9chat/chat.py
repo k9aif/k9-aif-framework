@@ -27,11 +27,13 @@ from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from examples.k9chat.chat_agent import ChatAgent
 from examples.k9chat.health_check import check_ollama_model, run_startup_check
 from examples.k9chat import provider_settings
 from examples.k9chat.project_manager import ProjectManager, ProjectNotFoundError, build_persistence
 from examples.k9chat.project_retriever import ProjectRetriever
+from examples.k9chat.knowledge_retriever import KnowledgeRetriever
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +44,7 @@ _EVAL_ENABLED = False
 _EVALUATOR = None
 _PROJECT_MANAGER = None
 _PROJECT_RETRIEVER = None
+_KNOWLEDGE_RETRIEVER = None
 
 
 def load_config() -> dict:
@@ -86,6 +89,21 @@ def get_project_retriever() -> ProjectRetriever:
     return _PROJECT_RETRIEVER
 
 
+def get_knowledge_retriever() -> KnowledgeRetriever:
+    global _KNOWLEDGE_RETRIEVER
+    if _KNOWLEDGE_RETRIEVER is None:
+        _KNOWLEDGE_RETRIEVER = KnowledgeRetriever(load_config())
+    return _KNOWLEDGE_RETRIEVER
+
+
+def _resolve_knowledge_context(message: str) -> list:
+    """Always-on K9-AIF/K9X knowledge grounding -- unlike project context,
+    this doesn't depend on the caller selecting anything. Returns [] (not
+    an error) if the knowledge base hasn't been seeded yet or the vector
+    backend isn't reachable, same fail-open behavior as project context."""
+    return get_knowledge_retriever().retrieve(message, top_k=5)
+
+
 def _resolve_project_context(project_id: str | None, message: str) -> tuple[str, list]:
     """Look up a project's instructions + retrieve relevant file chunks
     for this message. Returns ("", []) if no project_id, the project
@@ -104,14 +122,22 @@ def _resolve_project_context(project_id: str | None, message: str) -> tuple[str,
     return instructions, context
 
 
-def send_message(text: str, session_id: str = "default", project_id: str | None = None) -> str:
+def send_message(
+    text: str, session_id: str = "default", project_id: str | None = None,
+    unhinged_level: int = 0, profanity_level: int = 0, length_level: int = 1,
+) -> str:
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
+    knowledge_context = _resolve_knowledge_context(text)
     result = agent.execute({
         "text": text,
         "session_id": session_id,
         "project_instructions": instructions,
         "project_context": context,
+        "knowledge_context": knowledge_context,
+        "unhinged_level": unhinged_level,
+        "profanity_level": profanity_level,
+        "length_level": length_level,
     })
     return result.get("text", "")
 
@@ -121,15 +147,23 @@ def is_streaming_enabled() -> bool:
     return bool(config.get("chat", {}).get("stream", False))
 
 
-async def send_message_stream(text: str, session_id: str = "default", project_id: str | None = None):
+async def send_message_stream(
+    text: str, session_id: str = "default", project_id: str | None = None,
+    unhinged_level: int = 0, profanity_level: int = 0, length_level: int = 1,
+):
     """Yield response chunks as they arrive — used when chat.stream: true."""
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
+    knowledge_context = _resolve_knowledge_context(text)
     async for chunk in agent.execute_stream({
         "text": text,
         "session_id": session_id,
         "project_instructions": instructions,
         "project_context": context,
+        "knowledge_context": knowledge_context,
+        "unhinged_level": unhinged_level,
+        "profanity_level": profanity_level,
+        "length_level": length_level,
     }):
         yield chunk
 
@@ -139,18 +173,26 @@ def clear_session(session_id: str) -> None:
     agent.clear_history(session_id)
 
 
+def truncate_session(session_id: str, keep_count: int) -> None:
+    agent = build_chat_agent()
+    agent.truncate_history(session_id, keep_count)
+
+
 # ── Projects ─────────────────────────────────────────────────────────────────
+# owner_id scopes Projects per visitor (see auth.py's guest identity) --
+# None means "unscoped" (login disabled, or a legacy pre-scoping project),
+# which stays visible to everyone rather than becoming orphaned.
 
-def create_project(name: str, instructions: str = "") -> dict:
-    return get_project_manager().create_project(name, instructions)
+def create_project(name: str, instructions: str = "", owner_id: str | None = None) -> dict:
+    return get_project_manager().create_project(name, instructions, owner_id)
 
 
-def list_projects() -> list:
-    return get_project_manager().list_projects()
+def list_projects(owner_id: str | None = None) -> list:
+    return get_project_manager().list_projects(owner_id)
 
 
-def get_project(project_id: str) -> dict | None:
-    return get_project_manager().get_project(project_id)
+def get_project(project_id: str, owner_id: str | None = None) -> dict | None:
+    return get_project_manager().get_project_for_owner(project_id, owner_id)
 
 
 def update_project(project_id: str, name: str | None = None, instructions: str | None = None) -> dict:
@@ -199,11 +241,35 @@ def list_models_for(provider: str, base_url: str, api_key: str = "") -> list:
     return provider_settings.list_models(provider, base_url, api_key or None)
 
 
+def get_selectable_models() -> list[str]:
+    """The curated header dropdown's options -- a short, .env-defined
+    allowlist for the casual/SaaS-style picker, distinct from the
+    Provider Settings panel's free-form "fetch every model this host has
+    pulled" approach. K9CHAT_GENERAL_MODEL (today's active default) is
+    always included even if someone forgets to list it explicitly, so the
+    dropdown never opens without its own current selection as an option."""
+    raw = os.environ.get("K9CHAT_SELECTABLE_MODELS", "")
+    models = [m.strip() for m in raw.split(",") if m.strip()]
+    default_model = os.environ.get("K9CHAT_GENERAL_MODEL", "qwen3.8:27b")
+    if default_model not in models:
+        models.insert(0, default_model)
+    return models
+
+
 def apply_settings(provider: str, base_url: str, model: str, api_key: str = "") -> dict:
     """
     Repoint k9chat at a different provider/host/model at runtime.
     Resets the LLM + router factories and rebuilds the agent on next use.
     Never writes to config.yaml — the API key (if any) lives only in os.environ.
+
+    Warms the model up synchronously (a trivial real generate call) rather
+    than leaving it to load lazily on the visitor's next real message --
+    confirmed 2026-09-20 that "select a model, nothing visibly happens
+    until your next question" reads as broken even though the switch
+    itself was always real. This call blocking until the model is
+    genuinely resident (`ollama ps` will show it) is the fix: the
+    dropdown's whole point is to switch models, so switching should mean
+    something the moment you do it, not on your next message.
     """
     global _LLM_OVERRIDES, _CONFIG, _AGENT
 
@@ -213,7 +279,18 @@ def apply_settings(provider: str, base_url: str, model: str, api_key: str = "") 
     LLMFactory.reset()
     ModelRouterFactory.reset()
 
-    return get_health_status()
+    status = get_health_status()
+    if status["ok"]:
+        try:
+            agent = build_chat_agent()
+            agent.router.invoke(InferenceRequest(prompt="Hi", task_type="chat"))
+            status["warmed_up"] = True
+        except Exception as exc:
+            # Health check passed (model is pulled) but the real warm-up
+            # call still failed -- surface it, don't silently claim ready.
+            status["warmed_up"] = False
+            status["warmup_error"] = str(exc)
+    return status
 
 
 def get_chat_runtime_info() -> dict:

@@ -16,6 +16,59 @@
     applyTheme(next);
   });
 
+  // Sidebar collapse -- more canvas for the chat/telemetry columns.
+  // Persisted like theme so it doesn't reset on reload.
+  const appShell = document.querySelector(".app-shell");
+  const sidebarCollapseBtn = document.getElementById("sidebar-collapse-btn");
+  const sidebarExpandBtn = document.getElementById("sidebar-expand-btn");
+
+  function setSidebarCollapsed(collapsed) {
+    appShell.classList.toggle("sidebar-collapsed", collapsed);
+    sidebarExpandBtn.style.display = collapsed ? "block" : "none";
+    localStorage.setItem("k9chat_sidebar_collapsed", collapsed ? "1" : "0");
+  }
+  setSidebarCollapsed(localStorage.getItem("k9chat_sidebar_collapsed") === "1");
+  sidebarCollapseBtn.addEventListener("click", () => setSidebarCollapsed(true));
+  sidebarExpandBtn.addEventListener("click", () => setSidebarCollapsed(false));
+
+  // Two independent fun dials -- style/register only (see chat_agent.py's
+  // UNHINGED_INSTRUCTIONS/PROFANITY_INSTRUCTIONS). Read directly off the
+  // slider elements by chat_input.js at send time, same pattern as
+  // ProjectPanel.activeProjectId -- no separate state module needed for
+  // two persisted numbers.
+  const TONE_COLORS = ["#6b7280", "#22c55e", "#eab308", "#f97316", "#ef4444"];
+
+  function wireToneSlider(sliderId, labelId, names, storageKey, defaultLevel = 0) {
+    const slider = document.getElementById(sliderId);
+    const label = document.getElementById(labelId);
+
+    function apply(level) {
+      slider.value = level;
+      label.textContent = names[level];
+      label.style.color = TONE_COLORS[level];
+      localStorage.setItem(storageKey, String(level));
+    }
+    const stored = localStorage.getItem(storageKey);
+    apply(stored !== null ? Number(stored) : defaultLevel);
+    slider.addEventListener("input", () => apply(Number(slider.value)));
+  }
+
+  wireToneSlider(
+    "unhinged-slider", "unhinged-label",
+    ["Off", "Casual", "Blunt", "Unhinged", "EXTREME"], "k9chat_unhinged",
+  );
+  wireToneSlider(
+    "profanity-slider", "profanity-label",
+    ["Off", "Mild", "Moderate", "Heavy", "MAX"], "k9chat_profanity",
+  );
+  // Real prompt instruction (see chat_agent.py's LENGTH_INSTRUCTIONS) --
+  // defaults to Normal (1), not the other two dials' Off (0), since
+  // "Normal" here means "no injected instruction," not "disabled."
+  wireToneSlider(
+    "length-slider", "length-label",
+    ["Short", "Normal", "Long"], "k9chat_length", 1,
+  );
+
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -89,10 +142,67 @@
     settingsPanel.style.display = isOpen ? "none" : "flex";
   });
 
+  // Curated header dropdown (.env-driven, see Architecture tab) -- distinct
+  // from the Provider Settings panel's free-form "fetch every model this
+  // host has pulled" picker below. setActiveModel() keeps both in sync:
+  // if Settings applies a model that isn't in the curated list, it's added
+  // as a one-off "(custom)" option rather than silently failing to show.
+  const modelPicker = document.getElementById("model-picker");
+
+  function setActiveModel(model) {
+    if (!modelPicker || !model) return;
+    let opt = Array.from(modelPicker.options).find(o => o.value === model);
+    if (!opt) {
+      opt = document.createElement("option");
+      opt.value = model;
+      opt.textContent = model + " (custom)";
+      modelPicker.appendChild(opt);
+    }
+    modelPicker.value = model;
+  }
+
+  if (modelPicker) {
+    modelPicker.addEventListener("change", async () => {
+      const model = modelPicker.value;
+      const provider = document.getElementById("badge-provider").textContent;
+      const baseUrl = document.getElementById("badge-host").textContent;
+      // The switch now blocks until the model is genuinely loaded (see
+      // apply_settings()'s warm-up call) -- for a large model that's real
+      // seconds, not instant, so show that plainly rather than leaving
+      // the dropdown looking frozen/unresponsive.
+      modelPicker.disabled = true;
+      const prevTitle = modelPicker.title;
+      modelPicker.title = `Loading ${model}...`;
+      try {
+        const resp = await fetch("/chat/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider, base_url: baseUrl, model }),
+        });
+        const status = await resp.json();
+        document.getElementById("badge-provider").textContent = status.provider;
+        document.getElementById("badge-host").textContent = status.base_url;
+        setActiveModel(status.model);
+        if (!status.ok) {
+          alert(`Switched, but health check failed: ${status.error || "unknown error"}`);
+        } else if (status.warmed_up === false) {
+          alert(`Model is pulled but the warm-up call failed: ${status.warmup_error || "unknown error"}`);
+        }
+        await refreshHealth();
+      } catch (err) {
+        alert("Could not switch model — request failed.");
+      } finally {
+        modelPicker.disabled = false;
+        modelPicker.title = prevTitle;
+      }
+    });
+  }
+
   fetch("/chat/runtime").then(r => r.json()).then(rt => {
     settingsProvider.value = rt.provider || "ollama";
     settingsBaseUrl.value = rt.base_url || "";
     settingsModel.innerHTML = `<option value="${rt.model}">${rt.model}</option>`;
+    setActiveModel(rt.model);
   });
 
   settingsFetchBtn.addEventListener("click", async () => {
@@ -142,7 +252,7 @@
       });
       const status = await resp.json();
       document.getElementById("badge-provider").textContent = status.provider;
-      document.getElementById("badge-model").textContent = status.model;
+      setActiveModel(status.model);
       document.getElementById("badge-host").textContent = status.base_url;
       settingsStatus.textContent = status.ok ? "✓ Applied." : `⚠ Applied, but: ${status.error}`;
       await refreshHealth();
@@ -150,6 +260,102 @@
       settingsStatus.textContent = "⚠ Failed to apply settings.";
     }
   });
+
+  // ---------------- Waitlist widget ----------------
+  // Polled, not pushed -- only shown once real concurrent load exists
+  // (active > 2), so it never nags a single visitor chatting alone.
+  const waitlistWidget = document.getElementById("waitlist-widget");
+
+  async function pollQueueStatus() {
+    try {
+      const resp = await fetch("/chat/queue-status");
+      const s = await resp.json();
+      if (s.active > 2) {
+        const waitingPart = s.waiting > 0 ? ` · ${s.waiting} in queue` : "";
+        waitlistWidget.innerHTML =
+          `<span class="dot"></span>${s.active} chats running right now${waitingPart}`;
+        waitlistWidget.style.display = "flex";
+      } else {
+        waitlistWidget.style.display = "none";
+      }
+    } catch (err) {
+      waitlistWidget.style.display = "none";
+    }
+  }
+  if (waitlistWidget) {
+    pollQueueStatus();
+    setInterval(pollQueueStatus, 4000);
+  }
+
+  // ---------------- Telemetry panel ----------------
+  // Real numbers from gpu_telemetry.py (proxying the actual nvidia-smi
+  // server) -- same source queue_control.py's thermal guard checks
+  // against, not a separate/decorative readout. 2s poll matches the
+  // standalone RTX-5090 dashboard's own cadence.
+  const telemetryBody = document.getElementById("telemetry-body");
+  const telemetryBanner = document.getElementById("telemetry-throttle-banner");
+
+  function telemetryRow(label, value, pct, level) {
+    const cls = level ? ` ${level}` : "";
+    const bar = pct != null
+      ? `<div class="telemetry-bar-track"><div class="telemetry-bar-fill" style="width:${Math.min(100, Math.max(0, pct))}%"></div></div>`
+      : "";
+    return `<div class="telemetry-row${cls}"><div class="label">${label}</div><div class="value">${value}</div>${bar}</div>`;
+  }
+
+  async function pollTelemetry() {
+    if (!telemetryBody) return;
+    try {
+      const resp = await fetch("/telemetry");
+      const d = await resp.json();
+      if (d.error || d.temperatureC == null) {
+        telemetryBody.innerHTML = '<div class="telemetry-offline">Telemetry server unreachable</div>';
+        telemetryBanner.style.display = "none";
+        return;
+      }
+
+      const limit = d.temp_limit_c ?? 85;
+      const temp = d.temperatureC;
+      const tempLevel = temp >= limit ? "critical" : temp >= limit - 10 ? "warn" : "";
+      const gpuLoadLevel = d.gpuUtilizationPct >= 90 ? "warn" : "";
+      const memPct = d.memoryTotalMiB ? (d.memoryUsedMiB / d.memoryTotalMiB) * 100 : null;
+
+      let html = "";
+      html += telemetryRow("GPU Load", `${d.gpuUtilizationPct ?? "--"}%`, d.gpuUtilizationPct, gpuLoadLevel);
+      html += telemetryRow("GPU Temperature", `${temp}°C`, (temp / limit) * 100, tempLevel);
+      html += telemetryRow(
+        "GPU Memory",
+        `${d.memoryUsedMiB ?? "--"} / ${d.memoryTotalMiB ?? "--"} MiB`,
+        memPct,
+        memPct != null && memPct >= 90 ? "warn" : "",
+      );
+      if (d.cpuLoadPct != null) {
+        html += telemetryRow("CPU Load", `${d.cpuLoadPct}%`, d.cpuLoadPct, d.cpuLoadPct >= 90 ? "warn" : "");
+      }
+      if (d.cpuMemory) {
+        const cpuMemPct = d.cpuMemory.totalMiB ? (d.cpuMemory.usedMiB / d.cpuMemory.totalMiB) * 100 : null;
+        html += telemetryRow(
+          "CPU Memory",
+          `${d.cpuMemory.usedMiB} / ${d.cpuMemory.totalMiB} MiB`,
+          cpuMemPct,
+          cpuMemPct != null && cpuMemPct >= 90 ? "warn" : "",
+        );
+      }
+      if (d.cpuTempC != null) {
+        html += telemetryRow("CPU Temperature", `${d.cpuTempC}°C`, null, "");
+      }
+
+      telemetryBody.innerHTML = html;
+      telemetryBanner.style.display = temp >= limit ? "block" : "none";
+    } catch (err) {
+      telemetryBody.innerHTML = '<div class="telemetry-offline">Telemetry server unreachable</div>';
+      telemetryBanner.style.display = "none";
+    }
+  }
+  if (telemetryBody) {
+    pollTelemetry();
+    setInterval(pollTelemetry, 2000);
+  }
 
   // ---------------- Init ----------------
   SessionSidebar.onSwitch = (id) => MessageList.renderHistory(id);
