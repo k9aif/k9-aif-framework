@@ -142,9 +142,22 @@ def send_message(
     return result.get("text", "")
 
 
+_STREAM_OVERRIDE: bool | None = None  # None = defer to config.yaml's chat.stream
+
+
 def is_streaming_enabled() -> bool:
+    if _STREAM_OVERRIDE is not None:
+        return _STREAM_OVERRIDE
     config = load_config()
     return bool(config.get("chat", {}).get("stream", False))
+
+
+def toggle_streaming() -> bool:
+    """Runtime override, same pattern as toggle_evaluation() -- never
+    written to config.yaml, resets to the file's own default on restart."""
+    global _STREAM_OVERRIDE
+    _STREAM_OVERRIDE = not is_streaming_enabled()
+    return _STREAM_OVERRIDE
 
 
 async def send_message_stream(

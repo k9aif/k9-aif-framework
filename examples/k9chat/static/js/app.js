@@ -95,16 +95,23 @@
     });
   });
 
-  // ---------------- Streaming badge ----------------
+  // ---------------- Streaming toggle ----------------
   function refreshStreamBadge() {
     fetch("/chat/config").then(r => r.json()).then(cfg => {
       const dot = document.getElementById("stream-dot");
       const label = document.getElementById("badge-streaming");
-      label.textContent = cfg.stream ? "ON" : "OFF";
-      dot.classList.toggle("on", !!cfg.stream);
+      const on = !!cfg.stream;
+      label.textContent = on ? "ON" : "OFF";
+      dot.classList.toggle("on", on);
+      ChatInput.setStreamEnabled(on);
     }).catch(() => {});
   }
   refreshStreamBadge();
+  document.getElementById("badge-stream-wrap").addEventListener("click", () => {
+    fetch("/chat/stream/toggle", { method: "POST" })
+      .then(() => refreshStreamBadge())
+      .catch(() => {});
+  });
 
   // ---------------- Evaluation toggle ----------------
   function refreshEvalBadge() {

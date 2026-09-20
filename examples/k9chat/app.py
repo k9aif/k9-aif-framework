@@ -32,6 +32,7 @@ from examples.k9chat.chat import (
     send_message,
     send_message_stream,
     is_streaming_enabled,
+    toggle_streaming,
     is_evaluation_enabled,
     toggle_evaluation,
     evaluate_response,
@@ -260,6 +261,12 @@ async def chat_stream(payload: ChatRequest):
 @app.get("/chat/config")
 def chat_config():
     return JSONResponse({"stream": is_streaming_enabled()})
+
+
+@app.post("/chat/stream/toggle")
+def stream_toggle():
+    enabled = toggle_streaming()
+    return JSONResponse({"stream": enabled})
 
 
 @app.get("/chat/evaluation")

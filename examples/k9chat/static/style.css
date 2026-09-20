@@ -588,6 +588,12 @@ body {
 .badge-stream {
   display: flex;
   align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.badge-stream:hover {
+  opacity: 0.8;
 }
 
 .stream-dot {

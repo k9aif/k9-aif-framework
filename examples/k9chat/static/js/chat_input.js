@@ -229,5 +229,8 @@ const ChatInput = (() => {
     SessionSidebar.render();
   });
 
-  return { send };
+  return {
+    send,
+    setStreamEnabled: (enabled) => { streamEnabled = enabled; },
+  };
 })();
