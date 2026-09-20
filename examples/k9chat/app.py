@@ -320,7 +320,22 @@ def models(provider: str = "ollama", base_url: str = "", api_key: str = ""):
 
 @app.post("/chat/settings")
 def settings(payload: SettingsRequest):
-    status = apply_settings(payload.provider, payload.base_url, payload.model, payload.api_key)
+    """Model switching is a heavier, different cost than a normal chat
+    message -- it loads a fresh multi-GB model into VRAM (apply_settings()'s
+    warm-up call is a real generation). Two people casually flipping
+    between models, zero malice, would still mean real repeated GPU
+    reload cost -- guarded two ways: a cooldown between switches (global,
+    since the cost is per-switch not per-visitor) and the same
+    concurrency/thermal QueueSlot every chat message already goes
+    through."""
+    allowed, retry_after = queue_control.check_switch_cooldown()
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Model was switched too recently -- try again in {retry_after}s.",
+        )
+    with QueueSlot():
+        status = apply_settings(payload.provider, payload.base_url, payload.model, payload.api_key)
     return JSONResponse(status)
 
 

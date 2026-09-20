@@ -51,6 +51,33 @@ def status() -> dict:
         return {"active": _active, "waiting": _waiting, "max_concurrent": _MAX_CONCURRENT}
 
 
+# ── Model-switch cooldown ────────────────────────────────────────────────
+# A different, heavier cost than a normal chat message -- switching loads
+# a fresh multi-GB model into VRAM (apply_settings()'s warm-up call is a
+# real generation). Two people casually flipping between models back and
+# forth, with no malice at all, would mean real repeated reload cost on
+# the GPU -- flagged directly by Ravi (2026-09-20) as the concrete
+# scenario this guards against. A cooldown, not a per-visitor counter,
+# because the cost is per-switch (global, process-wide), not per-visitor.
+_SWITCH_COOLDOWN_SECONDS = int(os.environ.get("K9CHAT_MODEL_SWITCH_COOLDOWN_SECONDS", "60"))
+_switch_lock = threading.Lock()
+_last_switch_at = 0.0
+
+
+def check_switch_cooldown() -> tuple[bool, int]:
+    """(allowed, retry_after_seconds). Reserves the slot immediately on
+    success (not just checks) so two near-simultaneous switch requests
+    can't both pass the check before either updates the timestamp."""
+    global _last_switch_at
+    with _switch_lock:
+        now = time.monotonic()
+        elapsed = now - _last_switch_at
+        if elapsed < _SWITCH_COOLDOWN_SECONDS:
+            return False, int(_SWITCH_COOLDOWN_SECONDS - elapsed) + 1
+        _last_switch_at = now
+        return True, 0
+
+
 class QueueSlot:
     """Context manager wrapping one generation's turn at a processing
     slot. `position` is set once __enter__/aenter starts waiting -- how

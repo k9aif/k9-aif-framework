@@ -172,6 +172,7 @@
   // if Settings applies a model that isn't in the curated list, it's added
   // as a one-off "(custom)" option rather than silently failing to show.
   const modelPicker = document.getElementById("model-picker");
+  let lastGoodModel = modelPicker ? modelPicker.value : null;
 
   function setActiveModel(model) {
     if (!modelPicker || !model) return;
@@ -183,6 +184,7 @@
       modelPicker.appendChild(opt);
     }
     modelPicker.value = model;
+    lastGoodModel = model;
   }
 
   if (modelPicker) {
@@ -203,6 +205,12 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider, base_url: baseUrl, model }),
         });
+        if (resp.status === 429) {
+          const err = await resp.json();
+          alert(err.detail || "Model was switched too recently — try again shortly.");
+          modelPicker.value = lastGoodModel;
+          return;
+        }
         const status = await resp.json();
         document.getElementById("badge-provider").textContent = status.provider;
         document.getElementById("badge-host").textContent = status.base_url;
@@ -215,6 +223,7 @@
         await refreshHealth();
       } catch (err) {
         alert("Could not switch model — request failed.");
+        modelPicker.value = lastGoodModel;
       } finally {
         modelPicker.disabled = false;
         modelPicker.title = prevTitle;
