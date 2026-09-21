@@ -19,6 +19,14 @@ certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.5
 chromadb==1.1.1
+# Bundles a modern sqlite3 for chromadb_adapter.py's UBI9-container
+# sqlite-version workaround (see its _ensure_client()). Only ships Linux
+# x86_64 wheels (confirmed via PyPI's file listing -- no macOS or Windows
+# build exists), so this is marker-gated to Linux only: installing
+# requirements.txt on macOS/Windows local dev must not break trying to
+# resolve a wheel that doesn't exist for that platform. A no-op import
+# guard in chromadb_adapter.py handles it being absent everywhere else.
+pysqlite3-binary==0.5.4.post2; sys_platform == "linux"
 claude-agent-sdk==0.2.128
 click==8.1.8
 cohere==5.20.7

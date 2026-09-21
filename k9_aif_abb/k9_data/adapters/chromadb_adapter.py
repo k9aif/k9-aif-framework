@@ -27,6 +27,24 @@ class ChromaDBAdapter(BaseVectorDB):
     def _ensure_client(self):
         if self._client is not None:
             return
+
+        # chromadb checks the *system* sqlite3 version at import time and
+        # raises RuntimeError below 3.35.0 -- RHEL/UBI9 (this framework's
+        # standard Podman base image, see any ubuntu/Containerfile) ships
+        # an older one, so every UBI9-containerized app using ChromaDB
+        # hits this, not just this one. pysqlite3-binary bundles a modern
+        # sqlite3; swapping it into sys.modules before importing chromadb
+        # is chromadb's own documented fix
+        # (https://docs.trychroma.com/troubleshooting#sqlite). No-op where
+        # the system sqlite3 is already new enough (e.g. local macOS dev)
+        # or pysqlite3-binary isn't installed.
+        try:
+            import pysqlite3  # noqa: F401
+            import sys as _sys
+            _sys.modules["sqlite3"] = _sys.modules.pop("pysqlite3")
+        except ImportError:
+            pass
+
         try:
             import chromadb
             from chromadb.config import Settings
