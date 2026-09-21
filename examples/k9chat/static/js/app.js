@@ -169,16 +169,45 @@
       .catch(() => {});
   });
 
-  // ---------------- Live internet search toggle ----------------
+  // ---------------- Framework Mode toggle ----------------
+  // Same backend flag/endpoint as before (internet_search_enabled), shown
+  // inverted -- "Framework Mode: ON" means internet search is OFF (scoped
+  // to K9-AIF/K9X, zero internet dependency), and "OFF" means general
+  // questions + live search are allowed. Ravi's framing: the badge should
+  // read as "am I restricted to the framework," not "is search on."
   function refreshInternetBadge() {
     fetch("/chat/internet-search").then(r => r.json()).then(cfg => {
       const dot   = document.getElementById("internet-dot");
       const label = document.getElementById("badge-internet");
       const wrap  = document.getElementById("badge-internet-wrap");
-      const on    = !!cfg.internet_search_enabled;
-      label.textContent = on ? "ON" : "OFF";
-      dot.classList.toggle("on", on);
-      wrap.classList.toggle("active", on);
+      const frameworkModeOn = !cfg.internet_search_enabled;
+      label.textContent = frameworkModeOn ? "ON" : "OFF";
+      dot.classList.toggle("on", frameworkModeOn);
+      wrap.classList.toggle("active", frameworkModeOn);
+      wrap.title = cfg.framework_mode_locked
+        ? "Framework Mode is locked for this deployment (K9CHAT_FRAMEWORK_MODE_LOCKED) -- cannot be toggled off"
+        : "Click to toggle Framework Mode. ON = scoped to K9-AIF/K9X only, no internet access. OFF = general questions answered via live web search (self-hosted SearxNG)";
+      wrap.style.cursor = cfg.framework_mode_locked ? "not-allowed" : "pointer";
+
+      // Small supplementary line -- Framework Mode OFF can read as
+      // ambiguous at a glance, so spell out "Internet: ON" explicitly
+      // too, only shown when it's actually true.
+      const statusLine = document.getElementById("internet-status-line");
+      if (statusLine) statusLine.style.display = cfg.internet_search_enabled ? "inline-block" : "none";
+
+      // Unhinged/Profanity only work when Framework Mode is OFF -- same
+      // rule server-side (chat.py's _clamp_tone_for_framework_mode), this
+      // just keeps the slider from misleadingly looking usable when it
+      // isn't. Greyed out, not hidden -- still shows the user the dial
+      // exists and why it's inert right now.
+      const unhingedSlider = document.getElementById("unhinged-slider");
+      if (unhingedSlider) {
+        unhingedSlider.disabled = frameworkModeOn;
+        unhingedSlider.title = frameworkModeOn
+          ? "Unavailable while Framework Mode is ON (scoped, professional tone only)"
+          : "";
+        unhingedSlider.closest(".fun-group")?.classList.toggle("fun-group-disabled", frameworkModeOn);
+      }
     }).catch(() => {});
   }
   refreshInternetBadge();

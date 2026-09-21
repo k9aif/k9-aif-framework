@@ -1,6 +1,19 @@
 chat:
   stream: true   # config-driven — set false for non-streaming (full response) chat
 
+# ── Public/offline deployment lock ────────────────────────────────────────
+# When true: Framework Mode is forced ON and can't be toggled off via the
+# UI/API (internet_search stays permanently disabled), and unhinged_level/
+# profanity_level are clamped to 0 server-side regardless of what a caller
+# sends -- for a deployment where an untrusted visitor could otherwise
+# abuse the LLM/GPU with off-topic questions or push the tone dial to max
+# profanity. String, not a native bool -- config_loader's ${VAR:-default}
+# expansion always returns a string (confirmed reading _expand() directly),
+# so this is parsed explicitly (.lower() in ("true","1","yes")), never
+# bool(), which would treat the literal string "false" as truthy.
+deployment:
+  framework_mode_locked: "${K9CHAT_FRAMEWORK_MODE_LOCKED:-false}"
+
 evaluation:
   enabled: false          # toggle at runtime via POST /chat/evaluation/toggle
   pass_threshold: 70

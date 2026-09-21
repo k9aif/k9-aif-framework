@@ -61,6 +61,7 @@ from examples.k9chat.chat import (
     toggle_faq_shortcut,
     is_internet_search_enabled,
     toggle_internet_search,
+    is_framework_mode_locked,
 )
 from examples.k9chat.project_manager import ProjectNotFoundError
 from examples.k9chat.auth import (
@@ -367,13 +368,19 @@ def faq_shortcut_toggle():
 
 @app.get("/chat/internet-search")
 def internet_search_status():
-    return JSONResponse({"internet_search_enabled": is_internet_search_enabled()})
+    return JSONResponse({
+        "internet_search_enabled": is_internet_search_enabled(),
+        "framework_mode_locked": is_framework_mode_locked(),
+    })
 
 
 @app.post("/chat/internet-search/toggle")
 def internet_search_toggle():
     enabled = toggle_internet_search()
-    return JSONResponse({"internet_search_enabled": enabled})
+    return JSONResponse({
+        "internet_search_enabled": enabled,
+        "framework_mode_locked": is_framework_mode_locked(),
+    })
 
 
 @app.delete("/chat/session/{session_id}")

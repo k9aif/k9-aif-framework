@@ -52,6 +52,7 @@ _KNOWLEDGE_RETRIEVER = None
 _LEARNING_ENABLED = None  # lazy: seeded from config.yaml's correction_learning.enabled on first access
 _FAQ_SHORTCUT_ENABLED = None  # lazy: seeded from config.yaml's faq_shortcut.enabled on first access
 _INTERNET_SEARCH_ENABLED = None  # lazy: seeded from config.yaml's internet_search.enabled on first access
+_FRAMEWORK_MODE_LOCKED = None  # lazy: seeded from K9CHAT_FRAMEWORK_MODE_LOCKED (.env) on first access
 
 
 def load_config() -> dict:
@@ -180,10 +181,23 @@ def check_faq_shortcut(text: str, session_id: str = "default") -> dict | None:
     return match
 
 
+def _clamp_tone_for_framework_mode(unhinged_level: int, profanity_level: int) -> tuple[int, int]:
+    """Unhinged/Profanity only work when Framework Mode is OFF (Internet
+    enabled) -- same "professional/scoped mode means professional/scoped
+    tone too" rule whether a user toggled Framework Mode on themselves or
+    a deployment has it admin-locked via K9CHAT_FRAMEWORK_MODE_LOCKED.
+    Enforced here, server-side, not just by greying out the slider --
+    a raw API call can't bypass this by sending a nonzero level directly."""
+    if is_internet_search_enabled():
+        return unhinged_level, profanity_level
+    return 0, 0
+
+
 def send_message(
     text: str, session_id: str = "default", project_id: str | None = None,
     unhinged_level: int = 0, profanity_level: int = 0, length_level: int = 1,
 ) -> str:
+    unhinged_level, profanity_level = _clamp_tone_for_framework_mode(unhinged_level, profanity_level)
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
     knowledge_context = _resolve_knowledge_context(text)
@@ -225,6 +239,7 @@ async def send_message_stream(
     unhinged_level: int = 0, profanity_level: int = 0, length_level: int = 1,
 ):
     """Yield response chunks as they arrive — used when chat.stream: true."""
+    unhinged_level, profanity_level = _clamp_tone_for_framework_mode(unhinged_level, profanity_level)
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
     knowledge_context = _resolve_knowledge_context(text)
@@ -573,10 +588,26 @@ def toggle_faq_shortcut() -> bool:
     return _FAQ_SHORTCUT_ENABLED
 
 
-# ── Live Internet Search ─────────────────────────────────────────────────────
+# ── Live Internet Search / Framework Mode lock ───────────────────────────────
+
+def is_framework_mode_locked() -> bool:
+    """K9CHAT_FRAMEWORK_MODE_LOCKED (.env) -- for a public/offline
+    deployment where an untrusted visitor shouldn't be able to re-enable
+    Internet mode or the Unhinged dial themselves. String, not a native
+    bool -- config_loader's ${VAR:-default} expansion always returns a
+    string, so this must be parsed explicitly rather than bool()'d (the
+    literal string "false" is truthy in Python)."""
+    global _FRAMEWORK_MODE_LOCKED
+    if _FRAMEWORK_MODE_LOCKED is None:
+        raw = str(load_config().get("deployment", {}).get("framework_mode_locked", "false"))
+        _FRAMEWORK_MODE_LOCKED = raw.strip().lower() in ("true", "1", "yes")
+    return _FRAMEWORK_MODE_LOCKED
+
 
 def is_internet_search_enabled() -> bool:
     global _INTERNET_SEARCH_ENABLED
+    if is_framework_mode_locked():
+        return False
     if _INTERNET_SEARCH_ENABLED is None:
         _INTERNET_SEARCH_ENABLED = bool(
             load_config().get("internet_search", {}).get("enabled", False)
@@ -586,5 +617,7 @@ def is_internet_search_enabled() -> bool:
 
 def toggle_internet_search() -> bool:
     global _INTERNET_SEARCH_ENABLED
+    if is_framework_mode_locked():
+        return False  # refuse -- stays off, no-op
     _INTERNET_SEARCH_ENABLED = not is_internet_search_enabled()
     return _INTERNET_SEARCH_ENABLED
