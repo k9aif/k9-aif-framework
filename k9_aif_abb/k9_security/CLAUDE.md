@@ -29,7 +29,9 @@ k9_security/
 
 `k9_governance/` (sibling package, not under `k9_security/`) holds
 `ProfanityGovernance`/`ChainedGovernance` — the framework's Granite Guardian
-integration point. See "Guardian" section below — it's broken as shipped.
+integration point. See "Guardian" section below — real and mandatory as of
+the 2026-09-19 promotion (`ProfanityGovernance` is now an alias for the
+real `GuardianGovernance`); it was broken before that, not now.
 
 ## The one thing to internalize before touching any of this
 
