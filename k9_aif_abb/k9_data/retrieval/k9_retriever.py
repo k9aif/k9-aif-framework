@@ -122,7 +122,16 @@ class K9Retriever(BaseRetriever):
         embedding = self._embedding_svc.embed(text)
         if not embedding:
             return False
-        self._vectordb.insert(doc_id, embedding, metadata or {})
+        # VectorDB adapters (chromadb_adapter.py, pgvector_adapter.py) read
+        # the document body from metadata["text"], not from this method's
+        # own `text` argument -- inject it here so every caller's `text`
+        # is actually persisted, not just callers that happen to know to
+        # duplicate it into their own metadata dict themselves (previously
+        # only seed_knowledge_base.py did; every other caller silently lost
+        # the text -- confirmed via a real retrieve() round-trip returning
+        # metadata correctly but an empty "text" field).
+        full_metadata = {**(metadata or {}), "text": text}
+        self._vectordb.insert(doc_id, embedding, full_metadata)
         return True
 
     def store_context(self, result_key: str, agent_result: Dict[str, Any]) -> bool:
