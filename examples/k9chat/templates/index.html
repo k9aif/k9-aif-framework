@@ -75,35 +75,38 @@
           <p class="subtitle">K9-AIF Example Chat Interface</p>
         </div>
         <div class="badge-group">
-          <div class="badge badge-stream" id="badge-stream-wrap" title="Click to toggle streaming">
-            <span class="stream-dot" id="stream-dot"></span>Streaming: <span id="badge-streaming">…</span>
+          <div class="badge-row">
+            <div class="badge badge-stream" id="badge-stream-wrap" title="Click to toggle streaming">
+              <span class="stream-dot" id="stream-dot"></span>Streaming: <span id="badge-streaming">…</span>
+            </div>
+            <div class="badge badge-eval" id="badge-eval-wrap" title="Click to toggle prompt evaluation">
+              <span class="eval-dot" id="eval-dot"></span>Eval: <span id="badge-eval">OFF</span>
+            </div>
+            <div class="badge badge-learn" id="badge-learn-wrap" title="Click to toggle auto-learning from corrections">
+              <span class="learn-dot" id="learn-dot"></span>Learn: <span id="badge-learn">…</span>
+            </div>
+            <div class="badge badge-faq" id="badge-faq-wrap" title="Click to toggle the FAQ/glossary retrieve-then-rerank shortcut (deterministic answers for direct matches, no LLM call)">
+              <span class="faq-dot" id="faq-dot"></span>FAQ: <span id="badge-faq">…</span>
+            </div>
+            <div class="badge badge-internet" id="badge-internet-wrap" title="Click to toggle Framework Mode. ON = scoped to K9-AIF/K9X only, no internet access. OFF = general questions answered via live web search (self-hosted SearxNG)">
+              <span class="internet-dot" id="internet-dot"></span>Framework Mode: <span id="badge-internet">…</span>
+            </div>
           </div>
-          <div class="badge badge-eval" id="badge-eval-wrap" title="Click to toggle prompt evaluation">
-            <span class="eval-dot" id="eval-dot"></span>Eval: <span id="badge-eval">OFF</span>
+          <div class="badge-row">
+            <div class="badge" title="Inference provider"><span id="badge-provider">{{ provider }}</span></div>
+            <div class="badge badge-model-picker" title="Switch model — .env-curated list (see Architecture tab). Provider Settings panel is still there for anything not on this list.">
+              Model:
+              <select id="model-picker">
+                {% for m in selectable_models %}
+                <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="badge" id="badge-host-wrap" style="display:none">Host: <span id="badge-host">{{ base_url }}</span></div>
+            {% if display_name %}
+            <div class="badge badge-host-name" id="badge-host-name-wrap">{{ display_name }}</div>
+            {% endif %}
           </div>
-          <div class="badge badge-learn" id="badge-learn-wrap" title="Click to toggle auto-learning from corrections">
-            <span class="learn-dot" id="learn-dot"></span>Learn: <span id="badge-learn">…</span>
-          </div>
-          <div class="badge badge-faq" id="badge-faq-wrap" title="Click to toggle the FAQ/glossary retrieve-then-rerank shortcut (deterministic answers for direct matches, no LLM call)">
-            <span class="faq-dot" id="faq-dot"></span>FAQ: <span id="badge-faq">…</span>
-          </div>
-          <div class="badge badge-internet" id="badge-internet-wrap" title="Click to toggle Framework Mode. ON = scoped to K9-AIF/K9X only, no internet access. OFF = general questions answered via live web search (self-hosted SearxNG)">
-            <span class="internet-dot" id="internet-dot"></span>Framework Mode: <span id="badge-internet">…</span>
-          </div>
-          <span id="internet-status-line" class="internet-status-line" style="display:none" title="Live web search is active for general questions">Internet: ON</span>
-          <div class="badge" title="Inference provider"><span id="badge-provider">{{ provider }}</span></div>
-          <div class="badge badge-model-picker" title="Switch model — .env-curated list (see Architecture tab). Provider Settings panel is still there for anything not on this list.">
-            Model:
-            <select id="model-picker">
-              {% for m in selectable_models %}
-              <option value="{{ m }}" {% if m == model %}selected{% endif %}>{{ m }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="badge" id="badge-host-wrap" style="display:none">Host: <span id="badge-host">{{ base_url }}</span></div>
-          {% if display_name %}
-          <div class="badge badge-host-name" id="badge-host-name-wrap">{{ display_name }}</div>
-          {% endif %}
         </div>
       </header>
 

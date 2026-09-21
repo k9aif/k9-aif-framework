@@ -169,6 +169,10 @@
       .catch(() => {});
   });
 
+  // Read by refreshInternetBadge() below, consumed by pollTelemetry()'s
+  // "Internet Access" row in the right-pane telemetry panel.
+  let internetAccessEnabled = false;
+
   // ---------------- Framework Mode toggle ----------------
   // Same backend flag/endpoint as before (internet_search_enabled), shown
   // inverted -- "Framework Mode: ON" means internet search is OFF (scoped
@@ -189,11 +193,12 @@
         : "Click to toggle Framework Mode. ON = scoped to K9-AIF/K9X only, no internet access. OFF = general questions answered via live web search (self-hosted SearxNG)";
       wrap.style.cursor = cfg.framework_mode_locked ? "not-allowed" : "pointer";
 
-      // Small supplementary line -- Framework Mode OFF can read as
-      // ambiguous at a glance, so spell out "Internet: ON" explicitly
-      // too, only shown when it's actually true.
-      const statusLine = document.getElementById("internet-status-line");
-      if (statusLine) statusLine.style.display = cfg.internet_search_enabled ? "inline-block" : "none";
+      // Read by pollTelemetry() below to show "Internet Access" in the
+      // right-pane telemetry panel instead of a second top-bar badge --
+      // moved there after it looked like a stray floating pill next to
+      // Framework Mode. No extra fetch -- telemetry polls every 2s
+      // anyway and just reads whatever this was last set to.
+      internetAccessEnabled = cfg.internet_search_enabled;
 
       // Unhinged/Profanity only work when Framework Mode is OFF -- same
       // rule server-side (chat.py's _clamp_tone_for_framework_mode), this
@@ -462,6 +467,7 @@
       if (d.cpuTempC != null) {
         html += telemetryRow("CPU Temperature", `${d.cpuTempC}°C`, null, "");
       }
+      html += telemetryRow("Internet Access", internetAccessEnabled ? "ON" : "OFF", null, "");
 
       telemetryBody.innerHTML = html;
       telemetryBanner.style.display = temp >= limit ? "block" : "none";
