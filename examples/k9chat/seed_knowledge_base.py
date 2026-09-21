@@ -16,7 +16,7 @@
 # duplicating -- safe to re-run after any of these docs change.
 #
 # Usage (from the k9-aif-framework repo root):
-#   python -m examples.k9chat.seed_knowledge_base
+#   python -m k9chat.seed_knowledge_base
 
 from __future__ import annotations
 
@@ -24,9 +24,21 @@ import os
 import sys
 from pathlib import Path
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+# k9chat moved into its own k9-aif-examples repo 2026-09-21 -- two
+# separate roots now (same split as app.py): FRAMEWORK_ROOT for
+# k9_aif_abb/ imports (sibling checkout, override via
+# K9AIF_FRAMEWORK_PATH), EXAMPLES_ROOT so `k9chat.*` resolves as a
+# package regardless of invocation directory.
+REPO_ROOT = os.environ.get(
+    "K9AIF_FRAMEWORK_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../k9-aif-framework")),
+)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+EXAMPLES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if EXAMPLES_ROOT not in sys.path:
+    sys.path.insert(0, EXAMPLES_ROOT)
 
 from dotenv import load_dotenv
 
@@ -35,8 +47,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 import re
 
 from k9_aif_abb.k9_utils.config_loader import load_yaml
-from examples.k9chat.knowledge_retriever import KnowledgeRetriever, COLLECTION_NAME
-from examples.k9chat.project_retriever import chunk_text
+from k9chat.knowledge_retriever import KnowledgeRetriever, COLLECTION_NAME
+from k9chat.project_retriever import chunk_text
 
 BASE_DIR = os.path.dirname(__file__)
 FRAMEWORK_ROOT = Path(REPO_ROOT)

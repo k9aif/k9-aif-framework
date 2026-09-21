@@ -28,7 +28,7 @@ import logging
 import re
 from typing import Any, Dict, Optional
 
-from examples.k9chat import faq_reranker
+from k9chat import faq_reranker
 
 log = logging.getLogger("k9chat.faq_shortcut")
 

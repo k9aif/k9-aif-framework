@@ -8,9 +8,22 @@ import uuid
 
 from dotenv import load_dotenv
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+# k9chat lives in k9-aif-examples now (moved 2026-09-21 -- was inside
+# k9-aif-framework/examples/, which meant every k9chat commit showed up
+# in the framework's own history). Imports k9_aif_abb/ from a sibling
+# checkout instead of local framework source -- override via
+# K9AIF_FRAMEWORK_PATH if the two repos aren't cloned as siblings under
+# the same parent directory (the convention getlatest.sh sets up).
+REPO_ROOT = os.environ.get(
+    "K9AIF_FRAMEWORK_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../k9-aif-framework")),
+)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+EXAMPLES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if EXAMPLES_ROOT not in sys.path:
+    sys.path.insert(0, EXAMPLES_ROOT)
 
 BASE_DIR = os.path.dirname(__file__)
 
@@ -29,15 +42,15 @@ from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
-from examples.k9chat.chat_agent import ChatAgent
-from examples.k9chat.health_check import check_ollama_model, run_startup_check
-from examples.k9chat import provider_settings
-from examples.k9chat.project_manager import ProjectManager, ProjectNotFoundError, build_persistence
-from examples.k9chat.project_retriever import ProjectRetriever
-from examples.k9chat.knowledge_retriever import KnowledgeRetriever
-from examples.k9chat import correction_learner
-from examples.k9chat import faq_shortcut
-from examples.k9chat import internet_search
+from k9chat.chat_agent import ChatAgent
+from k9chat.health_check import check_ollama_model, run_startup_check
+from k9chat import provider_settings
+from k9chat.project_manager import ProjectManager, ProjectNotFoundError, build_persistence
+from k9chat.project_retriever import ProjectRetriever
+from k9chat.knowledge_retriever import KnowledgeRetriever
+from k9chat import correction_learner
+from k9chat import faq_shortcut
+from k9chat import internet_search
 
 log = logging.getLogger(__name__)
 
@@ -491,7 +504,7 @@ def run_chat_startup_check() -> None:
     """Call once at app startup — prints a clear PASS/FAIL banner."""
     run_startup_check(load_config())
     if is_faq_shortcut_enabled():
-        from examples.k9chat import faq_reranker
+        from k9chat import faq_reranker
         faq_reranker.warm_up()
 
 

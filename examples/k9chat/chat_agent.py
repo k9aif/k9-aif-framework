@@ -5,16 +5,29 @@ import json
 import os
 import sys
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+# k9chat lives in k9-aif-examples now (moved 2026-09-21 -- was inside
+# k9-aif-framework/examples/, which meant every k9chat commit showed up
+# in the framework's own history). Imports k9_aif_abb/ from a sibling
+# checkout instead of local framework source -- override via
+# K9AIF_FRAMEWORK_PATH if the two repos aren't cloned as siblings under
+# the same parent directory (the convention getlatest.sh sets up).
+REPO_ROOT = os.environ.get(
+    "K9AIF_FRAMEWORK_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../k9-aif-framework")),
+)
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
+
+EXAMPLES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if EXAMPLES_ROOT not in sys.path:
+    sys.path.insert(0, EXAMPLES_ROOT)
 
 from k9_aif_abb.k9_utils.config_loader import load_yaml
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke, llm_invoke_stream
-from examples.k9chat.guard_agent import GuardAgent
+from k9chat.guard_agent import GuardAgent
 
 BASE_DIR = os.path.dirname(__file__)
 

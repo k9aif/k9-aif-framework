@@ -8,19 +8,32 @@ import sys
 import time
 import uuid
 
-# app.py is uvicorn's actual import target (examples.k9chat.app:app) -- the
-# one file in k9chat that most needs to be self-sufficient regardless of
+# app.py is uvicorn's actual import target (k9chat.app:app) -- the one
+# file in k9chat that most needs to be self-sufficient regardless of
 # which Python/uvicorn launches it. Relying on cwd already being on
 # sys.path (true for a plain `python`/`uvicorn` invocation from the repo
 # root) breaks the moment a *different* environment's uvicorn is on PATH
 # (e.g. a global/Homebrew install with its own old pip-installed k9-aif)
 # or --reload's spawned subprocess doesn't inherit it -- confirmed live,
-# 2026-09-20: `ModuleNotFoundError: No module named 'examples.k9chat'`
+# 2026-09-20: `ModuleNotFoundError: No module named 'k9chat'`
 # from exactly that combination. Same pattern chat.py/chat_agent.py/
 # seed_knowledge_base.py already use; this was the one file missing it.
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
-if REPO_ROOT not in sys.path:
-    sys.path.insert(0, REPO_ROOT)
+#
+# Two separate roots now (k9chat moved into its own k9-aif-examples repo
+# 2026-09-21, previously both of these were the same k9-aif-framework
+# root): FRAMEWORK_ROOT for k9_aif_abb/ imports (sibling checkout,
+# override via K9AIF_FRAMEWORK_PATH), EXAMPLES_ROOT so `k9chat.*` resolves
+# as a package regardless of invocation directory.
+FRAMEWORK_ROOT = os.environ.get(
+    "K9AIF_FRAMEWORK_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../k9-aif-framework")),
+)
+if FRAMEWORK_ROOT not in sys.path:
+    sys.path.insert(0, FRAMEWORK_ROOT)
+
+EXAMPLES_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if EXAMPLES_ROOT not in sys.path:
+    sys.path.insert(0, EXAMPLES_ROOT)
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
@@ -28,7 +41,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
-from examples.k9chat.chat import (
+from k9chat.chat import (
     send_message,
     send_message_stream,
     is_streaming_enabled,
@@ -63,16 +76,16 @@ from examples.k9chat.chat import (
     toggle_internet_search,
     is_framework_mode_locked,
 )
-from examples.k9chat.project_manager import ProjectNotFoundError
-from examples.k9chat.auth import (
+from k9chat.project_manager import ProjectNotFoundError
+from k9chat.auth import (
     LoginRequiredMiddleware,
     current_owner_id,
     get_session_secret,
     sanitize_username,
 )
-from examples.k9chat.queue_control import QueueSlot
-from examples.k9chat import queue_control
-from examples.k9chat import gpu_telemetry
+from k9chat.queue_control import QueueSlot
+from k9chat import queue_control
+from k9chat import gpu_telemetry
 
 BASE_DIR = os.path.dirname(__file__)
 

@@ -34,7 +34,7 @@ import threading
 import time
 from typing import Optional
 
-from examples.k9chat import gpu_telemetry
+from k9chat import gpu_telemetry
 
 _MAX_CONCURRENT = int(os.environ.get("K9CHAT_MAX_CONCURRENT", "5"))
 _TEMP_POLL_SECONDS = 1.0
