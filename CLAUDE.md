@@ -44,7 +44,9 @@ Cardinality: Router 1→N Orchestrators, Orchestrator 1→N Squads
 
 ## LLM calls — one path only
 
-Agents never call `OllamaLLM`/`LLMFactory` directly. Always:
+Agents never call `OllamaLLM`/`LLMFactory` **or `ModelRouterFactory`/
+`router.invoke()`** directly — only `llm_invoke.py` itself is allowed to
+touch the router. Always:
 
 ```python
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
@@ -52,8 +54,15 @@ resp = llm_invoke(self.config, InferenceRequest(prompt=..., task_type=...))
 ```
 
 `llm_invoke` raises `RuntimeError` on failure — it never silently returns
-empty output; catch and handle explicitly. Full chain + adding a new
-provider: `SKILLS.md` Skills 2 and 13.
+empty output; catch and handle explicitly. It also retries on an empty
+response (a hybrid-reasoning model burning its whole token budget on
+invisible "thinking" and returning 0 chars is a real, observed failure
+mode) and emits the `LLMCall` trace event — both silently lost if an agent
+calls `router.invoke()` directly instead. Found live in k9chat's
+`ChatAgent.execute()` plus four other agents across two example apps
+(2026-09-21) — `check-llm-invoke.sh` (see Hooks below) now catches this
+automatically on every write/edit. Full chain + adding a new provider:
+`SKILLS.md` Skills 2 and 13.
 
 **BaseAgent vs K9ValidationLoopAgent vs K9PlanningLoopAgent** — the
 generator/scaffold defaults every agent to one-shot `BaseAgent`. Ask per
@@ -185,6 +194,7 @@ A2A messaging. `publish_event()` on an agent reaches the logger/monitor only.
 | `run-abb-tests.sh` | files under `k9_aif_abb/` | `test_framework.py` + `test_intelligent_model_router.py` |
 | `check-governance.sh` | `*.py` under `examples/` | warns if `NoopGovernance` appears |
 | `check-init-docstring.sh` | any `__init__.py` | warns if module docstring missing |
+| `check-llm-invoke.sh` | `*.py` under `examples/` or `k9_projects/` | warns if `router.invoke()`/`ModelRouterFactory.get_router()` appears outside `llm_invoke.py` |
 
 ## Commands
 

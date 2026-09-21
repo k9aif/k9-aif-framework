@@ -28,6 +28,7 @@ from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_factories.evaluation_factory import EvaluationFactory
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 from examples.k9chat.chat_agent import ChatAgent
 from examples.k9chat.health_check import check_ollama_model, run_startup_check
 from examples.k9chat import provider_settings
@@ -370,7 +371,7 @@ def apply_settings(provider: str, base_url: str, model: str, api_key: str = "") 
     if status["ok"]:
         try:
             agent = build_chat_agent()
-            agent.router.invoke(InferenceRequest(prompt="Hi", task_type="chat"))
+            llm_invoke(agent.config, InferenceRequest(prompt="Hi", task_type="chat"))
             status["warmed_up"] = True
         except Exception as exc:
             # Health check passed (model is pulled) but the real warm-up

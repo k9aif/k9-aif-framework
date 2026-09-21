@@ -55,6 +55,17 @@
             "statusMessage": "Checking __init__.py docstring..."
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-llm-invoke.sh",
+            "timeout": 10,
+            "statusMessage": "Checking llm_invoke usage..."
+          }
+        ]
       }
     ]
   }
