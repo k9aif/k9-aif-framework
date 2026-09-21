@@ -8,9 +8,8 @@ from typing import Dict, Any
 import traceback
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_inference.catalog.model_catalog import ModelCatalog
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from k9_aif_abb.k9_inference.routers.k9_model_router import K9ModelRouter
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 
 
 class ChatAgent(BaseAgent):
@@ -20,15 +19,6 @@ class ChatAgent(BaseAgent):
     def __init__(self, config=None, monitor=None, **kwargs):
         super().__init__(config or {}, monitor=monitor, **kwargs)
         self.logger.info(f"[{self.layer}] Initialized ChatAgent")
-
-        try:
-            self.catalog = ModelCatalog(self.config)
-            self.router = K9ModelRouter(self.catalog)
-            self.logger.info(f"[{self.layer}]  K9ModelRouter ready")
-        except Exception as e:
-            self.catalog = None
-            self.router = None
-            self.logger.error(f"[{self.layer}]  Could not initialize K9ModelRouter: {e}")
 
     async def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -57,16 +47,13 @@ class ChatAgent(BaseAgent):
         prompt += f"\nUser: {user_msg}\nAssistant:"
 
         try:
-            if self.router is None:
-                raise RuntimeError("K9ModelRouter not initialized")
-
             req = InferenceRequest(
                 prompt=prompt,
                 task_type="chat",
                 metadata={"agent": "chat_agent"}
             )
 
-            response = self.router.invoke(req)
+            response = llm_invoke(self.config, req)
 
             text = (response.output or "").strip()
             if not text:

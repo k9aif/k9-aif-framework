@@ -9,9 +9,8 @@ from typing import Dict, Any, List
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_factories.persistence_factory import PersistenceFactory
-from k9_aif_abb.k9_inference.catalog.model_catalog import ModelCatalog
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from k9_aif_abb.k9_inference.routers.k9_model_router import K9ModelRouter
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 
 
 class RetrieverAgent(BaseAgent):
@@ -33,16 +32,6 @@ class RetrieverAgent(BaseAgent):
         except Exception as e:
             self.logger.error(f"[{self.layer}] Persistence init failed: {e}")
             self.persistence = None
-
-        # 2) Router-based LLM fallback
-        try:
-            self.catalog = ModelCatalog(self.config)
-            self.router = K9ModelRouter(self.catalog)
-            self.logger.info(f"[{self.layer}] K9ModelRouter initialized for reasoning fallback.")
-        except Exception as e:
-            self.router = None
-            self.catalog = None
-            self.logger.warning(f"[{self.layer}] Router fallback unavailable: {e}")
 
     # ------------------------------------------------------------------
     def _resolve_collection(self, payload: Dict[str, Any]) -> str:
@@ -103,7 +92,7 @@ class RetrieverAgent(BaseAgent):
                 self.logger.warning(f"[{self.layer}] Keyword fallback failed: {fe}")
 
         # 3) Router-based LLM fallback reasoning
-        if (not results or len(results) == 0) and self.router:
+        if not results or len(results) == 0:
             self.logger.info(f"[{self.layer}] Using router fallback reasoning for '{query}'")
             try:
                 llm_prompt = (
@@ -119,7 +108,7 @@ class RetrieverAgent(BaseAgent):
                     metadata={"agent": "retriever_agent", "mode": "fallback_reasoning"},
                 )
 
-                response = self.router.invoke(req)
+                response = llm_invoke(self.config, req)
 
                 results = [{
                     "text": response.output,

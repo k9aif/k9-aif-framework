@@ -5,8 +5,8 @@ from typing import Dict, Any
 import logging
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 
 log = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ class AcmeBaseAgent(BaseAgent):
 
         self.config = config
         self.tools = {}
-        self.router = ModelRouterFactory.get_router(config)
 
     def run_inference(self, prompt, task_type="support"):
         inf_req = InferenceRequest(
@@ -27,7 +26,7 @@ class AcmeBaseAgent(BaseAgent):
             task_type=task_type
         )
 
-        response = self.router.invoke(inf_req)
+        response = llm_invoke(self.config, inf_req)
 
         return {
             "text": response.output,

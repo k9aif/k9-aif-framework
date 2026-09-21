@@ -8,9 +8,8 @@ import traceback
 from typing import Dict, Any
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from k9_aif_abb.k9_inference.catalog.model_catalog import ModelCatalog
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from k9_aif_abb.k9_inference.routers.k9_model_router import K9ModelRouter
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
 from ..agents.claim_processing_agent import ClaimProcessingAgent
 
 
@@ -27,15 +26,6 @@ class ClaimsOrchestrator(BaseOrchestrator):
 
         self.claim_agent = ClaimProcessingAgent(config=self.config, monitor=monitor)
 
-        try:
-            self.catalog = ModelCatalog(self.config)
-            self.router = K9ModelRouter(self.catalog)
-            self.logger.info(f"[{self.layer}] K9ModelRouter initialized for reasoning")
-        except Exception as e:
-            self.catalog = None
-            self.router = None
-            self.logger.warning(f"[{self.layer}] Router unavailable: {e}")
-
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         self.publish_status("started", {"event": "claims_flow_started"})
         self.logger.info(f"[{self.layer}] Execution started")
@@ -47,33 +37,32 @@ class ClaimsOrchestrator(BaseOrchestrator):
 
             intent = "general_inquiry"
 
-            if self.router:
-                try:
-                    intent_prompt = (
-                        "Classify the user's claim request.\n\n"
-                        f"Text: '{query}'\n\n"
-                        "Possible intents: [submit_claim, check_status, appeal_claim, general_inquiry]. "
-                        "Respond with one intent only."
-                    )
+            try:
+                intent_prompt = (
+                    "Classify the user's claim request.\n\n"
+                    f"Text: '{query}'\n\n"
+                    "Possible intents: [submit_claim, check_status, appeal_claim, general_inquiry]. "
+                    "Respond with one intent only."
+                )
 
-                    req = InferenceRequest(
-                        prompt=intent_prompt,
-                        task_type="chat",
-                        metadata={
-                            "agent": "claims_orchestrator",
-                            "stage": "intent_classification",
-                        },
-                    )
+                req = InferenceRequest(
+                    prompt=intent_prompt,
+                    task_type="chat",
+                    metadata={
+                        "agent": "claims_orchestrator",
+                        "stage": "intent_classification",
+                    },
+                )
 
-                    response = await self.router.ainvoke(req)
-                    intent = (response.output or "").strip().lower()
+                response = llm_invoke(self.config, req)
+                intent = (response.output or "").strip().lower()
 
-                    self.logger.info(
-                        f"[{self.layer}] Detected claim intent: {intent} "
-                        f"(model={response.model_alias}, provider={response.provider})"
-                    )
-                except Exception as le:
-                    self.logger.warning(f"[{self.layer}] Router classification failed: {le}")
+                self.logger.info(
+                    f"[{self.layer}] Detected claim intent: {intent} "
+                    f"(model={response.model_alias}, provider={response.provider})"
+                )
+            except Exception as le:
+                self.logger.warning(f"[{self.layer}] Router classification failed: {le}")
 
             if "submit" in intent or "file" in query.lower():
                 result = await self.claim_agent.execute(
