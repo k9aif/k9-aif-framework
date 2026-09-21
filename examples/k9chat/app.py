@@ -55,6 +55,7 @@ from examples.k9chat.chat import (
     is_correction_learning_enabled,
     toggle_correction_learning,
     learn_from_correction,
+    get_k9chat_version,
 )
 from examples.k9chat.project_manager import ProjectNotFoundError
 from examples.k9chat.auth import (
@@ -163,6 +164,7 @@ def home(request: Request):
             "model": runtime["model"],
             "display_name": runtime["display_name"],
             "selectable_models": get_selectable_models(),
+            "version": get_k9chat_version(),
         },
     )
 

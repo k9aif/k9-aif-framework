@@ -563,6 +563,16 @@ body {
   font-size: 1.7rem;
 }
 
+.version-tag {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  vertical-align: middle;
+  margin-left: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  opacity: 0.75;
+}
+
 .subtitle {
   margin: 4px 0 0 0;
   color: var(--text-muted);

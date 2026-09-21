@@ -321,6 +321,51 @@ def apply_settings(provider: str, base_url: str, model: str, api_key: str = "") 
     return status
 
 
+_VERSION_CACHE: str | None = None
+
+
+def get_k9chat_version() -> str:
+    """Short git commit hash so the UI can answer "is this the deployment
+    I just pushed" at a glance -- a hand-maintained version string would
+    go stale immediately given how often this app changes.
+
+    Two sources, in order:
+    1. K9CHAT_VERSION env var -- set by the container build (build-run.sh
+       captures the host's k9-aif-framework commit hash as a build-arg;
+       the container has no .git of its own to inspect, only
+       k9_aif_abb/ + examples/k9chat/ are copied in).
+    2. A live `git rev-parse --short HEAD` against this checkout -- the
+       fallback for local (non-container) dev via run_k9chat.sh, where
+       .git is right there and always accurate, including uncommitted
+       moves between commits.
+    Returns "unknown" if neither source works (e.g. a container built
+    without the build-arg, or git isn't on PATH)."""
+    global _VERSION_CACHE
+    if _VERSION_CACHE is not None:
+        return _VERSION_CACHE
+
+    env_version = os.environ.get("K9CHAT_VERSION", "").strip()
+    if env_version:
+        _VERSION_CACHE = env_version
+        return _VERSION_CACHE
+
+    try:
+        import subprocess
+        repo_root = os.path.abspath(os.path.join(BASE_DIR, "../.."))
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_root, capture_output=True, text=True, timeout=3,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            _VERSION_CACHE = result.stdout.strip()
+            return _VERSION_CACHE
+    except Exception:
+        pass
+
+    _VERSION_CACHE = "unknown"
+    return _VERSION_CACHE
+
+
 def get_chat_runtime_info() -> dict:
     config = load_config()
 
