@@ -66,7 +66,15 @@ class ChromaDBAdapter(BaseVectorDB):
 
     def insert(self, doc_id: str, embedding: List[float], metadata: Dict[str, Any]) -> None:
         self._ensure_client()
-        self._collection.add(
+        # upsert, not add() -- add() raises/no-ops on a doc_id that already
+        # exists rather than overwriting it. Confirmed live: re-running
+        # seed_knowledge_base.py after glossary.md's chunking strategy
+        # changed left 3 stale, pre-change merged chunks sitting under
+        # doc_ids k9chat/glossary:0/1/2 forever, silently never replaced by
+        # the corrected re-seed -- exactly what the seed script's own
+        # docstring ("idempotent-ish... safe to re-run after any of these
+        # docs change") assumes doesn't happen.
+        self._collection.upsert(
             ids=[doc_id],
             embeddings=[embedding],
             metadatas=[metadata],
@@ -76,7 +84,7 @@ class ChromaDBAdapter(BaseVectorDB):
     def insert_batch(self, ids: List[str], embeddings: List[List[float]],
                      documents: List[str], metadatas: List[Dict[str, Any]]) -> None:
         self._ensure_client()
-        self._collection.add(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
+        self._collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
 
     def search(self, query_embedding: List[float], top_k: int = 5) -> List[Dict[str, Any]]:
         self._ensure_client()
