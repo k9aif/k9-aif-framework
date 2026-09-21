@@ -6,6 +6,19 @@ evaluation:
   pass_threshold: 70
   judge_model: reasoning  # model alias used as the LLM judge
 
+correction_learning:
+  # Auto-detects when a user's next message corrects something the
+  # assistant just said, then writes the corrected fact straight into the
+  # shared knowledge base (k9x_knowledge_base) for future retrieval -- no
+  # review queue. Safe only because this k9chat instance is single-user/
+  # internal (home network, no public exposure) -- every "visitor" is the
+  # same trusted person on a different device. Auto-merge without a review
+  # step would be a real corpus-poisoning risk on a publicly-hosted,
+  # no-password k9chat; revisit before ever exposing this instance beyond
+  # the home network.
+  enabled: true            # toggle at runtime via POST /chat/learning/toggle
+  judge_model: reasoning   # model alias used to detect + extract corrections
+
 guardrails:
   enabled: false   # set true once the guardian model below is pulled
   model_alias: guardian
@@ -23,7 +36,14 @@ inference:
 
     models:
       general: "${K9CHAT_GENERAL_MODEL:-qwen3.8:27b}"
-      reasoning: "${K9CHAT_REASONING_MODEL:-qwen3.8:27b}"
+      # Dict form (not a bare string) so llm_factory.py's `think` passthrough
+      # applies -- reasoning is used by Eval's judge and correction_learner's
+      # detection call, both classification/judgment tasks that benefit from
+      # the model's hybrid thinking phase. Not set on `general` above: that
+      # would add thinking-phase latency to every ordinary chat reply too.
+      reasoning:
+        model: "${K9CHAT_REASONING_MODEL:-qwen3.8:27b}"
+        think: true
       guardian: "${K9CHAT_GUARDIAN_MODEL:-granite3-guardian:2b}"
 
   model_catalog:

@@ -132,6 +132,25 @@
       .catch(() => {});
   });
 
+  // ---------------- Correction auto-learning toggle ----------------
+  function refreshLearnBadge() {
+    fetch("/chat/learning").then(r => r.json()).then(cfg => {
+      const dot   = document.getElementById("learn-dot");
+      const label = document.getElementById("badge-learn");
+      const wrap  = document.getElementById("badge-learn-wrap");
+      const on    = !!cfg.learning_enabled;
+      label.textContent = on ? "ON" : "OFF";
+      dot.classList.toggle("on", on);
+      wrap.classList.toggle("active", on);
+    }).catch(() => {});
+  }
+  refreshLearnBadge();
+  document.getElementById("badge-learn-wrap").addEventListener("click", () => {
+    fetch("/chat/learning/toggle", { method: "POST" })
+      .then(() => refreshLearnBadge())
+      .catch(() => {});
+  });
+
   // ---------------- Health check ----------------
   const healthBanner = document.getElementById("health-banner");
   function refreshHealth() {

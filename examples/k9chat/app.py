@@ -51,6 +51,10 @@ from examples.k9chat.chat import (
     delete_project,
     add_project_file,
     remove_project_file,
+    get_last_assistant_reply,
+    is_correction_learning_enabled,
+    toggle_correction_learning,
+    learn_from_correction,
 )
 from examples.k9chat.project_manager import ProjectNotFoundError
 from examples.k9chat.auth import (
@@ -186,6 +190,8 @@ def chat(payload: ChatRequest):
     if not message:
         return JSONResponse({"reply": ""})
 
+    prior_reply = get_last_assistant_reply(payload.session_id)
+
     start = time.monotonic()
     with QueueSlot():
         reply = send_message(
@@ -205,6 +211,9 @@ def chat(payload: ChatRequest):
     eval_result = evaluate_response(message, reply)
     if eval_result:
         response["evaluation"] = eval_result
+    learned = learn_from_correction(prior_reply, message, session_id=payload.session_id)
+    if learned:
+        response["learned_correction"] = learned
     return JSONResponse(response)
 
 
@@ -222,6 +231,8 @@ async def chat_stream(payload: ChatRequest):
         if not message:
             yield f"data: {json.dumps({'done': True})}\n\n"
             return
+
+        prior_reply = get_last_assistant_reply(session_id)
 
         slot = QueueSlot()
         async with slot:
@@ -253,6 +264,11 @@ async def chat_stream(payload: ChatRequest):
         )
         if eval_result:
             done_payload["evaluation"] = eval_result
+        learned = await asyncio.get_event_loop().run_in_executor(
+            None, learn_from_correction, prior_reply, message, session_id
+        )
+        if learned:
+            done_payload["learned_correction"] = learned
         yield f"data: {json.dumps(done_payload)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -278,6 +294,17 @@ def evaluation_status():
 def evaluation_toggle():
     enabled = toggle_evaluation()
     return JSONResponse({"evaluation_enabled": enabled})
+
+
+@app.get("/chat/learning")
+def learning_status():
+    return JSONResponse({"learning_enabled": is_correction_learning_enabled()})
+
+
+@app.post("/chat/learning/toggle")
+def learning_toggle():
+    enabled = toggle_correction_learning()
+    return JSONResponse({"learning_enabled": enabled})
 
 
 @app.delete("/chat/session/{session_id}")

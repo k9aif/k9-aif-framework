@@ -638,6 +638,53 @@ body {
 .badge-eval:hover { opacity: 0.8; }
 .badge-eval.active { outline: 2px solid #f59e0b; }
 
+/* ── Correction auto-learning badge ── */
+.learn-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 7px;
+  background: #9ca3af;
+}
+.learn-dot.on {
+  background: #8b5cf6;
+  animation: k9-pulse-learn 1.6s infinite;
+}
+@keyframes k9-pulse-learn {
+  0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(139, 92, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}
+.badge-learn { cursor: pointer; user-select: none; }
+.badge-learn:hover { opacity: 0.8; }
+.badge-learn.active { outline: 2px solid #8b5cf6; }
+
+/* ── "Learned a correction" toast ── */
+.learn-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #1e1b2e;
+  border: 1px solid #8b5cf6;
+  color: #e5e7eb;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  max-width: min(90vw, 480px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 50;
+}
+.learn-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.learn-toast strong { color: #c4b5fd; }
+
 /* ── Grade pill on messages ── */
 .msg-grade {
   font-size: 0.72rem;

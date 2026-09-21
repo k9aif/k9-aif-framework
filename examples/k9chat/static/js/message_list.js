@@ -238,6 +238,26 @@ const MessageList = (() => {
     metaRow.appendChild(gradeEl);
   }
 
+  let learnToastTimer = null;
+  function showLearnToast(correctedFact) {
+    if (!correctedFact) return;
+    let el = document.getElementById("learn-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "learn-toast";
+      el.className = "learn-toast";
+      document.body.appendChild(el);
+    }
+    el.innerHTML = `<strong>Learned:</strong> ${correctedFact}`;
+    // Reflow before adding .show so the transition actually plays even if
+    // a toast is already visible (retriggering the same class wouldn't).
+    el.classList.remove("show");
+    void el.offsetWidth;
+    el.classList.add("show");
+    clearTimeout(learnToastTimer);
+    learnToastTimer = setTimeout(() => el.classList.remove("show"), 5000);
+  }
+
   return {
     loadMessages,
     saveMessages,
@@ -245,6 +265,7 @@ const MessageList = (() => {
     addBubble,
     addThinkingBubble,
     addEvalBadge,
+    showLearnToast,
     removeNode,
     appendMessage,
     persistMessage,

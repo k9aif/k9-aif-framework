@@ -116,6 +116,9 @@ const ChatInput = (() => {
           elapsed_ms: data.elapsed_ms,
           evaluation: data.evaluation,
         });
+        if (data.learned_correction) {
+          MessageList.showLearnToast(data.learned_correction.corrected_fact);
+        }
         SessionSidebar.touch(sessionId, { model: data.model });
         ArchitectureTrace.record({
           input: text,
@@ -192,6 +195,9 @@ const ChatInput = (() => {
           }
           if (data.evaluation) {
             MessageList.addEvalBadge(bubbleRef, data.evaluation);
+          }
+          if (data.learned_correction) {
+            MessageList.showLearnToast(data.learned_correction.corrected_fact);
           }
           MessageList.persistMessage(sessionId, "assistant", fullText, {
             elapsed_ms: data.elapsed_ms,

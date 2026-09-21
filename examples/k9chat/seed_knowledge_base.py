@@ -59,6 +59,7 @@ TEXT_CORPUS: list[tuple[str, Path]] = [
     # for" never actually surfaced the real definition and the model
     # answered wrong from its own prior knowledge instead.
     ("k9chat/glossary", Path(BASE_DIR) / "knowledge" / "glossary.md"),
+    ("k9chat/faq", Path(BASE_DIR) / "knowledge" / "faq.md"),
     ("k9-aif-framework/CLAUDE.md", FRAMEWORK_ROOT / "CLAUDE.md"),
     ("k9-aif-framework/SKILLS.md", FRAMEWORK_ROOT / "SKILLS.md"),
     ("k9-aif-framework/README.md", FRAMEWORK_ROOT / "README.md"),
@@ -83,7 +84,7 @@ TEXT_CORPUS: list[tuple[str, Path]] = [
 # question, "what does ABB stand for", couldn't retrieve it) -- a
 # glossary needs each fact to embed distinctly on its own, never merged
 # with its neighbors.
-HEADING_CHUNKED = {"k9chat/glossary"}
+HEADING_CHUNKED = {"k9chat/glossary", "k9chat/faq"}
 
 
 def _chunk_by_heading(text: str, filename: str) -> list[str]:

@@ -34,6 +34,7 @@ from examples.k9chat import provider_settings
 from examples.k9chat.project_manager import ProjectManager, ProjectNotFoundError, build_persistence
 from examples.k9chat.project_retriever import ProjectRetriever
 from examples.k9chat.knowledge_retriever import KnowledgeRetriever
+from examples.k9chat import correction_learner
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ _EVALUATOR = None
 _PROJECT_MANAGER = None
 _PROJECT_RETRIEVER = None
 _KNOWLEDGE_RETRIEVER = None
+_LEARNING_ENABLED = None  # lazy: seeded from config.yaml's correction_learning.enabled on first access
 
 
 def load_config() -> dict:
@@ -189,6 +191,19 @@ def clear_session(session_id: str) -> None:
 def truncate_session(session_id: str, keep_count: int) -> None:
     agent = build_chat_agent()
     agent.truncate_history(session_id, keep_count)
+
+
+def get_last_assistant_reply(session_id: str) -> str | None:
+    """Peeks at this session's history for the most recent assistant turn
+    -- callers grab this BEFORE sending a new message through the agent
+    (which appends + saves the new turn), so it reflects what the
+    assistant said right before whatever the user is about to send now."""
+    agent = build_chat_agent()
+    history = agent._get_history(session_id)
+    for entry in reversed(history):
+        if entry.get("role") == "assistant":
+            return entry.get("content")
+    return None
 
 
 # ── Projects ─────────────────────────────────────────────────────────────────
@@ -396,3 +411,38 @@ def evaluate_response(user_message: str, actual_output: str) -> dict | None:
     except Exception as exc:
         log.warning("[Evaluation] Failed: %s", exc)
         return None
+
+
+# ── Correction Auto-Learning ────────────────────────────────────────────────
+
+def is_correction_learning_enabled() -> bool:
+    global _LEARNING_ENABLED
+    if _LEARNING_ENABLED is None:
+        _LEARNING_ENABLED = bool(
+            load_config().get("correction_learning", {}).get("enabled", False)
+        )
+    return _LEARNING_ENABLED
+
+
+def toggle_correction_learning() -> bool:
+    global _LEARNING_ENABLED
+    _LEARNING_ENABLED = not is_correction_learning_enabled()
+    return _LEARNING_ENABLED
+
+
+def learn_from_correction(
+    prior_reply: str | None, new_message: str, session_id: str = "default"
+) -> dict | None:
+    """Single entry point app.py calls after every user message -- gated
+    entirely by the runtime toggle above, not by correction_learner.py
+    re-reading a static config value (see correction_learner.detect_correction's
+    own docstring for why that split matters)."""
+    if not is_correction_learning_enabled():
+        return None
+    return correction_learner.learn(
+        load_config(),
+        get_knowledge_retriever(),
+        prior_reply,
+        new_message,
+        session_id=session_id,
+    )
