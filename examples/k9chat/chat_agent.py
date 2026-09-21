@@ -11,10 +11,9 @@ if REPO_ROOT not in sys.path:
 
 from k9_aif_abb.k9_utils.config_loader import load_yaml
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
-from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_factories.cache_factory import CacheFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
-from k9_aif_abb.k9_utils.llm_invoke import llm_invoke_stream
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke, llm_invoke_stream
 from examples.k9chat.guard_agent import GuardAgent
 
 BASE_DIR = os.path.dirname(__file__)
@@ -86,7 +85,6 @@ class ChatAgent(BaseAgent):
 
         super().__init__(config)
 
-        self.router = ModelRouterFactory.get_router(config)
         self._cache = CacheFactory.create(config)
         self.guard_agent = GuardAgent(config)
 
@@ -249,7 +247,7 @@ class ChatAgent(BaseAgent):
         )
 
         inf_req = InferenceRequest(prompt=prompt, task_type="chat")
-        response = self.router.invoke(inf_req)
+        response = llm_invoke(self.config, inf_req)
 
         history.append({"role": "user", "content": message})
         history.append({"role": "assistant", "content": response.output})

@@ -65,6 +65,11 @@ package "K9-AIF ABB Layer" <<Frame>> {
     + {static} bootstrap(config): None
   }
 
+  class LlmInvoke <<utility>> {
+    + llm_invoke(config, request): InferenceResponse
+    + llm_invoke_stream(config, request): Iterator[str]
+  }
+
   class InferenceRequest {
     + prompt: str
     + system_prompt: str
@@ -139,7 +144,8 @@ BasePromptEvaluator <|-- K9PromptEvaluator
 ' COMPOSITION & DEPENDENCIES
 ' ══════════════════════════════════════════
 ChatAgent         "1" --> "1"  GuardAgent          : checks input via
-ChatAgent         "1" --> "1"  ModelRouterFactory  : obtains router from
+ChatAgent         "1" --> "1"  LlmInvoke            : invokes chat reply via
+LlmInvoke         "1" --> "1"  ModelRouterFactory   : resolves router via
 ModelRouterFactory "1" --> "1" BaseModelRouter      : resolves
 ModelRouterFactory "1" ..> "1" LLMFactory           : bootstraps if needed
 ChatAgent         "1" --> "1"  InferenceRequest     : creates
@@ -170,6 +176,21 @@ superseded when the Settings-panel
 config-override feature needed
 ChatAgent built directly (see
 chat.py's build_chat_agent()).
+end note
+
+note bottom of LlmInvoke
+Both execute() (llm_invoke) and
+execute_stream() (llm_invoke_stream)
+go through this wrapper, never
+ModelRouterFactory directly --
+adds retry-on-empty-response (a
+hybrid-reasoning model burning its
+token budget on invisible "thinking"
+and returning 0 chars is a real,
+observed failure mode) and emits the
+LLMCall trace event. execute() used
+to call router.invoke() directly,
+skipping both -- fixed 2026-09-21.
 end note
 
 @enduml
