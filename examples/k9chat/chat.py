@@ -36,6 +36,7 @@ from examples.k9chat.project_retriever import ProjectRetriever
 from examples.k9chat.knowledge_retriever import KnowledgeRetriever
 from examples.k9chat import correction_learner
 from examples.k9chat import faq_shortcut
+from examples.k9chat import internet_search
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ _PROJECT_RETRIEVER = None
 _KNOWLEDGE_RETRIEVER = None
 _LEARNING_ENABLED = None  # lazy: seeded from config.yaml's correction_learning.enabled on first access
 _FAQ_SHORTCUT_ENABLED = None  # lazy: seeded from config.yaml's faq_shortcut.enabled on first access
+_INTERNET_SEARCH_ENABLED = None  # lazy: seeded from config.yaml's internet_search.enabled on first access
 
 
 def load_config() -> dict:
@@ -106,6 +108,21 @@ def _resolve_knowledge_context(message: str) -> list:
     an error) if the knowledge base hasn't been seeded yet or the vector
     backend isn't reachable, same fail-open behavior as project context."""
     return get_knowledge_retriever().retrieve(message, top_k=5)
+
+
+def _resolve_web_context(message: str) -> list:
+    """Live web search, only when internet_search is toggled on -- gated
+    by the runtime toggle (is_internet_search_enabled()), not by
+    internet_search.py itself (same enabled/disabled split as every other
+    toggleable feature in this file)."""
+    if not is_internet_search_enabled():
+        return []
+    cfg = load_config().get("internet_search", {})
+    return internet_search.search(
+        cfg.get("base_url", "http://localhost:7070"),
+        message,
+        top_k=cfg.get("top_k", 5),
+    )
 
 
 def _resolve_project_context(project_id: str | None, message: str) -> tuple[str, list]:
@@ -169,12 +186,14 @@ def send_message(
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
     knowledge_context = _resolve_knowledge_context(text)
+    web_context = _resolve_web_context(text)
     result = agent.execute({
         "text": text,
         "session_id": session_id,
         "project_instructions": instructions,
         "project_context": context,
         "knowledge_context": knowledge_context,
+        "web_context": web_context,
         "unhinged_level": unhinged_level,
         "profanity_level": profanity_level,
         "length_level": length_level,
@@ -208,12 +227,14 @@ async def send_message_stream(
     agent = build_chat_agent()
     instructions, context = _resolve_project_context(project_id, text)
     knowledge_context = _resolve_knowledge_context(text)
+    web_context = _resolve_web_context(text)
     async for chunk in agent.execute_stream({
         "text": text,
         "session_id": session_id,
         "project_instructions": instructions,
         "project_context": context,
         "knowledge_context": knowledge_context,
+        "web_context": web_context,
         "unhinged_level": unhinged_level,
         "profanity_level": profanity_level,
         "length_level": length_level,
@@ -549,3 +570,20 @@ def toggle_faq_shortcut() -> bool:
     global _FAQ_SHORTCUT_ENABLED
     _FAQ_SHORTCUT_ENABLED = not is_faq_shortcut_enabled()
     return _FAQ_SHORTCUT_ENABLED
+
+
+# ── Live Internet Search ─────────────────────────────────────────────────────
+
+def is_internet_search_enabled() -> bool:
+    global _INTERNET_SEARCH_ENABLED
+    if _INTERNET_SEARCH_ENABLED is None:
+        _INTERNET_SEARCH_ENABLED = bool(
+            load_config().get("internet_search", {}).get("enabled", False)
+        )
+    return _INTERNET_SEARCH_ENABLED
+
+
+def toggle_internet_search() -> bool:
+    global _INTERNET_SEARCH_ENABLED
+    _INTERNET_SEARCH_ENABLED = not is_internet_search_enabled()
+    return _INTERNET_SEARCH_ENABLED

@@ -137,6 +137,7 @@ class ChatAgent(BaseAgent):
         project_instructions: str = "",
         project_context: list | None = None,
         knowledge_context: list | None = None,
+        web_context: list | None = None,
         unhinged_level: int = 0,
         profanity_level: int = 0,
         length_level: int = 1,
@@ -195,6 +196,22 @@ class ChatAgent(BaseAgent):
                 lines.append(f"- {chunk['text']}")
             lines.append("")
 
+        if web_context:
+            lines.append(
+                "Live web search results for the user's question (real, "
+                "current, fetched just now -- not from training data). "
+                "The scope instruction above about declining unrelated "
+                "code/image requests does NOT apply here: answering a "
+                "general question using these live results is a real, "
+                "intended K9Chat capability when Internet search is "
+                "enabled, not an off-scope request. Use these results "
+                "directly if they answer the question; say so plainly if "
+                "they don't."
+            )
+            for r in web_context:
+                lines.append(f"- {r['title']}: {r['content']} ({r['url']})")
+            lines.append("")
+
         for turn in history:
             role = "User" if turn["role"] == "user" else "Assistant"
             lines.append(f"{role}: {turn['content']}")
@@ -211,6 +228,7 @@ class ChatAgent(BaseAgent):
         project_instructions = request.get("project_instructions", "")
         project_context = request.get("project_context")
         knowledge_context = request.get("knowledge_context")
+        web_context = request.get("web_context")
         unhinged_level = request.get("unhinged_level", 0)
         profanity_level = request.get("profanity_level", 0)
         length_level = request.get("length_level", 1)
@@ -225,7 +243,10 @@ class ChatAgent(BaseAgent):
             return {"text": reply, "model": None, "session_id": session_id, "blocked": True}
 
         history = self._get_history(session_id)
-        prompt = self._format_prompt(history, message, project_instructions, project_context, knowledge_context, unhinged_level, profanity_level, length_level)
+        prompt = self._format_prompt(
+            history, message, project_instructions, project_context, knowledge_context,
+            web_context, unhinged_level, profanity_level, length_level,
+        )
 
         inf_req = InferenceRequest(prompt=prompt, task_type="chat")
         response = self.router.invoke(inf_req)
@@ -258,6 +279,7 @@ class ChatAgent(BaseAgent):
         project_instructions = request.get("project_instructions", "")
         project_context = request.get("project_context")
         knowledge_context = request.get("knowledge_context")
+        web_context = request.get("web_context")
         unhinged_level = request.get("unhinged_level", 0)
         profanity_level = request.get("profanity_level", 0)
         length_level = request.get("length_level", 1)
@@ -273,7 +295,10 @@ class ChatAgent(BaseAgent):
             return
 
         history = self._get_history(session_id)
-        prompt = self._format_prompt(history, message, project_instructions, project_context, knowledge_context, unhinged_level, profanity_level, length_level)
+        prompt = self._format_prompt(
+            history, message, project_instructions, project_context, knowledge_context,
+            web_context, unhinged_level, profanity_level, length_level,
+        )
 
         inf_req = InferenceRequest(prompt=prompt, task_type="chat")
 

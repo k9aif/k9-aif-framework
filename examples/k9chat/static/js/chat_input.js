@@ -106,8 +106,10 @@ const ChatInput = (() => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: sendText, session_id: sessionId, project_id: ProjectPanel.activeProjectId,
+            // No separate profanity control in the UI -- mirrors unhinged's
+            // level directly (see app.js's tone-slider wiring comment).
             unhinged_level: Number(document.getElementById("unhinged-slider")?.value || 0),
-            profanity_level: Number(document.getElementById("profanity-slider")?.value || 0),
+            profanity_level: Number(document.getElementById("unhinged-slider")?.value || 0),
           }),
         });
         const data = await response.json();
@@ -144,8 +146,10 @@ const ChatInput = (() => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
             message: text, session_id: sessionId, project_id: ProjectPanel.activeProjectId,
+            // No separate profanity control in the UI -- mirrors unhinged's
+            // level directly (see app.js's tone-slider wiring comment).
             unhinged_level: Number(document.getElementById("unhinged-slider")?.value || 0),
-            profanity_level: Number(document.getElementById("profanity-slider")?.value || 0),
+            profanity_level: Number(document.getElementById("unhinged-slider")?.value || 0),
           }),
     });
 

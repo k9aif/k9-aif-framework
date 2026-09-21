@@ -70,13 +70,12 @@
     slider.addEventListener("input", () => apply(Number(slider.value)));
   }
 
+  // Drives profanity under the hood too, same level, no separate control --
+  // chat_input.js's send()/sendStreaming() mirror this slider's value into
+  // profanity_level directly rather than reading a second DOM element.
   wireToneSlider(
     "unhinged-slider", "unhinged-label",
     ["Off", "Casual", "Blunt", "Unhinged", "EXTREME"], "k9chat_unhinged",
-  );
-  wireToneSlider(
-    "profanity-slider", "profanity-label",
-    ["Off", "Mild", "Moderate", "Heavy", "MAX"], "k9chat_profanity",
   );
   // Real prompt instruction (see chat_agent.py's LENGTH_INSTRUCTIONS) --
   // defaults to Normal (1), not the other two dials' Off (0), since
@@ -167,6 +166,25 @@
   document.getElementById("badge-faq-wrap").addEventListener("click", () => {
     fetch("/chat/faq-shortcut/toggle", { method: "POST" })
       .then(() => refreshFaqBadge())
+      .catch(() => {});
+  });
+
+  // ---------------- Live internet search toggle ----------------
+  function refreshInternetBadge() {
+    fetch("/chat/internet-search").then(r => r.json()).then(cfg => {
+      const dot   = document.getElementById("internet-dot");
+      const label = document.getElementById("badge-internet");
+      const wrap  = document.getElementById("badge-internet-wrap");
+      const on    = !!cfg.internet_search_enabled;
+      label.textContent = on ? "ON" : "OFF";
+      dot.classList.toggle("on", on);
+      wrap.classList.toggle("active", on);
+    }).catch(() => {});
+  }
+  refreshInternetBadge();
+  document.getElementById("badge-internet-wrap").addEventListener("click", () => {
+    fetch("/chat/internet-search/toggle", { method: "POST" })
+      .then(() => refreshInternetBadge())
       .catch(() => {});
   });
 

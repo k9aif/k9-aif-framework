@@ -59,6 +59,8 @@ from examples.k9chat.chat import (
     check_faq_shortcut,
     is_faq_shortcut_enabled,
     toggle_faq_shortcut,
+    is_internet_search_enabled,
+    toggle_internet_search,
 )
 from examples.k9chat.project_manager import ProjectNotFoundError
 from examples.k9chat.auth import (
@@ -361,6 +363,17 @@ def faq_shortcut_status():
 def faq_shortcut_toggle():
     enabled = toggle_faq_shortcut()
     return JSONResponse({"faq_shortcut_enabled": enabled})
+
+
+@app.get("/chat/internet-search")
+def internet_search_status():
+    return JSONResponse({"internet_search_enabled": is_internet_search_enabled()})
+
+
+@app.post("/chat/internet-search/toggle")
+def internet_search_toggle():
+    enabled = toggle_internet_search()
+    return JSONResponse({"internet_search_enabled": enabled})
 
 
 @app.delete("/chat/session/{session_id}")
