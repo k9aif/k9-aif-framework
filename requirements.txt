@@ -154,6 +154,16 @@ requests-oauthlib==2.0.0
 rich==14.3.3
 rpds-py==0.30.0
 s3transfer==0.16.0
+# CPU-only cross-encoder reranker for the FAQ-match shortcut
+# (examples/k9chat/faq_reranker.py) -- demonstrates the real retrieve-then-
+# rerank NLP pattern rather than misusing the chat LLM for a mechanical
+# relevance-scoring task. Pulls in torch/transformers as transitive deps;
+# bumped tokenizers below to the version these actually resolve to
+# (0.22.2 -> 0.23.2 -- already a transitive dep of chromadb/cohere/crewai/
+# litellm regardless of this addition, confirmed no conflict).
+safetensors==0.8.0
+scikit-learn==1.9.1
+sentence-transformers==6.1.0
 shellingham==1.5.4
 six==1.17.0
 sniffio==1.3.1
@@ -163,11 +173,17 @@ sympy==1.14.0
 tenacity==9.1.4
 textual==8.1.1
 tiktoken==0.12.0
-tokenizers==0.22.2
+tokenizers==0.23.2
 tomli==2.0.2
 tomli_w==1.1.0
 tomlkit==0.14.0
+# CPU build on Linux -- see the Containerfile, which pre-installs this from
+# PyTorch's CPU wheel index before the main requirements.txt pass so a
+# plain `pip install torch` here doesn't pull the multi-GB CUDA build (this
+# container never has GPU access anyway -- Ollama runs outside it).
+torch==2.14.0
 tqdm==4.67.3
+transformers==5.17.0
 typer==0.23.1
 types-requests==2.32.4.20260107
 typing-inspection==0.4.2

@@ -19,6 +19,19 @@ correction_learning:
   enabled: true            # toggle at runtime via POST /chat/learning/toggle
   judge_model: reasoning   # model alias used to detect + extract corrections
 
+faq_shortcut:
+  # Demonstrates a real retrieve-then-rerank NLP pattern: when the top
+  # knowledge-base hit is a curated FAQ/glossary entry AND a cross-encoder
+  # reranker (faq_reranker.py, CPU-only, sentence-transformers) scores it
+  # as a confident direct answer, that stored text is returned verbatim --
+  # no LLM call, zero hallucination risk for that class of question.
+  # Threshold empirically calibrated (2026-09-20): genuine FAQ/glossary
+  # matches scored 4.0-10.4, off-topic/wrong-chunk queries scored -11.4 to
+  # -6.3 against the real corpus -- 3.5 sits with safe margin on both sides.
+  enabled: true          # toggle at runtime via POST /chat/faq-shortcut/toggle
+  score_threshold: 3.5
+  sources: [k9chat/faq, k9chat/glossary]
+
 guardrails:
   enabled: false   # set true once the guardian model below is pulled
   model_alias: guardian

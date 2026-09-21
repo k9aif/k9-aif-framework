@@ -151,6 +151,25 @@
       .catch(() => {});
   });
 
+  // ---------------- FAQ retrieve-then-rerank shortcut toggle ----------------
+  function refreshFaqBadge() {
+    fetch("/chat/faq-shortcut").then(r => r.json()).then(cfg => {
+      const dot   = document.getElementById("faq-dot");
+      const label = document.getElementById("badge-faq");
+      const wrap  = document.getElementById("badge-faq-wrap");
+      const on    = !!cfg.faq_shortcut_enabled;
+      label.textContent = on ? "ON" : "OFF";
+      dot.classList.toggle("on", on);
+      wrap.classList.toggle("active", on);
+    }).catch(() => {});
+  }
+  refreshFaqBadge();
+  document.getElementById("badge-faq-wrap").addEventListener("click", () => {
+    fetch("/chat/faq-shortcut/toggle", { method: "POST" })
+      .then(() => refreshFaqBadge())
+      .catch(() => {});
+  });
+
   // ---------------- Health check ----------------
   const healthBanner = document.getElementById("health-banner");
   function refreshHealth() {

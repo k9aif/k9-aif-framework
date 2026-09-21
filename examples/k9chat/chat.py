@@ -35,6 +35,7 @@ from examples.k9chat.project_manager import ProjectManager, ProjectNotFoundError
 from examples.k9chat.project_retriever import ProjectRetriever
 from examples.k9chat.knowledge_retriever import KnowledgeRetriever
 from examples.k9chat import correction_learner
+from examples.k9chat import faq_shortcut
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ _PROJECT_MANAGER = None
 _PROJECT_RETRIEVER = None
 _KNOWLEDGE_RETRIEVER = None
 _LEARNING_ENABLED = None  # lazy: seeded from config.yaml's correction_learning.enabled on first access
+_FAQ_SHORTCUT_ENABLED = None  # lazy: seeded from config.yaml's faq_shortcut.enabled on first access
 
 
 def load_config() -> dict:
@@ -122,6 +124,42 @@ def _resolve_project_context(project_id: str | None, message: str) -> tuple[str,
     if project.get("file_ids"):
         context = get_project_retriever().retrieve_context(project_id, message, top_k=5)
     return instructions, context
+
+
+def check_faq_shortcut(text: str, session_id: str = "default") -> dict | None:
+    """Checks the FAQ/glossary retrieve-then-rerank shortcut (faq_shortcut.py)
+    BEFORE any LLM call -- callers (app.py's /chat and /chat/stream) run
+    this first and only fall through to send_message()/send_message_stream()
+    if it returns None. When it fires, this persists the turn to history
+    itself (send_message()/execute() never runs, so nothing else would).
+
+    Gated on the runtime toggle (is_faq_shortcut_enabled()), not on
+    faq_shortcut.py re-reading a static config value -- same split as
+    learn_from_correction()/is_correction_learning_enabled().
+
+    Uses its own larger, dedicated retrieval (top_k=25) rather than
+    reusing _resolve_knowledge_context()'s top_k=5 -- confirmed live that
+    5 (even 8) isn't enough recall for the curated FAQ/glossary chunk to
+    reliably even be IN the candidate pool the reranker sees (a bi-encoder
+    recall limit, not a reranking/ordering one -- reranking only fixes
+    ordering among retrieved candidates, it can't surface one that was
+    never retrieved). The curated corpus is small (~19 chunks between
+    glossary.md and faq.md), so top_k=25 gets close to full recall of it
+    at negligible extra cost (still just a vector search, no LLM/GPU call
+    either way)."""
+    if not is_faq_shortcut_enabled():
+        return None
+    shortcut_candidates = get_knowledge_retriever().retrieve(text, top_k=25)
+    match = faq_shortcut.try_shortcut(load_config(), shortcut_candidates, text)
+    if not match:
+        return None
+
+    agent = build_chat_agent()
+    history = agent._get_history(session_id)
+    history.append({"role": "user", "content": text})
+    history.append({"role": "assistant", "content": match["answer"]})
+    agent._save_history(session_id, history)
+    return match
 
 
 def send_message(
@@ -415,6 +453,9 @@ def get_health_status() -> dict:
 def run_chat_startup_check() -> None:
     """Call once at app startup — prints a clear PASS/FAIL banner."""
     run_startup_check(load_config())
+    if is_faq_shortcut_enabled():
+        from examples.k9chat import faq_reranker
+        faq_reranker.warm_up()
 
 
 # ── Prompt Evaluation ──────────────────────────────────────────────────────────
@@ -491,3 +532,20 @@ def learn_from_correction(
         new_message,
         session_id=session_id,
     )
+
+
+# ── FAQ Retrieve-then-Rerank Shortcut ────────────────────────────────────────
+
+def is_faq_shortcut_enabled() -> bool:
+    global _FAQ_SHORTCUT_ENABLED
+    if _FAQ_SHORTCUT_ENABLED is None:
+        _FAQ_SHORTCUT_ENABLED = bool(
+            load_config().get("faq_shortcut", {}).get("enabled", False)
+        )
+    return _FAQ_SHORTCUT_ENABLED
+
+
+def toggle_faq_shortcut() -> bool:
+    global _FAQ_SHORTCUT_ENABLED
+    _FAQ_SHORTCUT_ENABLED = not is_faq_shortcut_enabled()
+    return _FAQ_SHORTCUT_ENABLED

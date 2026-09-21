@@ -115,6 +115,7 @@ const ChatInput = (() => {
         MessageList.appendMessage(sessionId, "assistant", data.reply || "", {
           elapsed_ms: data.elapsed_ms,
           evaluation: data.evaluation,
+          faq_match: data.faq_match,
         });
         if (data.learned_correction) {
           MessageList.showLearnToast(data.learned_correction.corrected_fact);
@@ -196,12 +197,16 @@ const ChatInput = (() => {
           if (data.evaluation) {
             MessageList.addEvalBadge(bubbleRef, data.evaluation);
           }
+          if (data.faq_match) {
+            MessageList.addFaqMatchBadge(bubbleRef, data.faq_match);
+          }
           if (data.learned_correction) {
             MessageList.showLearnToast(data.learned_correction.corrected_fact);
           }
           MessageList.persistMessage(sessionId, "assistant", fullText, {
             elapsed_ms: data.elapsed_ms,
             evaluation: data.evaluation,
+            faq_match: data.faq_match,
           });
           SessionSidebar.touch(sessionId, { model: data.model });
           ArchitectureTrace.record({

@@ -56,6 +56,9 @@ from examples.k9chat.chat import (
     toggle_correction_learning,
     learn_from_correction,
     get_k9chat_version,
+    check_faq_shortcut,
+    is_faq_shortcut_enabled,
+    toggle_faq_shortcut,
 )
 from examples.k9chat.project_manager import ProjectNotFoundError
 from examples.k9chat.auth import (
@@ -192,6 +195,22 @@ def chat(payload: ChatRequest):
     if not message:
         return JSONResponse({"reply": ""})
 
+    # Checked before acquiring a QueueSlot -- a shortcut match never
+    # touches Ollama/the GPU at all (CPU-only retrieval + reranker), so it
+    # shouldn't have to wait behind other requests using the model.
+    shortcut_start = time.monotonic()
+    faq_match = check_faq_shortcut(message, session_id=payload.session_id)
+    if faq_match:
+        runtime = get_chat_runtime_info()
+        return JSONResponse({
+            "reply": faq_match["answer"],
+            "elapsed_ms": round((time.monotonic() - shortcut_start) * 1000),
+            "model": None,
+            "provider": runtime["provider"],
+            "base_url": runtime["base_url"],
+            "faq_match": {"score": round(faq_match["score"], 2), "source": faq_match["source"]},
+        })
+
     prior_reply = get_last_assistant_reply(payload.session_id)
 
     start = time.monotonic()
@@ -232,6 +251,30 @@ async def chat_stream(payload: ChatRequest):
     async def event_generator():
         if not message:
             yield f"data: {json.dumps({'done': True})}\n\n"
+            return
+
+        # Same as /chat: checked before touching QueueSlot, since a
+        # shortcut match is CPU-only (retrieval + reranker) and never
+        # needs the GPU/Ollama queue. run_in_executor because the
+        # reranker's inference is a real (if small) blocking CPU call --
+        # same offload pattern as evaluate_response()/learn_from_correction()
+        # below.
+        shortcut_start = time.monotonic()
+        faq_match = await asyncio.get_event_loop().run_in_executor(
+            None, check_faq_shortcut, message, session_id
+        )
+        if faq_match:
+            yield f"data: {json.dumps({'chunk': faq_match['answer']})}\n\n"
+            runtime = get_chat_runtime_info()
+            done_payload = {
+                "done": True,
+                "elapsed_ms": round((time.monotonic() - shortcut_start) * 1000),
+                "model": None,
+                "provider": runtime["provider"],
+                "base_url": runtime["base_url"],
+                "faq_match": {"score": round(faq_match["score"], 2), "source": faq_match["source"]},
+            }
+            yield f"data: {json.dumps(done_payload)}\n\n"
             return
 
         prior_reply = get_last_assistant_reply(session_id)
@@ -307,6 +350,17 @@ def learning_status():
 def learning_toggle():
     enabled = toggle_correction_learning()
     return JSONResponse({"learning_enabled": enabled})
+
+
+@app.get("/chat/faq-shortcut")
+def faq_shortcut_status():
+    return JSONResponse({"faq_shortcut_enabled": is_faq_shortcut_enabled()})
+
+
+@app.post("/chat/faq-shortcut/toggle")
+def faq_shortcut_toggle():
+    enabled = toggle_faq_shortcut()
+    return JSONResponse({"faq_shortcut_enabled": enabled})
 
 
 @app.delete("/chat/session/{session_id}")

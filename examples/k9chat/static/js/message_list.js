@@ -164,6 +164,15 @@ const MessageList = (() => {
         gradeEl.textContent = `${ev.grade} ${ev.score}`;
         metaRow.appendChild(gradeEl);
       }
+
+      if (meta.faq_match) {
+        const fm = meta.faq_match;
+        const faqEl = document.createElement("span");
+        faqEl.className = "msg-faq-match";
+        faqEl.title = `Deterministic answer from ${fm.source} -- no LLM call (retrieve-then-rerank match, score ${fm.score})`;
+        faqEl.textContent = "FAQ match";
+        metaRow.appendChild(faqEl);
+      }
     }
 
     col.appendChild(metaRow);
@@ -238,6 +247,18 @@ const MessageList = (() => {
     metaRow.appendChild(gradeEl);
   }
 
+  function addFaqMatchBadge(bubbleRef, faqMatch) {
+    if (!faqMatch || !bubbleRef) return;
+    const metaRow = bubbleRef.wrapper.querySelector(".msg-meta");
+    if (!metaRow) return;
+    if (metaRow.querySelector(".msg-faq-match")) return; // already added
+    const el = document.createElement("span");
+    el.className = "msg-faq-match";
+    el.title = `Deterministic answer from ${faqMatch.source} -- no LLM call (retrieve-then-rerank match, score ${faqMatch.score})`;
+    el.textContent = "FAQ match";
+    metaRow.appendChild(el);
+  }
+
   let learnToastTimer = null;
   function showLearnToast(correctedFact) {
     if (!correctedFact) return;
@@ -265,6 +286,7 @@ const MessageList = (() => {
     addBubble,
     addThinkingBubble,
     addEvalBadge,
+    addFaqMatchBadge,
     showLearnToast,
     removeNode,
     appendMessage,
