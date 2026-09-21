@@ -582,10 +582,11 @@ once this is done: you can directly test out the demos:
 from the k9-aif-framework folder, run the commands:
 
 ```bash
-./run_k9chat.sh
 ./run_acme_support_center.sh
 
 ```
+
+(k9chat moved to its own repo, [k9-aif-examples](https://github.com/k9aif/examples) — clone it as a sibling directory and see its `k9chat/README.md` for setup and run instructions.)
 
 test programs from the tests folder can be run like below:
 

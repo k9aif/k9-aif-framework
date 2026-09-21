@@ -1,5 +1,0 @@
-squads:
-  k9chat:
-    description: Minimal chat squad demonstrating K9-AIF architecture
-    agents:
-      - chat_agent

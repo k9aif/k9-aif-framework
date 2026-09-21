@@ -207,7 +207,8 @@ pytest k9_aif_abb/tests/ -v                      # all
 pytest k9_aif_abb/tests/test_framework.py -v     # framework stability only, no external services
 
 # Run example apps (local)
-./run_k9chat.sh
+# k9chat moved to github.com/k9aif/examples (k9-aif-examples) 2026-09-21 --
+# see that repo's k9chat/README.md for its own run instructions.
 ./run_acme_support_center.sh
 
 # EOC (RHEL/Podman) — after git pull, always rebuild; restart alone won't pick up code
