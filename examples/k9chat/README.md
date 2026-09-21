@@ -7,7 +7,7 @@ It demonstrates how a simple chat experience can be implemented using K9-AIF bui
 This example showcases:
 
 - ABB / SBB architectural separation (`ChatAgent`/`GuardAgent` extend `BaseAgent`; composed directly, not dispatched via a Squad/Orchestrator — see the class diagram note)
-- Model routing via **ModelRouterFactory** and the default **K9ModelRouter**
+- Model routing via **llm_invoke** (retry-on-empty-response + trace events), which resolves **ModelRouterFactory**/**K9ModelRouter** internally — agent code itself never touches the router directly
 - Integration with LLM providers (for example **Ollama**)
 - Real-time knowledge grounding (ChromaDB, `knowledge_retriever.py`/`seed_knowledge_base.py`) plus per-visitor **Projects** (own document collections, `project_manager.py`/`project_retriever.py`)
 - Guest identity with no password (`auth.py`) — every visitor gets a display name/codename, scoping Projects per-visitor without gating access
@@ -19,7 +19,7 @@ This example showcases:
 
 ## Class Diagram
 
-The following class diagram illustrates the core K9Chat object-oriented structure and shows how the example uses K9-AIF abstractions such as `BaseAgent`, `ModelRouterFactory`, `BaseModelRouter`, `InferenceRequest`, and `BasePromptEvaluator`. PlantUML source: [`../diagrams/k9-chat-class-diagram.puml`](../diagrams/k9-chat-class-diagram.puml).
+The following class diagram illustrates the core K9Chat object-oriented structure and shows how the example uses K9-AIF abstractions such as `BaseAgent`, `LlmInvoke` (the only sanctioned path to `ModelRouterFactory`/`BaseModelRouter`), `InferenceRequest`, and `BasePromptEvaluator`. PlantUML source: [`../diagrams/k9-chat-class-diagram.puml`](../diagrams/k9-chat-class-diagram.puml).
 
 ![K9Chat Class Diagram](../diagrams/k9-chat-class-diagram.png)
 

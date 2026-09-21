@@ -94,7 +94,6 @@ package "K9-AIF ABB Layer" <<Frame>> {
 package "K9Chat SBB" <<Frame>> {
 
   class ChatAgent {
-    - router: BaseModelRouter
     - guard_agent: GuardAgent
     + __init__(config=None)
     + execute(payload: dict): dict
