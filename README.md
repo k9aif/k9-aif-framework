@@ -9,7 +9,7 @@ The framework separates Architecture Building Blocks (ABB) from
 Solution Building Blocks (SBB), enabling extensible and composable
 agentic applications.
 
-[![K9-AIF Architecture](docs/diagrams/k9-aif-architecture.png)](docs/diagrams/k9-aif-architecture.png)
+[![K9-AIF Architecture](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9-aif-architecture.png)](https://github.com/k9aif/k9-aif-framework/blob/main/docs/diagrams/k9-aif-architecture.png)
 
 *K9-AIF layered architecture — click the image to view full resolution.*
 
