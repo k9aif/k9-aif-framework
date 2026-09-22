@@ -106,11 +106,7 @@ bash test_squads.sh              # squad execution flow
 
 ### Generate stub app
 
-```bash
-./k9_generator.sh preview <AppName>
-./k9_generator.sh run <AppName>
-./k9_generator.sh recycle <AppName>
-```
+Superseded by K9X Studio (k9x-ecosystem/k9x_studio) -- the `k9_generator.sh` CLI script this section originally described has been removed.
 
 ---
 
@@ -122,7 +118,7 @@ bash test_squads.sh              # squad execution flow
 
 **Solution Building Blocks (SBB)** — concrete implementations that extend ABBs with domain-specific behavior without modifying the core. Two locations:
 - `examples/<AppName>/` — hand-crafted reference SBBs (EOC is the canonical example)
-- `k9_projects/<AppName>/` — stub SBBs scaffolded by `k9_generator.sh`; flesh out from the reference examples
+- `k9_projects/<AppName>/` — stub SBBs scaffolded by K9X Studio; flesh out from the reference examples
 
 ### Execution hierarchy
 

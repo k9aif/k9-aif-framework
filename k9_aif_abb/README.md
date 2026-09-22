@@ -207,14 +207,9 @@ Claude Code understands:
 - Governance enforcement patterns
 - The full inference pipeline through `llm_invoke`
 
-### 3. No Claude Code? Use the Generator
+### 3. No Claude Code? Use K9X Studio
 
-If you are not using Claude Code, use the scaffold generator to create a compliant solution stub:
-
-```bash
-./k9_generator.sh preview <AppName>   # preview what will be generated
-./k9_generator.sh run <AppName>       # generate the solution scaffold
-```
+If you are not using Claude Code, use **K9X Studio** (k9x-ecosystem/k9x_studio) -- drag-and-drop canvas → Generate Scaffold -- to create a compliant solution stub.
 
 Then validate your solution at any time with:
 

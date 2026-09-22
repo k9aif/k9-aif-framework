@@ -200,10 +200,9 @@ See Chapter 2 for repository orientation and Chapter 5 onward for the developmen
 k9-aif-framework/
 ├── k9_aif_abb/          # The framework package — ABBs and OOB implementations
 ├── examples/            # Reference SBB implementations (EOC is canonical)
-├── k9_projects/         # Generated SBB stubs (from k9_generator.sh)
+├── k9_projects/         # Generated SBB stubs (from K9X Studio)
 ├── docs/                # Documentation
 ├── tests/               # Integration and smoke tests
-├── k9_generator.sh      # Scaffold generator for new solutions
 ├── CLAUDE.md            # Claude Code integration guide
 ├── SKILLS.md            # Step-by-step development recipes
 └── requirements.txt     # Python dependencies
@@ -664,7 +663,7 @@ Every SBB follows a lifecycle from initial design to reusable architectural know
 
 ```
 1. Design     → Identify the ABB or OOB base; clarify what the SBB realizes
-2. Scaffold   → Use k9_generator.sh or Studio to create the file structure
+2. Scaffold   → Use K9X Studio to create the file structure
 3. Realize    → Override required abstract methods; add domain logic
 4. Test       → Write domain behavior tests; verify governance and LLM mocking
 5. Inspect    → Run k9aif inspect to verify ABB compliance and decoupling
@@ -3006,11 +3005,7 @@ export K9_ENV=development
 
 ### 19.3 Adding a New SBB
 
-```bash
-# Use the generator for complete scaffold
-./k9_generator.sh preview MyNewApp   # preview without writing
-./k9_generator.sh run MyNewApp       # write scaffold to k9_projects/MyNewApp/
-```
+Use **K9X Studio** (k9x-ecosystem/k9x_studio) — drag-and-drop canvas → Generate Scaffold — to write a complete scaffold to `k9_projects/MyNewApp/`.
 
 The generator creates:
 - Agent stubs extending `BaseAgent`
@@ -3048,16 +3043,13 @@ Before submitting any agent or orchestrator:
 pytest k9_aif_abb/tests/test_framework.py -v
 
 # Run example applications
-./run_k9chat.sh
+# k9chat moved to github.com/k9aif/examples (k9-aif-examples) -- see that
+# repo's k9chat/README.md for its own run instructions.
 ./run_acme_support_center.sh
 
 # Smoke tests
 bash test_model_router.sh
 bash test_squads.sh
-
-# Generator
-./k9_generator.sh preview <AppName>
-./k9_generator.sh run <AppName>
 
 # Build and run EOC (RHEL/Podman)
 bash build.sh

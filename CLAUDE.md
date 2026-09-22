@@ -216,8 +216,7 @@ bash build.sh && bash run_eoc_pod.sh
 sudo podman pod ps
 sudo podman logs eoc-app-backend
 
-# Generate a stub app
-./k9_generator.sh preview <AppName>
+# Generate a stub app -- via K9X Studio (k9x-ecosystem/k9x_studio), not a CLI script
 ```
 
 ## Known gotchas (not obvious from the code alone)

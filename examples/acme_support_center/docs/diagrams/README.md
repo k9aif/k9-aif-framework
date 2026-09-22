@@ -3,11 +3,7 @@
 
 Step-1
 
-```bash
-
-./k9_generator run acme_support_center
-
-```
+Scaffold via K9X Studio (k9x-ecosystem/k9x_studio) -- drag-and-drop canvas -> Generate Scaffold.
 
 Step-2
 

@@ -450,20 +450,6 @@ Open **http://localhost:8080** — no setup required.
 
 ---
 
-## K9-AIF Generator — CLI
-
-For terminal-based workflows, K9-AIF includes a lightweight CLI generator:
-
-```bash
-./k9_generator.sh preview <AppName>   # preview what will be generated
-./k9_generator.sh run <AppName>       # generate the scaffold
-./k9_generator.sh recycle <AppName>   # regenerate from scratch
-```
-
-Refer to: [K9-AIF Generator](generator/README.md)
-
----
-
 ## K9-AIF Developer Journey
 
 ![K9-AIF Developer Journey](docs/diagrams/developers_journey.png)
@@ -474,15 +460,7 @@ The diagram illustrates how applications are built using K9-AIF:
 • **Application developers** extend ABBs into Solution Building Blocks (SBB) and implement agent logic in VS Code + Claude Code.
 • **Business analysts** configure workflows and governance policies using YAML without modifying code.
 
-Two paths to a running scaffold:
-
-
-| Path   | Tool            | How                                       |
-| -------- | ----------------- | ------------------------------------------- |
-| Visual | K9X Studio      | Drag-and-drop canvas → Generate Scaffold |
-| CLI    | k9_generator.sh | `./k9_generator.sh run <AppName>`         |
-
-Both paths produce the same scaffold structure — runnable out of the box with Ollama.
+Scaffolding a new solution goes through **K9X Studio**: drag-and-drop canvas → Generate Scaffold — runnable out of the box with Ollama.
 
 ---
 
@@ -671,14 +649,9 @@ Claude Code understands:
 - Governance enforcement patterns
 - The full inference pipeline through `llm_invoke`
 
-### 3. No Claude Code? Use the Generator
+### 3. No Claude Code? Use K9X Studio
 
-If you are not using Claude Code, use the scaffold generator to create a compliant solution stub:
-
-```bash
-./k9_generator.sh preview <AppName>   # preview what will be generated
-./k9_generator.sh run <AppName>       # generate the solution scaffold
-```
+If you are not using Claude Code, use **K9X Studio** (drag-and-drop canvas → Generate Scaffold) to create a compliant solution stub — see the K9-AIF Developer Journey section above.
 
 Then validate your solution at any time with:
 

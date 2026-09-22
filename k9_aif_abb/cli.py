@@ -160,8 +160,8 @@ A: examples/K9X_Enterprise_Insurance_OperationsCenter/ — a full
    production system: Kafka, PostgreSQL, Podman, 3 containers.
 
 Q: How do I scaffold a new project?
-A: Use k9_generator.sh in the framework repository:
-   ./k9_generator.sh run MyApp
+A: Use K9X Studio (k9x-ecosystem/k9x_studio) -- drag-and-drop canvas
+   -> Generate Scaffold.
 """
 
 HELP_PATTERNS = """
@@ -1491,7 +1491,7 @@ def main():
     elif cmd == "new":
         topic = args[1] if len(args) > 1 else ""
         print(f"k9aif new {topic} — coming soon.")
-        print("For now, use k9_generator.sh in the framework repository.")
+        print("For now, use K9X Studio (k9x-ecosystem/k9x_studio).")
     else:
         print(f"Unknown command: {cmd}")
         print("Run 'k9aif --help' for usage.")
