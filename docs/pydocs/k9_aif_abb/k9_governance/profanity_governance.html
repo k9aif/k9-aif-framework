@@ -31,25 +31,7 @@
             <h2>API Documentation</h2>
                 <ul class="memberlist">
             <li>
-                    <a class="class" href="#ProfanityGovernance">ProfanityGovernance</a>
-                            <ul class="memberlist">
-                        <li>
-                                <a class="function" href="#ProfanityGovernance.__init__">ProfanityGovernance</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#ProfanityGovernance.logger">logger</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#ProfanityGovernance.llm">llm</a>
-                        </li>
-                        <li>
-                                <a class="function" href="#ProfanityGovernance.pre_process">pre_process</a>
-                        </li>
-                        <li>
-                                <a class="function" href="#ProfanityGovernance.post_process">post_process</a>
-                        </li>
-                </ul>
-
+                    <a class="variable" href="#ProfanityGovernance">ProfanityGovernance</a>
             </li>
     </ul>
 
@@ -67,7 +49,32 @@
                     <h1 class="modulename">
 <a href="./../../k9_aif_abb.html">k9_aif_abb</a><wbr>.<a href="./../k9_governance.html">k9_governance</a><wbr>.profanity_governance    </h1>
 
-                
+                        <div class="docstring"><p>ProfanityGovernance — retired in place, 2026-09-19.</p>
+
+<p>The original implementation here was example/placeholder code (its own
+docstring said so) and was confirmed non-functional against the real
+model: it read payload["text"] (generated agents use "query"), used a
+prompt instructing the model to answer "SAFE"/"BLOCKED" free text, and
+granite4.1-guardian:8b never actually produces that format — it always
+answers "<score>yes</score>"/"<score>no</score>" regardless of prompt
+wording (confirmed empirically, see k9x_satan/target/guardian_governance.py,
+where this was first discovered and correctly handled). Against the real
+model, the old pre_process()'s <code>"BLOCKED" in result.upper()</code> check could
+never match, so it would silently pass every payload, safe or not,
+forever — while looking like semantic governance was active.</p>
+
+<p>Both generator templates (studiox_v2's and studiox_ibm's
+agent_base.py.j2/agent_critic_actor.py.j2/agent_validation_loop.py.j2) and
+every scaffold either has already generated construct this exact class by
+name — <code>from <a href="">k9_aif_abb.k9_governance.profanity_governance</a> import
+ProfanityGovernance</code>. Rather than rename the class and require touching
+every generator template and already-generated scaffold, this file now
+re-exports the real, fixed implementation under the same name — every
+existing call site keeps working unchanged, and starts actually working
+correctly instead of silently doing nothing. See guardian_governance.py
+for the real implementation and its full docstring.</p>
+</div>
+
                         <input id="mod-profanity_governance-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-profanity_governance-view-source"><span>View Source</span></label>
@@ -75,221 +82,51 @@
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="c1"># File: k9_aif_abb/k9_agents/governance/profanity_governance.py</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.governance.base_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseGovernance</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_utils.timer</span><span class="w"> </span><span class="kn">import</span> <span class="n">timed_stage</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_factories.llm_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMFactory</span>  <span class="c1"># Example ABB</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="k">class</span><span class="w"> </span><span class="nc">ProfanityGovernance</span><span class="p">(</span><span class="n">BaseGovernance</span><span class="p">):</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">    K9-AIF Governance SBB - ProfanityGovernance</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    -------------------------------------------</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    Uses either local keyword rules or an external inference engine</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">    (e.g., Granite Guardian LLM) to detect profanity or policy violations.</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">)</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">llm</span> <span class="o">=</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;granite-guardian&quot;</span><span class="p">)</span>  <span class="c1"># Example inference model</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PreCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pre_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Running Granite Guardian profanity check...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="c1"># Use inference engine</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Analyze this text for profanity:</span><span class="se">\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">ProfanityGovernance — retired in place, 2026-09-19.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">The original implementation here was example/placeholder code (its own</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">docstring said so) and was confirmed non-functional against the real</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">model: it read payload[&quot;text&quot;] (generated agents use &quot;query&quot;), used a</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">prompt instructing the model to answer &quot;SAFE&quot;/&quot;BLOCKED&quot; free text, and</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">granite4.1-guardian:8b never actually produces that format — it always</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">answers &quot;&lt;score&gt;yes&lt;/score&gt;&quot;/&quot;&lt;score&gt;no&lt;/score&gt;&quot; regardless of prompt</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">wording (confirmed empirically, see k9x_satan/target/guardian_governance.py,</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">where this was first discovered and correctly handled). Against the real</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">model, the old pre_process()&#39;s `&quot;BLOCKED&quot; in result.upper()` check could</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">never match, so it would silently pass every payload, safe or not,</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">forever — while looking like semantic governance was active.</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">Both generator templates (studiox_v2&#39;s and studiox_ibm&#39;s</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">agent_base.py.j2/agent_critic_actor.py.j2/agent_validation_loop.py.j2) and</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">every scaffold either has already generated construct this exact class by</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">name — `from k9_aif_abb.k9_governance.profanity_governance import</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">ProfanityGovernance`. Rather than rename the class and require touching</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">every generator template and already-generated scaffold, this file now</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">re-exports the real, fixed implementation under the same name — every</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">existing call site keeps working unchanged, and starts actually working</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">correctly instead of silently doing nothing. See guardian_governance.py</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">for the real implementation and its full docstring.</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_governance.guardian_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">GuardianGovernance</span>
 </span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>        <span class="k">if</span> <span class="s2">&quot;BLOCKED&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Guardian flagged content as BLOCKED&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">)</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>            <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ProfanityGovernance blocked ingress: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Content passed governance checks (SAFE)&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="k">return</span> <span class="n">payload</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PostCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">post_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Performing post-processing validation...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="k">return</span> <span class="n">payload</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="n">ProfanityGovernance</span> <span class="o">=</span> <span class="n">GuardianGovernance</span>
 </span></pre></div>
 
 
             </section>
                 <section id="ProfanityGovernance">
-                            <input id="ProfanityGovernance-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr class">
-            
-    <span class="def">class</span>
-    <span class="name">ProfanityGovernance</span><wbr>(<span class="base"><a href="../k9_core/governance/base_governance.html#BaseGovernance">k9_aif_abb.k9_core.governance.base_governance.BaseGovernance</a></span>):
+                    <div class="attr variable">
+            <span class="name">ProfanityGovernance</span>        =
+<span class="default_value">&lt;class &#39;<a href="guardian_governance.html#GuardianGovernance">k9_aif_abb.k9_governance.guardian_governance.GuardianGovernance</a>&#39;&gt;</span>
 
-                <label class="view-source-button" for="ProfanityGovernance-view-source"><span>View Source</span></label>
-
+        
     </div>
     <a class="headerlink" href="#ProfanityGovernance"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ProfanityGovernance-13"><a href="#ProfanityGovernance-13"><span class="linenos">13</span></a><span class="k">class</span><span class="w"> </span><span class="nc">ProfanityGovernance</span><span class="p">(</span><span class="n">BaseGovernance</span><span class="p">):</span>
-</span><span id="ProfanityGovernance-14"><a href="#ProfanityGovernance-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="ProfanityGovernance-15"><a href="#ProfanityGovernance-15"><span class="linenos">15</span></a><span class="sd">    K9-AIF Governance SBB - ProfanityGovernance</span>
-</span><span id="ProfanityGovernance-16"><a href="#ProfanityGovernance-16"><span class="linenos">16</span></a><span class="sd">    -------------------------------------------</span>
-</span><span id="ProfanityGovernance-17"><a href="#ProfanityGovernance-17"><span class="linenos">17</span></a><span class="sd">    Uses either local keyword rules or an external inference engine</span>
-</span><span id="ProfanityGovernance-18"><a href="#ProfanityGovernance-18"><span class="linenos">18</span></a><span class="sd">    (e.g., Granite Guardian LLM) to detect profanity or policy violations.</span>
-</span><span id="ProfanityGovernance-19"><a href="#ProfanityGovernance-19"><span class="linenos">19</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="ProfanityGovernance-20"><a href="#ProfanityGovernance-20"><span class="linenos">20</span></a>
-</span><span id="ProfanityGovernance-21"><a href="#ProfanityGovernance-21"><span class="linenos">21</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="ProfanityGovernance-22"><a href="#ProfanityGovernance-22"><span class="linenos">22</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-23"><a href="#ProfanityGovernance-23"><span class="linenos">23</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-24"><a href="#ProfanityGovernance-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">llm</span> <span class="o">=</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;granite-guardian&quot;</span><span class="p">)</span>  <span class="c1"># Example inference model</span>
-</span><span id="ProfanityGovernance-25"><a href="#ProfanityGovernance-25"><span class="linenos">25</span></a>
-</span><span id="ProfanityGovernance-26"><a href="#ProfanityGovernance-26"><span class="linenos">26</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PreCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="ProfanityGovernance-27"><a href="#ProfanityGovernance-27"><span class="linenos">27</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pre_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ProfanityGovernance-28"><a href="#ProfanityGovernance-28"><span class="linenos">28</span></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-29"><a href="#ProfanityGovernance-29"><span class="linenos">29</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Running Granite Guardian profanity check...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-30"><a href="#ProfanityGovernance-30"><span class="linenos">30</span></a>
-</span><span id="ProfanityGovernance-31"><a href="#ProfanityGovernance-31"><span class="linenos">31</span></a>        <span class="c1"># Use inference engine</span>
-</span><span id="ProfanityGovernance-32"><a href="#ProfanityGovernance-32"><span class="linenos">32</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Analyze this text for profanity:</span><span class="se">\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-33"><a href="#ProfanityGovernance-33"><span class="linenos">33</span></a>
-</span><span id="ProfanityGovernance-34"><a href="#ProfanityGovernance-34"><span class="linenos">34</span></a>        <span class="k">if</span> <span class="s2">&quot;BLOCKED&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
-</span><span id="ProfanityGovernance-35"><a href="#ProfanityGovernance-35"><span class="linenos">35</span></a>            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Guardian flagged content as BLOCKED&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-36"><a href="#ProfanityGovernance-36"><span class="linenos">36</span></a>            <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ProfanityGovernance blocked ingress: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-37"><a href="#ProfanityGovernance-37"><span class="linenos">37</span></a>
-</span><span id="ProfanityGovernance-38"><a href="#ProfanityGovernance-38"><span class="linenos">38</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Content passed governance checks (SAFE)&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-39"><a href="#ProfanityGovernance-39"><span class="linenos">39</span></a>        <span class="k">return</span> <span class="n">payload</span>
-</span><span id="ProfanityGovernance-40"><a href="#ProfanityGovernance-40"><span class="linenos">40</span></a>
-</span><span id="ProfanityGovernance-41"><a href="#ProfanityGovernance-41"><span class="linenos">41</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PostCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="ProfanityGovernance-42"><a href="#ProfanityGovernance-42"><span class="linenos">42</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">post_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ProfanityGovernance-43"><a href="#ProfanityGovernance-43"><span class="linenos">43</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Performing post-processing validation...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance-44"><a href="#ProfanityGovernance-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="n">payload</span>
-</span></pre></div>
-
-
-            <div class="docstring"><h2 id="k9-aif-governance-sbb-profanitygovernance">K9-AIF Governance SBB - ProfanityGovernance</h2>
-
-<p>Uses either local keyword rules or an external inference engine
-(e.g., Granite Guardian LLM) to detect profanity or policy violations.</p>
-</div>
-
-
-                            <div id="ProfanityGovernance.__init__" class="classattr">
-                                        <input id="ProfanityGovernance.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-            
-        <span class="name">ProfanityGovernance</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>, </span><span class="param"><span class="n">monitor</span><span class="o">=</span><span class="kc">None</span></span>)</span>
-
-                <label class="view-source-button" for="ProfanityGovernance.__init__-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#ProfanityGovernance.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ProfanityGovernance.__init__-21"><a href="#ProfanityGovernance.__init__-21"><span class="linenos">21</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="ProfanityGovernance.__init__-22"><a href="#ProfanityGovernance.__init__-22"><span class="linenos">22</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.__init__-23"><a href="#ProfanityGovernance.__init__-23"><span class="linenos">23</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.__init__-24"><a href="#ProfanityGovernance.__init__-24"><span class="linenos">24</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">llm</span> <span class="o">=</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;granite-guardian&quot;</span><span class="p">)</span>  <span class="c1"># Example inference model</span>
-</span></pre></div>
-
-
-    
-
-                            </div>
-                            <div id="ProfanityGovernance.logger" class="classattr">
-                                <div class="attr variable">
-            <span class="name">logger</span>
-
-        
-    </div>
-    <a class="headerlink" href="#ProfanityGovernance.logger"></a>
     
     
 
-                            </div>
-                            <div id="ProfanityGovernance.llm" class="classattr">
-                                <div class="attr variable">
-            <span class="name">llm</span>
-
-        
-    </div>
-    <a class="headerlink" href="#ProfanityGovernance.llm"></a>
-    
-    
-
-                            </div>
-                            <div id="ProfanityGovernance.pre_process" class="classattr">
-                                        <input id="ProfanityGovernance.pre_process-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-                    <div class="decorator decorator-timed_stage">@timed_stage(&#39;Governance PreCheck&#39;, logger=logging.getLogger(&#39;governance&#39;))</div>
-
-        <span class="def">async def</span>
-        <span class="name">pre_process</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
-
-                <label class="view-source-button" for="ProfanityGovernance.pre_process-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#ProfanityGovernance.pre_process"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ProfanityGovernance.pre_process-26"><a href="#ProfanityGovernance.pre_process-26"><span class="linenos">26</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PreCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="ProfanityGovernance.pre_process-27"><a href="#ProfanityGovernance.pre_process-27"><span class="linenos">27</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">pre_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ProfanityGovernance.pre_process-28"><a href="#ProfanityGovernance.pre_process-28"><span class="linenos">28</span></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-29"><a href="#ProfanityGovernance.pre_process-29"><span class="linenos">29</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Running Granite Guardian profanity check...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-30"><a href="#ProfanityGovernance.pre_process-30"><span class="linenos">30</span></a>
-</span><span id="ProfanityGovernance.pre_process-31"><a href="#ProfanityGovernance.pre_process-31"><span class="linenos">31</span></a>        <span class="c1"># Use inference engine</span>
-</span><span id="ProfanityGovernance.pre_process-32"><a href="#ProfanityGovernance.pre_process-32"><span class="linenos">32</span></a>        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Analyze this text for profanity:</span><span class="se">\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-33"><a href="#ProfanityGovernance.pre_process-33"><span class="linenos">33</span></a>
-</span><span id="ProfanityGovernance.pre_process-34"><a href="#ProfanityGovernance.pre_process-34"><span class="linenos">34</span></a>        <span class="k">if</span> <span class="s2">&quot;BLOCKED&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">upper</span><span class="p">():</span>
-</span><span id="ProfanityGovernance.pre_process-35"><a href="#ProfanityGovernance.pre_process-35"><span class="linenos">35</span></a>            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Guardian flagged content as BLOCKED&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;WARNING&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-36"><a href="#ProfanityGovernance.pre_process-36"><span class="linenos">36</span></a>            <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ProfanityGovernance blocked ingress: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-37"><a href="#ProfanityGovernance.pre_process-37"><span class="linenos">37</span></a>
-</span><span id="ProfanityGovernance.pre_process-38"><a href="#ProfanityGovernance.pre_process-38"><span class="linenos">38</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Content passed governance checks (SAFE)&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.pre_process-39"><a href="#ProfanityGovernance.pre_process-39"><span class="linenos">39</span></a>        <span class="k">return</span> <span class="n">payload</span>
-</span></pre></div>
-
-
-            <div class="docstring"><p>Execute governance and compliance checks BEFORE sending payload outward.
-Must be implemented by subclasses (e.g., Guardian, SecurityPolicy).</p>
-</div>
-
-
-                            </div>
-                            <div id="ProfanityGovernance.post_process" class="classattr">
-                                        <input id="ProfanityGovernance.post_process-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-<div class="attr function">
-                    <div class="decorator decorator-timed_stage">@timed_stage(&#39;Governance PostCheck&#39;, logger=logging.getLogger(&#39;governance&#39;))</div>
-
-        <span class="def">async def</span>
-        <span class="name">post_process</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>,</span><span class="param">	<span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
-
-                <label class="view-source-button" for="ProfanityGovernance.post_process-view-source"><span>View Source</span></label>
-
-    </div>
-    <a class="headerlink" href="#ProfanityGovernance.post_process"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ProfanityGovernance.post_process-41"><a href="#ProfanityGovernance.post_process-41"><span class="linenos">41</span></a>    <span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;Governance PostCheck&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">))</span>
-</span><span id="ProfanityGovernance.post_process-42"><a href="#ProfanityGovernance.post_process-42"><span class="linenos">42</span></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">post_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ProfanityGovernance.post_process-43"><a href="#ProfanityGovernance.post_process-43"><span class="linenos">43</span></a>        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;Performing post-processing validation...&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">)</span>
-</span><span id="ProfanityGovernance.post_process-44"><a href="#ProfanityGovernance.post_process-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="n">payload</span>
-</span></pre></div>
-
-
-            <div class="docstring"><p>Execute governance and compliance checks AFTER payload is received or processed.
-Must be implemented by subclasses.</p>
-</div>
-
-
-                            </div>
-                            <div class="inherited">
-                                <h5>Inherited Members</h5>
-                                <dl>
-                                    <div><dt><a href="../k9_core/governance/base_governance.html#BaseGovernance">k9_aif_abb.k9_core.governance.base_governance.BaseGovernance</a></dt>
-                                <dd id="ProfanityGovernance.layer" class="variable"><a href="../k9_core/governance/base_governance.html#BaseGovernance.layer">layer</a></dd>
-                <dd id="ProfanityGovernance.config" class="variable"><a href="../k9_core/governance/base_governance.html#BaseGovernance.config">config</a></dd>
-                <dd id="ProfanityGovernance.log" class="function"><a href="../k9_core/governance/base_governance.html#BaseGovernance.log">log</a></dd>
-
-            </div>
-            <div><dt><a href="../k9_core/base_component.html#BaseComponent">k9_aif_abb.k9_core.base_component.BaseComponent</a></dt>
-                                <dd id="ProfanityGovernance.monitor" class="variable"><a href="../k9_core/base_component.html#BaseComponent.monitor">monitor</a></dd>
-                <dd id="ProfanityGovernance.message_bus" class="variable"><a href="../k9_core/base_component.html#BaseComponent.message_bus">message_bus</a></dd>
-
-            </div>
-                                </dl>
-                            </div>
                 </section>
     </main>
 <script>
