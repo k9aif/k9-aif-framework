@@ -424,27 +424,32 @@ Examples include:
 
 ## K9X Studio — Visual Builder
 
-**[K9X Studio](https://github.com/k9aif/k9x-ecosystem)** is a browser-based drag-and-drop architecture builder for K9-AIF systems.
+**K9X Studio** is a browser-based drag-and-drop architecture builder for K9-AIF systems.
 
 Design your architecture visually → generate a production-ready scaffold → implement in VS Code + Claude Code.
 
-```bash
-podman run -d \
-  --name k9x_studio \
-  -p 8080:8080 \
-  -e K9X_PROJECTS_ROOT="/k9x/projects" \
-  -v ~/k9x-studio-working:/k9x/projects:Z \
-  ghcr.io/k9aif/k9x-studio:latest
-```
-
-Open **http://localhost:8080** — no setup required.
-
 - Drag Router → Orchestrator → Squad → Agents onto the canvas
 - Configure each node in the inspector
-- Click **Generate Scaffold** — a ready-to-run project lands in `~/k9x-studio-working/k9_projects/<your-project>/`
+- Click **Generate Scaffold** — a ready-to-run project lands in `k9_projects/<your-project>/`
 - Supports Ollama, OpenAI, and Grok backends out of the box
 
-➡️ **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem)**
+➡️ **https://studio.k9x.ai** — source: **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem)**
+
+## K9X Ecosystem
+
+Products built on top of K9-AIF, beyond the framework itself:
+
+| Product | Purpose | URL |
+|---|---|---|
+| Designer Studio | Visual K9-AIF architecture builder (see above) | [studio.k9x.ai](https://studio.k9x.ai) |
+| Enterprise Continuum | Governed SBB/ABB catalog — publish, promote, harvest workflow | [continuum.k9x.ai](https://continuum.k9x.ai) |
+| Enterprise Repository | TOGAF Architecture Repository — governed artifact/standards catalog | [repo.k9x.ai](https://repo.k9x.ai) |
+| HIL (Human in the Loop) | Kafka-native case management for agent escalations | [hil.k9x.ai](https://hil.k9x.ai) |
+| Security Analysis Tool (SATAN) | Adversarial red-team harness proving k9x_Shield containment | [satan.k9x.ai](https://satan.k9x.ai) |
+
+In the pipeline: **dashboard.k9x.ai** (read-only ecosystem catalog + launch point), **inspector.k9x.ai** (architectural conformance scanner for any K9-AIF solution).
+
+Source for all of the above: **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem)**
 
 ---
 
