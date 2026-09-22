@@ -168,11 +168,7 @@ print("k9_aif_framework installed successfully")
 
 ### Inspect your solution
 
-Once installed, run the inspector against your solution folder to validate ABB compliance:
-
-```bash
-python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
-```
+A dedicated architectural conformance inspector (`k9x_inspector`) is in active development in [k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem). An earlier, naive per-file version of this check shipped inside the framework itself but produced false positives on legitimate code (it didn't resolve inheritance chains) and has been removed.
 
 ---
 
@@ -211,11 +207,7 @@ Claude Code understands:
 
 If you are not using Claude Code, use **K9X Studio** (k9x-ecosystem/k9x_studio) -- drag-and-drop canvas → Generate Scaffold -- to create a compliant solution stub.
 
-Then validate your solution at any time with:
-
-```bash
-python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
-```
+See "Inspect your solution" above for validating it once built.
 
 ---
 

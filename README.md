@@ -236,8 +236,8 @@ The EOC is the canonical reference implementation of K9-AIF — the most complet
 
 - **ACME Health Insurance Claims Assistant** — Multi-agent insurance workflow demo including eligibility checks, provider lookup, and claims support.
   → [examples/acme_health_insurance](examples/acme_health_insurance)
-- **K9Chat** — Minimal chat application demonstrating K9-AIF squads, agents, and model routing.
-  → [examples/k9chat](examples/k9chat)
+- **K9Chat** — Reference chat application demonstrating `BaseAgent`, `llm_invoke`, multi-provider model routing, governance, and retrieval grounding. A single-agent app, not a multi-agent Squad/Orchestrator example — see the EOC example above for that.
+  → [github.com/k9aif/examples](https://github.com/k9aif/examples) (moved out of this repo 2026-09-21)
 - **WeatherAssist Decision Support System**
 - **Department of War (DoW) Systems Engineering Pipeline** — Demonstrates how K9-AIF architectural patterns can automate multi-stage systems engineering workflows aligned with the DoDAF 2.0 architecture framework, exploring agent orchestration across multiple architectural stages using K9-AIF patterns together with the CrewAI orchestration framework.
 
@@ -422,9 +422,7 @@ Examples include:
 
 # Scaffold Generation
 
-K9-AIF provides two ways to generate a production-ready project scaffold.
-
-## K9X Studio — Visual Builder (Recommended)
+## K9X Studio — Visual Builder
 
 **[K9X Studio](https://github.com/k9aif/k9x-ecosystem)** is a browser-based drag-and-drop architecture builder for K9-AIF systems.
 
@@ -653,11 +651,7 @@ Claude Code understands:
 
 If you are not using Claude Code, use **K9X Studio** (drag-and-drop canvas → Generate Scaffold) to create a compliant solution stub — see the K9-AIF Developer Journey section above.
 
-Then validate your solution at any time with:
-
-```bash
-python -m k9_aif_abb.k9_utils.k9_aif_inspector /path/to/your/solution
-```
+A dedicated architectural conformance inspector for validating any K9-AIF solution (`k9x_inspector`) is in active development in [k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem) — an earlier, naive per-file version of this check shipped inside the framework itself but produced false positives on legitimate code (it didn't resolve inheritance chains) and has been removed.
 
 ---
 
