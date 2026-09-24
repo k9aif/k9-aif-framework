@@ -42,8 +42,25 @@ class PostgresDatabaseStorage(BaseDatabaseStorage):
         self.schema = pg.get("schema", "public")
         self.echo = bool(pg.get("echo", False))
 
+        # G-20: a bare "postgresql://" scheme lets SQLAlchemy pick the
+        # default driver for whatever version happens to be installed --
+        # SQLAlchemy 2.1 changed that default from psycopg2 to psycopg
+        # (v3), while this framework's own `postgres` extra still ships
+        # only psycopg2-binary. A fresh `pip install k9-aif[postgres]`
+        # then resolves sqlalchemy>=2.1 (no upper bound in pyproject.toml)
+        # and fails with ModuleNotFoundError: psycopg on first connect --
+        # confirmed live against a clean install. Naming the driver
+        # explicitly removes the ambiguity regardless of which
+        # SQLAlchemy version resolves. Chose +psycopg2 (not +psycopg,
+        # i.e. not also switching the extra to psycopg v3) because it
+        # matches what's actually shipped today with zero packaging
+        # change -- the smallest fix that closes the gap between "what
+        # the extra installs" and "what the URL asks SQLAlchemy to load".
+        # Configurable via postgres.driver for anyone who has psycopg v3
+        # installed by other means and wants it instead.
+        self.driver = pg.get("driver", "psycopg2")
         self.database_url = (
-            f"postgresql://{self.user}:{self.password}"
+            f"postgresql+{self.driver}://{self.user}:{self.password}"
             f"@{self.host}:{self.port}/{self.database}"
         )
 

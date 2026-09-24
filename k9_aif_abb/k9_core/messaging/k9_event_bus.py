@@ -182,6 +182,7 @@ class K9EventBus:
         session_timeout_ms: int = 30000,
         heartbeat_interval_ms: int = 10000,
         max_poll_interval_ms: int = 600000,
+        metadata_max_age_ms: int = 3000,
     ) -> None:
         """
         Async consumer loop using aiokafka.
@@ -200,6 +201,12 @@ class K9EventBus:
             session_timeout_ms:   broker-side session timeout.
             heartbeat_interval_ms: heartbeat frequency (must be < session_timeout_ms / 3).
             max_poll_interval_ms: max time between fetches (set high for slow LLM calls).
+            metadata_max_age_ms:  how often the consumer refreshes cluster metadata --
+                                   aiokafka's own default is 5 minutes, which delays
+                                   discovering a topic created *after* this consumer
+                                   started (e.g. the first hil.replies.<queue> for a
+                                   queue nobody's escalated to yet) by up to that long.
+                                   Kept short and configurable rather than hardcoded.
         """
         try:
             from aiokafka import AIOKafkaConsumer
@@ -209,7 +216,17 @@ class K9EventBus:
             )
             return
 
-        consumer_kwargs = dict(
+        # G-19: aiokafka's AIOKafkaConsumer constructor has no `pattern`
+        # parameter on any version -- pattern subscription is
+        # `consumer.subscribe(pattern=...)`, called *after* construction,
+        # not a constructor kwarg. Confirmed live: the prior version of
+        # this method (`AIOKafkaConsumer(pattern=..., ...)`) raised
+        # TypeError against a real broker, so K9EventRouter.
+        # listen_for_hil_replies() never actually consumed a single
+        # reply -- caught only by a live-integration test, since this
+        # framework's own test_hil_roundtrip.py fakes the message bus
+        # and never exercises this method's real aiokafka call at all.
+        consumer = AIOKafkaConsumer(
             bootstrap_servers=[self.broker_url],
             group_id=self.group_id,
             auto_offset_reset="earliest",
@@ -218,16 +235,16 @@ class K9EventBus:
             session_timeout_ms=session_timeout_ms,
             heartbeat_interval_ms=heartbeat_interval_ms,
             max_poll_interval_ms=max_poll_interval_ms,
+            metadata_max_age_ms=metadata_max_age_ms,
             **self._security_kwargs(),
         )
 
         if pattern is not None:
-            import re
-            consumer = AIOKafkaConsumer(pattern=re.compile(pattern), **consumer_kwargs)
+            consumer.subscribe(pattern=pattern)
             subscribe_desc = f"pattern={pattern!r}"
         else:
             subscribe_topics = topics if topics is not None else [self.topic]
-            consumer = AIOKafkaConsumer(*subscribe_topics, **consumer_kwargs)
+            consumer.subscribe(topics=subscribe_topics)
             subscribe_desc = f"topics={subscribe_topics}"
 
         await consumer.start()

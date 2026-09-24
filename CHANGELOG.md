@@ -4,6 +4,65 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.12.2] — 2026-09-24
+
+### Fixed
+
+- **G-19 (critical): `K9EventBus.subscribe_async(pattern=…)` raised `TypeError` against a real broker.** The prior implementation called `AIOKafkaConsumer(pattern=re.compile(pattern), ...)` — aiokafka's constructor has no `pattern` parameter on any version; pattern subscription is `consumer.subscribe(pattern=...)`, called after construction. Impact: `K9EventRouter.listen_for_hil_replies()` failed on real Kafka, so no HIL reply was ever consumed and paused flows never resumed. Missed by this framework's own `test_hil_roundtrip.py`, which fakes the message bus and never exercises this method's real aiokafka call — caught only by a live-integration test against real Redpanda. Fixed: construct the consumer without `topics`/`pattern`, then call `consumer.subscribe(pattern=...)` or `consumer.subscribe(topics=...)` before `start()`. Also added a configurable `metadata_max_age_ms` (default 3000ms, was implicitly aiokafka's 5-minute default), since the long default delays discovering a topic created after the consumer started — e.g. the first `hil.replies.<queue>` for a queue nobody's escalated to yet.
+- **G-20 (high): `PostgresDatabaseStorage` failed on a clean install** with `ModuleNotFoundError: psycopg`. `sqlalchemy>=2.0` (no upper bound) resolves 2.1 on a fresh install, and SQLAlchemy 2.1 changed the default driver for a bare `postgresql://` URL from psycopg2 to psycopg (v3) — but the framework's own `postgres` extra ships only `psycopg2-binary`. Fixed by naming the driver explicitly (`postgresql+psycopg2://`, matching what the extra actually installs) rather than switching the extra to psycopg v3 — smallest fix that closes the gap between what's installed and what the URL asks SQLAlchemy to load. Configurable via `postgres.driver` in config for anyone with psycopg v3 installed by other means.
+
+### Documentation
+
+- **G-17: `SKILLS.md` Skill 13 described an older provider-adapter pattern than the code.** It said `LLMFactory.register("name", SomeBaseLLMSubclass)` was the whole mechanism — `BaseProviderAdapter`/`ProviderAdapterRegistry` is a real layer that already sat between `LLMFactory` and every OOB adapter (ollama, openai, openai-compatible, azure-openai, watsonx, mock) before this release, undocumented. Refreshed from the actual current code.
+
+### Deferred
+
+- **G-18** (make `_on_hil_reply()`'s resolve→route sequence crash-safe via a `pending → resuming → resolved` state plus a stale-row recovery sweep) — real scope, not small: needs new Router-side sweep infrastructure this framework doesn't have yet. Left for 1.13 rather than rushed into this release.
+
+18 new tests (`test_k9_event_bus_subscribe_async.py`, `test_postgres_database_storage.py`), 584/584 full suite passing, zero regressions.
+
+**Note:** `1.12.0` was yanked from PyPI — it shipped before G-16 (a separate reply-idempotency bug, fixed in `1.12.1`) was known. Anything pinning this framework should use `1.12.2`, not `1.12.0` or `1.12.1`.
+
+---
+
+## [1.12.1] — 2026-09-24
+
+### Fixed
+
+- **G-16: HIL reply resolution wasn't actually idempotent.** `get_hil_pending()` had no status filter — it returned a `hil_pending` row whether it was `"pending"` or `"resolved"`. `_on_hil_reply()` only checked whether a row existed at all, never whether it was still pending, before re-routing. A duplicate reply — Kafka's own at-least-once redelivery on a consumer-group rebalance, or a race between the outbox's immediate publish attempt and its retry sweep both landing a message on the topic (k9x-hil) — re-routed an already-resumed flow a second time. Fixed: `resolve_hil_pending()` is now an atomic compare-and-swap (`UPDATE ... WHERE correlation_id=? AND status='pending'`, returns whether exactly one row changed) instead of an unconditional update with no return value; `_on_hil_reply()` calls it *before* building the resumed payload and only re-routes if it returns `True`. Also closes a second latent bug for free: two Router instances racing on the same reply now correctly have only one of them win.
+
+New test proves a duplicate reply resumes a flow exactly once. 570/570 full suite passing.
+
+---
+
+## [1.12.0] — 2026-09-24 — YANKED, see 1.12.2
+
+### Added
+
+- **`AzureOpenAIProviderAdapter` + `AzureOpenAILLM` (G-4)** — registered OOB as backend `azure-openai` in `ProviderAdapterRegistry`. Motivated by direct evidence, not speculative provider coverage: a live IBM Process Studio blueprint resolved its actual tech stack to "Azure OpenAI GPT-4o, Azure tenant." Routes by deployment name (Azure's real routing model — passed as `model=` per-request, not baked into the client at construction); credential resolution mirrors `OpenAIProviderAdapter`'s exact order for consistency. 38 new tests (invocation, timeout, 429, malformed/empty responses, `system_prompt=None` acceptance).
+
+569/569 full suite passing at release time.
+
+**Yanked 2026-09-24:** shipped before G-16 (see `1.12.1`) was discovered — a duplicate HIL reply could re-route an already-resumed flow. Use `1.12.2`.
+
+---
+
+## [1.11.0] — 2026-09-24
+
+### Added
+
+- **HIL (Human-in-the-Loop) round trip** — `RequiresHIL` (`k9_core/orchestration/hil_signal.py`), a first-class exception an Agent or Squad raises to trigger a human decision mid-flow, rather than a return-value flag a Squad author has to remember to check. Propagates by exception through the existing Agent → Squad → Orchestrator call chain; only the catching Orchestrator ever touches Kafka (a deliberate, documented carve-out of the Kafka-ownership rule — see `CLAUDE.md`'s HIL section for why that's a consistency requirement, not layering purity).
+- **`BaseHILOrchestrator`** — a real, invocable Orchestrator (`BaseOrchestrator.handle_requires_hil()` delegates to it — a second deliberate carve-out, "Orchestrators don't call other Orchestrators," chosen so Studio's own "HIL Orchestrator" canvas component maps onto something actually invocable). Publishes `hil.requests.<queue>`, persists a new `hil_pending` table via `RoutingStateStore` (correlation_id, which orchestrator/module to resume, the resume payload — not just a topic name), returns `pending_hil` immediately. Never blocks — a HIL review can take hours or days.
+- **`K9EventRouter.listen_for_hil_replies()`** — one consumer, pattern-subscribed across every `hil.replies.*` topic (`K9EventBus.subscribe_async()` gained `pattern=` support), not one process per orchestrator type — job-id belongs in the message (`correlation_id`), never the topic name. Resolves by `correlation_id` against `hil_pending` and re-routes the resumed payload through the Router's own `route()` — resuming is just re-routing with new information now available, not a second mechanism.
+
+### Fixed
+
+- `execute_squads()`'s parallel-execution path wrapped squad execution in a bare `except Exception`, which would have silently converted a `RequiresHIL` signal into a generic `"failed"` result — now special-cased to propagate instead.
+
+New: `test_hil_roundtrip.py`. 552/552 full suite passing.
+
+---
+
 ## [1.10.8] — 2026-09-19
 
 ### Added
