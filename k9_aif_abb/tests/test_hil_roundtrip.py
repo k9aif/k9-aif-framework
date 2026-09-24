@@ -159,10 +159,11 @@ def test_hil_not_triggered_on_clean_payload():
 
 
 def test_hil_reply_with_unknown_correlation_id_is_dropped_not_raised():
-    """A reply for a correlation_id nothing is waiting on (already
-    resolved, or from a different Router instance) must be logged and
-    dropped, never raise -- a stray/duplicate Kafka message shouldn't be
-    able to crash the Router's consumer loop."""
+    """A reply for a correlation_id that never existed at all must be
+    logged and dropped, never raise -- a stray Kafka message shouldn't be
+    able to crash the Router's consumer loop. (Distinct from "already
+    resolved" -- see test_duplicate_hil_reply_resumes_flow_exactly_once,
+    which is the case this test used to conflate with this one.)"""
     store = _make_store()
     bus = _FakeMessageBus()
     router = K9EventRouter(
@@ -174,3 +175,41 @@ def test_hil_reply_with_unknown_correlation_id_is_dropped_not_raised():
     asyncio.run(router._on_hil_reply({"correlation_id": "does-not-exist"}))
 
     assert bus.published == []
+
+
+def test_duplicate_hil_reply_resumes_flow_exactly_once():
+    """G-16: get_hil_pending() has no status filter, and the original
+    _on_hil_reply() only checked "does a row exist," never "is it still
+    pending" -- a duplicate reply (Kafka's own at-least-once redelivery,
+    or an outbox immediate-attempt/sweep race on the k9x-hil publishing
+    side) re-routed an already-resumed flow a second time. Fixed by
+    making resolve_hil_pending() an atomic compare-and-swap
+    (status='pending' -> 'resolved', WHERE status='pending') and gating
+    re-routing on it actually being the call that won that transition."""
+    store = _make_store()
+    bus = _FakeMessageBus()
+    config = {
+        "k9_env": "test",
+        "routing": {"table": {"fraud_alert": "fraud.in"}, "hil": {"prefix": "hil."}},
+    }
+    router = K9EventRouter(config=config, message_bus=bus, state_store=store)
+    orchestrator = _FraudOrchestrator(config=config, message_bus=bus, hil_state_store=store)
+
+    incoming = {"event_type": "fraud_alert", "alert_id": "ALT-3001", "fraud_probability": 0.91}
+    router.route(incoming)
+    result = orchestrator.execute_flow(incoming)
+    correlation_id = result["correlation_id"]
+
+    hil_decision = {"correlation_id": correlation_id, "action": "approve", "actor": "reviewer@bank.example"}
+
+    # The same reply delivered twice -- e.g. Kafka redelivers on a
+    # consumer-group rebalance, or the outbox's own immediate-attempt
+    # and sweep both got a message onto the topic.
+    asyncio.run(router._on_hil_reply(dict(hil_decision)))
+    asyncio.run(router._on_hil_reply(dict(hil_decision)))
+
+    resumed_events = [e for t, e in bus.published if t == "fraud.in"]
+    assert len(resumed_events) == 2  # step 1's original dispatch + exactly one resume, not two
+
+    resolved = store.get_hil_pending(correlation_id)
+    assert resolved["status"] == "resolved"

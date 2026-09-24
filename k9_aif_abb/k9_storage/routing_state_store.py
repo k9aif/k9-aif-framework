@@ -353,14 +353,32 @@ class RoutingStateStore:
             row = session.execute(stmt).fetchone()
             return dict(row._mapping) if row else None
 
-    def resolve_hil_pending(self, correlation_id: str) -> None:
-        """Mark a pending HIL flow resolved once the Router has re-dispatched
-        it. Does not delete the row -- kept for audit/traceability, same
-        append-don't-erase posture as the rest of this store."""
+    def resolve_hil_pending(self, correlation_id: str) -> bool:
+        """Atomically mark a pending HIL flow resolved -- the compare-and-
+        swap gate a caller MUST use to decide whether to re-route (G-16).
+        Does not delete the row -- kept for audit/traceability, same
+        append-don't-erase posture as the rest of this store.
+
+        Returns True only if this call is the one that actually
+        transitioned pending -> resolved (exactly one row changed).
+        False means the row was already resolved -- by a genuine
+        duplicate Kafka delivery, an outbox immediate-attempt/sweep race
+        (see hil_reply.py), or a second Router instance racing on the
+        same reply -- and the caller must NOT re-route in that case, or
+        a flow that already resumed once resumes again. Guessed-safe by
+        an earlier version of this method (unconditional UPDATE, no
+        WHERE on status, no return value) -- confirmed wrong: get_hil_pending()
+        has no status filter either, so a duplicate reply found a real
+        row and re-routed regardless of whether it was already resolved.
+        """
         with self.db.get_session() as session:
-            session.execute(
+            result = session.execute(
                 update(self.hil_pending)
-                .where(self.hil_pending.c.correlation_id == correlation_id)
+                .where(
+                    self.hil_pending.c.correlation_id == correlation_id,
+                    self.hil_pending.c.status == "pending",
+                )
                 .values(status="resolved", resolved_at=datetime.utcnow())
             )
             session.commit()
+            return result.rowcount == 1

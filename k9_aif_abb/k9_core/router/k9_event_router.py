@@ -188,8 +188,24 @@ class K9EventRouter(BaseRouter):
         if not pending:
             log.warning(
                 "[%s] HIL reply correlation_id=%s matches no pending flow "
-                "(already resolved, or from a different Router instance?)",
-                self.layer, correlation_id,
+                "(unknown correlation_id)", self.layer, correlation_id,
+            )
+            return
+
+        # G-16: the atomic gate, not an optimization -- resolve_hil_pending()
+        # is a compare-and-swap (status='pending' -> 'resolved', WHERE
+        # status='pending') and only re-routes if *this* call is the one
+        # that actually made the transition. A duplicate reply (Kafka's
+        # own at-least-once redelivery, or an outbox immediate-attempt/
+        # sweep race on the publishing side -- see hil_reply.py) finds
+        # the row already resolved, resolve_hil_pending() returns False,
+        # and this drops it instead of re-routing a flow that already
+        # resumed once. Also protects two Router instances racing on the
+        # same reply -- only one of them wins the UPDATE.
+        if not self.state_store.resolve_hil_pending(correlation_id):
+            log.info(
+                "[%s] HIL reply correlation_id=%s already resolved -- "
+                "dropping duplicate, not re-routing", self.layer, correlation_id,
             )
             return
 
@@ -200,7 +216,6 @@ class K9EventRouter(BaseRouter):
             resumed_payload.get("event_type"),
         )
         self.route(resumed_payload)
-        self.state_store.resolve_hil_pending(correlation_id)
 
     # ------------------------------------------------------------------
     def _dispatch(self, topic: str, payload: Dict[str, Any], strategy: str = "") -> None:
