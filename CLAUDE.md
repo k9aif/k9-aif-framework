@@ -224,6 +224,18 @@ on it — resuming is just re-routing with new information now available,
 reusing the same method that handles any other event, not a second
 mechanism. Marks the row `resolved` after.
 
+**Not every HIL-consumer action is a decision worth publishing.** The
+reference reply-side implementation, `k9x-hil`
+(`backend/task_actions.py`), only publishes to `reply_to` on a *terminal*
+decision — `complete` / `reject` / `expire`. `claim` and `start` aren't
+decisions (someone picked the task up, nothing for a waiting flow to
+resume on yet), and `escalate` isn't terminal either — the task stays
+in-flight for someone else to act on; whichever terminal action
+eventually lands on it is what publishes, not the escalation itself. Any
+other HIL consumer you build should draw the same line — publish on
+outcomes, not on intermediate state changes — or a waiting flow resumes
+prematurely on a decision that hasn't actually been made yet.
+
 **Two deliberate rule carve-outs, both documented, neither accidental:**
 1. The Kafka-ownership rule above — Agent/Squad may *raise* `RequiresHIL`,
    but only the Orchestrator that catches it ever calls
