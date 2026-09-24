@@ -1,0 +1,64 @@
+@startuml hil_roundtrip_sequence
+title K9-AIF HIL Round Trip — RequiresHIL → BaseHILOrchestrator → Router
+
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 160
+
+actor "UI / Caller" as UI
+participant "K9EventRouter" as Router
+participant "Orchestrator\n(SBB, e.g. FraudOrchestrator)" as Orch
+participant "Squad" as Squad
+participant "Agent" as Agent
+participant "BaseHILOrchestrator" as HILOrch
+participant "RoutingStateStore\n(hil_pending table)" as Store
+queue "Kafka\nhil.requests.<queue>" as ReqTopic
+queue "Kafka\nhil.replies.<queue>" as ReplyTopic
+actor "Human reviewer\n(e.g. k9x-hil)" as Human
+
+== Forward flow — one Kafka hop, then plain calls ==
+UI -> Router: event (fraud_alert)
+Router -> Router: route() — event_type -> domain topic
+Router -> Orch: (domain topic consumed) execute_flow(payload)
+Orch -> Squad: execute(payload)
+Squad -> Agent: execute(step_context)
+
+== Trigger — Agent/Squad may raise, never publish ==
+Agent -> Agent: fraud_probability > threshold
+Agent -->> Squad: raise RequiresHIL(reason, context, priority)
+note right of Agent
+  Deliberate exception, not a return flag —
+  guarantees propagation through a Squad's
+  sequential flow even if the Squad author
+  never checks for it. Agent/Squad still
+  never touch Kafka directly (see CLAUDE.md
+  Kafka-ownership carve-out).
+end note
+Squad -->> Orch: RequiresHIL propagates\n(logged, re-raised — not caught)
+
+== Catch + halt — only the Orchestrator touches Kafka ==
+Orch -> Orch: except RequiresHIL as exc:
+Orch -> HILOrch: handle_requires_hil(exc, payload)\n(real Orchestrator-to-Orchestrator call —\nsecond deliberate rule carve-out)
+HILOrch -> HILOrch: generate correlation_id
+HILOrch -> Store: record_hil_pending(correlation_id,\n  resume_module, resume_class, reply_to, payload)
+HILOrch -> ReqTopic: publish_to(hil.requests.<queue>, message)
+HILOrch -->> Orch: {status: pending_hil, correlation_id, reply_to}
+Orch -->> UI: {status: pending_hil, "check back later"}
+note over Orch, UI
+  Never blocks waiting for a decision —
+  a HIL review can take hours or days.
+end note
+
+== Time passes — human reviews, out of band ==
+ReqTopic -> Human: HIL request
+Human -> ReplyTopic: decision (approve / reject / escalate)
+
+== Resume — Router listens across every hil.replies.* topic ==
+ReplyTopic -> Router: (pattern-subscribed via\nmessage_bus.subscribe_async(pattern="hil\\.replies\\..*"))
+Router -> Store: get_hil_pending(correlation_id)
+Store -->> Router: pending row (resume payload)
+Router -> Router: resumed_payload = {**pending.payload,\n  hil_decision: message}
+Router -> Router: route(resumed_payload)\n(reuse — resuming IS re-routing,\nnot a second mechanism)
+Router -> Orch: (domain topic) execute_flow(resumed_payload)
+Router -> Store: resolve_hil_pending(correlation_id)
+
+@enduml

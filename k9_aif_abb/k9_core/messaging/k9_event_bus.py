@@ -178,6 +178,7 @@ class K9EventBus:
         self,
         callback,
         topics: Optional[List[str]] = None,
+        pattern: Optional[str] = None,
         session_timeout_ms: int = 30000,
         heartbeat_interval_ms: int = 10000,
         max_poll_interval_ms: int = 600000,
@@ -191,6 +192,11 @@ class K9EventBus:
         Args:
             callback:             async or sync callable receiving the decoded payload dict.
             topics:               list of topic names to subscribe to; defaults to [self.topic].
+            pattern:               regex string for pattern subscription (e.g. r"hil\\..*") —
+                                   used instead of ``topics`` when the exact topic set is
+                                   dynamic (one HIL Router listening across every
+                                   ``hil.replies.<orchestrator>`` topic, not one process
+                                   per orchestrator type). Mutually exclusive with ``topics``.
             session_timeout_ms:   broker-side session timeout.
             heartbeat_interval_ms: heartbeat frequency (must be < session_timeout_ms / 3).
             max_poll_interval_ms: max time between fetches (set high for slow LLM calls).
@@ -203,10 +209,7 @@ class K9EventBus:
             )
             return
 
-        subscribe_topics = topics if topics is not None else [self.topic]
-
-        consumer = AIOKafkaConsumer(
-            *subscribe_topics,
+        consumer_kwargs = dict(
             bootstrap_servers=[self.broker_url],
             group_id=self.group_id,
             auto_offset_reset="earliest",
@@ -218,10 +221,19 @@ class K9EventBus:
             **self._security_kwargs(),
         )
 
+        if pattern is not None:
+            import re
+            consumer = AIOKafkaConsumer(pattern=re.compile(pattern), **consumer_kwargs)
+            subscribe_desc = f"pattern={pattern!r}"
+        else:
+            subscribe_topics = topics if topics is not None else [self.topic]
+            consumer = AIOKafkaConsumer(*subscribe_topics, **consumer_kwargs)
+            subscribe_desc = f"topics={subscribe_topics}"
+
         await consumer.start()
         self.log.info(
-            "[K9EventBus] Async consumer READY | topics=%s | group=%s",
-            subscribe_topics, self.group_id,
+            "[K9EventBus] Async consumer READY | %s | group=%s",
+            subscribe_desc, self.group_id,
         )
 
         try:
@@ -236,7 +248,7 @@ class K9EventBus:
         finally:
             await consumer.stop()
             self.log.info(
-                "[K9EventBus] Async consumer stopped | topics=%s", subscribe_topics
+                "[K9EventBus] Async consumer stopped | %s", subscribe_desc
             )
 
     # ----------------------------------------------------------------------

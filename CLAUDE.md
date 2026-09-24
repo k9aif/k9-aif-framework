@@ -163,9 +163,91 @@ provider to any of these: `SKILLS.md` Skill 11.
 ## Kafka ownership
 
 Only the **Router** (domain topics) and **Orchestrator** (results /
-downstream topics) touch Kafka. Agents are constructed without a
-`message_bus` — they share data sequentially through the Squad flow, not via
-A2A messaging. `publish_event()` on an agent reaches the logger/monitor only.
+downstream topics) touch Kafka directly — this hasn't changed. Agents are
+constructed without a `message_bus` — they share data sequentially through
+the Squad flow, not via A2A messaging. `publish_event()` on an agent reaches
+the logger/monitor only.
+
+**One narrow, deliberate exception: triggering HIL.** An Agent or Squad may
+raise `RequiresHIL` to signal that a human decision is needed mid-flow (a
+fraud score below threshold, an `ESCALATE` disposition, a Squad synthesizing
+across agents) — this is a controlled propagation, not a Kafka publish. The
+signal is *raised* at Agent/Squad depth and *caught* at the Orchestrator,
+which remains the only layer that actually calls `message_bus.publish_to()`
+and the only layer that decides execution halts. Never let an Agent or
+Squad call `message_bus` directly, even for HIL — this isn't layering
+purity, it's a consistency requirement: a Kafka publish issued below the
+layer that controls whether execution continues can't stop the rest of the
+flow from completing normally, which produces exactly the outcome
+`RequiresHIL` exists to prevent — a workflow reporting itself "completed"
+while a human is still being asked to review it. See the HIL section below
+for the full mechanism (signal shape, Orchestrator-side halt + state
+persistence, Router-side resume).
+
+## HIL (Human-in-the-Loop)
+
+`RequiresHIL` (`k9_core/orchestration/hil_signal.py`) is raised by an Agent
+or Squad to trigger a human decision mid-flow. It propagates by exception
+through the normal Agent → Squad → Orchestrator call chain (confirmed:
+`BaseSquad.execute()` logs and re-raises, never swallows) — never a
+return-value flag, so it can't be silently dropped by a Squad author who
+never thought about HIL.
+
+**Catch it in your SBB orchestrator's `execute_flow()`:**
+
+```python
+from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+
+def execute_flow(self, payload):
+    try:
+        results = self.execute_squads([self.fraud_squad], payload)
+    except RequiresHIL as exc:
+        return self.handle_requires_hil(exc, payload)
+    return {"status": "completed", **results}
+```
+
+`handle_requires_hil()` delegates to a composed `BaseHILOrchestrator` —
+publishes `hil.requests.<queue>` (queue defaults to a slugified form of
+the catching orchestrator's `layer`), persists a `hil_pending` row via
+`RoutingStateStore` (correlation_id, which orchestrator/module to resume,
+the payload to resume it with — not just a topic name), and returns
+`{"status": "pending_hil", "correlation_id": ..., ...}` immediately.
+**Never blocks** — a HIL review can take hours or days.
+
+`K9EventRouter.listen_for_hil_replies()` subscribes once, across every
+`hil.replies.*` topic (`K9EventBus.subscribe_async(..., pattern=...)`) —
+job-id belongs in the message (`correlation_id`), never in the topic name;
+one Router, not one consumer per orchestrator type. On a reply,
+`_on_hil_reply()` resolves the pending row by `correlation_id`, merges the
+decision into the resumed payload as `hil_decision`, and calls `route()`
+on it — resuming is just re-routing with new information now available,
+reusing the same method that handles any other event, not a second
+mechanism. Marks the row `resolved` after.
+
+**Two deliberate rule carve-outs, both documented, neither accidental:**
+1. The Kafka-ownership rule above — Agent/Squad may *raise* `RequiresHIL`,
+   but only the Orchestrator that catches it ever calls
+   `message_bus.publish_to()`.
+2. `BaseOrchestrator.handle_requires_hil()` calls a real, separate
+   `BaseHILOrchestrator` instance — a genuine Orchestrator-to-Orchestrator
+   call, otherwise disallowed. Chosen deliberately (composing it as a
+   plain collaborator method was the alternative) so Studio's own "HIL
+   Orchestrator" canvas component maps onto something that's actually
+   invocable, not just a UI label.
+
+`hil_pending`'s `payload` column persists the *resume* payload (original
+`event_type` included) — the Router's own registered `routing.table`
+resolves where it goes next, exactly as it would for any fresh event; no
+separate resume-topic lookup exists or is needed. Full sequence:
+`docs/diagrams/hil_roundtrip_sequence.puml` /
+`README.md`'s Human-in-the-Loop section.
+
+**Known limitation, not yet solved:** `BaseHILOrchestrator`'s and
+`K9EventRouter`'s zero-config state-store bootstraps must resolve to the
+*same* backing DB (same `db_path`, or an explicitly shared `state_store=`)
+or a reply can never find the row it's meant to resolve — nothing enforces
+this automatically today; get it wrong and replies are silently dropped
+(logged as "matches no pending flow", not raised).
 
 ## Pre-Push Checklist
 

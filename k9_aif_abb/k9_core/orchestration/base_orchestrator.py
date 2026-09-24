@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
+from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event
 
 
@@ -88,12 +89,20 @@ class BaseOrchestrator(ABC):
         policy_enforcer=None,
         enable_zero_trust: Optional[bool] = None,
         session_manager=None,
+        hil_state_store=None,
     ):
         self.config = config or {}
         self.monitor = monitor
         self.message_bus = message_bus
         self.governance = require_governance(governance, self.config.get("k9_env"))
         self._session_manager = session_manager or self._bootstrap_session(self.config)
+        # Shared with whichever Router resolves this Orchestrator's HIL
+        # replies -- must be the *same* store instance/backing DB on both
+        # sides, or a reply can never find the pending row it resolves.
+        # None is a legitimate default (BaseHILOrchestrator bootstraps its
+        # own); pass this explicitly whenever a Router elsewhere shares
+        # persistence with this Orchestrator's HIL requests.
+        self.hil_state_store = hil_state_store
 
         self.enable_zero_trust = (
             enable_zero_trust
@@ -164,6 +173,14 @@ class BaseOrchestrator(ABC):
                 squad = futures[future]
                 try:
                     results[squad.squad_id] = future.result()
+                except RequiresHIL:
+                    # Never swallow a HIL signal into a generic failure --
+                    # cancel remaining futures and propagate immediately so
+                    # the caller's own `except RequiresHIL` catches it, same
+                    # as the sequential path already does for free.
+                    for other in futures:
+                        other.cancel()
+                    raise
                 except Exception as exc:
                     self.logger.error(
                         "[%s] Squad %s failed: %s", self.layer, squad.squad_id, exc,
@@ -318,6 +335,64 @@ class BaseOrchestrator(ABC):
             return {"allowed": False, "reason": str(exc), "payload": payload}
 
         return {"allowed": True, "reason": "Shield check passed", "payload": checked_payload}
+
+    # ------------------------------------------------------------------
+    def handle_requires_hil(
+        self,
+        exc: "RequiresHIL",
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Catch point for ``RequiresHIL`` raised by an Agent or Squad this
+        Orchestrator owns. Delegates the actual publish + persist to a
+        ``BaseHILOrchestrator`` (or subclass) -- this Orchestrator never
+        touches Kafka itself for this; it hands off.
+
+        SBB usage, in a concrete ``execute_flow()``::
+
+            from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+
+            def execute_flow(self, payload):
+                try:
+                    results = self.execute_squads([self.fraud_squad], payload)
+                except RequiresHIL as exc:
+                    return self.handle_requires_hil(exc, payload)
+                return {"status": "completed", **results}
+
+        ``resume_module``/``resume_class`` default to *this* Orchestrator
+        (the one that caught the exception) -- the common case is
+        "re-invoke the same flow with the human decision merged in", not
+        handing off to a different orchestrator on resume.
+        """
+        hil_orchestrator = self._get_hil_orchestrator()
+
+        hil_payload = {
+            "correlation_id": None,  # BaseHILOrchestrator generates one
+            "source_orchestrator": self.layer,
+            "reason": exc.reason,
+            "priority": exc.priority,
+            "queue": exc.queue,
+            "context": exc.context,
+            "resume_module": type(self).__module__,
+            "resume_class": type(self).__name__,
+            "resume_payload": payload,
+        }
+        return hil_orchestrator.execute_flow(hil_payload)
+
+    def _get_hil_orchestrator(self):
+        """Lazily construct a BaseHILOrchestrator sharing this Orchestrator's
+        config/message_bus/monitor. Cached on the instance -- constructing
+        one per RequiresHIL would re-bootstrap the state store every time."""
+        if getattr(self, "_hil_orchestrator", None) is None:
+            from k9_aif_abb.k9_core.orchestration.base_hil_orchestrator import BaseHILOrchestrator
+            self._hil_orchestrator = BaseHILOrchestrator(
+                config=self.config,
+                monitor=self.monitor,
+                message_bus=self.message_bus,
+                governance=self.governance,
+                state_store=self.hil_state_store,
+            )
+        return self._hil_orchestrator
 
     # ------------------------------------------------------------------
     def _zero_trust_context(

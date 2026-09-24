@@ -40,6 +40,7 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
   - [Architectural Layers](#architectural-layers)
   - [Agent Squads](#agent-squads)
   - [Zero Trust Execution Layer](#zero-trust-execution-layer)
+  - [Human-in-the-Loop (HIL)](#human-in-the-loop-hil)
 - [Prototype Implementations](#prototype-implementations)
 - [Design Goals](#design-goals)
 - [Architectural Patterns](#architectural-patterns)
@@ -206,6 +207,43 @@ This is not a checkpoint at the edge — it is enforced at every layer:
 > Zero Trust is not a checkpoint — it is a layer applied across the system.
 
 ![Zero Trust Execution Layer](docs/diagrams/k9-security_class_diagram.png)
+
+---
+
+## Human-in-the-Loop (HIL)
+
+An Agent or Squad can trigger a human decision mid-flow — a fraud score
+below an auto-approve threshold, a low-confidence classification, a
+policy that always requires sign-off — by raising `RequiresHIL`, a
+first-class exception rather than a return-value flag your Squad author
+has to remember to check.
+
+Two rules govern how this crosses the framework's existing layers, both
+deliberate, documented carve-outs rather than accidents:
+
+- **Agents and Squads never touch Kafka, even for HIL.** `RequiresHIL`
+  propagates by exception through the normal Agent → Squad → Orchestrator
+  call chain; only the catching **Orchestrator** actually publishes.
+  Publishing below the layer that controls whether execution continues
+  can't stop the rest of the flow from completing normally — exactly the
+  inconsistency this design avoids.
+- **The Orchestrator delegates to a real, separate `BaseHILOrchestrator`**
+  — a second, conscious exception to "Orchestrators don't call other
+  Orchestrators" — so every part of the framework that can trigger HIL
+  shares one place that knows how to publish, persist, and resume,
+  instead of each SBB orchestrator hand-rolling it.
+
+The Orchestrator never blocks waiting for a decision — a human review can
+take hours or days. It returns `{"status": "pending_hil", ...}`
+immediately; `K9EventRouter` picks the decision back up later by
+subscribing across every `hil.replies.*` topic (one consumer, pattern-
+subscribed — never one Kafka topic per job) and resolving by
+`correlation_id` against a persisted `hil_pending` row, then re-routing
+the resumed payload through its own `route()` — resuming a workflow is
+just re-routing it with new information now available, not a second
+mechanism.
+
+![HIL Round Trip](docs/diagrams/hil_roundtrip_sequence.png)
 
 ---
 

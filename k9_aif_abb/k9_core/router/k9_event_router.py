@@ -40,6 +40,7 @@ Extend and override ``route()`` for custom routing logic::
 """
 
 import logging
+import re
 from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_core.router.base_router import BaseRouter
@@ -60,6 +61,7 @@ class K9EventRouter(BaseRouter):
         monitor=None,
         message_bus=None,
         governance=None,
+        state_store=None,
     ):
         super().__init__(
             config=config,
@@ -71,10 +73,42 @@ class K9EventRouter(BaseRouter):
         self._table: Dict[str, str] = routing_cfg.get("table", {})
         self._intent_topic: str = routing_cfg.get("intent_topic", "intent.in")
 
-        log.info(
-            "[%s] routing table: %d entries | intent_topic=%s",
-            self.layer, len(self._table), self._intent_topic,
+        hil_cfg = routing_cfg.get("hil", {})
+        self._hil_prefix: str = hil_cfg.get("prefix", "hil.")
+        self._hil_reply_pattern: str = hil_cfg.get(
+            "reply_pattern", re.escape(self._hil_prefix) + r"replies\..*"
         )
+        self.state_store = state_store or self._bootstrap_state_store(self.config)
+
+        log.info(
+            "[%s] routing table: %d entries | intent_topic=%s | hil_reply_pattern=%s",
+            self.layer, len(self._table), self._intent_topic, self._hil_reply_pattern,
+        )
+
+    @staticmethod
+    def _bootstrap_state_store(config: Dict[str, Any]):
+        """Same zero-config SQLite default as BaseHILOrchestrator — the
+        Router and the HIL Orchestrator must agree on where pending
+        correlations live, or a reply never finds the row it's meant to
+        resolve. Pass state_store= explicitly to share a real store
+        (Postgres, or the same in-process instance) across both."""
+        try:
+            from k9_aif_abb.k9_storage.sqlite_database_storage import SQLiteDatabaseStorage
+            from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore
+
+            db_path = (
+                config.get("hil", {}).get("db_path")
+                or config.get("persistence", {}).get("db_path")
+                or "./runtime/hil_pending.db"
+            )
+            db = SQLiteDatabaseStorage(db_path=db_path)
+            return RoutingStateStore(db=db)
+        except Exception as exc:
+            log.warning(
+                "[K9EventRouter] no state_store configured and default bootstrap "
+                "failed (%s) -- HIL replies cannot be resolved", exc,
+            )
+            return None
 
     def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -110,6 +144,63 @@ class K9EventRouter(BaseRouter):
             "event_type": event_type,
             "strategy": "intent_required",
         }
+
+    # ------------------------------------------------------------------
+    # HIL reply handling
+    #
+    # One consumer, subscribed to a topic *pattern* (hil.replies.*), not
+    # one process per orchestrator/queue -- job-id belongs in the message
+    # (correlation_id), never in the topic name. See CLAUDE.md's HIL
+    # section and BaseHILOrchestrator's own topic-convention docstring.
+    # ------------------------------------------------------------------
+    async def listen_for_hil_replies(self) -> None:
+        """Long-running consumer loop -- run this as its own asyncio task
+        alongside whatever normally feeds route(). Resolves each reply by
+        correlation_id against state_store's hil_pending table and
+        re-routes the resumed payload through the Router's own route(),
+        same as any other event -- resuming is just re-routing with new
+        information now available, not a separate mechanism."""
+        if not self.message_bus or not hasattr(self.message_bus, "subscribe_async"):
+            log.warning(
+                "[%s] no pattern-capable message_bus configured -- "
+                "HIL replies cannot be consumed", self.layer,
+            )
+            return
+        await self.message_bus.subscribe_async(
+            self._on_hil_reply, pattern=self._hil_reply_pattern
+        )
+
+    async def _on_hil_reply(self, message: Dict[str, Any]) -> None:
+        correlation_id = message.get("correlation_id")
+        if not correlation_id:
+            log.warning("[%s] HIL reply missing correlation_id, dropped: %r",
+                        self.layer, message)
+            return
+
+        if not self.state_store:
+            log.error(
+                "[%s] HIL reply correlation_id=%s received but no state_store "
+                "configured -- cannot resolve", self.layer, correlation_id,
+            )
+            return
+
+        pending = self.state_store.get_hil_pending(correlation_id)
+        if not pending:
+            log.warning(
+                "[%s] HIL reply correlation_id=%s matches no pending flow "
+                "(already resolved, or from a different Router instance?)",
+                self.layer, correlation_id,
+            )
+            return
+
+        resumed_payload = {**(pending.get("payload") or {}), "hil_decision": message}
+        log.info(
+            "[%s] HIL reply correlation_id=%s resolved -> re-routing "
+            "event_type=%r", self.layer, correlation_id,
+            resumed_payload.get("event_type"),
+        )
+        self.route(resumed_payload)
+        self.state_store.resolve_hil_pending(correlation_id)
 
     # ------------------------------------------------------------------
     def _dispatch(self, topic: str, payload: Dict[str, Any], strategy: str = "") -> None:

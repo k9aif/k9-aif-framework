@@ -31,6 +31,8 @@ class RoutingStateStore:
     - session_turns
     - routing_decisions
     - context_artifacts
+    - hil_pending (paused flows awaiting a human decision -- see
+      BaseHILOrchestrator / RequiresHIL)
 
     Supports both:
     - PostgreSQL (existing schema / reflection)
@@ -118,6 +120,36 @@ class RoutingStateStore:
                 Column("created_at", DateTime),
             )
 
+            metadata.create_all(engine)
+
+        # hil_pending is reflected/created independently of the four
+        # tables above -- an existing DB that predates this table (has
+        # sessions/session_turns/routing_decisions/context_artifacts
+        # already, but not yet hil_pending) must not fall all the way
+        # through to redefining those four from scratch just because this
+        # one new table isn't there yet. Confirmed live: without this
+        # isolation, partial reflection success (4 tables reflect fine,
+        # hil_pending's reflection then fails) drops into the fallback
+        # branch above, which tries to Table()-define sessions etc. a
+        # second time against a MetaData that already has them registered
+        # -> sqlalchemy.exc.InvalidRequestError.
+        try:
+            self.hil_pending = Table("hil_pending", metadata, autoload_with=engine)
+        except Exception:
+            self.hil_pending = Table(
+                "hil_pending",
+                metadata,
+                Column("correlation_id", String, primary_key=True),
+                Column("orchestrator_module", String, nullable=False),
+                Column("orchestrator_class", String, nullable=False),
+                Column("reply_to", String, nullable=False),
+                Column("reason", Text),
+                Column("priority", String, default="medium"),
+                Column("payload", JSON),
+                Column("status", String, default="pending"),
+                Column("created_at", DateTime),
+                Column("resolved_at", DateTime),
+            )
             metadata.create_all(engine)
 
     # ------------------------------------------------------------------
@@ -275,5 +307,60 @@ class RoutingStateStore:
                     cache_eligible=cache_eligible,
                     created_at=datetime.utcnow(),
                 )
+            )
+            session.commit()
+
+    # ------------------------------------------------------------------
+    # HIL Pending Flows -- paused workflows awaiting a human decision.
+    #
+    # Not just a routing-table lookup: enough is persisted here to know
+    # which Orchestrator class to reconstruct and resume when the reply
+    # comes back, not merely which topic to reply to. See
+    # BaseHILOrchestrator.execute_flow() (writer) and
+    # K9EventRouter's HIL-reply handling (reader).
+    # ------------------------------------------------------------------
+    def record_hil_pending(
+        self,
+        correlation_id: str,
+        orchestrator_module: str,
+        orchestrator_class: str,
+        reply_to: str,
+        payload: Dict[str, Any],
+        reason: Optional[str] = None,
+        priority: str = "medium",
+    ) -> None:
+        with self.db.get_session() as session:
+            session.execute(
+                insert(self.hil_pending).values(
+                    correlation_id=correlation_id,
+                    orchestrator_module=orchestrator_module,
+                    orchestrator_class=orchestrator_class,
+                    reply_to=reply_to,
+                    reason=reason,
+                    priority=priority,
+                    payload=payload,
+                    status="pending",
+                    created_at=datetime.utcnow(),
+                )
+            )
+            session.commit()
+
+    def get_hil_pending(self, correlation_id: str) -> Optional[Dict[str, Any]]:
+        with self.db.get_session() as session:
+            stmt = select(self.hil_pending).where(
+                self.hil_pending.c.correlation_id == correlation_id
+            )
+            row = session.execute(stmt).fetchone()
+            return dict(row._mapping) if row else None
+
+    def resolve_hil_pending(self, correlation_id: str) -> None:
+        """Mark a pending HIL flow resolved once the Router has re-dispatched
+        it. Does not delete the row -- kept for audit/traceability, same
+        append-don't-erase posture as the rest of this store."""
+        with self.db.get_session() as session:
+            session.execute(
+                update(self.hil_pending)
+                .where(self.hil_pending.c.correlation_id == correlation_id)
+                .values(status="resolved", resolved_at=datetime.utcnow())
             )
             session.commit()
