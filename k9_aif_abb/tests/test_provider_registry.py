@@ -11,8 +11,10 @@ from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegist
 from k9_aif_abb.k9_core.inference.base_provider_adapter import BaseProviderAdapter
 from k9_aif_abb.k9_core.inference.ollama_provider_adapter import OllamaProviderAdapter
 from k9_aif_abb.k9_core.inference.openai_provider_adapter import OpenAIProviderAdapter
+from k9_aif_abb.k9_core.inference.azure_openai_provider_adapter import AzureOpenAIProviderAdapter
 from k9_aif_abb.k9_core.inference.ollama_llm import OllamaLLM
 from k9_aif_abb.k9_core.inference.openai_llm import OpenAILLM
+from k9_aif_abb.k9_core.inference.azure_openai_llm import AzureOpenAILLM
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 
 
@@ -34,6 +36,10 @@ class TestProviderAdapterRegistry:
     def test_openai_compatible_backend_resolves(self):
         adapter = ProviderAdapterRegistry.resolve("openai-compatible")
         assert isinstance(adapter, OpenAIProviderAdapter)
+
+    def test_azure_openai_backend_resolves(self):
+        adapter = ProviderAdapterRegistry.resolve("azure-openai")
+        assert isinstance(adapter, AzureOpenAIProviderAdapter)
 
     def test_unknown_backend_raises_valueerror(self):
         with pytest.raises(ValueError, match="No provider adapter registered"):
@@ -139,6 +145,82 @@ class TestOpenAIProviderAdapter:
                 adapter.create_llm("gpt-4o-mini", factory_cfg, {})
 
 
+# ── AzureOpenAIProviderAdapter ─────────────────────────────────────────────
+
+class TestAzureOpenAIProviderAdapter:
+
+    def test_creates_azure_openai_llm(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {
+            "api_key_env": "TEST_AZURE_KEY",
+            "azure_endpoint": "https://my-resource.openai.azure.com",
+            "api_version": "2024-10-21",
+        }
+        with patch.dict(os.environ, {"TEST_AZURE_KEY": "azkey-test-123"}):
+            llm = adapter.create_llm("gpt-4o", factory_cfg, {})
+        assert isinstance(llm, AzureOpenAILLM)
+        # No explicit deployment given -- falls back to model_name.
+        assert llm.deployment == "gpt-4o"
+
+    def test_explicit_deployment_overrides_model_name(self):
+        """Enterprises frequently name a deployment differently from the
+        underlying model (e.g. "prod-gpt4o-eastus2" serving gpt-4o)."""
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {
+            "api_key_env": "TEST_AZURE_KEY",
+            "azure_endpoint": "https://my-resource.openai.azure.com",
+        }
+        with patch.dict(os.environ, {"TEST_AZURE_KEY": "azkey-test-123"}):
+            llm = adapter.create_llm("gpt-4o", factory_cfg, {"deployment": "prod-gpt4o-eastus2"})
+        assert llm.deployment == "prod-gpt4o-eastus2"
+
+    def test_default_api_version_applied(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {
+            "api_key_env": "TEST_AZURE_KEY",
+            "azure_endpoint": "https://my-resource.openai.azure.com",
+        }
+        with patch.dict(os.environ, {"TEST_AZURE_KEY": "azkey-test-123"}):
+            llm = adapter.create_llm("gpt-4o", factory_cfg, {})
+        assert isinstance(llm, AzureOpenAILLM)  # construction itself proves a version resolved
+
+    def test_missing_api_key_env_raises(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {
+            "api_key_env": "MISSING_AZURE_KEY_XYZ",
+            "azure_endpoint": "https://my-resource.openai.azure.com",
+        }
+        clean_env = {k: v for k, v in os.environ.items() if k != "MISSING_AZURE_KEY_XYZ"}
+        with patch.dict(os.environ, clean_env, clear=True):
+            with pytest.raises(EnvironmentError, match="MISSING_AZURE_KEY_XYZ"):
+                adapter.create_llm("gpt-4o", factory_cfg, {})
+
+    def test_missing_endpoint_raises(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {"api_key_env": "TEST_AZURE_KEY"}  # no azure_endpoint
+        clean_env = {k: v for k, v in os.environ.items() if k != "AZURE_OPENAI_ENDPOINT"}
+        with patch.dict(os.environ, {**clean_env, "TEST_AZURE_KEY": "azkey-test"}, clear=True):
+            with pytest.raises(EnvironmentError, match="azure_endpoint"):
+                adapter.create_llm("gpt-4o", factory_cfg, {})
+
+    def test_implicit_azure_openai_api_key_fallback(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {"azure_endpoint": "https://my-resource.openai.azure.com"}
+        with patch.dict(os.environ, {"AZURE_OPENAI_API_KEY": "azkey-implicit"}):
+            llm = adapter.create_llm("gpt-4o", factory_cfg, {})
+        assert isinstance(llm, AzureOpenAILLM)
+
+    def test_implicit_azure_openai_endpoint_fallback(self):
+        adapter = AzureOpenAIProviderAdapter()
+        factory_cfg = {"api_key_env": "TEST_AZURE_KEY"}
+        with patch.dict(os.environ, {
+            "TEST_AZURE_KEY": "azkey-test",
+            "AZURE_OPENAI_ENDPOINT": "https://implicit-resource.openai.azure.com",
+        }):
+            llm = adapter.create_llm("gpt-4o", factory_cfg, {})
+        assert isinstance(llm, AzureOpenAILLM)
+
+
 # ── LLMFactory dispatch via registry ──────────────────────────────────────
 
 class TestLLMFactoryProviderDispatch:
@@ -187,6 +269,20 @@ class TestLLMFactoryProviderDispatch:
             }
         }
 
+    def _azure_openai_config(self):
+        return {
+            "inference": {
+                "llm_factory": {
+                    "backend": "azure-openai",
+                    "azure_endpoint": "https://my-resource.openai.azure.com",
+                    "api_key_env": "AZURE_TEST_KEY",
+                    "models": {
+                        "general": {"model": "gpt-4o", "temperature": 0.3}
+                    },
+                }
+            }
+        }
+
     def test_ollama_backend_creates_ollama_llm(self):
         LLMFactory.bootstrap(self._ollama_config())
         llm = LLMFactory.get("general")
@@ -205,6 +301,13 @@ class TestLLMFactoryProviderDispatch:
             llm = LLMFactory.get("general")
         assert isinstance(llm, OpenAILLM)
         assert llm.model == "grok-3-mini"
+
+    def test_azure_openai_backend_creates_azure_openai_llm(self):
+        LLMFactory.bootstrap(self._azure_openai_config())
+        with patch.dict(os.environ, {"AZURE_TEST_KEY": "azkey-test"}):
+            llm = LLMFactory.get("general")
+        assert isinstance(llm, AzureOpenAILLM)
+        assert llm.deployment == "gpt-4o"
 
     def test_llm_instances_are_cached(self):
         LLMFactory.bootstrap(self._ollama_config())
