@@ -38,10 +38,15 @@ This package may include:
 
     from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
 
-    factory = MCPClientConnectionFactory.from_config(config)
-    client = factory.get_connection("weather")
+    # Built-in transports: "streamable_http" (hosted MCP servers),
+    # "http" (REST /tools convention), "stdio" (local server process)
+    client = MCPClientConnectionFactory.get(
+        "streamable_http",
+        config={"name": "weather", "kwargs": {"url": "http://mcp-host:8000/mcp"}},
+    )
 
     await client.connect()
+    tools = await client.list_tools()
     result = await client.call_tool("get_weather", {"city": "Boston"})
 
 """

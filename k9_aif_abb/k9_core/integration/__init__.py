@@ -53,7 +53,8 @@ This package may include:
 
 - `base_connector` — Abstract connector interface
 - `mcp_client_connector` — MCP-based client integration
-- `mcp_http_connector` — HTTP-based MCP interaction
+- `mcp_streamable_http_connector` — standard MCP streamable-HTTP client for hosted MCP servers
+- `mcp_http_connector` — HTTP tool servers using the REST convention (`/tools`, `/tools/call`)
 - `mcp_stdio_connector` — STDIO-based MCP communication
 
 

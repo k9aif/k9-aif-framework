@@ -1343,7 +1343,8 @@ def list_adapters():
     adapters = [
         ("K9CrewAIAdapter",          "k9_aif_abb.k9_adapters.crewai.k9_crewai_adapter",          "Wrap a full CrewAI Crew in K9-AIF contracts"),
         ("K9XLiteLLMBridgeAdapter",  "k9_aif_abb.k9_adapters.crewai.k9x_litellm_bridge_adapter", "Wire K9ModelRouter into CrewAI agents (extends BaseLLM)"),
-        ("MCPHttpConnector",          "k9_aif_abb.k9_core.integration.mcp_http_connector",        "HTTP/HTTPS MCP tool server client"),
+        ("MCPStreamableHttpConnector", "k9_aif_abb.k9_core.integration.mcp_streamable_http_connector", "Standard MCP streamable-HTTP client (hosted MCP servers)"),
+        ("MCPHttpConnector",          "k9_aif_abb.k9_core.integration.mcp_http_connector",        "HTTP tool server client (REST /tools, /tools/call convention)"),
         ("MCPStdioConnector",         "k9_aif_abb.k9_core.integration.mcp_stdio_connector",       "stdio MCP tool server client"),
     ]
 

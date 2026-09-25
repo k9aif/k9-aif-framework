@@ -224,7 +224,7 @@ k9_aif_abb/
 │   ├── monitoring/      # BaseMonitor, LoggerMonitor
 │   ├── storage/         # BaseStorage
 │   ├── retrieval/       # BaseRetriever, BaseDocParser, RetrieverRegistry
-│   ├── integration/     # BaseConnector, MCPClientConnector, MCPHttpConnector
+│   ├── integration/     # BaseConnector, MCPStreamableHttpConnector, MCPHttpConnector, MCPStdioConnector
 │   ├── streaming/       # BaseStreamProvider, RedpandaStreamProvider
 │   ├── logging/         # BaseLogger
 │   ├── formatter/       # BaseFormatter

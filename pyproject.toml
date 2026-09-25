@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9-aif"
-version = "1.12.2"
+version = "1.12.3"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -38,6 +38,7 @@ server    = ["fastapi>=0.110", "uvicorn>=0.29"]
 s3        = ["boto3>=1.28"]
 ibm-cos   = ["ibm-cos-sdk>=2.13"]
 openai    = ["openai>=1.0"]
+mcp       = ["mcp>=1.10"]
 all       = [
     "aiokafka>=0.10",
     "kafka-python>=2.0",
@@ -52,6 +53,7 @@ all       = [
     "boto3>=1.28",
     "ibm-cos-sdk>=2.13",
     "openai>=1.0",
+    "mcp>=1.10",
 ]
 
 [project.urls]

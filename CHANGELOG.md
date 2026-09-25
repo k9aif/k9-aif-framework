@@ -4,6 +4,27 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.12.3] — 2026-09-25
+
+### Added
+
+- **G-24: `MCPStreamableHttpConnector` — the framework can now call hosted, standards-compliant MCP servers.** Until now the only HTTP connector, `MCPHttpConnector`, spoke a REST convention (`GET /tools`, `POST /tools/call` with `{name, arguments}`) and never performed the MCP `initialize` handshake, so it got a 404 from any server speaking the standard MCP streamable-HTTP transport (e.g. one built with the official SDK's `FastMCP`, served at `/mcp`). The framework's other MCP connectors speak the real protocol but only over stdio. Solutions reaching a deployed MCP server had to call the official SDK directly, outside the framework. The new connector (`k9_core/integration/mcp_streamable_http_connector.py`) wraps the official SDK's streamable-HTTP client behind the same `connect` / `list_tools` / `call_tool` / `close` shape as the existing connectors:
+  - config: `url` (or `base_url`), optional `api_key` (Bearer), `headers`, `timeout`, `sse_read_timeout`;
+  - `call_tool` returns the tool's structured content, falling back to JSON parsed from its text content; FastMCP's `{"result": ...}` wrapper around generic return types is removed only when the text content confirms it is a wrapper;
+  - a tool call the server marks `isError` raises `MCPToolError` instead of returning an error payload as if it were data;
+  - one MCP session per call, because the SDK's transport uses task-bound anyio cancel scopes — a session opened in `connect()` and closed in `close()` fails once those run in different asyncio tasks;
+  - uses the SDK's current `streamable_http_client` when present, falling back to `streamablehttp_client` on older SDKs.
+- **New optional extra `mcp`** (`pip install "k9-aif[mcp]"`, `mcp>=1.10`), also included in `all`. The SDK is imported lazily, so the framework imports without it.
+
+### Fixed
+
+- **`MCPClientConnectionFactory` had an empty registry** — `bootstrap()` registered nothing, so `get()` could only return connectors a solution registered itself. `bootstrap()` now registers the built-in transports `streamable_http`, `http` and `stdio` (never overriding a name a solution already registered), and `get()` bootstraps on first use. `get()` also no longer reports a `KeyError` raised inside a connector's constructor as "Unknown MCP client".
+- **`k9_mcp` package docstring** showed `MCPClientConnectionFactory.from_config()` / `get_connection()`, neither of which exists; replaced with the real `get()` API.
+
+18 new tests (`test_mcp_streamable_http_connector.py`): result unwrapping and config against a fake session; the real protocol against a FastMCP server started in-process on a free port (list, call, generic-return unwrapping, tool error, repeated calls across event loops, and `MCPHttpConnector` failing against the same server); plus an optional live test run when `MCP_SERVER_URL` is set, which passes against a deployed containerized MCP server. 602/602 full suite passing, zero regressions.
+
+---
+
 ## [1.12.2] — 2026-09-24
 
 ### Fixed
