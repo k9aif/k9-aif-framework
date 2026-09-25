@@ -115,13 +115,16 @@ through unmodified — `ShieldGovernance` never mutates a passing payload.
 raises: `True` → treated as FLAG, `False` → treated as BLOCK.
 
 **The checks are correct and well-tested** (`tests/test_shield_governance.py`).
-**What is not automatic: nothing calls `apply_pre_governance`/
-`apply_post_governance` for you.** `BaseValidationLoopAgent.execute()` and
-`BaseCriticActorAgent.execute()` — the two most commonly generated agent
-patterns — do not call them anywhere in their loop. A generated agent that
-constructs `ShieldGovernance(config=config)` in `__init__` and passes it as
-`governance=` gets **zero enforcement** unless its own `execute()` (or an
-override) explicitly calls the hooks. Don't assume "this agent has
+**Where the hooks are called for you (since 6b55f6b, shipped in 1.12.x):**
+`BaseValidationLoopAgent.execute()` and `BaseCriticActorAgent.execute()` —
+the two most commonly generated agent patterns, plus anything extending them
+(e.g. `K9PlanningLoopAgent`) — wrap `_execute_loop()` with real
+`apply_pre_governance`/`apply_post_governance` calls. Put loop logic in
+`_execute_loop()`; **overriding `execute()` itself bypasses governance.**
+
+**Where they are not:** a custom agent extending `BaseAgent` directly gets
+**zero enforcement** from `governance=ShieldGovernance(...)` unless its own
+`execute()` explicitly calls the hooks. Don't assume "this agent has
 `ShieldGovernance` wired" means anything is actually being checked — verify
 the hooks are called, not just that the object was constructed.
 
