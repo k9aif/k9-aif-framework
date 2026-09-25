@@ -12,6 +12,7 @@
 #        MCP_SERVER_URL=http://mcp-host:8765/mcp pytest k9_aif_abb/tests/test_mcp_streamable_http_connector.py -v
 
 import asyncio
+import importlib.util
 import os
 import socket
 import threading
@@ -22,7 +23,6 @@ from typing import Any, Dict
 
 import pytest
 
-from k9_aif_abb.k9_core.integration.mcp_http_connector import MCPHttpConnector
 from k9_aif_abb.k9_core.integration.mcp_streamable_http_connector import (
     MCPStreamableHttpConnector,
     MCPToolError,
@@ -90,6 +90,14 @@ def test_structured_content_is_preferred():
     assert session.calls == [("screen", {"vendor_name": "V"})]
 
 
+def test_sdk2_snake_case_fields_are_read():
+    ok = SimpleNamespace(is_error=False, structured_content={"risk_level": "low"}, content=[])
+    assert _run(_connector_with(_FakeSession(result=ok)).call_tool("t", {})) == {"risk_level": "low"}
+    failed = SimpleNamespace(is_error=True, structured_content=None, content=[_text("denied")])
+    with pytest.raises(MCPToolError, match="denied"):
+        _run(_connector_with(_FakeSession(result=failed)).call_tool("t", {}))
+
+
 def test_fastmcp_result_wrapper_is_unwrapped_when_text_confirms_it():
     value = {"match_score": 0.0, "risk_level": "NONE"}
     result = SimpleNamespace(isError=False, structuredContent={"result": value},
@@ -130,7 +138,9 @@ def test_tool_error_raises():
 def test_factory_registers_builtin_transports():
     conn = MCPClientConnectionFactory.get("streamable_http", config={"kwargs": {"url": "http://x/mcp"}})
     assert isinstance(conn, MCPStreamableHttpConnector)
-    assert isinstance(MCPClientConnectionFactory.get("http", config={"kwargs": {}}), MCPHttpConnector)
+    if importlib.util.find_spec("httpx"):
+        from k9_aif_abb.k9_core.integration.mcp_http_connector import MCPHttpConnector
+        assert isinstance(MCPClientConnectionFactory.get("http", config={"kwargs": {}}), MCPHttpConnector)
     with pytest.raises(ValueError, match="Unknown MCP client"):
         MCPClientConnectionFactory.get("carrier_pigeon", config={})
 
@@ -167,9 +177,12 @@ def _free_port():
 def local_mcp_server():
     pytest.importorskip("mcp")
     uvicorn = pytest.importorskip("uvicorn")
-    from mcp.server.fastmcp import FastMCP
+    try:
+        from mcp.server.mcpserver import MCPServer as ServerClass   # SDK 2.x
+    except ImportError:
+        from mcp.server.fastmcp import FastMCP as ServerClass       # SDK 1.x
 
-    mcp_server = FastMCP("k9-test-tools")
+    mcp_server = ServerClass("k9-test-tools")
 
     @mcp_server.tool()
     def screen_vendor(vendor_name: str, country: str) -> dict:
@@ -225,7 +238,8 @@ def test_protocol_generic_return_type_is_unwrapped(local_mcp_server):
 
 def test_protocol_tool_failure_raises(local_mcp_server):
     conn = MCPStreamableHttpConnector({"kwargs": {"url": local_mcp_server}})
-    with pytest.raises(MCPToolError, match="boom"):
+    # SDK 1.x servers return the exception text; 2.x servers hide it by design
+    with pytest.raises(MCPToolError, match="fail_always"):
         _run(conn.call_tool("fail_always", {"reason": "boom"}))
 
 
@@ -239,6 +253,7 @@ def test_protocol_repeated_calls_across_event_loops(local_mcp_server):
 def test_rest_connector_cannot_reach_standard_server(local_mcp_server):
     """Documents why this connector exists: MCPHttpConnector's REST paths 404 on a standard MCP server."""
     httpx = pytest.importorskip("httpx")
+    from k9_aif_abb.k9_core.integration.mcp_http_connector import MCPHttpConnector
     conn = MCPHttpConnector({"kwargs": {"base_url": local_mcp_server}})
     with pytest.raises(httpx.HTTPStatusError):
         _run(conn.call_tool("screen_vendor", {"vendor_name": "A", "country": "US"}))

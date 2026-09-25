@@ -4,6 +4,20 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.12.4] — 2026-09-25
+
+### Fixed
+
+- **1.12.3's `MCPStreamableHttpConnector` failed on a clean install with the current MCP SDK (2.x).** Caught by installing `k9-aif[mcp]==1.12.3` from PyPI into a fresh virtualenv: `mcp>=1.10` resolves to `mcp 2.2.0`, a new major line, while 1.12.3 was developed and tested against `mcp 1.26`. Three breaks, all fixed:
+  - `MCPClientConnectionFactory.bootstrap()` imported every built-in connector eagerly, including `MCPHttpConnector`, which needs `httpx` — not a k9-aif dependency, and no longer pulled in by the MCP SDK (2.x moved to `httpx2`). So `get("streamable_http")` raised `ModuleNotFoundError: httpx`. Built-ins are now registered by import path and imported only when that transport is requested.
+  - The connector built its timeout with `httpx.Timeout`; it now uses whichever HTTP library the installed SDK's own client factory uses (`httpx` on 1.x, `httpx2` on 2.x).
+  - SDK 2.x renamed result fields to snake_case (`is_error`, `structured_content`); the connector read only the 1.x camelCase names, so on 2.x a failed tool call was returned as data and structured results were missed. Both spellings are now read.
+- Tests now run on both SDK lines (the in-process server uses 2.x `MCPServer` or 1.x `FastMCP`, whichever is installed) and no longer import `httpx` at module level. Verified: 20/20 on `mcp 1.26`; 19 passed + 1 skipped (the `MCPHttpConnector` comparison, which needs `httpx`) on `mcp 2.2` in a clean venv; the live test passes against a deployed MCP server on both. 603/603 full suite passing.
+
+**Note:** use `1.12.4`, not `1.12.3`, with the `mcp` extra.
+
+---
+
 ## [1.12.3] — 2026-09-25
 
 ### Added

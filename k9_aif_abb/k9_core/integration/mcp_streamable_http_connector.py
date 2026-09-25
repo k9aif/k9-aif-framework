@@ -43,6 +43,7 @@ class MCPStreamableHttpConnector(BaseConnector):
     tasks. ``connect()``/``close()`` therefore hold no session.
 
     Requires the optional ``mcp`` extra: ``pip install "k9-aif[mcp]"``.
+    Works with both MCP SDK lines (1.x and 2.x).
     """
 
     def __init__(self, config: Dict[str, Any]):
@@ -88,19 +89,22 @@ class MCPStreamableHttpConnector(BaseConnector):
         headers = self._request_headers() or None
 
         if hasattr(streamable_http, "streamable_http_client"):
-            # Current SDK: transport takes a pre-built httpx client
-            import httpx
+            # SDK >= 1.2x and 2.x: the transport takes a pre-built HTTP client.
+            # Built with the SDK's own factory, so it uses whichever HTTP
+            # library that SDK line depends on (httpx on 1.x, httpx2 on 2.x).
+            from mcp.shared import _httpx_utils
 
-            async with streamable_http.create_mcp_http_client(
+            http_lib = getattr(_httpx_utils, "httpx2", None) or getattr(_httpx_utils, "httpx")
+            async with _httpx_utils.create_mcp_http_client(
                 headers=headers,
-                timeout=httpx.Timeout(self.timeout, read=self.sse_read_timeout),
+                timeout=http_lib.Timeout(self.timeout, read=self.sse_read_timeout),
             ) as http_client:
                 async with streamable_http.streamable_http_client(self.url, http_client=http_client) as streams:
                     async with ClientSession(streams[0], streams[1]) as session:
                         await session.initialize()
                         yield session
         else:
-            # Older SDKs (< 1.2x): headers and timeouts passed directly
+            # Older 1.x SDKs: headers and timeouts passed directly
             async with streamable_http.streamablehttp_client(
                 self.url,
                 headers=headers,
@@ -156,8 +160,14 @@ def _text_of(content: Any) -> str:
     return "".join(parts)
 
 
+def _field(obj: Any, snake: str, camel: str) -> Any:
+    """Read a result field by its SDK 2.x (snake_case) or 1.x (camelCase) name."""
+    value = getattr(obj, snake, None)
+    return getattr(obj, camel, None) if value is None else value
+
+
 def _unwrap_tool_result(tool_name: str, result: Any) -> Dict[str, Any]:
-    if getattr(result, "isError", False):
+    if _field(result, "is_error", "isError"):
         raise MCPToolError(f"MCP tool '{tool_name}' failed: {_text_of(result.content) or 'no detail'}")
 
     text = _text_of(result.content)
@@ -168,7 +178,7 @@ def _unwrap_tool_result(tool_name: str, result: Any) -> Dict[str, Any]:
         except ValueError:
             parsed = None
 
-    structured = getattr(result, "structuredContent", None)
+    structured = _field(result, "structured_content", "structuredContent")
     if structured is not None:
         # FastMCP wraps generic return types (Dict[str, Any], list, ...) as
         # {"result": <value>} in structured output while the text content
