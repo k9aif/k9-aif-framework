@@ -1,8 +1,7 @@
 # CLAUDE.md
 
-Guidance for Claude Code in this repository. Full prior version (extended
-config/persistence/MCP/adapter-table reference material) preserved in
-`old-CLAUDE.md`. Step-by-step recipes live in `SKILLS.md` — **read it
+Guidance for Claude Code in this repository. Step-by-step recipes live in
+`SKILLS.md` — **read it
 directly when doing one of those tasks; it is no longer auto-imported here**,
 so don't assume its contents are already in context.
 
@@ -85,11 +84,27 @@ at all" guard. The methods that actually run checks are
 `apply_pre_governance(payload)` / `apply_post_governance(result)`
 (`BaseAgent`, and identically on `BaseOrchestrator`/`BaseRouter` — separate,
 duplicated methods, not inherited from one place), which call
-`self.governance.pre_process`/`post_process`. **Neither is called
-automatically by any base class** — every concern (agent, orchestrator,
-router) must call them itself, same as `enforce_governance()`. Calling only
+`self.governance.pre_process`/`post_process`. **Only the loop agents call
+them for you** (`BaseValidationLoopAgent`, `BaseCriticActorAgent` and their
+subclasses — see the Shield section below). `BaseAgent`, `BaseOrchestrator`
+and `BaseRouter` never do: a custom agent, every orchestrator and every
+router must call them itself, same as `enforce_governance()`. Calling only
 `enforce_governance()` gives zero content-level protection even though it
 looks like "governance is on."
+
+**The hooks are `async`; `BaseAgent.execute()` and `execute_flow()` are
+sync.** Calling `self.apply_pre_governance(payload)` without awaiting it
+returns an un-run coroutine — no check runs, no error is raised. From sync
+code use `_run_coro_sync(self.apply_pre_governance(payload))` (the bridge
+the loop agents and `BaseOrchestrator` use; safe inside a running event
+loop, unlike `asyncio.run()`/`run_until_complete()`). Orchestrators also
+have a sync ingress wrapper, `apply_shield(payload)` →
+`{"allowed", "reason", "payload"}`.
+
+`require_governance()` never fails at init: with no governance passed it
+returns `NoopGovernance` in every environment (WARNING in
+development/test, ERROR otherwise; `K9_ENV` unset means `production`). The
+hard fail happens only where `enforce_governance()` is called.
 
 ## Security / Vulnerability (k9x_Shield) and Zero Trust
 
@@ -113,6 +128,22 @@ under `strict=False` (the common config) just logs and lets the payload
 through unmodified — `ShieldGovernance` never mutates a passing payload.
 `fail_open` (default `True`) controls what happens if a check itself
 raises: `True` → treated as FLAG, `False` → treated as BLOCK.
+
+**Shield is off in the shipped configuration.** `k9_aif_abb/config/config.yaml`
+sets `security.shield.enabled: false` ("SBBs enable and configure in their
+own config.yaml"), while `ShieldGovernance`'s code fallback when the key is
+absent is `enabled=True`. So a solution that copies the framework config
+gets no Shield checks until it sets `security.shield.enabled: true` **and**
+passes `governance=ShieldGovernance(...)` to each component. Don't tell
+anyone Shield is on by default without checking which config is loaded.
+
+**`ShieldGovernance(config)` runs only the checks listed** under
+`security.shield.ingress.checks` / `egress.checks`, and takes the *whole*
+config (it reads `config["security"]["shield"]`). With `enabled: true` and
+no check lists — or passed the shield block itself instead of the whole
+config — it builds empty chains, still logs `enabled=True`, and blocks
+nothing (verified: a prompt-injection payload passes). Copy the check lists
+from the framework's `config.yaml`, and prove it with one injection test.
 
 **The checks are correct and well-tested** (`tests/test_shield_governance.py`).
 **Where the hooks are called for you (since 6b55f6b, shipped in 1.12.x):**
@@ -153,6 +184,43 @@ proving these layers actually contain a real attack end-to-end — read its
 own `CLAUDE.md` for the full Router-ingress/Orchestrator-egress containment
 contract before assuming a generated app gets that containment "for free."
 It doesn't, without explicit wiring — satan builds its own.
+
+## MCP tools
+
+Three built-in client transports, all behind `MCPClientConnectionFactory.get(name, config={...})`
+(built-ins are registered by import path and imported only when requested):
+
+| Name | Class | Use for |
+|---|---|---|
+| `streamable_http` | `MCPStreamableHttpConnector` | **Any hosted, standard MCP server** (e.g. FastMCP at `http://host:port/mcp`). Official SDK, real handshake. Needs `pip install "k9-aif[mcp]"`; works on SDK 1.x and 2.x |
+| `http` | `MCPHttpConnector` | Only servers exposing the REST convention `GET /tools`, `POST /tools/call`. **404s on a standard MCP server** — not MCP over HTTP despite the name |
+| `stdio` | `MCPStdioConnector` | Spawning a local MCP server process |
+
+`MCPStreamableHttpConnector` opens one MCP session per call (`connect()`/
+`close()` hold nothing) because the SDK's anyio cancel scopes are bound to
+the task that opened them. `call_tool()` returns the tool's structured
+result as a dict (FastMCP's `{"result": ...}` wrapper removed) and raises
+`MCPToolError` when the server reports the call failed. Added in 1.12.4
+(G-24); 1.12.3 had it but breaks on SDK 2.x — never pin 1.12.3.
+
+`BaseMCPAgent` is the abstract base for tool-calling agents (`connect`/
+`send_request`/`close`); `MCPClientAgent` is a **stub** whose methods raise
+`NotImplementedError` — don't build on it. Serving tools:
+`k9_mcp/servers/BaseMCPServer` (`handle_request`) is the ABB for a tool you
+implement yourself; it defines no network transport of its own.
+
+## Model routers
+
+Every call goes through `llm_invoke` → `ModelRouterFactory.get_router(config)`
+→ a `BaseModelRouter`. `inference.router.type` selects only the built-ins
+(`k9` / `k9_model_router`, or `default`; anything else raises
+`ValueError: Unsupported router type`); there is **no public
+registry for a custom router type yet** (a router registry mirroring the
+provider registry is proposed). Today a solution plugs in its own router by
+building it at start-up and placing it in `ModelRouterFactory._instances`
+under the factory's cache key — exactly what the EOC does with
+`EOCModelRouter` (`examples/K9X_Enterprise_Insurance_OperationsCenter/api/app.py`).
+Agents are unaffected either way.
 
 ## Everything is provisioned through factories
 
@@ -221,11 +289,28 @@ the payload to resume it with — not just a topic name), and returns
 `hil.replies.*` topic (`K9EventBus.subscribe_async(..., pattern=...)`) —
 job-id belongs in the message (`correlation_id`), never in the topic name;
 one Router, not one consumer per orchestrator type. On a reply,
-`_on_hil_reply()` resolves the pending row by `correlation_id`, merges the
-decision into the resumed payload as `hil_decision`, and calls `route()`
-on it — resuming is just re-routing with new information now available,
-reusing the same method that handles any other event, not a second
-mechanism. Marks the row `resolved` after.
+`_on_hil_reply()` first resolves the pending row by `correlation_id` with an
+atomic compare-and-swap (`resolve_hil_pending()`: `pending` → `resolved`,
+returns whether it won — since 1.12.1, G-16), and only if it won merges the
+decision into the resumed payload as `hil_decision` and calls `route()` on
+it. A duplicate reply (Kafka redelivery, outbox retry, a second Router)
+therefore resumes the flow exactly once. Resuming is just re-routing with
+new information now available, reusing the same method that handles any
+other event, not a second mechanism.
+
+**Open (G-18):** the row is marked resolved *before* re-routing, so a crash
+between the two loses that resume. A `resuming` state plus recovery sweep
+is planned; until then the SBB orchestrator's resume branch must be
+idempotent.
+
+**Request fields not yet passed:** `BaseHILOrchestrator.execute_flow()`
+builds the request from `title`/`reason`/`priority`/`source_orchestrator`
+plus `payload` (the `RequiresHIL` context). It does not pass per-task TTL,
+PII field lists, required role, or `artifacts` — the list of object-storage
+links (`s3://bucket/key`, S3/MinIO) that k9x-hil reads to fetch the review
+document directly. k9x-hil falls back to queue defaults for the first
+three; a solution that needs documents shown to the reviewer must add
+`artifacts` itself.
 
 **Not every HIL-consumer action is a decision worth publishing.** The
 reference reply-side implementation, `k9x-hil`
@@ -274,7 +359,8 @@ this automatically today; get it wrong and replies are silently dropped
 - No hardcoded IPs (`192.168.x.x` etc.) — env vars with localhost defaults:
   `"${POSTGRES_HOST:-localhost}"`, `"${OLLAMA_BASE_URL:-http://localhost:11434}"`
 - No credentials in `config.yaml` — secrets in `.env` (gitignored) only
-- `.env` never staged; `env-example` is the template
+- `.env` never staged; example apps and generated projects ship an
+  `env-example` template — copy it, never commit the real `.env`
 - No `__pycache__`/`.pyc` — `.gitignore` present before first commit
 - Three-layer decoupling preserved (see above)
 - After any `k9_aif_abb/` change: `./generate_pdoc.sh` (the `./` matters —
@@ -330,11 +416,42 @@ sudo podman logs eoc-app-backend
   which plain `MemoryPersistence` doesn't provide. Resolves to
   `SQLiteDatabaseStorage(db_path=":memory:")` instead.
 
-## Where the rest lives
+## Reference
 
-Config structure, persistence tables, MCP client stack, session management,
-Zero Trust guard, the full Provider Adapter table, and detailed Squad/Agent
-YAML examples were trimmed from this file per Anthropic's CLAUDE.md size
-guidance (keep only what's needed nearly every session). They're either
-self-evident from the source under `k9_aif_abb/`, covered step-by-step in
-`SKILLS.md`, or preserved verbatim in `old-CLAUDE.md`.
+**Unknown intents.** When the Router can't map an `event_type`, it
+publishes to `intent.in`; `IntentOrchestrator` (`k9_orchestrators/`) runs
+`IntentSquad` (`k9_squad/`) with a `BaseIntentAgent` (OOB `K9IntentAgent`:
+`intent_map` lookup → LLM via `llm_invoke` → `fallback_intent()`) and
+re-publishes to the domain topic, or returns a "please clarify" response.
+Nothing is ever wired *in front of* the Router. Below `confidence_threshold`
+(default 0.5) `IntentSquad.on_low_confidence()` fires.
+
+**Config.** Two levels: the framework's `k9_aif_abb/config/config.yaml`
+(test defaults: Ollama, SQLite, Shield off) and each solution's own
+`config/config.yaml`, which overrides it. Key sections:
+`inference.llm_factory.models`, `inference.model_catalog`,
+`inference.router.persistence` (sqlite | postgres | memory), `postgres`,
+`messaging`, `security.shield`.
+
+**Persistence.** `RoutingStateStore` (`k9_storage/routing_state_store.py`)
+holds `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`
+and `hil_pending` — SQLite auto-created, PostgreSQL by reflection;
+`postgres.schema` must match the real schema or reflection misses tables.
+
+**Sessions.** `BaseOrchestrator` wires a session manager only when
+`session.enabled: true` (`_bootstrap_session`); no key, no overhead.
+
+**Infrastructure (env vars, localhost defaults — never hardcode IPs):**
+`OLLAMA_BASE_URL` (:11434), `POSTGRES_HOST` (:5432), `KAFKA_BROKER` (:9092),
+`NEO4J_URI` (bolt :7687), `DOCLING_ENDPOINT` (:5001), `S3_ENDPOINT_URL`
+(:9000, with `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`), `MCP_SERVER_URL`
+for a hosted MCP server, `K9_ENV` for governance enforcement.
+
+**Canonical example:** `examples/K9X_Enterprise_Insurance_OperationsCenter/`
+— three processes (FastAPI app + UI, Kafka router, orchestrator consumer),
+per-domain orchestrators, zero trust, custom model router.
+
+Step-by-step recipes (new agent, new provider, new factory backend, Squad/
+Agent YAML, validation loops, HIL wiring): `SKILLS.md`. Anything else:
+the source under `k9_aif_abb/` is authoritative over any doc, this one
+included.

@@ -842,17 +842,93 @@ class FraudValidationAgent(K9ValidationLoopAgent):
 ```
 
 One-pass → extend `BaseAgent`. Iterative convergence → extend `K9ValidationLoopAgent`.
+Generate → critique → refine → `K9CriticActorAgent`. Plan and revise own steps → `K9PlanningLoopAgent`.
+Loop agents: put logic in the hook methods / `_execute_loop()`, **never override `execute()`** —
+that is where they apply governance for you.
 
-## Governance
+## Governance — the checks only run where the hooks are called
 
-`K9_ENV=development` — NoopGovernance logs WARNING, continues.
-`K9_ENV=production` — `enforce_governance()` raises `PermissionError`.
+Pass a governance object to each component (e.g. `governance=ShieldGovernance(...)`).
+With none, `require_governance()` falls back to `NoopGovernance` (WARNING in
+`K9_ENV=development|test`, ERROR otherwise; unset `K9_ENV` means production).
+
+- `enforce_governance()` only asserts real governance is configured (raises `PermissionError`
+  in production if not). **It runs no checks.**
+- `apply_pre_governance(payload)` / `apply_post_governance(result)` run the checks. They are
+  **async** — calling one from sync `execute()` without awaiting it only creates a coroutine
+  and checks nothing. Loop agents call them for you. **`BaseAgent`, orchestrators and routers
+  do not** — call them yourself:
 
 ```python
+# the framework's own sync-to-async bridge (used by the loop agents; safe inside a running loop)
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
+
 def execute(self, payload):
-    self.enforce_governance()   # raises in production if not configured
-    ...
+    self.enforce_governance()                                   # fail fast if unconfigured
+    payload = _run_coro_sync(self.apply_pre_governance(payload))  # raises PermissionError on BLOCK
+    result = {...}                                              # your work, via llm_invoke
+    return _run_coro_sync(self.apply_post_governance(result))
 ```
+
+In an orchestrator's `execute_flow()`, use the sync wrapper instead:
+`sh = self.apply_shield(payload)`; if `not sh["allowed"]`, return a denial; else use `sh["payload"]`.
+
+**K9X Shield** (`k9_security/vulnerability/ShieldGovernance`): 13 checks (prompt injection,
+PII, tool arguments, credentials, ...); BLOCK raises `PermissionError`, FLAG is logged
+(`strict: true` turns FLAG into BLOCK). The framework's shipped config has it **off**. It runs
+**only the checks you list** — `enabled: true` alone blocks nothing:
+
+```yaml
+security:                 # the framework config.yaml's default check lists
+  shield:
+    enabled: true
+    ingress: {checks: [InputSizeCheck, PromptInjectionCheck, PIIBoundaryCheck]}
+    egress:  {checks: [SemanticDriftCheck, ToolArgumentCheck, ExecutionGuardCheck, PIIBoundaryCheck]}
+```
+
+Pass the **whole** config: `ShieldGovernance(config)` (it reads `config["security"]["shield"]`).
+Prove it with one test that sends a prompt-injection payload and expects `PermissionError`.
+
+**Zero Trust** (orchestrators only): `enable_zero_trust: true` (default off) runs identity /
+role / risk checks before any squad; `RoleBasedAuthorizationGuard` allows actions not listed
+in its `role_policy`, so list every restricted action.
+
+## Kafka and HIL
+
+Only the **Router** and **Orchestrators** use Kafka (`message_bus`). Agents and Squads never
+publish — they enrich the shared context through the Squad flow.
+
+Human review: an Agent or Squad raises `RequiresHIL(reason, context, priority, queue)`; the
+Orchestrator catches it in `execute_flow()` and returns `self.handle_requires_hil(exc, payload)`
+(publishes `hil.requests.<queue>`, records `hil_pending`, returns `pending_hil` — never blocks).
+`K9EventRouter.listen_for_hil_replies()` resumes the flow once per decision by re-routing the
+original payload with `hil_decision` attached; the orchestrator's resume branch must apply it
+without re-running agents, and must be idempotent.
+
+## MCP tools
+
+```python
+from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
+
+tools = MCPClientConnectionFactory.get(
+    "streamable_http",                                   # hosted MCP server (needs k9-aif[mcp])
+    config={"kwargs": {"url": "http://localhost:8765/mcp"}},
+)
+result = await tools.call_tool("tool_name", {"arg": "value"})   # dict; MCPToolError on failure
+```
+
+`"http"` is only for REST-style tool servers (`/tools`, `/tools/call`) and fails on a standard
+MCP server; `"stdio"` spawns a local server process. `MCPClientAgent` is a stub — extend
+`BaseMCPAgent` instead.
+
+## Full framework guidance (installed with the package)
+
+Read these before non-trivial work — they are more complete than this file:
+
+- `__K9AIF_DOCS__/CLAUDE.md` — architecture rules, governance, Shield, Zero Trust, HIL, MCP, gotchas
+- `__K9AIF_DOCS__/SKILLS.md` — step-by-step recipes (new agent, provider, factory backend, HIL wiring)
+
+The framework source under that folder is authoritative over any doc.
 
 ## Key CLI Commands
 
@@ -958,7 +1034,9 @@ def context_init(silent=False):
             if not silent:
                 print("  ✓")
 
-    _write("k9aif_context.md", K9AIF_CONTEXT_MD)
+    import k9_aif_abb
+    docs_dir = Path(k9_aif_abb.__file__).resolve().parent
+    _write("k9aif_context.md", K9AIF_CONTEXT_MD.replace("__K9AIF_DOCS__", str(docs_dir)))
     _write("README.md", K9AIF_README_MD)
 
     # Wire Claude Code — write or append @k9aif_context.md to CLAUDE.md

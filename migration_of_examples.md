@@ -56,7 +56,7 @@ independent of this migration.
   hardcodes `examples/` paths and descriptions (real user-facing CLI help,
   should be updated but isn't a break)
 - This repo's own docs: `README.md`, `CHANGELOG.md`, `SKILLS.md`,
-  `old-CLAUDE.md`, `setup.md`, `docs/getting-started.md`,
+  `setup.md`, `docs/getting-started.md`,
   `docs/developers/Developer-guide.md`
 - Other repos' context docs that point developers at the framework's
   examples for reference: `dow-k9-aif/CLAUDE.md`, `studiox_v2/context/

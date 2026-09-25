@@ -41,8 +41,9 @@ We hit this directly on 2026-08-08: `CLAUDE.md` had grown to 395 lines and
 was auto-importing `SKILLS.md` (1,582 lines) via `@SKILLS.md`, so every
 session force-loaded 1,977 lines regardless of task. Fixed by trimming
 `CLAUDE.md` to ~156 lines of load-bearing content, dropping the auto-import,
-and preserving the full prior version in `old-CLAUDE.md` rather than deleting
-it outright. `SKILLS.md` is now read on demand, not force-loaded.
+and keeping the full prior version as `old-CLAUDE.md` until its
+still-accurate reference material was folded back into `CLAUDE.md`'s
+Reference section (2026-09-25), when it was deleted. `SKILLS.md` is now read on demand, not force-loaded.
 
 Path- or language-specific guidance belongs in scoped `.claude/rules/` files,
 not the root `CLAUDE.md` — keeps the always-loaded file focused on what

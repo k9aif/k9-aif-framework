@@ -91,10 +91,15 @@ standardized MCP communication patterns.</p>
 
 <pre><code>from <a href="k9_factories/mcp_client_connection_factory.html">k9_aif_abb.k9_factories.mcp_client_connection_factory</a> import MCPClientConnectionFactory
 
-factory = MCPClientConnectionFactory.from_config(config)
-client = factory.get_connection("weather")
+# Built-in transports: "streamable_http" (hosted MCP servers),
+# "http" (REST /tools convention), "stdio" (local server process)
+client = MCPClientConnectionFactory.get(
+    "streamable_http",
+    config={"name": "weather", "kwargs": {"url": "http://mcp-host:8000/mcp"}},
+)
 
 await client.connect()
+tools = await client.list_tools()
 result = await client.call_tool("get_weather", {"city": "Boston"})
 </code></pre>
 </div>
@@ -143,13 +148,18 @@ result = await client.call_tool("get_weather", {"city": "Boston"})
 </span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
 </span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">    from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    factory = MCPClientConnectionFactory.from_config(config)</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">    client = factory.get_connection(&quot;weather&quot;)</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">    await client.connect()</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">    result = await client.call_tool(&quot;get_weather&quot;, {&quot;city&quot;: &quot;Boston&quot;})</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">    # Built-in transports: &quot;streamable_http&quot; (hosted MCP servers),</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">    # &quot;http&quot; (REST /tools convention), &quot;stdio&quot; (local server process)</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">    client = MCPClientConnectionFactory.get(</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="sd">        &quot;streamable_http&quot;,</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="sd">        config={&quot;name&quot;: &quot;weather&quot;, &quot;kwargs&quot;: {&quot;url&quot;: &quot;http://mcp-host:8000/mcp&quot;}},</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="sd">    )</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="sd">    await client.connect()</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">    tools = await client.list_tools()</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a><span class="sd">    result = await client.call_tool(&quot;get_weather&quot;, {&quot;city&quot;: &quot;Boston&quot;})</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

@@ -388,21 +388,28 @@ def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
 
 **To apply governance pipeline hooks:**
 
-```python
-import asyncio
+The hooks are `async` and `execute()` is sync, so bridge them with the
+framework's `_run_coro_sync` (the same helper the loop agents use). Don't use
+`asyncio.get_event_loop().run_until_complete(...)` or `asyncio.run(...)` —
+both raise inside an already-running event loop (FastAPI, Jupyter), and a
+broad `except` upstream then hides that governance never ran. Never call a
+hook without the bridge: an un-awaited coroutine runs no checks and raises
+nothing.
 
-# Pre-process (sanitize/validate input before LLM)
-payload = asyncio.get_event_loop().run_until_complete(
-    self.apply_pre_governance(payload)
-)
+```python
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
+
+# Pre-process (sanitize/validate input before LLM) -- raises PermissionError on BLOCK
+payload = _run_coro_sync(self.apply_pre_governance(payload))
 
 # ... call llm_invoke ...
 
 # Post-process (validate/redact output after LLM)
-result = asyncio.get_event_loop().run_until_complete(
-    self.apply_post_governance(result)
-)
+result = _run_coro_sync(self.apply_post_governance(result))
 ```
+
+In an orchestrator's `execute_flow()`, use the sync wrapper
+`self.apply_shield(payload)` → `{"allowed", "reason", "payload"}` instead.
 
 ---
 
