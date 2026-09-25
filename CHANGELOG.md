@@ -4,6 +4,33 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.12.5] — 2026-09-25
+
+Documentation and project-context release: no runtime behaviour changes to
+any framework component.
+
+### Changed
+
+- **`k9aif --context-init` now writes an accurate `k9aif_context.md`** (the file a new project's `CLAUDE.md` imports). The previous template's governance example called only `enforce_governance()`, which runs no checks, so an agent written from it got no Shield protection. The template now covers:
+  - the real hook pattern (`_run_coro_sync(self.apply_pre_governance(...))`, and `apply_shield()` in orchestrators);
+  - Shield config with explicit ingress/egress check lists — `enabled: true` alone blocks nothing;
+  - Zero Trust;
+  - the Kafka-ownership and HIL rules;
+  - MCP usage (`streamable_http` for hosted servers);
+  - the absolute paths of the installed `CLAUDE.md` / `SKILLS.md`.
+- **Packaged `CLAUDE.md` and `SKILLS.md` refreshed** (`k9_aif_abb/CLAUDE.md`, `k9_aif_abb/SKILLS.md` in the wheel):
+  - async governance hooks silently check nothing if called un-awaited from sync code;
+  - the Shield default-off config, and the empty-check-list trap;
+  - the HIL compare-and-swap resume order (G-16) and the open G-18 window;
+  - HIL request fields not yet passed (TTL, PII, role, `artifacts`);
+  - new MCP-transport and model-router sections;
+  - a Reference section replacing the deleted `old-CLAUDE.md`.
+- `SKILLS.md`'s governance recipe used `run_until_complete`, which raises inside a running event loop (FastAPI); it now uses `_run_coro_sync`.
+
+603/603 full suite passing, zero regressions.
+
+---
+
 ## [1.12.4] — 2026-09-25
 
 ### Fixed
