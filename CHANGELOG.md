@@ -4,6 +4,21 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.12.6] — 2026-09-27
+
+Documentation release: no runtime behaviour changes.
+
+### Fixed
+
+- **README links and images now absolute so they render on PyPI.** The README is also the PyPI `long_description`, and PyPI does not resolve relative paths: on pypi.org every relative link and image became `pypi.org/project/k9-aif/<path>` and returned 404. All 22 relative targets are now absolute: files use `github.com/.../blob/main/`, folders `.../tree/main/`, images `raw.githubusercontent.com/.../main/`. The list includes the outer link of the linked LLM-provider diagram. All 33 README URLs return HTTP 200.
+
+### Added
+
+- `scripts/check_readme_links.py`: fails on any relative link or image in the README; `--check-urls` also requires HTTP 200 for every URL. It is used by the new `k9_aif_abb/tests/test_readme_links.py` (skipped outside a repository checkout) and the new `.claude/hooks/check-readme-links.sh`, which blocks README edits that add a relative link.
+- README: a short **Built on K9-AIF: Defense Acquisition System (DAS)** section with tips from building DAS, replacing an outdated entry that described DAS as using CrewAI.
+
+---
+
 ## [1.12.5] — 2026-09-25
 
 Documentation and project-context release: no runtime behaviour changes to

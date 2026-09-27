@@ -42,6 +42,7 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
   - [Zero Trust Execution Layer](#zero-trust-execution-layer)
   - [Human-in-the-Loop (HIL)](#human-in-the-loop-hil)
 - [Prototype Implementations](#prototype-implementations)
+  - [Built on K9-AIF: Defense Acquisition System (DAS)](#built-on-k9-aif-defense-acquisition-system-das)
 - [Design Goals](#design-goals)
 - [Architectural Patterns](#architectural-patterns)
 - [Intelligent Model Routing](#intelligent-model-routing)
@@ -75,12 +76,12 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 Start here for a structured explanation of K9-AIF:
 
-- [The Path of K9-AIF](docs/understanding-k9-aif/01-the-path-of-k9-aif.md)
-- [What K9-AIF Is](docs/understanding-k9-aif/02-what-k9-aif-is.md)
-- [K9-AIF for Stakeholders](docs/understanding-k9-aif/03-k9-aif-for-stakeholders.md)
-- [K9-AIF vs Agent Frameworks](docs/understanding-k9-aif/04-k9-aif-vs-agent-frameworks.md)
-- [Where Agent Systems Fail](docs/understanding-k9-aif/05-where-agent-systems-fail.md)
-- [FAQ](docs/understanding-k9-aif/06-faq.md)
+- [The Path of K9-AIF](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/01-the-path-of-k9-aif.md)
+- [What K9-AIF Is](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/02-what-k9-aif-is.md)
+- [K9-AIF for Stakeholders](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/03-k9-aif-for-stakeholders.md)
+- [K9-AIF vs Agent Frameworks](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/04-k9-aif-vs-agent-frameworks.md)
+- [Where Agent Systems Fail](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/05-where-agent-systems-fail.md)
+- [FAQ](https://github.com/k9aif/k9-aif-framework/blob/main/docs/understanding-k9-aif/06-faq.md)
 
 ---
 
@@ -206,7 +207,7 @@ This is not a checkpoint at the edge — it is enforced at every layer:
 
 > Zero Trust is not a checkpoint — it is a layer applied across the system.
 
-![Zero Trust Execution Layer](docs/diagrams/k9-security_class_diagram.png)
+![Zero Trust Execution Layer](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9-security_class_diagram.png)
 
 ---
 
@@ -243,7 +244,7 @@ the resumed payload through its own `route()` — resuming a workflow is
 just re-routing it with new information now available, not a second
 mechanism.
 
-![HIL Round Trip](docs/diagrams/hil_roundtrip_sequence.png)
+![HIL Round Trip](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/hil_roundtrip_sequence.png)
 
 ---
 
@@ -255,7 +256,7 @@ governed multi-agent architectures across multiple domains.
 ### Featured Example
 
 **K9X Enterprise Insurance Operations Center (EOC)**
-→ [examples/K9X_Enterprise_Insurance_OperationsCenter](examples/K9X_Enterprise_Insurance_OperationsCenter)
+→ [examples/K9X_Enterprise_Insurance_OperationsCenter](https://github.com/k9aif/k9-aif-framework/tree/main/examples/K9X_Enterprise_Insurance_OperationsCenter)
 
 The EOC is the canonical reference implementation of K9-AIF — the most complete, production-aligned example in the framework. It demonstrates every architectural concept end-to-end:
 
@@ -270,14 +271,31 @@ The EOC is the canonical reference implementation of K9-AIF — the most complet
 
 **Use the EOC as your reference when building any new K9-AIF solution.**
 
+### Built on K9-AIF: Defense Acquisition System (DAS)
+
+**DAS** turns capability documents into JCIDS, acquisition and
+systems-engineering deliverables aligned with DoDAF 2.0. It is built entirely
+on K9-AIF: 1 router, 4 stage orchestrators, 5 YAML squads and 17 agents, all
+SBBs extending framework ABBs.
+→ [github.com/k9aif/dow-k9x](https://github.com/k9aif/dow-k9x) · Live: [das.k9x.ai](https://das.k9x.ai/)
+
+Tips from building it:
+
+- **Route deterministically when the intent is known.** The analyst picks the document type; the router maps it to a stage topic with a plain table, and no LLM decides the route.
+- **One orchestrator per stage, squads reused across stages.** The gate-readiness and package-assembly squads serve the JCIDS, Acquisition and SE orchestrators unchanged; stages differ in config and prompts, not code.
+- **Validation loops only where output must converge**, such as generating views, proposing trace links and classifying drift. Everything else is a single-pass `BaseAgent`.
+- **Ground agents in the source.** Agents use only the source document or approved prior-stage outputs, write `NOT PROVIDED IN SOURCE` instead of inventing, and cite evidence, with governance checking every agent's input and output.
+- **Carry a job ID on every event.** Output from two concurrent runs once appeared in the same session; the cause was events without a `job_id`, not queueing.
+- **Human gates at stage boundaries, documents by reference.** The review task carries an `s3://` link, and K9X HIL fetches the document from object storage. New solutions should use the framework's `RequiresHIL` round trip (see [Human-in-the-Loop](#human-in-the-loop-hil)) so the flow resumes on the decision.
+
 ### Additional Examples
 
 - **ACME Health Insurance Claims Assistant** — Multi-agent insurance workflow demo including eligibility checks, provider lookup, and claims support.
-  → [examples/acme_health_insurance](examples/acme_health_insurance)
+  → [examples/acme_health_insurance](https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance)
 - **K9Chat** — Reference chat application demonstrating `BaseAgent`, `llm_invoke`, multi-provider model routing, governance, and retrieval grounding. A single-agent app, not a multi-agent Squad/Orchestrator example — see the EOC example above for that.
   → [github.com/k9aif/examples](https://github.com/k9aif/examples) (moved out of this repo 2026-09-21)
 - **WeatherAssist Decision Support System**
-- **Department of War (DoW) Systems Engineering Pipeline** — Demonstrates how K9-AIF architectural patterns can automate multi-stage systems engineering workflows aligned with the DoDAF 2.0 architecture framework, exploring agent orchestration across multiple architectural stages using K9-AIF patterns together with the CrewAI orchestration framework.
+- **Defense Acquisition System (DAS)** — multi-stage JCIDS, acquisition and systems-engineering pipeline aligned with DoDAF 2.0, built entirely on K9-AIF. See [Built on K9-AIF: Defense Acquisition System (DAS)](#built-on-k9-aif-defense-acquisition-system-das) above.
 
 ---
 
@@ -322,9 +340,9 @@ The full set of patterns is available in the **K9-AIF Architecture Patterns repo
 
 An in-framework pattern for iterative hypothesis-validate-reason workflows — applicable across security, fraud, claims, compliance, and document extraction domains.
 
-![K9-AIF Validation Loop Pattern](docs/diagrams/k9x-framework-validation-loop-pattern.png)
+![K9-AIF Validation Loop Pattern](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9x-framework-validation-loop-pattern.png)
 
-Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. `K9ValidationLoopAgent` is the OOB LLM-driven implementation for confidence-convergence loops. `K9PlanningLoopAgent` (`k9_aif_abb/k9_agents/planning/`) is the dynamic-planning sibling — the agent builds and revises its own step plan each iteration, finalizing when the plan is complete. See [Skill 10 in SKILLS.md](SKILLS.md) for usage and the SA decision guide.
+Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. `K9ValidationLoopAgent` is the OOB LLM-driven implementation for confidence-convergence loops. `K9PlanningLoopAgent` (`k9_aif_abb/k9_agents/planning/`) is the dynamic-planning sibling — the agent builds and revises its own step plan each iteration, finalizing when the plan is complete. See [Skill 10 in SKILLS.md](https://github.com/k9aif/k9-aif-framework/blob/main/SKILLS.md) for usage and the SA decision guide.
 
 ### Prompt Evaluation Pattern
 
@@ -354,7 +372,7 @@ This enables:
 For detailed implementation documentation see:
 
 See the full documentation for the inference layer in
-[`k9_aif_abb/k9_inference`](k9_aif_abb/k9_inference)
+[`k9_aif_abb/k9_inference`](https://github.com/k9aif/k9-aif-framework/tree/main/k9_aif_abb/k9_inference)
 
 ---
 
@@ -364,7 +382,7 @@ K9-AIF uses a **Provider Adapter** pattern to support multiple LLM backends with
 
 `LLMFactory` remains provider-agnostic — it resolves the correct adapter from `ProviderAdapterRegistry` and asks it to construct the `BaseLLM`. Agents, squads, orchestrators, and the model router require no changes when switching providers.
 
-[![LLM Provider Class Diagram](docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)](docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)
+[![LLM Provider Class Diagram](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)](https://github.com/k9aif/k9-aif-framework/blob/main/docs/diagrams/k9-aif-inteference-llm-provider-class-diagram.png)
 
 *Click to view full resolution.*
 
@@ -493,7 +511,7 @@ Source for all of the above: **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9
 
 ## K9-AIF Developer Journey
 
-![K9-AIF Developer Journey](docs/diagrams/developers_journey.png)
+![K9-AIF Developer Journey](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/developers_journey.png)
 
 The diagram illustrates how applications are built using K9-AIF:
 
@@ -524,8 +542,8 @@ A comprehensive developer guide for contributors and solution developers buildin
 
 | Format   | Location                                                                   |
 | ---------- | ---------------------------------------------------------------------------- |
-| Markdown | [docs/developers/Developer-guide.md](docs/developers/Developer-guide.md)   |
-| PDF      | [docs/developers/Developer-guide.pdf](docs/developers/Developer-guide.pdf) |
+| Markdown | [docs/developers/Developer-guide.md](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.md)   |
+| PDF      | [docs/developers/Developer-guide.pdf](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.pdf) |
 
 The guide covers all 21 chapters — from core architecture and ABB/SBB development model through agent, orchestrator, and router development; the Validation Loop and Critic-Actor iterative reasoning patterns; model routing, governance, testing standards, and developer workflow. It includes accurate class signatures, config examples, and code drawn directly from the `k9_aif_abb` source.
 
@@ -540,9 +558,9 @@ K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assist
 
 | File                                                                        | How it helps Claude Code                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`CLAUDE.md`](CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                  |
-| [`SKILLS.md`](SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full`llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
-| [`AGENTS.md`](examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                          |
+| [`CLAUDE.md`](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                  |
+| [`SKILLS.md`](https://github.com/k9aif/k9-aif-framework/blob/main/SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full`llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
+| [`AGENTS.md`](https://github.com/k9aif/k9-aif-framework/blob/main/examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                          |
 
 ### Generating a new example with Claude Code
 
@@ -573,7 +591,7 @@ The combination of `CLAUDE.md`, `SKILLS.md`, and the reference example gives Cla
 
 ### Automated hooks (`.claude/settings.json`)
 
-The repository also ships `.claude/settings.json`, which wires five `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, and `__init__.py` docstring check (see [Hooks](CLAUDE.md#hooks) in `CLAUDE.md`) — that run automatically whenever Claude Code writes or edits a file.
+The repository also ships `.claude/settings.json`, which wires five `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, and `__init__.py` docstring check (see [Hooks](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md#hooks) in `CLAUDE.md`) — that run automatically whenever Claude Code writes or edits a file.
 
 **Each hook command uses an absolute path** (e.g. `/Users/<you>/k9-aif-framework/.claude/hooks/check-python.sh`). After cloning, edit `.claude/settings.json` and replace the path prefix with the absolute path of your own clone, or the hooks will fail with "command not found".
 

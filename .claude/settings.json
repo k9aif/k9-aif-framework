@@ -66,6 +66,17 @@
             "statusMessage": "Checking llm_invoke usage..."
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/ravinatarajan/ai/k9-aif-framework/.claude/hooks/check-readme-links.sh",
+            "timeout": 10,
+            "statusMessage": "Checking README links..."
+          }
+        ]
       }
     ]
   }
