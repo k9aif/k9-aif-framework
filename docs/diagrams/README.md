@@ -33,6 +33,15 @@ together at design time and runtime. Source: `k9x_ecosystem.puml`.
 
 ---
 
+## Agent Execution Pattern Hierarchy
+
+![Agent Execution Pattern Hierarchy](agent_execution_pattern_hierarchy.png)
+
+`BaseValidationLoopAgent` and its two OOB strategies: `K9ValidationLoopAgent`
+(confidence convergence) and `K9PlanningLoopAgent` (dynamic plan + scratchpad).
+
+---
+
 ## Configuration-Driven Behavior
 
 ![Configuration Driven Behavior](config_driven.png)

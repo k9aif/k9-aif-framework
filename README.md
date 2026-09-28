@@ -344,6 +344,10 @@ An in-framework pattern for iterative hypothesis-validate-reason workflows — a
 
 Implemented as `BaseValidationLoopAgent` in `k9_aif_abb/k9_agents/validation/`. `K9ValidationLoopAgent` is the OOB LLM-driven implementation for confidence-convergence loops. `K9PlanningLoopAgent` (`k9_aif_abb/k9_agents/planning/`) is the dynamic-planning sibling — the agent builds and revises its own step plan each iteration, finalizing when the plan is complete. See [Skill 10 in SKILLS.md](https://github.com/k9aif/k9-aif-framework/blob/main/SKILLS.md) for usage and the SA decision guide.
 
+![Agent Execution Pattern Hierarchy](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/agent_execution_pattern_hierarchy.png)
+
+One contract, two out-of-box convergence strategies: domain SBBs extend `K9ValidationLoopAgent` when the question is *"is this hypothesis true, and am I confident enough?"* (e.g. `FraudDetectionAgent` in the EOC example), or `K9PlanningLoopAgent` when it is *"what's left on my plan?"* (`InvestigationAgent` is an illustrative name).
+
 ### Prompt Evaluation Pattern
 
 A development-time pipeline for grading authored prompts — system prompts, agent instructions, and guided-flow templates — before they reach a workflow.
