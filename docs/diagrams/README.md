@@ -24,6 +24,15 @@ Source: `agentic_lifecycle.puml`.
 
 ---
 
+## K9X Ecosystem
+
+![K9X Ecosystem — Component Overview](k9x_ecosystem.png)
+
+How K9X Studio, the K9-AIF framework, K9X Enterprise Continuum, and K9X HIL fit
+together at design time and runtime. Source: `k9x_ecosystem.puml`.
+
+---
+
 ## Configuration-Driven Behavior
 
 ![Configuration Driven Behavior](config_driven.png)

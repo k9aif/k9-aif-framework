@@ -1,0 +1,64 @@
+@startuml ch10-ecosystem
+!theme plain
+skinparam dpi 600
+skinparam backgroundColor #FEFEFE
+skinparam packageBackgroundColor #F8FAFC
+skinparam packageBorderColor #6366F1
+skinparam componentBackgroundColor #EEF2FF
+skinparam componentBorderColor #6366F1
+skinparam arrowColor #6366F1
+
+title K9X Ecosystem — Component Overview
+
+package "Design Time" as DT #EEF2FF {
+  component "K9X Studio" as STUDIO
+  note right of STUDIO
+    Visual architecture designer;
+    generates framework-compliant
+    scaffolds from specifications
+  end note
+}
+
+actor "SBB Architect /\nPM" as PM
+
+package "Framework" as FW #D1FAE5 {
+  component "K9-AIF" as K9
+  note right of K9
+    ABB/SBB contracts;
+    governed execution runtime
+  end note
+}
+
+package "Artifact Governance\n(SBB -> ABB promotion)" as GOV #EDE9FE {
+  component "K9X Enterprise Continuum" as CONT
+  note right of CONT
+    SBB/ABB catalog;
+    promotion and harvesting
+    workflow -- distinct from the
+    framework's runtime execution
+    governance (Zero Trust,
+    enforce_governance())
+  end note
+}
+
+package "Human-in-the-Loop" as RT #FEF3C7 {
+  component "K9X HIL" as HIL
+  note right of HIL
+    Event-driven human review
+    case management
+  end note
+}
+
+STUDIO -down-> K9 : generates\nscaffold
+STUDIO -right-> PM : hands off\nscaffold
+PM -down-> CONT : creates project,\npublishes SBB
+K9 -down-> HIL : publishes\nHIL tasks
+
+cloud "Kafka" as KF #F1F5F9
+
+K9 --> KF
+HIL --> KF
+KF --> HIL
+KF --> K9
+
+@enduml

@@ -493,6 +493,10 @@ This is where every K9-AIF application starts: design your architecture visually
 
 ## K9X Ecosystem
 
+![K9X Ecosystem — Component Overview](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9x_ecosystem.png)
+
+**K9X Studio** generates the framework-compliant scaffold and hands it to the SBB Architect / PM, who builds on **K9-AIF** and publishes the finished SBB to **K9X Enterprise Continuum** for SBB → ABB promotion. At runtime, K9-AIF publishes human-review tasks over Kafka to **K9X HIL**. Continuum's artifact governance is separate from the framework's runtime execution governance (Zero Trust, `enforce_governance()`).
+
 Products built on top of K9-AIF, beyond the framework itself:
 
 | Product | Purpose | URL |
