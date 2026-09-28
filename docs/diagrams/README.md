@@ -15,10 +15,12 @@ The diagrams illustrate different aspects of the architecture, including:
 
 ## Developer Journey
 
-![Developer Journey](developers_journey.png)
+![K9X Agentic Process Development Lifecycle](agentic_lifecycle.png)
 
-Illustrates how applications evolve from Architectural Building Blocks (ABB)
-to Solution Building Blocks (SBB) and configuration-driven deployment.
+Illustrates the lifecycle of every K9-AIF application: requirements → K9X Studio
+scaffold → SBB implementation → submission to K9X Enterprise Continuum → Enterprise
+Architect review via K9X HIL → promotion to the shared tier or harvest into a new ABB.
+Source: `agentic_lifecycle.puml`.
 
 ---
 

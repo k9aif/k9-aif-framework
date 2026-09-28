@@ -1,0 +1,59 @@
+@startuml ch11-agentic-lifecycle
+!theme plain
+skinparam dpi 150
+skinparam titleFontSize 22
+skinparam backgroundColor #FEFEFE
+skinparam activityBackgroundColor #EEF2FF
+skinparam activityBorderColor #6366F1
+skinparam activityDiamondBackgroundColor #FEF3C7
+skinparam activityDiamondBorderColor #CA8A04
+skinparam arrowColor #6366F1
+skinparam swimlaneBorderColor #6366F1
+skinparam DefaultFontColor #000000
+skinparam ActivityFontColor #000000
+skinparam ActivityDiamondFontColor #000000
+skinparam ArrowFontColor #000000
+skinparam NoteFontColor #000000
+
+title K9X Agentic Process Development Lifecycle
+
+|Architect|
+start
+:Provide project requirements,
+current state, context, and scope;
+
+|K9X Studio|
+:Generate framework-compliant
+scaffold from specification;
+
+|SBB Architect / PM|
+:Implement domain business logic
+on the generated scaffold;
+:Test and iterate;
+:Create project and instance
+in K9X Enterprise Continuum;
+:Submit SBB for review;
+
+|K9X Enterprise Continuum|
+:Record submission
+under the project's catalog;
+:Notify Enterprise Architects
+via K9X HIL;
+
+|Enterprise Architect|
+:Review submitted SBB;
+if (Approve?) then (yes)
+  :Promote to shared tier,
+  or harvest pattern to a
+  new framework ABB;
+else (no)
+  :Return with feedback
+  for rework;
+  stop
+endif
+
+|K9X Enterprise Continuum|
+:Catalog entry updated;
+stop
+
+@enduml

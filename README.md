@@ -482,7 +482,7 @@ Examples include:
 
 **K9X Studio** is a browser-based drag-and-drop architecture builder for K9-AIF systems.
 
-Design your architecture visually → generate a production-ready scaffold → implement in VS Code + Claude Code.
+This is where every K9-AIF application starts: design your architecture visually → generate a production-ready scaffold → implement the SBBs (VS Code + Claude Code recommended).
 
 - Drag Router → Orchestrator → Squad → Agents onto the canvas
 - Configure each node in the inspector
@@ -511,15 +511,15 @@ Source for all of the above: **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9
 
 ## K9-AIF Developer Journey
 
-![K9-AIF Developer Journey](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/developers_journey.png)
+![K9X Agentic Process Development Lifecycle](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/agentic_lifecycle.png)
 
-The diagram illustrates how applications are built using K9-AIF:
+Every K9-AIF application follows the same lifecycle, whether or not you use Claude Code:
 
-• **Architects** design the system visually in **K9X Studio** or define ABBs directly in code.
-• **Application developers** extend ABBs into Solution Building Blocks (SBB) and implement agent logic in VS Code + Claude Code.
-• **Business analysts** configure workflows and governance policies using YAML without modifying code.
-
-Scaffolding a new solution goes through **K9X Studio**: drag-and-drop canvas → Generate Scaffold — runnable out of the box with Ollama.
+1. **Architect** — provides the project requirements, current state, context, and scope.
+2. **K9X Studio** — generates a framework-compliant scaffold from that specification. Studio is the starting point for every new K9-AIF application.
+3. **SBB Architect / PM** — implements the domain business logic on the generated scaffold (VS Code + Claude Code recommended), tests and iterates, then creates the project and instance in **K9X Enterprise Continuum** and submits the SBB for review.
+4. **K9X Enterprise Continuum** — records the submission under the project's catalog and notifies Enterprise Architects via **K9X HIL**.
+5. **Enterprise Architect** — reviews the submitted SBB. Approved SBBs are promoted to the shared tier (or their pattern is harvested into a new framework ABB) and the catalog entry is updated; rejected SBBs return with feedback for rework.
 
 ---
 
@@ -685,14 +685,22 @@ Architecture Building Blocks define the contracts, Solution Building Blocks impl
 Read `CLAUDE.md` for architecture and `SKILLS.md` for step-by-step recipes. These are the two
 documents that will make you productive fast.
 
-### 2. Use Claude Code with VS Code — the Recommended Path
+### 2. Create Your Application in K9X Studio
 
-The most effective way to build with K9-AIF is **Claude Code** inside **VS Code**.
+Every K9-AIF application starts in **K9X Studio** — with or without Claude Code. Describe the
+architecture on the drag-and-drop canvas and click **Generate Scaffold** to get a framework-compliant,
+runnable project. See the K9-AIF Developer Journey section above for the full lifecycle.
+
+➡️ **https://studio.k9x.ai**
+
+### 3. Implement with Claude Code in VS Code
+
+To implement domain logic on the Studio scaffold, the most effective tool is **Claude Code** inside **VS Code**.
 
 K9-AIF ships with `CLAUDE.md` and `SKILLS.md` — these are loaded automatically by Claude Code,
 giving it a deep understanding of the framework's architecture, conventions, and code generation
-rules. Claude Code will generate agents, squads, orchestrators, and config that comply with the
-framework out of the box, without you having to explain the patterns each time.
+rules. Claude Code will extend the generated agents, squads, orchestrators, and config in ways that
+comply with the framework, without you having to explain the patterns each time.
 
 Download and install Claude Code from:
 **https://claude.ai/code**
@@ -707,10 +715,6 @@ Claude Code understands:
 - Kafka ownership (Router publishes, Orchestrator consumes)
 - Governance enforcement patterns
 - The full inference pipeline through `llm_invoke`
-
-### 3. No Claude Code? Use K9X Studio
-
-If you are not using Claude Code, use **K9X Studio** (drag-and-drop canvas → Generate Scaffold) to create a compliant solution stub — see the K9-AIF Developer Journey section above.
 
 A dedicated architectural conformance inspector for validating any K9-AIF solution (`k9x_inspector`) is in active development in [k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem) — an earlier, naive per-file version of this check shipped inside the framework itself but produced false positives on legitimate code (it didn't resolve inheritance chains) and has been removed.
 
