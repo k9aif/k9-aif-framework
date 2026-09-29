@@ -58,6 +58,12 @@
                                 <a class="variable" href="#InferenceRequest.cost_profile">cost_profile</a>
                         </li>
                         <li>
+                                <a class="variable" href="#InferenceRequest.session_id">session_id</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#InferenceRequest.user_id">user_id</a>
+                        </li>
+                        <li>
                                 <a class="variable" href="#InferenceRequest.metadata">metadata</a>
                         </li>
                 </ul>
@@ -144,7 +150,13 @@ prompt caching — the system portion is stable across calls and cacheable indep
 </span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="n">latency_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;realtime&quot; | &quot;interactive&quot; | &quot;batch&quot;</span>
 </span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="n">cost_profile</span><span class="p">:</span>   <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;minimal&quot; | &quot;standard&quot; | &quot;premium&quot;</span>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="c1"># Conversation identity. When given, turns are kept in one session and</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>    <span class="c1"># the router prefers the session&#39;s current model on a tie (affinity).</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="c1"># Omitted -&gt; a fresh session per call (previous behaviour).</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>    <span class="n">user_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -176,7 +188,13 @@ prompt caching — the system portion is stable across calls and cacheable indep
 </span><span id="InferenceRequest-41"><a href="#InferenceRequest-41"><span class="linenos">41</span></a>    <span class="n">latency_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;realtime&quot; | &quot;interactive&quot; | &quot;batch&quot;</span>
 </span><span id="InferenceRequest-42"><a href="#InferenceRequest-42"><span class="linenos">42</span></a>    <span class="n">cost_profile</span><span class="p">:</span>   <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># &quot;minimal&quot; | &quot;standard&quot; | &quot;premium&quot;</span>
 </span><span id="InferenceRequest-43"><a href="#InferenceRequest-43"><span class="linenos">43</span></a>
-</span><span id="InferenceRequest-44"><a href="#InferenceRequest-44"><span class="linenos">44</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="InferenceRequest-44"><a href="#InferenceRequest-44"><span class="linenos">44</span></a>    <span class="c1"># Conversation identity. When given, turns are kept in one session and</span>
+</span><span id="InferenceRequest-45"><a href="#InferenceRequest-45"><span class="linenos">45</span></a>    <span class="c1"># the router prefers the session&#39;s current model on a tie (affinity).</span>
+</span><span id="InferenceRequest-46"><a href="#InferenceRequest-46"><span class="linenos">46</span></a>    <span class="c1"># Omitted -&gt; a fresh session per call (previous behaviour).</span>
+</span><span id="InferenceRequest-47"><a href="#InferenceRequest-47"><span class="linenos">47</span></a>    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="InferenceRequest-48"><a href="#InferenceRequest-48"><span class="linenos">48</span></a>    <span class="n">user_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="InferenceRequest-49"><a href="#InferenceRequest-49"><span class="linenos">49</span></a>
+</span><span id="InferenceRequest-50"><a href="#InferenceRequest-50"><span class="linenos">50</span></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -306,6 +324,30 @@ __pydantic_private__: Values of private attributes set on the model instance.
         
     </div>
     <a class="headerlink" href="#InferenceRequest.cost_profile"></a>
+    
+    
+
+                            </div>
+                            <div id="InferenceRequest.session_id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">session_id</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#InferenceRequest.session_id"></a>
+    
+    
+
+                            </div>
+                            <div id="InferenceRequest.user_id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">user_id</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#InferenceRequest.user_id"></a>
     
     
 

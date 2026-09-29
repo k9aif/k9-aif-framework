@@ -222,6 +222,17 @@ under the factory's cache key — exactly what the EOC does with
 `EOCModelRouter` (`examples/K9X_Enterprise_Insurance_OperationsCenter/api/app.py`).
 Agents are unaffected either way.
 
+**`K9ModelRouter` learns only from graded evidence.** Rules (capability
++3, latency/cost tier +2, `default_model`) decide until
+`record_feedback(prompt, alias, quality)` has supplied graded outcomes;
+then a k-NN quality predictor over similar prompts can overrule them by
+`learning.margin` points (`k9_inference/learning/`). Before 1.13 the
+router stored sessions/decisions/affinity but never read them back --
+don't describe older versions as adaptive. Runtime calls record only
+success/latency (circuit breaker), not quality: something must grade.
+A `confidential` request is hard-restricted to confidential-capable models
+(before 1.13 a +3 capability match could beat the +2 confidential score).
+
 ## Everything is provisioned through factories
 
 Never instantiate directly in application code: `LLMFactory`,
@@ -434,8 +445,8 @@ Nothing is ever wired *in front of* the Router. Below `confidence_threshold`
 `messaging`, `security.shield`.
 
 **Persistence.** `RoutingStateStore` (`k9_storage/routing_state_store.py`)
-holds `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`
-and `hil_pending` — SQLite auto-created, PostgreSQL by reflection;
+holds `sessions`, `session_turns`, `routing_decisions`, `context_artifacts`,
+`hil_pending` and `routing_outcomes` (learned-routing evidence, 1.13) — SQLite auto-created, PostgreSQL by reflection;
 `postgres.schema` must match the real schema or reflection misses tables.
 
 **Sessions.** `BaseOrchestrator` wires a session manager only when

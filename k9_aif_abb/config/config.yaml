@@ -192,6 +192,18 @@ inference:
         schema:   "${POSTGRES_SCHEMA:-k9aif}"
         schema_file: "k9_aif_abb/db/k9_db_schema.sql"
 
+    # Learned routing (1.13.0). Rules above decide until graded evidence
+    # exists (record_feedback / K9X Arena); then each model's quality on a
+    # new prompt is predicted from similar graded prompts. All optional.
+    learning:
+      enabled: true
+      embedder: hashing      # hashing (no model) | service (vectordb.embedding_model)
+      k: 15                  # similar prompts per model
+      min_neighbors: 3       # graded neighbours before a model is predicted
+      min_models: 2          # predicted models before evidence can decide
+      margin: 3.0            # quality points needed to overrule the rules' pick
+      breaker: {window: 20, min_calls: 5, failure_rate: 0.5}
+
   llm_factory:
     base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:

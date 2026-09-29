@@ -362,20 +362,21 @@ Implemented in `k9_aif_abb/k9_agents/evaluation/`. Config key: `evaluation.provi
 
 ## Intelligent Model Routing
 
-K9-AIF includes an Intelligent Model Router that enables applications to dynamically select the most appropriate AI model at runtime.
+Agents never name a model. Every call goes through `llm_invoke` to `K9ModelRouter`, which picks one from the model catalog in two layers.
 
-Rather than binding agents to specific model providers, the router evaluates inference requests based on task type, metadata, and routing policies to determine the best model and provider.
+**Rules (cold start).** Weighted scoring on the request: task-type capability (+3), latency tier (+2) and cost tier (+2). The `default_model` is the fallback. On a tie, the conversation's current model wins (session affinity).
 
-This enables:
+**Evidence (learned routing, since 1.13).** This works like evaluation-trained routers such as Not Diamond and RouteLLM. The router keeps graded outcomes: which model scored what, 0 to 100, on which prompt. For a new prompt, it predicts each model's quality from its scores on the most similar prompts it has seen. It then subtracts a penalty for latency or cost the request can't afford. If the best prediction beats the rules' pick by a margin, the evidence decides. Routing is per prompt: two reasoning prompts can go to different models.
 
-- provider-agnostic application logic
-- centralized governance over inference usage
-- cost and latency optimization
-- future compatibility with new AI models
+```python
+router.record_feedback(prompt, model_alias="smart", quality=88, task_type="reasoning")
+```
 
-For detailed implementation documentation see:
+Graders, evaluators, HIL reviewers or [K9X Arena](https://github.com/k9aif/k9x-arena) (head-to-head model matches) supply the evidence. With none, the router behaves exactly as the rules say.
 
-See the full documentation for the inference layer in
+**Guard rails evidence can't cross.** A `confidential` request goes only to confidential-capable models when the catalog has any. A model whose recent calls mostly failed is skipped (circuit breaker). Every decision records why it was made.
+
+Configure under `inference.router.learning` (all keys optional; see [`config.yaml`](https://github.com/k9aif/k9-aif-framework/blob/main/k9_aif_abb/config/config.yaml)). Inference-layer documentation:
 [`k9_aif_abb/k9_inference`](https://github.com/k9aif/k9-aif-framework/tree/main/k9_aif_abb/k9_inference)
 
 ---

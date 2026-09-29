@@ -4,6 +4,37 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.13.0] — 2026-09-29
+
+K9ModelRouter becomes a learned router. Until now it stored sessions, turns, decisions and model affinity, but never read any of them back; routing was rules only.
+
+### Added
+
+- **Learned routing** (`inference.router.learning`, on by default). This follows evaluation-trained routers such as Not Diamond, RouteLLM and RouterBench's k-NN baseline.
+  - Graded outcomes (prompt vector, model, quality 0–100, latency) are stored in the new `routing_outcomes` table.
+  - For each new prompt, every model's quality is predicted as the similarity-weighted average of its scores on the k most similar graded prompts.
+  - The request's `latency_budget` and `cost_profile` turn that into a utility score.
+  - The top model replaces the rules' pick when it leads by `margin` points (default 3), or when the rules' pick has no evidence.
+  - Routing is per prompt, not per task type.
+  - With no graded evidence, behaviour is identical to 1.12.
+- `K9ModelRouter.record_feedback(prompt, model_alias, quality, task_type=None, latency_ms=None)`: how graders, evaluators, HIL reviewers and K9X Arena teach the router.
+- `k9_inference/learning/`:
+  - `HashingPromptEmbedder`: sparse unigram and bigram hashing, deterministic, no model or dependency.
+  - `ServicePromptEmbedder`: any `BaseEmbeddingService`, e.g. Ollama.
+  - `KNNQualityPredictor` and `utility()`.
+- Runtime outcomes: every `invoke`/`ainvoke`/stream records success and latency. `InferenceResponse.latency_ms` is now filled in.
+- Circuit breaker: a model whose recent calls mostly failed is skipped (never every model).
+- `InferenceRequest.session_id` and `user_id`. Turns now stay in one session, and the router prefers the session's current model on a tie (affinity). String ids map to stable UUIDs, as Postgres stores uuid.
+- `RouteDecision.strategy` (`rules`/`learned`), `predicted_quality` and `predictions`.
+- `RoutingStateStore.record_outcome()` / `load_outcomes()`. `routing_outcomes` is created automatically on existing databases; the Postgres DDL is in `db/k9aif_db_schema.sql`.
+
+### Fixed
+
+- **Confidential requests could reach a model not cleared for them.** Rules gave +3 for a capability match but only +2 for `confidential`, so a `reasoning` + `confidential` request went to the reasoning model. A confidential request is now restricted to confidential-capable models whenever the catalog has any. This includes the `default_model` fallback, and learned routing can't override it.
+- `InferenceRequest` had no `session_id` field, so `_resolve_session_id()` always created a new session: every call was its own conversation.
+
+---
+
 ## [1.12.6] — 2026-09-27
 
 Documentation release: no runtime behaviour changes.

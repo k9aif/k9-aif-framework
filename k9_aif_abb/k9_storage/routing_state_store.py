@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
     Table,
@@ -33,6 +33,8 @@ class RoutingStateStore:
     - context_artifacts
     - hil_pending (paused flows awaiting a human decision -- see
       BaseHILOrchestrator / RequiresHIL)
+    - routing_outcomes (what each model actually did: success, latency and,
+      when graded, quality -- the evidence K9ModelRouter learns from)
 
     Supports both:
     - PostgreSQL (existing schema / reflection)
@@ -149,6 +151,29 @@ class RoutingStateStore:
                 Column("status", String, default="pending"),
                 Column("created_at", DateTime),
                 Column("resolved_at", DateTime),
+            )
+            metadata.create_all(engine)
+
+        # routing_outcomes is also reflected/created on its own, for the same
+        # reason as hil_pending: existing databases predate it.
+        try:
+            self.routing_outcomes = Table("routing_outcomes", metadata, autoload_with=engine)
+        except Exception:
+            self.routing_outcomes = Table(
+                "routing_outcomes",
+                metadata,
+                Column("outcome_id", Integer, primary_key=True, autoincrement=True),
+                Column("session_id", String),
+                Column("task_type", String),
+                Column("model_alias", String, nullable=False),
+                Column("success", Boolean, default=True),
+                Column("quality", Float),
+                Column("latency_ms", Float),
+                Column("prompt_hash", Text),
+                Column("embedder", String),
+                Column("prompt_vector", JSON),
+                Column("source", String, default="runtime"),
+                Column("created_at", DateTime),
             )
             metadata.create_all(engine)
 
@@ -382,3 +407,66 @@ class RoutingStateStore:
             )
             session.commit()
             return result.rowcount == 1
+
+    # ------------------------------------------------------------------
+    # Routing Outcomes -- the evidence the learned router trains on.
+    # Runtime rows (every routed call) carry success + latency; graded rows
+    # (record_feedback, K9X Arena, evaluators) also carry quality 0-100 and
+    # the prompt vector used for similarity.
+    # ------------------------------------------------------------------
+    def record_outcome(
+        self,
+        model_alias: str,
+        task_type: Optional[str] = None,
+        success: bool = True,
+        quality: Optional[float] = None,
+        latency_ms: Optional[float] = None,
+        session_id: Optional[str] = None,
+        prompt_hash: Optional[str] = None,
+        embedder: Optional[str] = None,
+        prompt_vector: Any = None,
+        source: str = "runtime",
+    ) -> None:
+        if isinstance(prompt_vector, dict):
+            # JSON object keys must be strings.
+            prompt_vector = {str(k): v for k, v in prompt_vector.items()}
+        with self.db.get_session() as session:
+            session.execute(
+                insert(self.routing_outcomes).values(
+                    session_id=session_id,
+                    task_type=task_type,
+                    model_alias=model_alias,
+                    success=success,
+                    quality=quality,
+                    latency_ms=latency_ms,
+                    prompt_hash=prompt_hash,
+                    embedder=embedder,
+                    prompt_vector=prompt_vector,
+                    source=source,
+                    created_at=datetime.utcnow(),
+                )
+            )
+            session.commit()
+
+    def load_outcomes(
+        self,
+        graded_only: bool = False,
+        embedder: Optional[str] = None,
+        limit: int = 2000,
+    ) -> List[Dict[str, Any]]:
+        """Newest first. ``graded_only`` returns rows with a quality score
+        (and, with ``embedder``, only vectors from that embedder)."""
+        t = self.routing_outcomes
+        stmt = select(t)
+        if graded_only:
+            stmt = stmt.where(t.c.quality.isnot(None))
+        if embedder:
+            stmt = stmt.where(t.c.embedder == embedder)
+        stmt = stmt.order_by(t.c.outcome_id.desc()).limit(limit)
+        with self.db.get_session() as session:
+            rows = [dict(r._mapping) for r in session.execute(stmt).fetchall()]
+        for row in rows:
+            vec = row.get("prompt_vector")
+            if isinstance(vec, dict):
+                row["prompt_vector"] = {int(k): float(v) for k, v in vec.items()}
+        return rows

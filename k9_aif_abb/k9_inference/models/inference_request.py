@@ -40,4 +40,10 @@ class InferenceRequest(BaseModel):
     latency_budget: Optional[str] = None   # "realtime" | "interactive" | "batch"
     cost_profile:   Optional[str] = None   # "minimal" | "standard" | "premium"
 
+    # Conversation identity. When given, turns are kept in one session and
+    # the router prefers the session's current model on a tie (affinity).
+    # Omitted -> a fresh session per call (previous behaviour).
+    session_id: Optional[str] = None
+    user_id: Optional[str] = None
+
     metadata: Optional[Dict[str, Any]] = None

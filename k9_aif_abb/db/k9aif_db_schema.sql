@@ -243,3 +243,29 @@ CREATE INDEX idx_routing_decisions_created_at ON k9aif.routing_decisions USING b
 CREATE INDEX idx_routing_decisions_metadata_gin ON k9aif.routing_decisions USING gin (decision_metadata);
 CREATE INDEX idx_routing_decisions_selected_model ON k9aif.routing_decisions USING btree (selected_model);
 CREATE INDEX idx_routing_decisions_session_id ON k9aif.routing_decisions USING btree (session_id);
+
+
+-- k9aif.routing_outcomes definition (1.13.0 -- learned routing evidence)
+-- Runtime rows: every routed call (success, latency). Graded rows: quality
+-- 0-100 + prompt vector, written by K9ModelRouter.record_feedback().
+-- Created automatically by RoutingStateStore if missing.
+
+-- DROP TABLE k9aif.routing_outcomes;
+
+CREATE TABLE IF NOT EXISTS k9aif.routing_outcomes (
+	outcome_id bigserial NOT NULL,
+	session_id text NULL,
+	task_type varchar(100) NULL,
+	model_alias varchar(100) NOT NULL,
+	success bool DEFAULT true NULL,
+	quality float8 NULL,
+	latency_ms float8 NULL,
+	prompt_hash text NULL,
+	embedder varchar(100) NULL,
+	prompt_vector json NULL,
+	"source" varchar(50) DEFAULT 'runtime' NULL,
+	created_at timestamptz DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT routing_outcomes_pkey PRIMARY KEY (outcome_id)
+);
+CREATE INDEX IF NOT EXISTS idx_routing_outcomes_model ON k9aif.routing_outcomes USING btree (model_alias);
+CREATE INDEX IF NOT EXISTS idx_routing_outcomes_graded ON k9aif.routing_outcomes USING btree (embedder) WHERE quality IS NOT NULL;

@@ -51,6 +51,15 @@
                         <li>
                                 <a class="variable" href="#RouteDecision.rationale">rationale</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#RouteDecision.strategy">strategy</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RouteDecision.predicted_quality">predicted_quality</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RouteDecision.predictions">predictions</a>
+                        </li>
                 </ul>
 
             </li>
@@ -79,7 +88,7 @@
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
 </span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RouteDecision</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -91,6 +100,12 @@
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="n">predicted_latency_ms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="n">rationale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="c1"># Learned routing (K9ModelRouter): &quot;rules&quot; or &quot;learned&quot;, the chosen</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="c1"># model&#39;s predicted quality (0-100), and every candidate&#39;s prediction.</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="n">predicted_quality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -115,6 +130,12 @@
 </span><span id="RouteDecision-15"><a href="#RouteDecision-15"><span class="linenos">15</span></a>    <span class="n">predicted_latency_ms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="RouteDecision-16"><a href="#RouteDecision-16"><span class="linenos">16</span></a>
 </span><span id="RouteDecision-17"><a href="#RouteDecision-17"><span class="linenos">17</span></a>    <span class="n">rationale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="RouteDecision-18"><a href="#RouteDecision-18"><span class="linenos">18</span></a>
+</span><span id="RouteDecision-19"><a href="#RouteDecision-19"><span class="linenos">19</span></a>    <span class="c1"># Learned routing (K9ModelRouter): &quot;rules&quot; or &quot;learned&quot;, the chosen</span>
+</span><span id="RouteDecision-20"><a href="#RouteDecision-20"><span class="linenos">20</span></a>    <span class="c1"># model&#39;s predicted quality (0-100), and every candidate&#39;s prediction.</span>
+</span><span id="RouteDecision-21"><a href="#RouteDecision-21"><span class="linenos">21</span></a>    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="RouteDecision-22"><a href="#RouteDecision-22"><span class="linenos">22</span></a>    <span class="n">predicted_quality</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="RouteDecision-23"><a href="#RouteDecision-23"><span class="linenos">23</span></a>    <span class="n">predictions</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -220,6 +241,42 @@ __pydantic_private__: Values of private attributes set on the model instance.
         
     </div>
     <a class="headerlink" href="#RouteDecision.rationale"></a>
+    
+    
+
+                            </div>
+                            <div id="RouteDecision.strategy" class="classattr">
+                                <div class="attr variable">
+            <span class="name">strategy</span><span class="annotation">: Optional[str]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RouteDecision.strategy"></a>
+    
+    
+
+                            </div>
+                            <div id="RouteDecision.predicted_quality" class="classattr">
+                                <div class="attr variable">
+            <span class="name">predicted_quality</span><span class="annotation">: Optional[float]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RouteDecision.predicted_quality"></a>
+    
+    
+
+                            </div>
+                            <div id="RouteDecision.predictions" class="classattr">
+                                <div class="attr variable">
+            <span class="name">predictions</span><span class="annotation">: Optional[Dict[str, float]]</span>        =
+<span class="default_value">None</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RouteDecision.predictions"></a>
     
     
 

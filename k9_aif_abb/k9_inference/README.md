@@ -103,8 +103,22 @@ Requests may include metadata used by the router to select the appropriate model
 
 BaseModelRouter (ABB)
 K9ModelRouter (SBB)
+  learning/            prompt embedders + per-prompt quality predictor
 
 ```
+
+`K9ModelRouter.route()` decides in two layers:
+
+1. **Rules.** Capability, latency-tier and cost-tier scoring with a `default_model` fallback, and session affinity on ties. This is the cold start.
+2. **Evidence.** A similarity-weighted k-nearest-neighbour model over graded outcomes (the approach of Not Diamond, RouteLLM and RouterBench's k-NN router). It predicts each model's quality on the new prompt; the best prediction, after latency and cost penalties, replaces the rules' pick when it's ahead by `margin` points.
+
+Evidence comes from `record_feedback(prompt, model_alias, quality, task_type=...)` and is stored in `routing_outcomes`. Every routed call also stores its success and latency there, which feeds the circuit breaker. Confidential requests stay on confidential-capable models whatever the evidence says.
+
+The `RouteDecision` carries `strategy` (`rules`/`learned`), `predicted_quality`, every candidate's `predictions` and a `rationale`.
+
+Prompt vectors come from `learning.embedder`:
+- `hashing` (default): word unigrams and bigrams hashed into a sparse vector. It needs no model and gives the same vector in every process.
+- `service`: `EmbeddingServiceFactory`, for example Ollama `nomic-embed-text`.
 
 ## Architecture Diagram
 
