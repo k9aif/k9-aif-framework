@@ -117,8 +117,10 @@ Evidence comes from `record_feedback(prompt, model_alias, quality, task_type=...
 The `RouteDecision` carries `strategy` (`rules`/`learned`), `predicted_quality`, every candidate's `predictions` and a `rationale`.
 
 Prompt vectors come from `learning.embedder`:
-- `hashing` (default): word unigrams and bigrams hashed into a sparse vector. It needs no model and gives the same vector in every process.
-- `service`: `EmbeddingServiceFactory`, for example Ollama `nomic-embed-text`.
+- `hashing` (default): word unigrams and bigrams, stop-words removed, hashed into a sparse vector. It needs no model and gives the same vector in every process. It matches prompts that share wording, not meaning.
+- `service`: `EmbeddingServiceFactory`, for example Ollama `nomic-embed-text`. Use this when prompts with the same meaning are worded differently.
+
+Only evidence from the same task type counts, and only prompts at least `min_similarity` (0.15) alike.
 
 ## Architecture Diagram
 

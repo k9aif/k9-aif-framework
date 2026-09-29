@@ -12,20 +12,21 @@ K9ModelRouter becomes a learned router. Until now it stored sessions, turns, dec
 
 - **Learned routing** (`inference.router.learning`, on by default). This follows evaluation-trained routers such as Not Diamond, RouteLLM and RouterBench's k-NN baseline.
   - Graded outcomes (prompt vector, model, quality 0–100, latency) are stored in the new `routing_outcomes` table.
-  - For each new prompt, every model's quality is predicted as the similarity-weighted average of its scores on the k most similar graded prompts.
+  - For each new prompt, every model's quality is predicted as the similarity-weighted average of its scores on the k most similar graded prompts. Only prompts of the same task type count, and only when at least `min_similarity` (0.15) alike; an unrelated prompt falls back to the rules.
   - The request's `latency_budget` and `cost_profile` turn that into a utility score.
   - The top model replaces the rules' pick when it leads by `margin` points (default 3), or when the rules' pick has no evidence.
   - Routing is per prompt, not per task type.
   - With no graded evidence, behaviour is identical to 1.12.
 - `K9ModelRouter.record_feedback(prompt, model_alias, quality, task_type=None, latency_ms=None)`: how graders, evaluators, HIL reviewers and K9X Arena teach the router.
 - `k9_inference/learning/`:
-  - `HashingPromptEmbedder`: sparse unigram and bigram hashing, deterministic, no model or dependency.
-  - `ServicePromptEmbedder`: any `BaseEmbeddingService`, e.g. Ollama.
+  - `HashingPromptEmbedder`: sparse unigram and bigram hashing with stop-words removed; deterministic, no model or dependency. It matches wording, not meaning.
+  - `ServicePromptEmbedder`: any `BaseEmbeddingService`, e.g. Ollama `nomic-embed-text`, for prompts that mean the same but are worded differently.
   - `KNNQualityPredictor` and `utility()`.
 - Runtime outcomes: every `invoke`/`ainvoke`/stream records success and latency. `InferenceResponse.latency_ms` is now filled in.
 - Circuit breaker: a model whose recent calls mostly failed is skipped (never every model).
 - `InferenceRequest.session_id` and `user_id`. Turns now stay in one session, and the router prefers the session's current model on a tie (affinity). String ids map to stable UUIDs, as Postgres stores uuid.
 - `RouteDecision.strategy` (`rules`/`learned`), `predicted_quality` and `predictions`.
+- Verified live through `llm_invoke` against Ollama: the learned pick is used, the call's latency and success are recorded, and an unrelated prompt falls back to the rules.
 - `RoutingStateStore.record_outcome()` / `load_outcomes()`. `routing_outcomes` is created automatically on existing databases; the Postgres DDL is in `db/k9aif_db_schema.sql`.
 
 ### Fixed

@@ -53,11 +53,15 @@ class KNNQualityPredictor:
         self.min_similarity = float(min_similarity)
 
     def predict(self, vector: Vector, examples: Iterable[Example],
-                candidates: Iterable[str]) -> Dict[str, Prediction]:
+                candidates: Iterable[str], task_type: Optional[str] = None) -> Dict[str, Prediction]:
+        """With ``task_type``, only examples graded on that task type count:
+        how a model did on chat says nothing reliable about its code."""
         wanted = set(candidates)
         scored: Dict[str, List[tuple]] = {m: [] for m in wanted}
         for ex in examples:
             if ex.model_alias not in wanted:
+                continue
+            if task_type and ex.task_type and ex.task_type != task_type:
                 continue
             sim = similarity(vector, ex.vector)
             if sim >= self.min_similarity:

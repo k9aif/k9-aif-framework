@@ -56,7 +56,7 @@ _LEARNING_DEFAULTS: Dict[str, Any] = {
     "embedder": "hashing",       # or "service" (EmbeddingServiceFactory / vectordb.*)
     "k": 15,                     # neighbours per model
     "power": 2.0,                # similarity weighting exponent
-    "min_similarity": 0.25,      # ignore prompts this dissimilar (other task types, mostly)
+    "min_similarity": 0.15,      # prompts less similar than this are not evidence
     "min_neighbors": 3,          # graded neighbours a model needs to be predicted
     "min_models": 2,             # models with predictions before evidence can decide
     "margin": 3.0,               # quality points needed to overrule the rules' pick
@@ -326,7 +326,7 @@ class K9ModelRouter(BaseModelRouter):
                 if chosen in preds:
                     predicted = preds[chosen].quality
                     if preds[chosen].latency_ms is not None:
-                        predicted_latency = int(preds[chosen].latency_ms)
+                        predicted_latency = int(round(preds[chosen].latency_ms))
 
         model_info = self.catalog.get_model(chosen)
         return RouteDecision(
@@ -406,7 +406,7 @@ class K9ModelRouter(BaseModelRouter):
             return None
         candidates = [a for a in self._allowed(request) if a not in tripped]
         _, vec = self._vector(request.prompt, request.task_type)
-        preds = self._predictor.predict(vec, self._examples, candidates)
+        preds = self._predictor.predict(vec, self._examples, candidates, task_type=request.task_type)
         preds = {a: p for a, p in preds.items() if p.neighbors >= int(self.learning["min_neighbors"])}
         if len(preds) < int(self.learning["min_models"]):
             return None

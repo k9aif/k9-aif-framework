@@ -29,6 +29,13 @@ Vector = Union[Dict[int, float], List[float]]
 
 _TOKEN = re.compile(r"[a-z0-9_]+")
 
+# Filler words carry no signal about which model suits a prompt, and would
+# make unrelated prompts look similar.
+_STOP = frozenset(
+    "a an the of to and or in on for by with is are was be been that this these those it its as at "
+    "from then there than into per your you i we our me my please can could would should will".split()
+)
+
 
 def _normalise_sparse(vec: Dict[int, float]) -> Dict[int, float]:
     norm = math.sqrt(sum(v * v for v in vec.values()))
@@ -54,17 +61,21 @@ def similarity(a: Vector, b: Vector) -> float:
 
 
 class HashingPromptEmbedder:
-    """Signed feature hashing of word unigrams and bigrams.
+    """Signed feature hashing of word unigrams and bigrams (stop-words
+    removed). Lexical: it matches prompts that share wording, not meaning --
+    use ``ServicePromptEmbedder`` (``learning.embedder: service``) for that.
 
-    The task type, when known, is added as its own token (as heavy as the whole
-    text) so prompts of the same type sit closer together than prompts that merely
-    share vocabulary.
+    Task type is not mixed into the vector by default: the predictor
+    already compares only examples of the same task type, and a shared
+    task token would make every pair of same-type prompts look at least 50%
+    similar -- unrelated prompts would then count as evidence. Set
+    ``task_weight`` > 0 only when examples lack a task type.
     """
 
-    def __init__(self, dims: int = 2048, task_weight: float = 1.0):
+    def __init__(self, dims: int = 2048, task_weight: float = 0.0):
         self.dims = int(dims)
         self.task_weight = float(task_weight)
-        self.name = f"hashing-v1-{self.dims}"
+        self.name = f"hashing-v2-{self.dims}" + (f"-t{self.task_weight:g}" if self.task_weight else "")
 
     def _slot(self, token: str) -> tuple[int, float]:
         digest = hashlib.md5(token.encode("utf-8")).digest()
@@ -73,7 +84,7 @@ class HashingPromptEmbedder:
         return index, sign
 
     def embed(self, text: str, task_type: Optional[str] = None) -> Dict[int, float]:
-        words = _TOKEN.findall((text or "").lower())
+        words = [w for w in _TOKEN.findall((text or "").lower()) if w not in _STOP]
         features: List[str] = list(words) + [f"{a} {b}" for a, b in zip(words, words[1:])]
         vec: Dict[int, float] = {}
         for token in features:
@@ -81,7 +92,7 @@ class HashingPromptEmbedder:
             vec[index] = vec.get(index, 0.0) + sign
         # Sub-linear term frequency so one repeated word doesn't dominate.
         vec = {k: math.copysign(1.0 + math.log(abs(v)), v) for k, v in vec.items() if v}
-        if task_type:
+        if task_type and self.task_weight:
             norm = math.sqrt(sum(v * v for v in vec.values())) or 1.0
             index, sign = self._slot(f"__task__:{task_type}")
             vec[index] = vec.get(index, 0.0) + sign * self.task_weight * norm
@@ -113,4 +124,4 @@ def build_embedder(learning_cfg: Dict, full_config: Optional[Dict] = None):
         model = cfg.get("vectordb", {}).get("embedding_model", "nomic-embed-text")
         return ServicePromptEmbedder(svc, name=f"service:{model}")
     return HashingPromptEmbedder(dims=int(learning_cfg.get("dims", 2048)),
-                                 task_weight=float(learning_cfg.get("task_weight", 1.0)))
+                                 task_weight=float(learning_cfg.get("task_weight", 0.0)))

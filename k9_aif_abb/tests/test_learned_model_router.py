@@ -66,8 +66,11 @@ def test_embedder_similar_prompts_score_higher_than_unrelated():
     assert similarity(a, b) > similarity(a, c)
 
 
-def test_embedder_separates_task_types():
-    e = HashingPromptEmbedder()
+def test_embedder_task_token_is_opt_in():
+    text = "Summarise this claim note for the adjuster."
+    plain = HashingPromptEmbedder()
+    assert similarity(plain.embed(text, "summarization"), plain.embed(text, "extraction")) == pytest.approx(1.0)
+    e = HashingPromptEmbedder(task_weight=1.0)
     text = "Summarise this claim note for the adjuster."
     assert similarity(e.embed(text, "summarization"), e.embed(text, "summarization")) > \
         similarity(e.embed(text, "summarization"), e.embed(text, "extraction"))
@@ -126,12 +129,31 @@ def test_routes_differently_per_prompt_within_one_task_type():
     assert proof.model_alias == "smart"
 
 
+def test_unrelated_prompt_of_the_same_type_is_not_evidence():
+    """Found live: SQL evidence used to route a proof prompt."""
+    r = _router()
+    _teach(r, SQL, "fast", 90)
+    _teach(r, SQL, "smart", 55)
+    d = r.route(InferenceRequest(prompt="Prove that the square root of two is irrational.",
+                                 task_type="reasoning"))
+    assert d.model_alias == "smart" and d.strategy == "rules" and d.predictions is None
+
+
 def test_evidence_for_another_task_type_is_ignored():
     r = _router()
     _teach(r, SQL, "fast", 95, task="extraction")
     _teach(r, SQL, "smart", 10, task="extraction")
     d = r.route(InferenceRequest(prompt="Hello, what can you do?", task_type="chat"))
     assert d.model_alias == "fast" and d.strategy == "rules" and d.predictions is None
+
+
+def test_same_words_different_task_type_is_not_evidence():
+    r = _router()
+    for i in range(5):
+        r.record_feedback(f"A chat task about claims {i}.", "smart", 99, task_type="chat")
+        r.record_feedback(f"A chat task about claims {i}.", "secure", 10, task_type="chat")
+    d = r.route(InferenceRequest(prompt="A code task about claims 1.", task_type="code"))
+    assert d.strategy == "rules" and d.predictions is None
 
 
 # ---------------------------------------------------------------------------
