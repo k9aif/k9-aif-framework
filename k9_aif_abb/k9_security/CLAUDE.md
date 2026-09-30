@@ -13,12 +13,15 @@ a real investigation against a real generated scaffold
 ```
 k9_security/
 ├── vulnerability/   k9x_Shield — deterministic pattern-matching checks
-│   ├── checks/          13 concrete BaseVulnerabilityCheck subclasses
+│   ├── checks/          14 concrete BaseVulnerabilityCheck subclasses (OutboundLinkCheck added 1.14)
 │   ├── base_vulnerability_check.py   the Chain-of-Responsibility ABC
 │   ├── vulnerability_chain.py        runs checks, BLOCK/FLAG/strict/fail_open semantics
 │   └── shield_governance.py          concrete BaseGovernance wrapping the chain
+├── tool_result_guard.py  screen_tool_result / @govern_tool_result — tool OUTPUTS through ingress governance (1.14)
 ├── zero_trust/      Identity/risk/authorization-based, NOT pattern-matching
 │   ├── context.py       ExecutionContext/IdentityContext/AttributeContext/DestinationContext
+│   ├── identity.py      BaseAuthenticator/ApiKeyAuthenticator, BaseIdentityResolver
+│   │                    (Payload = legacy default, Signed = HMAC stamp from BaseRouter.admit()) (1.14)
 │   ├── decisions.py     TrustDecision (ALLOW/DENY/REQUIRE_APPROVAL/ALLOW_WITH_OBLIGATIONS)
 │   ├── evaluators.py    BaseRiskEvaluator (ContextualRiskEvaluator default)
 │   ├── enforcers.py     BasePolicyEnforcer (audit log, PII masking obligations)

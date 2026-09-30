@@ -46,6 +46,11 @@ try:
         RuntimePolicyEnforcer,
     )
 
+    from k9_aif_abb.k9_security.zero_trust.identity import (
+        BaseIdentityResolver,
+        build_identity_resolver,
+    )
+
     ZERO_TRUST_AVAILABLE = True
 except ImportError:
     ZERO_TRUST_AVAILABLE = False
@@ -88,6 +93,7 @@ class BaseOrchestrator(ABC):
         zero_trust_guard=None,
         policy_enforcer=None,
         enable_zero_trust: Optional[bool] = None,
+        identity_resolver=None,
         session_manager=None,
         hil_state_store=None,
     ):
@@ -103,6 +109,10 @@ class BaseOrchestrator(ABC):
         # own); pass this explicitly whenever a Router elsewhere shares
         # persistence with this Orchestrator's HIL requests.
         self.hil_state_store = hil_state_store
+
+        # Where Zero Trust gets caller identity from (None -> security.identity.mode,
+        # default 'payload' in 1.x). See k9_security/zero_trust/identity.py.
+        self.identity_resolver = identity_resolver
 
         self.enable_zero_trust = (
             enable_zero_trust
@@ -395,12 +405,21 @@ class BaseOrchestrator(ABC):
         return self._hil_orchestrator
 
     # ------------------------------------------------------------------
+    def _resolve_identity(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]], component_type: str):
+        """Caller identity + trust zone, from the configured identity resolver
+        (``identity_resolver=`` or ``security.identity.mode``). Built lazily so a
+        signed-mode resolver only needs its secret where Zero Trust actually runs."""
+        if self.identity_resolver is None:
+            self.identity_resolver = build_identity_resolver(self.config)
+        return self.identity_resolver.resolve(payload, ctx or {}, self.__class__.__name__, component_type)
+
     def _zero_trust_context(
         self,
         payload: Dict[str, Any],
         ctx: Optional[Dict[str, Any]] = None,
     ):
         ctx = ctx or {}
+        resolved = self._resolve_identity(payload, ctx, "orchestrator")
 
         return ExecutionContext(
             request_id=payload.get("request_id") or ctx.get("request_id") or "unknown",
@@ -408,16 +427,11 @@ class BaseOrchestrator(ABC):
             workflow_id=payload.get("workflow_id") or ctx.get("workflow_id"),
             source_type=payload.get("source_type", "orchestrator"),
             action_type=payload.get("action_type", "execute_flow"),
-            identity=IdentityContext(
-                principal_id=payload.get("principal_id", self.__class__.__name__),
-                principal_type=payload.get("principal_type", "orchestrator"),
-                roles=payload.get("roles", []),
-                tenant_id=payload.get("tenant_id"),
-            ),
+            identity=resolved.identity,
             attributes=AttributeContext(
                 data_sensitivity=payload.get("data_sensitivity", "low"),
                 environment=payload.get("environment", self.config.get("environment", "dev")),
-                trust_zone=payload.get("trust_zone", "internal"),
+                trust_zone=resolved.trust_zone,
                 labels=payload.get("labels", {}),
             ),
             destination=DestinationContext(

@@ -23,6 +23,17 @@ try:
         RuntimePolicyEnforcer,
     )
 
+    from k9_aif_abb.k9_security.zero_trust.identity import (
+        CLAIM_FIELDS,
+        CREDENTIALS_FIELD,
+        SECRET_ENV,
+        STAMP_FIELD,
+        BaseIdentityResolver,
+        build_authenticator,
+        build_identity_resolver,
+        sign_identity,
+    )
+
     ZERO_TRUST_AVAILABLE = True
 except ImportError:
     ZERO_TRUST_AVAILABLE = False
@@ -52,6 +63,8 @@ class BaseRouter(ABC):
         zero_trust_guard=None,
         policy_enforcer=None,
         enable_zero_trust: Optional[bool] = None,
+        identity_resolver=None,
+        authenticator=None,
         session_manager=None,
         object_store=None,
     ):
@@ -62,6 +75,12 @@ class BaseRouter(ABC):
         self.registry: Dict[str, Any] = {}
         self._session_manager = session_manager or self._bootstrap_session(self.config)
         self.object_store = object_store or self._bootstrap_object_store(self.config)
+
+        # Where Zero Trust gets caller identity from (None -> security.identity.mode,
+        # default 'payload' in 1.x). See k9_security/zero_trust/identity.py.
+        self.identity_resolver = identity_resolver
+        # Verifies credentials in admit(); None -> security.auth.api_keys (if configured).
+        self.authenticator = authenticator
 
         self.enable_zero_trust = (
             enable_zero_trust
@@ -78,6 +97,49 @@ class BaseRouter(ABC):
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"[{self.layer}] Initialized with config: {self.config}")
+
+    def admit(
+        self,
+        payload: Dict[str, Any],
+        credentials: Optional[Dict[str, Any]] = None,
+        trust_zone: str = "internal",
+        ttl_seconds: int = 3600,
+    ) -> Dict[str, Any]:
+        """The trusted edge: authenticate the caller and stamp a signed identity.
+
+        Call this where a request enters the system (an API handler, a
+        consumer of an external topic) before route(). It
+
+        1. authenticates ``credentials`` (or ``payload["_k9_credentials"]``)
+           with the configured BaseAuthenticator;
+        2. removes everything a caller could use to self-declare identity or
+           trust (principal_id, principal_type, roles, tenant_id, trust_zone,
+           any inbound stamp, the credentials themselves);
+        3. adds an HMAC-signed identity stamp (``$K9_IDENTITY_SECRET``) that
+           SignedIdentityResolver verifies in every Router/Orchestrator
+           downstream, in this process or another.
+
+        Failed or missing authentication returns the cleaned payload with no
+        stamp: downstream it resolves as anonymous (high Zero Trust risk).
+        """
+        import os
+
+        creds = credentials if credentials is not None else payload.get(CREDENTIALS_FIELD) or {}
+        cleaned = {k: v for k, v in payload.items()
+                   if k not in CLAIM_FIELDS and k not in (STAMP_FIELD, CREDENTIALS_FIELD)}
+        if self.authenticator is None:
+            self.authenticator = build_authenticator(self.config)
+        identity = self.authenticator.authenticate(creds) if (self.authenticator and creds) else None
+        if identity is None:
+            self.logger.warning("[%s] admit: caller not authenticated; continuing as anonymous", self.layer)
+            return cleaned
+        secret = os.environ.get(SECRET_ENV, "")
+        if not secret:
+            raise ValueError(f"BaseRouter.admit() needs ${SECRET_ENV} to sign the identity")
+        cleaned[STAMP_FIELD] = sign_identity(identity, secret, trust_zone=trust_zone, ttl_seconds=ttl_seconds)
+        self.logger.info("[%s] admit: %s (%s) roles=%s", self.layer, identity.principal_id,
+                         identity.principal_type, identity.roles)
+        return cleaned
 
     def register_orchestrator(self, intent: str, orchestrator: Any):
         self.registry[intent] = orchestrator
@@ -205,12 +267,21 @@ class BaseRouter(ABC):
             "payload": execution_context.payload,
         }
 
+    def _resolve_identity(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]], component_type: str):
+        """Caller identity + trust zone, from the configured identity resolver
+        (``identity_resolver=`` or ``security.identity.mode``). Built lazily so a
+        signed-mode resolver only needs its secret where Zero Trust actually runs."""
+        if self.identity_resolver is None:
+            self.identity_resolver = build_identity_resolver(self.config)
+        return self.identity_resolver.resolve(payload, ctx or {}, self.__class__.__name__, component_type)
+
     def _zero_trust_context(
         self,
         payload: Dict[str, Any],
         ctx: Optional[Dict[str, Any]] = None,
     ):
         ctx = ctx or {}
+        resolved = self._resolve_identity(payload, ctx, "router")
 
         return ExecutionContext(
             request_id=payload.get("request_id")
@@ -220,19 +291,14 @@ class BaseRouter(ABC):
             workflow_id=payload.get("workflow_id") or ctx.get("workflow_id"),
             source_type=payload.get("source_type", "router"),
             action_type=payload.get("action_type", "route"),
-            identity=IdentityContext(
-                principal_id=payload.get("principal_id", self.__class__.__name__),
-                principal_type=payload.get("principal_type", "router"),
-                roles=payload.get("roles", []),
-                tenant_id=payload.get("tenant_id"),
-            ),
+            identity=resolved.identity,
             attributes=AttributeContext(
                 data_sensitivity=payload.get("data_sensitivity", "low"),
                 environment=payload.get(
                     "environment",
                     self.config.get("environment", "dev"),
                 ),
-                trust_zone=payload.get("trust_zone", "internal"),
+                trust_zone=resolved.trust_zone,
                 labels=payload.get("labels", {}),
             ),
             destination=DestinationContext(

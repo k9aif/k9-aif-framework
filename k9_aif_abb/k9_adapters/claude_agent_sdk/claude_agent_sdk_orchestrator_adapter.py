@@ -148,6 +148,7 @@ from claude_agent_sdk import (
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+from k9_aif_abb.k9_security.tool_result_guard import screen_tool_result, withheld_value
 
 _MCP_SERVER_NAME = "k9x_adapter_tools"
 
@@ -202,10 +203,19 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         max_turns: Optional[int] = None,
         permission_mode: Optional[str] = None,
         name: Optional[str] = None,
+        govern_tool_results: bool = True,
+        tool_result_governance: Optional[Any] = None,
         **base_orchestrator_kwargs: Any,
     ) -> None:
         BaseAdapter.__init__(self, adapter_name=name or "ClaudeAgentSDKOrchestratorAdapter")
         BaseOrchestrator.__init__(self, **base_orchestrator_kwargs)
+
+        # Tool *results* are untrusted input to the model (indirect prompt
+        # injection). When on, every handler's return value passes ingress
+        # governance -- this adapter's own, or a narrower pipeline given as
+        # tool_result_governance -- before Claude reads it.
+        self._govern_tool_results = govern_tool_results
+        self._tool_result_governance = tool_result_governance
 
         self._capabilities: Dict[str, ToolCapability] = {c.name: c for c in capabilities}
         self._registered_tool_names = frozenset(self._capabilities)
@@ -252,9 +262,32 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         wrapped = []
         for cap in self._capabilities.values():
             wrapped.append(
-                sdk_tool(cap.name, cap.description, cap.input_schema)(cap.handler)
+                sdk_tool(cap.name, cap.description, cap.input_schema)(self._guarded_handler(cap))
             )
         return create_sdk_mcp_server(name=_MCP_SERVER_NAME, tools=wrapped)
+
+    # ── the tool-result gate ──────────────────────────────────────────────
+
+    def _guarded_handler(self, cap: "ToolCapability"):
+        """The capability's handler, with its result screened before Claude
+        reads it. can_use_tool governs the call going out; this governs what
+        comes back. A refused result reaches Claude as an error notice, never
+        as the content."""
+        if not self._govern_tool_results:
+            return cap.handler
+
+        async def guarded(args: Dict[str, Any]) -> Dict[str, Any]:
+            result = await cap.handler(args)
+            try:
+                await screen_tool_result(self._tool_result_governance or self.governance,
+                                         cap.name, result, ctx=self._governance_context())
+            except PermissionError as exc:
+                return withheld_value(result, str(exc))
+            return result
+
+        guarded.__name__ = getattr(cap.handler, "__name__", cap.name)
+        guarded.__doc__ = getattr(cap.handler, "__doc__", None)
+        return guarded
 
     # ── the egress gate ───────────────────────────────────────────────────
 

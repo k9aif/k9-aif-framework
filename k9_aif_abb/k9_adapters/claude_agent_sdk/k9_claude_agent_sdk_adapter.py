@@ -47,7 +47,13 @@ class K9ClaudeAgentSDKAdapter:
         permission_mode: Optional[str] = None,
         mapper: Optional[ClaudeAgentSDKPayloadMapper] = None,
         orchestrator_adapter: Optional[ClaudeAgentSDKOrchestratorAdapter] = None,
+        **orchestrator_kwargs: Any,
     ) -> None:
+        """``orchestrator_kwargs`` (config=, governance=, enable_zero_trust=,
+        govern_tool_results=, tool_result_governance=, ...) are forwarded to
+        the ClaudeAgentSDKOrchestratorAdapter this facade builds, so the
+        facade alone can be fully governed -- before 1.14 it built the
+        adapter with no governance at all and offered no way to pass one."""
         self.mapper = mapper or ClaudeAgentSDKPayloadMapper()
         self.orchestrator_adapter = orchestrator_adapter or ClaudeAgentSDKOrchestratorAdapter(
             capabilities=capabilities,
@@ -56,6 +62,7 @@ class K9ClaudeAgentSDKAdapter:
             model=model,
             max_turns=max_turns,
             permission_mode=permission_mode,
+            **orchestrator_kwargs,
         )
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:

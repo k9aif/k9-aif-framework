@@ -5,6 +5,19 @@ runtime security pattern integrated into the K9-AIF framework.
 
 ---
 
+## New in 1.14: can an agent grant itself a role?
+
+```bash
+K9_ENV=development python examples/zero_trust_execution_demo/identity_demo.py
+```
+
+The same request, three ways: an agent writes `roles: ["claims_approver"]` into its own payload.
+1. **payload mode** (1.x default): Zero Trust believes it. Approved.
+2. **signed mode**: self-declared identity is ignored; the caller is anonymous. Denied.
+3. **signed mode, admitted**: `BaseRouter.admit()` authenticates the agent's API key, strips the claims and stamps an HMAC-signed identity; the orchestrator verifies it. Approved.
+
+See `k9_security/zero_trust/identity.py` and `security.identity.mode` in the framework `config.yaml`.
+
 ## What this shows
 
 Traditional Zero Trust focuses on **who can access what**.

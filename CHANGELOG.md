@@ -4,6 +4,29 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.14.0] — 2026-09-30
+
+Security release, driven by Zscaler ThreatLabz's 2026 Phishing & Initial Access Report ("AI agents will phish other AI agents"). Three gaps closed; the default behaviour of existing solutions is unchanged.
+
+### Added
+
+- **Authenticated caller identity for Zero Trust** (`k9_security/zero_trust/identity.py`).
+  - Until now `BaseRouter` and `BaseOrchestrator` built `IdentityContext` and `trust_zone` from the payload itself, so any caller, including another agent, could claim `roles: ["admin"]` or `trust_zone: "internal"`.
+  - New ABB contracts `BaseAuthenticator` and `BaseIdentityResolver`, with OOB `ApiKeyAuthenticator` (API key → principal, `principal_type` agent/service/user, roles, tenant; keys from the environment only), `SignedIdentityResolver` and `PayloadIdentityResolver`.
+  - `BaseRouter.admit(payload, credentials)` is the trusted edge: it authenticates, strips every self-declared identity field and any inbound stamp, and adds an HMAC-SHA256-signed identity stamp (`$K9_IDENTITY_SECRET`, with expiry). `SignedIdentityResolver` verifies it in any Router or Orchestrator, in this process or another (e.g. across Kafka). Unsigned, tampered or expired → anonymous.
+  - `BaseRouter` and `BaseOrchestrator` take an optional `identity_resolver=` (and the Router an `authenticator=`); otherwise `security.identity.mode` decides. **Default: `payload`**, the previous behaviour, with a one-time warning. Set `signed` to opt in; the default changes in 2.0.
+  - `examples/zero_trust_execution_demo/identity_demo.py` shows a spoofed role believed (payload), denied (signed), and a properly admitted agent allowed.
+- **Tool-result guard** (`k9_security/tool_result_guard.py`). What a tool *returns* is untrusted input to the model (indirect prompt injection). `screen_tool_result()` runs it through a governance object's ingress stage (Shield ingress checks, then Granite Guardian when chained), keyed as `query` so Guardian reads the real content.
+  - The Claude Agent SDK adapter now screens every tool result automatically (`govern_tool_results=True`, optional narrower `tool_result_governance=`). A refused result reaches Claude as an error notice, never as the content. `can_use_tool` still governs the call going out.
+  - `@govern_tool_result(governance)` for CrewAI tools and plain functions (returns a withheld notice), `on_block="raise"` for LangGraph nodes.
+- **`OutboundLinkCheck`** (k9x Shield, egress, opt-in; LLM05). Links in agent output: lookalike domains (one edit or homoglyph away from an allowed/protected brand), brand-in-subdomain (`paypal.com.evil.io`), `user@host` URLs, IP-literal URLs and punycode BLOCK by default; shorteners and non-allowlisted hosts FLAG. The ThreatLabz chatbot pattern (collect an ID, invent a debt, hand over a payment link).
+
+### Fixed
+
+- `K9ClaudeAgentSDKAdapter` (the facade) built its orchestrator adapter with no governance and offered no way to pass one. It now forwards `config=`, `governance=`, `enable_zero_trust=` and the tool-result options.
+
+---
+
 ## [1.13.0] — 2026-09-29
 
 K9ModelRouter becomes a learned router. Until now it stored sessions, turns, decisions and model affinity, but never read any of them back; routing was rules only.

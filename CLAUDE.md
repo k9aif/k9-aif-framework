@@ -111,13 +111,15 @@ hard fail happens only where `enforce_governance()` is called.
 Two independent, non-overlapping security layers ship in the framework —
 know which one a question is actually about before answering it:
 
-**k9x_Shield** (`k9_security/vulnerability/`) — 13 concrete
+**k9x_Shield** (`k9_security/vulnerability/`) — 14 concrete
 `BaseVulnerabilityCheck` subclasses (`checks/`: `InputSizeCheck`,
 `PromptInjectionCheck`, `PIIBoundaryCheck`, `PIIRequestCheck`,
 `SemanticDriftCheck`, `ToolArgumentCheck`, `ToolAuthorizationCheck`,
 `ExecutionGuardCheck`, `HardcodedCredentialCheck`, `MemoryPoisoningCheck`,
 `SystemPromptLeakageCheck`, `OutputSanitizationCheck`,
-`RequestFrequencyCheck`), run in order by `VulnerabilityChain`
+`RequestFrequencyCheck`, `OutboundLinkCheck` (1.14, egress, opt-in:
+lookalike / brand-in-subdomain / user@host / IP / punycode links BLOCK,
+shorteners and non-allowlisted hosts FLAG)), run in order by `VulnerabilityChain`
 (`vulnerability_chain.py`), wrapped by `ShieldGovernance`
 (`shield_governance.py`) — a concrete `pre_process`/`post_process`
 implementation, i.e. a drop-in `governance=` value for any `BaseAgent`/
@@ -178,6 +180,31 @@ one word defeats it). Treat Zero Trust and Shield as additive, not
 redundant: Zero Trust's real value is its authorization/risk-scoring/
 data-masking machinery (`RoleBasedAuthorizationGuard`,
 `SensitiveDataLossGuard`), not its compromise check.
+
+**Zero Trust identity (1.14, `k9_security/zero_trust/identity.py`).**
+Before 1.14 both `_zero_trust_context()`s read `principal_id`/`roles`/
+`tenant_id`/`trust_zone` from the payload — any caller (another agent
+included) could claim `roles: ["admin"]`. Now identity comes from a
+`BaseIdentityResolver`: `PayloadIdentityResolver` (that same legacy
+behaviour, **still the 1.x default**, warns once) or
+`SignedIdentityResolver` (`security.identity.mode: signed`): only a
+trusted in-process `ctx["identity"]` or an HMAC-signed `_k9_identity`
+stamp counts; self-declared fields are ignored; otherwise `anonymous`.
+`BaseRouter.admit(payload, credentials)` is the edge: `BaseAuthenticator`
+(OOB `ApiKeyAuthenticator`, keys from env via `security.auth.api_keys`)
+→ strip claims and any inbound stamp → sign with `$K9_IDENTITY_SECRET`
+(same value on every Router/Orchestrator process). Signed mode without the
+secret raises when Zero Trust first runs — deliberately, never a silent
+fallback to payload. Default flips to signed in 2.0.
+
+**Tool results are governed too (1.14, `k9_security/tool_result_guard.py`).**
+What a tool returns is untrusted model input (indirect prompt injection).
+`screen_tool_result()` runs it through `governance.pre_process` with the
+text under `"query"` (so Guardian reads it). The Claude Agent SDK adapter
+does this for every tool automatically (`govern_tool_results=True`;
+refused → error notice to Claude); CrewAI tools / LangGraph nodes use
+`@govern_tool_result(gov)` / `on_block="raise"`. `can_use_tool` still
+governs the outgoing call — the two gates are complementary.
 
 **k9x_satan** (`k9x-ecosystem/k9x_satan`) is the reference implementation
 proving these layers actually contain a real attack end-to-end — read its

@@ -45,6 +45,19 @@ security:
       class: k9_aif_abb.k9_core.security.mock_auth.MockAuth
       kwargs: {}
 
+  # Zero Trust caller identity (1.14). "payload" (1.x default) believes the
+  # principal_id / roles / trust_zone a caller writes into its own payload —
+  # spoofable. "signed" accepts only an identity stamped by BaseRouter.admit()
+  # after authentication, signed with $K9_IDENTITY_SECRET (same value on every
+  # Router/Orchestrator process); anything else is anonymous.
+  identity:
+    mode: payload            # payload | signed
+  # API-key authentication used by BaseRouter.admit(). Keys live in .env,
+  # never here; one principal per agent, service or user (non-human identities).
+  # auth:
+  #   api_keys:
+  #     claims-bot: {env: K9_KEY_CLAIMS_BOT, principal_type: agent, roles: [claims_approver]}
+
   # k9x_Shield — Chain of Vulnerability Tests
   # Disabled by default in ABB. SBBs enable and configure in their own config.yaml.
   shield:
@@ -68,7 +81,7 @@ security:
     #   InputSizeCheck:     # check class name — every OOB check accepts a config
     #     max_chars: 50000  # dict (thresholds, extra_patterns, block_on_match, ...)
 
-    # Five additional OOB checks are registered but NOT enabled by default —
+    # Six additional OOB checks are registered but NOT enabled by default —
     # each needs solution-specific config to be useful (an approved-tool
     # allowlist, an agent's own system-prompt text, etc.), so adding them here
     # unconfigured would silently change behavior for every SBB that copies
@@ -84,6 +97,11 @@ security:
     #                               template injection in agent output)
     #   RequestFrequencyCheck     — max_requests_per_window / rate_limit_window_seconds
     #                               (LLM10 — per-session rate limiting)
+    #   OutboundLinkCheck         — allowed_domains / protected_brands / block_kinds
+    #                               (egress; LLM05 — lookalike, brand-in-subdomain,
+    #                               user@host, IP-literal, punycode and shortener
+    #                               links in agent output; ThreatLabz 2026 chatbot
+    #                               payment-redirect pattern)
 
 governance:
   enabled: true
