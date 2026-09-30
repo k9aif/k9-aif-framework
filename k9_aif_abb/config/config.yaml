@@ -54,12 +54,15 @@ security:
     mode: payload            # payload | signed
   # API-key authentication used by BaseRouter.admit(). Keys live in .env,
   # never here; one principal per agent, service or user (non-human identities).
-  # auth:
-  #   oidc:                  # bearer tokens from Keycloak / any OIDC provider (pip install "k9-aif[oidc]")
-  #     issuer: "${OIDC_ISSUER:-http://localhost:8113/realms/k9x}"
-  #     roles_claim: realm_access.roles
-  #   api_keys:
-  #     claims-bot: {env: K9_KEY_CLAIMS_BOT, principal_type: agent, roles: [claims_approver]}
+  # auth:                    # AuthenticatorFactory (pip install "k9-aif[oidc]" for IdPs)
+  #   providers:             # tried in order; types: keycloak | entra_id | okta | oidc | api_key | <registered>
+  #     - type: keycloak
+  #       base_url: "${KEYCLOAK_URL:-http://localhost:8113}"
+  #       realm: k9x
+  #       client_id: k9x-agents          # this client's roles are read too
+  #     - type: api_key
+  #       api_keys:
+  #         claims-bot: {env: K9_KEY_CLAIMS_BOT, principal_type: agent, roles: [claims_approver]}
 
   # k9x_Shield — Chain of Vulnerability Tests
   # Disabled by default in ABB. SBBs enable and configure in their own config.yaml.

@@ -32,7 +32,7 @@ so admit() treats the caller as unauthenticated -> anonymous.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .context import IdentityContext
 from .identity import BaseAuthenticator
@@ -47,13 +47,17 @@ class OIDCAuthenticator(BaseAuthenticator):
     def __init__(self, issuer: str, audience: Optional[str] = None, jwks_uri: Optional[str] = None,
                  roles_claim: str = "realm_access.roles", tenant_claim: Optional[str] = None,
                  leeway_seconds: int = 30,
-                 key_resolver: Optional[Callable[[str], Any]] = None) -> None:
-        """``key_resolver(token) -> key`` overrides JWKS lookup (tests, pinned keys)."""
+                 key_resolver: Optional[Callable[[str], Any]] = None,
+                 discovery: bool = False) -> None:
+        """``key_resolver(token) -> key`` overrides JWKS lookup (tests, pinned keys).
+        ``discovery=True`` reads jwks_uri from ``<issuer>/.well-known/openid-configuration``
+        on first use (and refuses a document whose issuer doesn't match)."""
         if not issuer:
             raise ValueError("OIDCAuthenticator needs an issuer")
         self.issuer = issuer.rstrip("/")
         self.audience = audience
-        self.jwks_uri = jwks_uri or f"{self.issuer}/protocol/openid-connect/certs"
+        self.discovery = bool(discovery) and not jwks_uri
+        self.jwks_uri = jwks_uri or ("" if self.discovery else f"{self.issuer}/protocol/openid-connect/certs")
         self.roles_claim = roles_claim
         self.tenant_claim = tenant_claim
         self.leeway = int(leeway_seconds)
@@ -68,7 +72,8 @@ class OIDCAuthenticator(BaseAuthenticator):
     def from_config(cls, cfg: Dict[str, Any]) -> "OIDCAuthenticator":
         return cls(issuer=cfg.get("issuer", ""), audience=cfg.get("audience"), jwks_uri=cfg.get("jwks_uri"),
                    roles_claim=cfg.get("roles_claim", "realm_access.roles"),
-                   tenant_claim=cfg.get("tenant_claim"), leeway_seconds=cfg.get("leeway_seconds", 30))
+                   tenant_claim=cfg.get("tenant_claim"), leeway_seconds=cfg.get("leeway_seconds", 30),
+                   discovery=cfg.get("discovery", False))
 
     # ── BaseAuthenticator contract ────────────────────────────────────────────
     def authenticate(self, credentials: Dict[str, Any]) -> Optional[IdentityContext]:
@@ -78,14 +83,24 @@ class OIDCAuthenticator(BaseAuthenticator):
         claims = self._verify(token)
         if claims is None:
             return None
-        username = claims.get("preferred_username") or claims.get("sub", "")
-        is_service = username.startswith("service-account-") or claims.get("typ") == "service"
+        principal_id, principal_type = self.principal(claims)
         return IdentityContext(
-            principal_id=username[len("service-account-"):] if username.startswith("service-account-") else username,
-            principal_type="agent" if is_service else "user",
-            roles=_as_list(_dig(claims, self.roles_claim)),
+            principal_id=principal_id,
+            principal_type=principal_type,
+            roles=self.roles(claims),
             tenant_id=_dig(claims, self.tenant_claim) if self.tenant_claim else None,
         )
+
+    # ── provider-specific pieces (IdP adapters override these) ───────────────
+    def principal(self, claims: Dict[str, Any]) -> Tuple[str, str]:
+        """(principal_id, principal_type). Default: Keycloak-style service accounts are agents."""
+        username = claims.get("preferred_username") or claims.get("sub", "")
+        if username.startswith("service-account-"):
+            return username[len("service-account-"):], "agent"
+        return username, "agent" if claims.get("typ") == "service" else "user"
+
+    def roles(self, claims: Dict[str, Any]) -> List[str]:
+        return _as_list(_dig(claims, self.roles_claim))
 
     # ── verification ─────────────────────────────────────────────────────────
     def _verify(self, token: str) -> Optional[Dict[str, Any]]:
@@ -104,8 +119,22 @@ class OIDCAuthenticator(BaseAuthenticator):
     def _jwks(self):
         if self._jwks_client is None:
             import jwt
+            if not self.jwks_uri:
+                self.jwks_uri = self._discover_jwks_uri()
             self._jwks_client = jwt.PyJWKClient(self.jwks_uri, cache_keys=True, lifespan=300)
         return self._jwks_client
+
+    def _discover_jwks_uri(self) -> str:
+        """OIDC discovery. The document's issuer must equal ours: a mismatch
+        means a misconfiguration or a spoofed endpoint, and is refused."""
+        import json
+        import urllib.request
+        url = f"{self.issuer}/.well-known/openid-configuration"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            doc = json.loads(resp.read())
+        if str(doc.get("issuer", "")).rstrip("/") != self.issuer:
+            raise ValueError(f"OIDC discovery issuer {doc.get('issuer')!r} does not match {self.issuer!r}")
+        return doc["jwks_uri"]
 
 
 def _bearer(credentials: Dict[str, Any]) -> str:

@@ -192,8 +192,10 @@ trusted in-process `ctx["identity"]` or an HMAC-signed `_k9_identity`
 stamp counts; self-declared fields are ignored; otherwise `anonymous`.
 `BaseRouter.admit(payload, credentials)` is the edge: `BaseAuthenticator`
 (OOB `ApiKeyAuthenticator`, keys from env via `security.auth.api_keys`;
-`OIDCAuthenticator` for Keycloak/any OIDC provider via `security.auth.oidc`,
-extra `k9-aif[oidc]`; `keycloak_demo.py` verified live)
+`OIDCAuthenticator` for any OIDC provider, IdP adapters `keycloak`
+(realm + client roles) / `entra_id` / `okta`, all built by
+`AuthenticatorFactory` from `security.auth.providers`; extra `k9-aif[oidc]`;
+`keycloak_demo.py` verified live)
 → strip claims and any inbound stamp → sign with `$K9_IDENTITY_SECRET`
 (same value on every Router/Orchestrator process). Signed mode without the
 secret raises when Zero Trust first runs — deliberately, never a silent
@@ -266,7 +268,9 @@ A `confidential` request is hard-restricted to confidential-capable models
 
 Never instantiate directly in application code: `LLMFactory`,
 `ModelRouterFactory`, `AgentRegistry`, `OrchestratorRegistry`,
-`SecretManagerFactory`, `CacheFactory`, `ObjectStorageFactory`. Every factory
+`SecretManagerFactory`, `CacheFactory`, `ObjectStorageFactory`,
+`AuthenticatorFactory` (1.14: `api_key`/`oidc`/`keycloak`/`entra_id`/`okta`;
+solutions `register()` their own `BaseAuthenticator`). Every factory
 `create(config)` has a zero-config default (env secrets, in-memory cache,
 local storage) — no config key required for the common case. Adding a new
 provider to any of these: `SKILLS.md` Skill 11.

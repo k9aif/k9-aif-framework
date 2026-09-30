@@ -14,8 +14,12 @@ Two ABB contracts, three OOB SBBs:
 
     BaseAuthenticator            verifies credentials at the edge -> IdentityContext
       ApiKeyAuthenticator          API key -> principal (agent / service / user), roles, tenant
-      OIDCAuthenticator            OIDC bearer token (Keycloak, Entra ID, Okta, ...) -> identity
+      OIDCAuthenticator            OIDC bearer token (any provider) -> identity
                                    (oidc_authenticator.py; pip install "k9-aif[oidc]")
+      Keycloak/EntraID/Okta-       provider presets (idp_adapters.py)
+        Authenticator
+    AuthenticatorFactory         k9_factories/authenticator_factory.py: registry,
+                                   register() for solution SBBs, create(config)
     BaseIdentityResolver         where BaseRouter/BaseOrchestrator get identity from
       PayloadIdentityResolver      legacy: self-declared payload fields (the 1.x default; warns)
       SignedIdentityResolver       only an HMAC-signed stamp or a trusted in-process ctx
@@ -266,16 +270,8 @@ class ChainedAuthenticator(BaseAuthenticator):
 
 
 def build_authenticator(config: Optional[Dict[str, Any]]) -> Optional[BaseAuthenticator]:
-    """From ``security.auth``: ``oidc`` (bearer tokens from Keycloak / any OIDC
-    provider; needs k9-aif[oidc]) and/or ``api_keys``. Both -> tried in that
-    order. Neither -> None."""
-    auth_cfg = (((config or {}).get("security", {}) or {}).get("auth", {}) or {})
-    found: List[BaseAuthenticator] = []
-    if auth_cfg.get("oidc"):
-        from .oidc_authenticator import OIDCAuthenticator
-        found.append(OIDCAuthenticator.from_config(auth_cfg["oidc"]))
-    if auth_cfg.get("api_keys"):
-        found.append(ApiKeyAuthenticator(auth_cfg["api_keys"]))
-    if not found:
-        return None
-    return found[0] if len(found) == 1 else ChainedAuthenticator(*found)
+    """The authenticator ``security.auth`` describes, via AuthenticatorFactory
+    (providers list; the earlier oidc/api_keys keys still work). None when
+    nothing is configured."""
+    from k9_aif_abb.k9_factories.authenticator_factory import AuthenticatorFactory
+    return AuthenticatorFactory.create(config)
