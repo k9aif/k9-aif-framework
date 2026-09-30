@@ -191,7 +191,9 @@ behaviour, **still the 1.x default**, warns once) or
 trusted in-process `ctx["identity"]` or an HMAC-signed `_k9_identity`
 stamp counts; self-declared fields are ignored; otherwise `anonymous`.
 `BaseRouter.admit(payload, credentials)` is the edge: `BaseAuthenticator`
-(OOB `ApiKeyAuthenticator`, keys from env via `security.auth.api_keys`)
+(OOB `ApiKeyAuthenticator`, keys from env via `security.auth.api_keys`;
+`OIDCAuthenticator` for Keycloak/any OIDC provider via `security.auth.oidc`,
+extra `k9-aif[oidc]`; `keycloak_demo.py` verified live)
 → strip claims and any inbound stamp → sign with `$K9_IDENTITY_SECRET`
 (same value on every Router/Orchestrator process). Signed mode without the
 secret raises when Zero Trust first runs — deliberately, never a silent

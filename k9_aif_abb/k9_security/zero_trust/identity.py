@@ -14,6 +14,8 @@ Two ABB contracts, three OOB SBBs:
 
     BaseAuthenticator            verifies credentials at the edge -> IdentityContext
       ApiKeyAuthenticator          API key -> principal (agent / service / user), roles, tenant
+      OIDCAuthenticator            OIDC bearer token (Keycloak, Entra ID, Okta, ...) -> identity
+                                   (oidc_authenticator.py; pip install "k9-aif[oidc]")
     BaseIdentityResolver         where BaseRouter/BaseOrchestrator get identity from
       PayloadIdentityResolver      legacy: self-declared payload fields (the 1.x default; warns)
       SignedIdentityResolver       only an HMAC-signed stamp or a trusted in-process ctx
@@ -249,7 +251,31 @@ def build_identity_resolver(config: Optional[Dict[str, Any]]) -> BaseIdentityRes
     return PayloadIdentityResolver()
 
 
+class ChainedAuthenticator(BaseAuthenticator):
+    """Tries each authenticator in order; the first identity wins."""
+
+    def __init__(self, *authenticators: BaseAuthenticator) -> None:
+        self.authenticators = [a for a in authenticators if a is not None]
+
+    def authenticate(self, credentials: Dict[str, Any]) -> Optional[IdentityContext]:
+        for auth in self.authenticators:
+            identity = auth.authenticate(credentials)
+            if identity is not None:
+                return identity
+        return None
+
+
 def build_authenticator(config: Optional[Dict[str, Any]]) -> Optional[BaseAuthenticator]:
-    """An ApiKeyAuthenticator when ``security.auth.api_keys`` is configured, else None."""
-    principals = (((config or {}).get("security", {}) or {}).get("auth", {}) or {}).get("api_keys")
-    return ApiKeyAuthenticator(principals) if principals else None
+    """From ``security.auth``: ``oidc`` (bearer tokens from Keycloak / any OIDC
+    provider; needs k9-aif[oidc]) and/or ``api_keys``. Both -> tried in that
+    order. Neither -> None."""
+    auth_cfg = (((config or {}).get("security", {}) or {}).get("auth", {}) or {})
+    found: List[BaseAuthenticator] = []
+    if auth_cfg.get("oidc"):
+        from .oidc_authenticator import OIDCAuthenticator
+        found.append(OIDCAuthenticator.from_config(auth_cfg["oidc"]))
+    if auth_cfg.get("api_keys"):
+        found.append(ApiKeyAuthenticator(auth_cfg["api_keys"]))
+    if not found:
+        return None
+    return found[0] if len(found) == 1 else ChainedAuthenticator(*found)

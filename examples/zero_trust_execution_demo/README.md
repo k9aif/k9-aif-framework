@@ -18,6 +18,21 @@ The same request, three ways: an agent writes `roles: ["claims_approver"]` into 
 
 See `k9_security/zero_trust/identity.py` and `security.identity.mode` in the framework `config.yaml`.
 
+### With a real identity provider: Keycloak
+
+`keycloak_demo.py` runs the same flow with real Keycloak users and tokens (`pip install "k9-aif[oidc]"`; Keycloak with a `k9x` realm, client `k9x-cli` and test users). Each request: Keycloak token → `EdgeRouter.admit()` (`OIDCAuthenticator` verifies it) → Zero Trust with a role policy → k9x Shield.
+
+```
+OK       k9x (claims_approver) approves a claim
+DENIED   k9aif (claims_reader) tries to approve
+OK       ibm (claims_reader) reads a claim
+DENIED   santa (no roles) reads a claim
+DENIED   satan self-declares claims_approver in the payload
+BLOCKED  satan (red_team) probes with a prompt injection      <- identity passes, Shield blocks
+DENIED   forged token claiming claims_approver                <- anonymous
+OK       ravinata (agent_admin, claims_approver) approves
+```
+
 ## What this shows
 
 Traditional Zero Trust focuses on **who can access what**.

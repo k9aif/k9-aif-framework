@@ -29,6 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 kafka     = ["aiokafka>=0.10", "kafka-python>=2.0"]
 postgres  = ["psycopg2-binary>=2.9"]
+oidc      = ["pyjwt[crypto]>=2.8"]   # OIDCAuthenticator (Keycloak / any OIDC provider)
 neo4j     = ["neo4j>=5.14"]
 crewai    = ["crewai>=1.14"]
 claude-agent-sdk = ["claude-agent-sdk>=0.2.0"]
