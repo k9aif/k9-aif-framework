@@ -21,6 +21,11 @@ Security release, driven by Zscaler ThreatLabz's 2026 Phishing & Initial Access 
 - **Tool-result guard** (`k9_security/tool_result_guard.py`). What a tool *returns* is untrusted input to the model (indirect prompt injection). `screen_tool_result()` runs it through a governance object's ingress stage (Shield ingress checks, then Granite Guardian when chained), keyed as `query` so Guardian reads the real content.
   - The Claude Agent SDK adapter now screens every tool result automatically (`govern_tool_results=True`, optional narrower `tool_result_governance=`). A refused result reaches Claude as an error notice, never as the content. `can_use_tool` still governs the call going out.
   - `@govern_tool_result(governance)` for CrewAI tools and plain functions (returns a withheld notice), `on_block="raise"` for LangGraph nodes.
+- **Granite Guardian `ingress_risks`** (opt-in, `governance.guardian.ingress_risks`). Extra ingress classifications, each with a risk definition as the model's **system message** at temperature 0, the way Granite Guardian takes a risk. Built-in:
+  - `process_manipulation`: text that directs the system itself (approve, skip verification, treat as pre-authorized);
+  - `impersonation`: text claiming to be an internal agent/system or asserting its own roles to get records approved or disclosed.
+
+  Custom `{name, definition}` entries are also accepted. Verified live against `granite4.1-guardian:8b` on k9x_satan's corpus: each caught an attack the default check rated SAFE, with 0 false positives over 7 clean claims × 3 runs. Unavailable calls follow `on_unavailable`, never SAFE. The default (no list) is unchanged; each risk is one extra Guardian call.
 - **`OutboundLinkCheck`** (k9x Shield, egress, opt-in; LLM05). Links in agent output: lookalike domains (one edit or homoglyph away from an allowed/protected brand), brand-in-subdomain (`paypal.com.evil.io`), `user@host` URLs, IP-literal URLs and punycode BLOCK by default; shorteners and non-allowlisted hosts FLAG. The ThreatLabz chatbot pattern (collect an ID, invent a debt, hand over a payment link).
 
 ### Fixed
