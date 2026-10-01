@@ -156,6 +156,9 @@
                 </ul>
 
             </li>
+            <li>
+                    <a class="function" href="#test_per_model_timeout_reaches_the_ollama_client">test_per_model_timeout_reaches_the_ollama_client</a>
+            </li>
     </ul>
 
 
@@ -526,6 +529,23 @@
 </span><span id="L-347"><a href="#L-347"><span class="linenos">347</span></a>        <span class="k">assert</span> <span class="n">llm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 </span><span id="L-348"><a href="#L-348"><span class="linenos">348</span></a>        <span class="n">LLMFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span><span id="L-349"><a href="#L-349"><span class="linenos">349</span></a>        <span class="k">assert</span> <span class="ow">not</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">is_bootstrapped</span><span class="p">()</span>
+</span><span id="L-350"><a href="#L-350"><span class="linenos">350</span></a>
+</span><span id="L-351"><a href="#L-351"><span class="linenos">351</span></a>
+</span><span id="L-352"><a href="#L-352"><span class="linenos">352</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_per_model_timeout_reaches_the_ollama_client</span><span class="p">():</span>
+</span><span id="L-353"><a href="#L-353"><span class="linenos">353</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;inference.llm_factory.models.&lt;alias&gt;.timeout -&gt; OllamaLLM (was fixed at 120 s).&quot;&quot;&quot;</span>
+</span><span id="L-354"><a href="#L-354"><span class="linenos">354</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_factories.llm_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMFactory</span>
+</span><span id="L-355"><a href="#L-355"><span class="linenos">355</span></a>    <span class="n">LLMFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span id="L-356"><a href="#L-356"><span class="linenos">356</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="L-357"><a href="#L-357"><span class="linenos">357</span></a>        <span class="n">LLMFactory</span><span class="o">.</span><span class="n">bootstrap</span><span class="p">({</span><span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;llm_factory&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;ollama&quot;</span><span class="p">,</span> <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+</span><span id="L-358"><a href="#L-358"><span class="linenos">358</span></a>                                                            <span class="s2">&quot;base_url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://localhost:11434&quot;</span><span class="p">,</span>
+</span><span id="L-359"><a href="#L-359"><span class="linenos">359</span></a>                                                            <span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;big:27b&quot;</span><span class="p">,</span> <span class="s2">&quot;timeout&quot;</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span>
+</span><span id="L-360"><a href="#L-360"><span class="linenos">360</span></a>                                                                                <span class="s2">&quot;num_ctx&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span> <span class="s2">&quot;think&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+</span><span id="L-361"><a href="#L-361"><span class="linenos">361</span></a>                                                                       <span class="s2">&quot;plain&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;small:1b&quot;</span><span class="p">}}}}})</span>
+</span><span id="L-362"><a href="#L-362"><span class="linenos">362</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slow&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">total</span> <span class="o">==</span> <span class="mi">600</span>
+</span><span id="L-363"><a href="#L-363"><span class="linenos">363</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slow&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;num_ctx&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span> <span class="s2">&quot;think&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+</span><span id="L-364"><a href="#L-364"><span class="linenos">364</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plain&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">total</span> <span class="o">==</span> <span class="mi">120</span>          <span class="c1"># default unchanged</span>
+</span><span id="L-365"><a href="#L-365"><span class="linenos">365</span></a>    <span class="k">finally</span><span class="p">:</span>
+</span><span id="L-366"><a href="#L-366"><span class="linenos">366</span></a>        <span class="n">LLMFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span></pre></div>
 
 
@@ -1696,6 +1716,40 @@ underlying model (e.g. "prod-gpt4o-eastus2" serving gpt-4o).</p>
 
 
                             </div>
+                </section>
+                <section id="test_per_model_timeout_reaches_the_ollama_client">
+                            <input id="test_per_model_timeout_reaches_the_ollama_client-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_per_model_timeout_reaches_the_ollama_client</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_per_model_timeout_reaches_the_ollama_client-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_per_model_timeout_reaches_the_ollama_client"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_per_model_timeout_reaches_the_ollama_client-353"><a href="#test_per_model_timeout_reaches_the_ollama_client-353"><span class="linenos">353</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_per_model_timeout_reaches_the_ollama_client</span><span class="p">():</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-354"><a href="#test_per_model_timeout_reaches_the_ollama_client-354"><span class="linenos">354</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;inference.llm_factory.models.&lt;alias&gt;.timeout -&gt; OllamaLLM (was fixed at 120 s).&quot;&quot;&quot;</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-355"><a href="#test_per_model_timeout_reaches_the_ollama_client-355"><span class="linenos">355</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_factories.llm_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">LLMFactory</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-356"><a href="#test_per_model_timeout_reaches_the_ollama_client-356"><span class="linenos">356</span></a>    <span class="n">LLMFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-357"><a href="#test_per_model_timeout_reaches_the_ollama_client-357"><span class="linenos">357</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-358"><a href="#test_per_model_timeout_reaches_the_ollama_client-358"><span class="linenos">358</span></a>        <span class="n">LLMFactory</span><span class="o">.</span><span class="n">bootstrap</span><span class="p">({</span><span class="s2">&quot;inference&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;llm_factory&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;ollama&quot;</span><span class="p">,</span> <span class="s2">&quot;provider&quot;</span><span class="p">:</span> <span class="s2">&quot;ollama&quot;</span><span class="p">,</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-359"><a href="#test_per_model_timeout_reaches_the_ollama_client-359"><span class="linenos">359</span></a>                                                            <span class="s2">&quot;base_url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://localhost:11434&quot;</span><span class="p">,</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-360"><a href="#test_per_model_timeout_reaches_the_ollama_client-360"><span class="linenos">360</span></a>                                                            <span class="s2">&quot;models&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;slow&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;big:27b&quot;</span><span class="p">,</span> <span class="s2">&quot;timeout&quot;</span><span class="p">:</span> <span class="mi">600</span><span class="p">,</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-361"><a href="#test_per_model_timeout_reaches_the_ollama_client-361"><span class="linenos">361</span></a>                                                                                <span class="s2">&quot;num_ctx&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span> <span class="s2">&quot;think&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-362"><a href="#test_per_model_timeout_reaches_the_ollama_client-362"><span class="linenos">362</span></a>                                                                       <span class="s2">&quot;plain&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;small:1b&quot;</span><span class="p">}}}}})</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-363"><a href="#test_per_model_timeout_reaches_the_ollama_client-363"><span class="linenos">363</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slow&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">total</span> <span class="o">==</span> <span class="mi">600</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-364"><a href="#test_per_model_timeout_reaches_the_ollama_client-364"><span class="linenos">364</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slow&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;num_ctx&quot;</span><span class="p">:</span> <span class="mi">16384</span><span class="p">,</span> <span class="s2">&quot;think&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-365"><a href="#test_per_model_timeout_reaches_the_ollama_client-365"><span class="linenos">365</span></a>        <span class="k">assert</span> <span class="n">LLMFactory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;plain&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">total</span> <span class="o">==</span> <span class="mi">120</span>          <span class="c1"># default unchanged</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-366"><a href="#test_per_model_timeout_reaches_the_ollama_client-366"><span class="linenos">366</span></a>    <span class="k">finally</span><span class="p">:</span>
+</span><span id="test_per_model_timeout_reaches_the_ollama_client-367"><a href="#test_per_model_timeout_reaches_the_ollama_client-367"><span class="linenos">367</span></a>        <span class="n">LLMFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>inference.llm_factory.models.<alias>.timeout -> OllamaLLM (was fixed at 120 s).</p>
+</div>
+
+
                 </section>
     </main>
 <script>

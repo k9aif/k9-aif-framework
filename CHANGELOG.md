@@ -4,7 +4,25 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased]
+## [1.14.1] — 2026-10-01
+
+Maintenance release: dependency floors raised past known vulnerabilities, the security capability catalog, and a per-model timeout.
+
+### Security
+
+- **Dependency floors raised.** The previous minimums allowed versions with published, fixed advisories (found by K9X Sentinel's OSV audit):
+
+  | Package | Was | Now | Advisories excluded |
+  |---|---|---|---|
+  | aiohttp | >=3.9 | >=3.14.3 | 76 |
+  | pyjwt (`oidc`) | >=2.8 | >=2.15.0 | 24 |
+  | requests | >=2.28 | >=2.33.0 | 8 |
+  | mcp (`mcp`, `all`) | >=1.10 | >=1.28.1 | 6 |
+  | kafka-python (`kafka`, `all`) | >=2.0 | >=2.3.2 | 4 |
+  | pydantic | >=2.0 | >=2.4.0 | 2 |
+  | python-dotenv | >=1.0 | >=1.2.2 | 2 |
+
+- **claude-agent-sdk >= 0.2.163** (`claude-agent-sdk`, `all`): older SDKs break against MCP SDK 2.x (`'Server' object has no attribute 'list_tools'`), which a fresh install now resolves to. Verified with both MCP 2.2.0 and 1.28.1. Every extra was dry-run resolved in a clean environment.
 
 ### Fixed
 

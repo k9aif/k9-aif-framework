@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.14.0"
+framework_version: "1.14.1"
 
 taxonomies:
   owasp_llm_2025:
