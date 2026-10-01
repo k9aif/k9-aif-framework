@@ -10,17 +10,17 @@ Maintenance release: dependency floors raised past known vulnerabilities, the se
 
 ### Security
 
-- **Dependency floors raised.** The previous minimums allowed versions with published, fixed advisories (found by K9X Sentinel's OSV audit):
+- **Dependency floors raised.** The previous minimums allowed versions with published, already-fixed vulnerabilities (found by K9X Sentinel's OSV audit; counted as distinct CVEs, GitHub and PyPI advisories for the same CVE merged):
 
-  | Package | Was | Now | Advisories excluded |
+  | Package | Was | Now | Fixed vulnerabilities (CVEs) excluded |
   |---|---|---|---|
-  | aiohttp | >=3.9 | >=3.14.3 | 76 |
-  | pyjwt (`oidc`) | >=2.8 | >=2.15.0 | 24 |
-  | requests | >=2.28 | >=2.33.0 | 8 |
-  | mcp (`mcp`, `all`) | >=1.10 | >=1.28.1 | 6 |
-  | kafka-python (`kafka`, `all`) | >=2.0 | >=2.3.2 | 4 |
-  | pydantic | >=2.0 | >=2.4.0 | 2 |
-  | python-dotenv | >=1.0 | >=1.2.2 | 2 |
+  | aiohttp | >=3.9 | >=3.14.3 | 38 |
+  | pyjwt (`oidc`) | >=2.8 | >=2.15.0 | 12 |
+  | requests | >=2.28 | >=2.33.0 | 4 |
+  | mcp (`mcp`, `all`) | >=1.10 | >=1.28.1 | 3 |
+  | kafka-python (`kafka`, `all`) | >=2.0 | >=2.3.2 | 2 |
+  | pydantic | >=2.0 | >=2.4.0 | 1 |
+  | python-dotenv | >=1.0 | >=1.2.2 | 1 |
 
 - **claude-agent-sdk >= 0.2.163** (`claude-agent-sdk`, `all`): older SDKs break against MCP SDK 2.x (`'Server' object has no attribute 'list_tools'`), which a fresh install now resolves to. Verified with both MCP 2.2.0 and 1.28.1. Every extra was dry-run resolved in a clean environment.
 
