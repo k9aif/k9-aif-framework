@@ -347,3 +347,20 @@ class TestLLMFactoryProviderDispatch:
         assert llm is not None
         LLMFactory.reset()
         assert not LLMFactory.is_bootstrapped()
+
+
+def test_per_model_timeout_reaches_the_ollama_client():
+    """inference.llm_factory.models.<alias>.timeout -> OllamaLLM (was fixed at 120 s)."""
+    from k9_aif_abb.k9_factories.llm_factory import LLMFactory
+    LLMFactory.reset()
+    try:
+        LLMFactory.bootstrap({"inference": {"llm_factory": {"backend": "ollama", "provider": "ollama",
+                                                            "base_url": "http://localhost:11434",
+                                                            "models": {"slow": {"model": "big:27b", "timeout": 600,
+                                                                                "num_ctx": 16384, "think": False},
+                                                                       "plain": {"model": "small:1b"}}}}})
+        assert LLMFactory.get("slow").timeout.total == 600
+        assert LLMFactory.get("slow").kwargs == {"num_ctx": 16384, "think": False}
+        assert LLMFactory.get("plain").timeout.total == 120          # default unchanged
+    finally:
+        LLMFactory.reset()

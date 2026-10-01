@@ -144,6 +144,9 @@ class LLMFactory:
                 "max_tokens": model_cfg.get("max_tokens"),
                 "num_ctx": model_cfg.get("num_ctx"),
                 "think": model_cfg.get("think"),
+                # Seconds for one call. Large local models need more than the
+                # adapter default (OllamaLLM: 120 s) for long prompts or a cold load.
+                "timeout": model_cfg.get("timeout"),
             }
             extra_kwargs = {k: v for k, v in extra_kwargs.items() if v is not None}
 
