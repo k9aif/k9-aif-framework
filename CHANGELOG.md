@@ -4,6 +4,14 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- **Security capability catalog** (`k9_aif_abb/k9_security/capabilities.yaml`, ships in the package). Every Shield check, Guardian risk, Zero Trust/identity component, the tool-result guard, model-router protections, governance enforcement and HIL, mapped to OWASP Top 10 for LLM Applications 2025 (LLM01–10) and OWASP Top 10 for Agentic Applications 2026 (ASI01–10), each with coverage (full/partial), whether it's on by default and its stated limits, plus the gaps the maintainers already know about. Read by [K9X Sentinel](https://github.com/k9aif/k9x-sentinel), which compares newly published threats against it daily. `test_security_capabilities.py` fails when a registered Shield check or Guardian risk is missing from the catalog, when a listed component no longer exists, or when `framework_version` doesn't match `pyproject.toml`.
+
+---
+
 ## [1.14.0] — 2026-09-30
 
 Security release, driven by Zscaler ThreatLabz's 2026 Phishing & Initial Access Report ("AI agents will phish other AI agents"). Three gaps closed; the default behaviour of existing solutions is unchanged.

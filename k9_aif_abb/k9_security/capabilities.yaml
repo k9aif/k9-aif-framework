@@ -1,0 +1,315 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework — security capability catalog
+#
+# What the framework defends against, in machine-readable form, mapped to
+# OWASP Top 10 for LLM Applications 2025 (LLM01-LLM10) and OWASP Top 10 for
+# Agentic Applications 2026 (ASI01-ASI10).
+#
+# Read by K9X Sentinel (k9aif/k9x-sentinel) to decide whether a newly
+# published threat is covered, partially covered, or a gap. Ships inside the
+# package, so `importlib.resources.files("k9_aif_abb.k9_security") /
+# "capabilities.yaml"` always describes the installed version.
+#
+# Kept honest by k9_aif_abb/tests/test_security_capabilities.py: every Shield
+# check, Guardian risk and component path listed here must exist, and every
+# registered Shield check / Guardian risk must be listed. When you add or
+# change a security control, update this file in the same commit.
+#
+# coverage:  full    = the control addresses the threat class as described
+#            partial = it addresses part of it, or only when configured
+# enabled_by_default: whether it runs with the framework's shipped config.
+#            Most controls are opt-in per solution (see root CLAUDE.md).
+
+catalog_version: 1
+framework_version: "1.14.0"
+
+taxonomies:
+  owasp_llm_2025:
+    LLM01: Prompt Injection
+    LLM02: Sensitive Information Disclosure
+    LLM03: Supply Chain
+    LLM04: Data and Model Poisoning
+    LLM05: Improper Output Handling
+    LLM06: Excessive Agency
+    LLM07: System Prompt Leakage
+    LLM08: Vector and Embedding Weaknesses
+    LLM09: Misinformation
+    LLM10: Unbounded Consumption
+  owasp_agentic_2026:
+    ASI01: Agent Goal Hijack
+    ASI02: Tool Misuse and Exploitation
+    ASI03: Identity and Privilege Abuse
+    ASI04: Agentic Supply Chain Vulnerabilities
+    ASI05: Unexpected Code Execution
+    ASI06: Memory and Context Poisoning
+    ASI07: Insecure Inter-Agent Communication
+    ASI08: Cascading Failures
+    ASI09: Human-Agent Trust Exploitation
+    ASI10: Rogue Agents
+
+capabilities:
+
+  # ── k9x Shield: deterministic checks (k9_security/vulnerability/checks) ──
+  - id: shield.prompt_injection
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.PromptInjectionCheck
+    stage: ingress
+    mechanism: regex over every string in the payload
+    enabled_by_default: false
+    covers: {LLM01: full, LLM07: partial, ASI01: partial}
+    summary: Known injection phrasings (ignore previous instructions, reveal the system prompt, role resets).
+    limits: Paraphrase evades it; Guardian is the semantic layer for that.
+
+  - id: shield.semantic_drift
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.SemanticDriftCheck
+    stage: ingress, egress
+    mechanism: phrase matching + repeated-substring detection
+    enabled_by_default: false
+    covers: {ASI01: partial, LLM10: partial, ASI08: partial}
+    summary: Goal-override language and loop traps (repetitive payloads meant to trap an agent in a loop).
+    limits: Phrase-based; can false-positive on legitimately repetitive output.
+
+  - id: shield.input_size
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.InputSizeCheck
+    stage: ingress
+    mechanism: character and key-count limits
+    enabled_by_default: false
+    covers: {LLM10: partial}
+    summary: Token stuffing and runaway cost from oversized payloads.
+
+  - id: shield.request_frequency
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.RequestFrequencyCheck
+    stage: ingress
+    mechanism: per-session request budget over a rolling window
+    enabled_by_default: false
+    covers: {LLM10: partial}
+    summary: High-volume resource exhaustion that stays under the per-payload size limit.
+    limits: Per session only; no global or per-tenant token budget.
+
+  - id: shield.pii_boundary
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.PIIBoundaryCheck
+    stage: ingress, egress
+    mechanism: regex for email, US SSN, card numbers, phone numbers
+    enabled_by_default: false
+    covers: {LLM02: partial}
+    summary: Literal PII values in a payload or an output (FLAG by default).
+    limits: US-centric formats; no names, addresses or free-text identifiers.
+
+  - id: shield.pii_request
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.PIIRequestCheck
+    stage: ingress
+    mechanism: phrase matching on disclosure requests
+    enabled_by_default: false
+    covers: {LLM02: partial, ASI09: partial}
+    summary: Requests that an agent disclose PII ("include the full SSN for audit purposes").
+
+  - id: shield.hardcoded_credential
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.HardcodedCredentialCheck
+    stage: ingress, egress
+    mechanism: regex for API keys, tokens, passwords
+    enabled_by_default: false
+    covers: {LLM02: partial}
+    summary: Secrets appearing in payloads or outputs.
+
+  - id: shield.tool_argument
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.ToolArgumentCheck
+    stage: egress
+    mechanism: regex for SQL injection, command injection, path traversal, SSRF
+    enabled_by_default: false
+    covers: {LLM05: partial, LLM06: partial, ASI02: partial, ASI05: partial}
+    summary: Malicious arguments an LLM generates for a tool call.
+
+  - id: shield.tool_authorization
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.ToolAuthorizationCheck
+    stage: egress
+    mechanism: allowlist of approved tools and backends (default deny)
+    enabled_by_default: false
+    covers: {LLM03: partial, LLM06: partial, ASI02: partial, ASI04: partial}
+    summary: Unapproved tools or attacker-controlled backend URLs (shadow AI, tool abuse).
+    limits: No per-scope (per agent/squad) tool authorization; one list per solution.
+
+  - id: shield.execution_guard
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.ExecutionGuardCheck
+    stage: egress
+    mechanism: pattern matching on destructive execution payloads
+    enabled_by_default: false
+    covers: {ASI05: partial, LLM06: partial}
+    summary: Filesystem destruction, privilege escalation, reverse shells, persistence, dangerous interpreters.
+
+  - id: shield.memory_poisoning
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.MemoryPoisoningCheck
+    stage: ingress
+    mechanism: session fact fingerprints in a cache + authority-language matching
+    enabled_by_default: false
+    covers: {LLM04: partial, ASI06: partial}
+    summary: Fabricated prior approvals and contradicted session facts.
+    limits: Session memory only; vector stores and long-term memory are not screened.
+
+  - id: shield.system_prompt_leakage
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.SystemPromptLeakageCheck
+    stage: egress
+    mechanism: verbatim fragment matching against the agent's own role/goal text
+    enabled_by_default: false
+    covers: {LLM07: full}
+    summary: An agent's output containing its own instructions.
+    limits: No-op until the solution configures system_prompt_fragments.
+
+  - id: shield.output_sanitization
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.OutputSanitizationCheck
+    stage: egress
+    mechanism: markup/script/template pattern matching
+    enabled_by_default: false
+    covers: {LLM05: partial}
+    summary: HTML/JS/template injection echoed into output for a downstream renderer.
+
+  - id: shield.outbound_link
+    kind: shield_check
+    component: k9_aif_abb.k9_security.vulnerability.checks.OutboundLinkCheck
+    stage: egress
+    mechanism: host classification against allowed domains and protected brands
+    enabled_by_default: false
+    covers: {LLM05: partial, ASI09: partial}
+    summary: Phishing links in agent output (lookalikes, brand-in-subdomain, user@host, IP literals, punycode, shorteners).
+
+  # ── Guardian: semantic LLM screening (k9_governance/guardian_governance.py) ──
+  - id: guardian.screening
+    kind: governance
+    component: k9_aif_abb.k9_governance.guardian_governance.GuardianGovernance
+    stage: ingress, egress
+    mechanism: Granite Guardian classification via Ollama
+    enabled_by_default: false
+    covers: {LLM01: full, ASI01: partial, LLM09: partial}
+    summary: Harm, jailbreak and paraphrased injection that pattern checks miss; mandatory per product policy.
+    limits: Not yet invoked by Shield as an escalation on a pending BLOCK.
+
+  - id: guardian.risk.process_manipulation
+    kind: guardian_risk
+    risk: process_manipulation
+    stage: ingress
+    mechanism: Granite Guardian with a custom risk definition
+    enabled_by_default: false
+    covers: {LLM01: partial, ASI01: partial, ASI09: partial}
+    summary: Documents that try to direct the automated system (approve, bypass review, assert authority).
+
+  - id: guardian.risk.impersonation
+    kind: guardian_risk
+    risk: impersonation
+    stage: ingress
+    mechanism: Granite Guardian with a custom risk definition
+    enabled_by_default: false
+    covers: {ASI03: partial, ASI07: partial, ASI09: partial}
+    summary: Text claiming to come from an internal agent, system or administrator to gain approval or disclosure.
+
+  # ── Tool results ──
+  - id: tool_result_guard
+    kind: component
+    component: k9_aif_abb.k9_security.tool_result_guard.screen_tool_result
+    stage: ingress
+    mechanism: tool output routed through the governance ingress stage (Shield + Guardian)
+    enabled_by_default: true
+    covers: {LLM01: partial, ASI02: partial, ASI06: partial}
+    summary: Indirect prompt injection in fetched pages, documents and other agents' replies.
+    limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result.
+
+  # ── Zero Trust and identity (k9_security/zero_trust) ──
+  - id: zero_trust.guard
+    kind: zero_trust
+    component: k9_aif_abb.k9_security.zero_trust.guards.DefaultZeroTrustGuard
+    stage: orchestrator
+    mechanism: compromise check, role-based authorization, data-loss masking, risk scoring
+    enabled_by_default: false
+    covers: {LLM06: partial, ASI03: partial, LLM02: partial}
+    summary: Per-request authorization of actions against roles, with masking obligations.
+    limits: Orchestrator only; its built-in compromise check is a plain substring match.
+
+  - id: zero_trust.signed_identity
+    kind: zero_trust
+    component: k9_aif_abb.k9_security.zero_trust.identity.SignedIdentityResolver
+    stage: router, orchestrator
+    mechanism: HMAC-SHA256 identity stamp issued by BaseRouter.admit()
+    enabled_by_default: false
+    covers: {ASI03: full, ASI07: partial}
+    summary: Identity claims in payloads are ignored; only a stamp signed after authentication counts.
+    limits: Payload identity is still the 1.x default; signed becomes default in 2.0.
+
+  - id: zero_trust.authenticators
+    kind: zero_trust
+    component: k9_aif_abb.k9_factories.authenticator_factory.AuthenticatorFactory
+    stage: router
+    mechanism: API keys; OIDC JWT verification (JWKS, issuer, expiry, audience); Keycloak, Entra ID, Okta adapters
+    enabled_by_default: false
+    covers: {ASI03: partial}
+    summary: Authenticates callers (humans, agents, services) at the Router edge.
+
+  # ── Model routing ──
+  - id: model_router.confidential_restriction
+    kind: component
+    component: k9_aif_abb.k9_inference.routers.k9_model_router.K9ModelRouter
+    stage: inference
+    mechanism: confidential requests hard-restricted to confidential-capable models
+    enabled_by_default: true
+    covers: {LLM02: partial}
+    summary: Confidential prompts never routed to a model not cleared for them.
+
+  - id: model_router.circuit_breaker
+    kind: component
+    component: k9_aif_abb.k9_inference.routers.k9_model_router.K9ModelRouter
+    stage: inference
+    mechanism: per-model failure-rate breaker over a rolling window
+    enabled_by_default: true
+    covers: {ASI08: partial}
+    summary: A failing model is taken out of rotation instead of cascading failures.
+
+  # ── Governance and human oversight ──
+  - id: governance.enforcement
+    kind: governance
+    component: k9_aif_abb.k9_core.governance.base_governance.BaseGovernance
+    stage: all
+    mechanism: NoopGovernance refused in production/staging by enforce_governance()
+    enabled_by_default: true
+    covers: {ASI10: partial}
+    summary: A component cannot silently run without governance in production.
+    limits: Only asserts governance is configured; content checks run only where hooks are called.
+
+  - id: hil.requires_hil
+    kind: component
+    component: k9_aif_abb.k9_core.orchestration.hil_signal.RequiresHIL
+    stage: orchestrator
+    mechanism: agent/squad raises, orchestrator halts and publishes a HIL request
+    enabled_by_default: true
+    covers: {LLM06: partial, ASI09: partial, ASI10: partial}
+    summary: High-risk decisions stop for a human instead of completing autonomously.
+
+# Gaps the maintainers already know about. Sentinel links a new threat to one
+# of these instead of raising it as new, unless the threat changes its severity.
+known_gaps:
+  - id: gap.per_scope_llm_allowlist
+    covers: [LLM06, ASI03]
+    summary: No per-agent/squad allowlist of which models may be called.
+  - id: gap.token_budgets
+    covers: [LLM10]
+    summary: No token or cost budgets per session, tenant or agent.
+  - id: gap.scoped_tool_authorization
+    covers: [ASI02, LLM06]
+    summary: Tool authorization is one allowlist per solution, not per agent or squad.
+  - id: gap.vector_store_screening
+    covers: [LLM08, ASI06]
+    summary: Documents and embeddings entering a vector store are not screened; retrieval results are only screened when returned as a tool result.
+  - id: gap.shield_guardian_escalation
+    covers: [LLM01]
+    summary: Shield does not escalate a borderline pattern match to Guardian for a second opinion.
+  - id: gap.output_factuality
+    covers: [LLM09]
+    summary: No grounding/factuality check on agent output beyond validation-loop confidence.

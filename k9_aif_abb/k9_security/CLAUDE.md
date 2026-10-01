@@ -18,6 +18,8 @@ k9_security/
 │   ├── vulnerability_chain.py        runs checks, BLOCK/FLAG/strict/fail_open semantics
 │   └── shield_governance.py          concrete BaseGovernance wrapping the chain
 ├── tool_result_guard.py  screen_tool_result / @govern_tool_result — tool OUTPUTS through ingress governance (1.14)
+├── capabilities.yaml  machine-readable catalog of every control here (OWASP LLM/ASI mapped, known gaps);
+│                      K9X Sentinel reads it; test_security_capabilities.py keeps it in step with the code
 ├── zero_trust/      Identity/risk/authorization-based, NOT pattern-matching
 │   ├── context.py       ExecutionContext/IdentityContext/AttributeContext/DestinationContext
 │   ├── identity.py      BaseAuthenticator/ApiKeyAuthenticator, BaseIdentityResolver

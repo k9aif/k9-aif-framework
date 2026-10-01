@@ -210,6 +210,14 @@ refused → error notice to Claude); CrewAI tools / LangGraph nodes use
 `@govern_tool_result(gov)` / `on_block="raise"`. `can_use_tool` still
 governs the outgoing call — the two gates are complementary.
 
+**Security capability catalog** (`k9_security/capabilities.yaml`): every
+security control above, mapped to OWASP LLM01-10 / ASI01-10, plus known gaps.
+**Update it in the same commit as any security control change** --
+`test_security_capabilities.py` fails on a missing Shield check or Guardian
+risk, a stale component path, or a `framework_version` that doesn't match
+`pyproject.toml` (bump both when releasing). K9X Sentinel
+(`k9x-ecosystem/k9x_sentinel`) judges new threats against it daily.
+
 **k9x_satan** (`k9x-ecosystem/k9x_satan`) is the reference implementation
 proving these layers actually contain a real attack end-to-end — read its
 own `CLAUDE.md` for the full Router-ingress/Orchestrator-egress containment
