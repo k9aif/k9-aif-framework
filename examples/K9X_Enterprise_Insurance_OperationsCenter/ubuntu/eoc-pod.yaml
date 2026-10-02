@@ -48,7 +48,9 @@ metadata:
     description: "K9-AIF EOC — Insurance Operations Center (3 containers)"
 
 spec:
-  restartPolicy: OnFailure
+  # Always: podman-restart.service brings back restart-policy=always
+  # containers at boot (OnFailure pods stayed down after every reboot).
+  restartPolicy: Always
 
   hostAliases:
   - ip: "<RHEL_HOST_IP>"  # replace with this host's LAN IP before deploying
