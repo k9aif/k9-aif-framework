@@ -102,6 +102,10 @@ class BaseCriticActorAgent(BaseAgent):
         fail()      — default returns disposition=FAIL
     """
 
+    # execute() runs pre/post governance itself around the loop (on the
+    # payload and on result["output"]); BaseAgent adds only the assertion.
+    _governs_own_execute = True
+
     layer: str = "BaseCriticActorAgent"
 
     # ------------------------------------------------------------------

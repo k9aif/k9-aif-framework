@@ -65,3 +65,45 @@ def require_governance(governance: Any, env: str | None = None) -> Any:
         )
 
     return NoopGovernance()
+
+def governance_from_config(config: dict | None) -> Any:
+    """Governance a component gets when none is passed in: built from the
+    application's own config, so configuring it once covers every agent.
+
+    ``security.shield.enabled: true`` → :class:`ShieldGovernance` over the
+    whole config (it reads ``security.shield.ingress/egress.checks``).
+    Otherwise ``None`` (→ :func:`require_governance` decides).
+    """
+    shield = ((config or {}).get("security") or {}).get("shield") or {}
+    if shield.get("enabled") is True:
+        from k9_aif_abb.k9_security.vulnerability.shield_governance import ShieldGovernance
+        return ShieldGovernance(config)
+    return None
+
+
+def is_permissive_env(env: str | None = None) -> bool:
+    """development / dev / test tolerate NoopGovernance; everything else
+    (including K9_ENV unset, which means production) does not."""
+    return (env or os.getenv("K9_ENV", "production")).lower() in ("development", "dev", "test")
+
+
+def assert_governed(governance: Any, layer: str, logger: logging.Logger | None = None) -> None:
+    """Refuse ungoverned execution outside development/test.
+
+    Raises :class:`PermissionError` if *governance* is :class:`NoopGovernance`
+    in production/staging; logs a warning and returns in development/test.
+    Shared by :class:`BaseAgent` (called automatically around every
+    ``execute()``) and the framework adapters (around ``execute_flow()``).
+    """
+    if not isinstance(governance, NoopGovernance):
+        return
+    env = os.getenv("K9_ENV", "production").lower()
+    if is_permissive_env(env):
+        (logger or log).warning(
+            "[%s] NoopGovernance active in %s environment — proceeding without enforcement.", layer, env)
+        return
+    raise PermissionError(
+        f"[{layer}] enforce_governance() failed: ungoverned execution refused — NoopGovernance is active "
+        f"in {env!r} environment. "
+        "Configure governance (e.g. security.shield.enabled: true, or pass governance=...)."
+    )

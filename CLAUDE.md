@@ -71,40 +71,50 @@ score → `K9ValidationLoopAgent`; agent must plan and revise its own steps →
 
 ## Governance
 
-Every agent gets a governance pipeline via `require_governance()` at init.
-`K9_ENV=development|test` → `NoopGovernance` permitted (WARNING logged).
-`K9_ENV=production|staging` → `enforce_governance()` **raises**
-`PermissionError` if governance isn't configured. An agent that never calls
-`self.enforce_governance()` in `execute()` silently runs `NoopGovernance`
-even in production — the most common real bug in new agent code.
+**Governance by construction (1.15).** `BaseAgent.__init_subclass__` wraps
+every subclass's `execute()` (sync or async) when the class is defined, so
+on every call, with nothing for the agent to do:
 
-**`enforce_governance()` does not run any checks.** It only asserts that
-governance isn't `NoopGovernance` — a "did anyone configure real governance
-at all" guard. The methods that actually run checks are
-`apply_pre_governance(payload)` / `apply_post_governance(result)`
-(`BaseAgent`, and identically on `BaseOrchestrator`/`BaseRouter` — separate,
-duplicated methods, not inherited from one place), which call
-`self.governance.pre_process`/`post_process`. **Only the loop agents call
-them for you** (`BaseValidationLoopAgent`, `BaseCriticActorAgent` and their
-subclasses — see the Shield section below). `BaseAgent`, `BaseOrchestrator`
-and `BaseRouter` never do: a custom agent, every orchestrator and every
-router must call them itself, same as `enforce_governance()`. Calling only
-`enforce_governance()` gives zero content-level protection even though it
-looks like "governance is on."
+1. `assert_governed()` — `NoopGovernance` outside development/test raises
+   `PermissionError` before the agent's code runs (`K9_ENV` unset means
+   `production`);
+2. `governance.pre_process(payload)` — the agent sees the governed payload;
+3. the agent's own `execute()`;
+4. `governance.post_process(result["output"])` for a dict result with an
+   `output` key (other result fields — audit trail — untouched).
 
-**The hooks are `async`; `BaseAgent.execute()` and `execute_flow()` are
-sync.** Calling `self.apply_pre_governance(payload)` without awaiting it
-returns an un-run coroutine — no check runs, no error is raised. From sync
-code use `_run_coro_sync(self.apply_pre_governance(payload))` (the bridge
-the loop agents and `BaseOrchestrator` use; safe inside a running event
-loop, unlike `asyncio.run()`/`run_until_complete()`). Orchestrators also
-have a sync ingress wrapper, `apply_shield(payload)` →
-`{"allowed", "reason", "payload"}`.
+A `PermissionError` from governance (Shield BLOCK) propagates to the caller.
+**Overriding `execute()` does not bypass it** — the override is wrapped too.
+A subclass calling `super().execute()` is governed once (a contextvar guard).
+`BaseValidationLoopAgent` / `BaseCriticActorAgent` set
+`_governs_own_execute = True` (they run pre/post around the loop, on
+`result["output"]`) and get the assertion only. Tests:
+`tests/test_governance_by_construction.py`.
 
-`require_governance()` never fails at init: with no governance passed it
-returns `NoopGovernance` in every environment (WARNING in
-development/test, ERROR otherwise; `K9_ENV` unset means `production`). The
-hard fail happens only where `enforce_governance()` is called.
+**Where governance comes from.** `governance=` if passed; otherwise
+`governance_from_config(config)`: `security.shield.enabled: true` →
+`ShieldGovernance(config)`. One config setting therefore governs every agent
+of an application. Nothing configured → `NoopGovernance` (fine in
+development/test, refused in production).
+
+**Adapters.** The CrewAI, LangGraph and Claude SDK orchestrator adapters
+run pre/post at their boundary and call `assert_governed()` at the top of
+`execute_flow()`.
+
+**Not wrapped:** orchestrator/router logic outside agents (call
+`apply_shield()` / `apply_zero_trust()` / `apply_pre_governance()` there), and
+`llm_invoke()` called outside an agent. `enforce_governance()` still exists
+(it is the same assertion) and is harmless to call.
+
+**The governance hooks on Orchestrator/Router are `async`.** From sync
+code use `_run_coro_sync(self.apply_pre_governance(payload))`, never
+`asyncio.run()` (fails inside a running event loop). Orchestrators also have
+a sync ingress wrapper, `apply_shield(payload)` → `{"allowed", "reason",
+"payload"}`. (BaseAgent's automatic wrapper calls the governance backend
+directly and resolves an awaitable result safely.)
+
+**Unit tests** default to `K9_ENV=test` (`k9_aif_abb/tests/conftest.py`);
+production behaviour is tested explicitly.
 
 ## Security / Vulnerability (k9x_Shield) and Zero Trust
 
@@ -133,11 +143,11 @@ raises: `True` → treated as FLAG, `False` → treated as BLOCK.
 
 **Shield is off in the shipped configuration.** `k9_aif_abb/config/config.yaml`
 sets `security.shield.enabled: false` ("SBBs enable and configure in their
-own config.yaml"), while `ShieldGovernance`'s code fallback when the key is
-absent is `enabled=True`. So a solution that copies the framework config
-gets no Shield checks until it sets `security.shield.enabled: true` **and**
-passes `governance=ShieldGovernance(...)` to each component. Don't tell
-anyone Shield is on by default without checking which config is loaded.
+own config.yaml"). Since 1.15 a solution that sets `security.shield.enabled:
+true` (with check lists) in its config gets `ShieldGovernance` on every agent
+automatically (`governance_from_config`); orchestrators/routers still take
+`governance=ShieldGovernance(...)` explicitly. Don't tell anyone Shield is on
+by default without checking which config is loaded.
 
 **`ShieldGovernance(config)` runs only the checks listed** under
 `security.shield.ingress.checks` / `egress.checks`, and takes the *whole*
@@ -148,18 +158,8 @@ nothing (verified: a prompt-injection payload passes). Copy the check lists
 from the framework's `config.yaml`, and prove it with one injection test.
 
 **The checks are correct and well-tested** (`tests/test_shield_governance.py`).
-**Where the hooks are called for you (since 6b55f6b, shipped in 1.12.x):**
-`BaseValidationLoopAgent.execute()` and `BaseCriticActorAgent.execute()` —
-the two most commonly generated agent patterns, plus anything extending them
-(e.g. `K9PlanningLoopAgent`) — wrap `_execute_loop()` with real
-`apply_pre_governance`/`apply_post_governance` calls. Put loop logic in
-`_execute_loop()`; **overriding `execute()` itself bypasses governance.**
-
-**Where they are not:** a custom agent extending `BaseAgent` directly gets
-**zero enforcement** from `governance=ShieldGovernance(...)` unless its own
-`execute()` explicitly calls the hooks. Don't assume "this agent has
-`ShieldGovernance` wired" means anything is actually being checked — verify
-the hooks are called, not just that the object was constructed.
+Every agent runs them around `execute()` (governance by construction, above);
+the loop agents run them around `_execute_loop()` on `result["output"]`.
 
 **Zero Trust** (`k9_security/zero_trust/`) — a separate mechanism,
 identity/risk/authorization-based rather than pattern-matching-based:

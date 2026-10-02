@@ -147,6 +147,7 @@ from claude_agent_sdk import (
 )
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
+from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_security.tool_result_guard import screen_tool_result, withheld_value
 
@@ -369,6 +370,8 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
     # ── BaseOrchestrator contract ─────────────────────────────────────────
 
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Refuse ungoverned execution outside development/test (same rule as BaseAgent).
+        assert_governed(self.governance, self.layer, self.logger)
         self.validate_payload(payload)
 
         try:
@@ -388,6 +391,8 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         """Async twin of execute_flow(), for callers already inside an event
         loop (e.g. a FastAPI handler) -- avoids the asyncio.run() footgun
         documented across this framework's other async/sync bridges."""
+        # Refuse ungoverned execution outside development/test (same rule as BaseAgent).
+        assert_governed(self.governance, self.layer, self.logger)
         self.validate_payload(payload)
         messages = await self._execute_flow_governed(payload)
         return self.adapt_output(messages)

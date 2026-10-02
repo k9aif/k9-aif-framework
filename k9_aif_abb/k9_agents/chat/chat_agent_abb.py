@@ -14,7 +14,7 @@ class ChatAgentABB(BaseAgent):
     ----------------------------------------------------
     Provides the core orchestration and governance for all ChatAgents.
     Ensures:
-      - Governance enforcement via BaseAgent.enforce_governance()
+      - Governance enforced automatically by BaseAgent around execute()
       - Logging and audit events to MessageBus
       - Optional retrieval or LLM delegation handled by SBB subclass
     """
@@ -25,13 +25,9 @@ class ChatAgentABB(BaseAgent):
         """Executes governed ABB-level chat flow."""
         self.logger.info("[%s] execution started", self.layer)
 
-        # ---------------- Governance Enforcement ----------------
-        try:
-            self.enforce_governance()
-            self.logger.info("[%s] governance enforcement passed", self.layer)
-        except PermissionError as e:
-            self.logger.error("[%s] %s", self.layer, e)
-            return {"reply": "[WARN] Governance enforcement failed — no governance pipeline configured."}
+        # Governance is enforced around execute() by BaseAgent (governance by
+        # construction): outside development/test an ungoverned agent never
+        # reaches this line (PermissionError to the caller).
 
         # ---------------- Input Validation ----------------
         if not payload or "message" not in payload:

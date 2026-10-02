@@ -275,13 +275,22 @@ capabilities:
   # ── Governance and human oversight ──
   - id: governance.enforcement
     kind: governance
-    component: k9_aif_abb.k9_core.governance.base_governance.BaseGovernance
+    component: k9_aif_abb.k9_core.agent.base_agent.BaseAgent
     stage: all
-    mechanism: NoopGovernance refused in production/staging by enforce_governance()
+    mechanism: >-
+      governance by construction: BaseAgent wraps every subclass's execute()
+      (assert configured governance, pre_process the payload, post_process
+      the output); built from security.shield config when none is passed;
+      overriding execute() is wrapped too; the CrewAI, LangGraph and Claude
+      SDK adapters assert it around execute_flow()
     enabled_by_default: true
     covers: {ASI10: partial}
-    summary: A component cannot silently run without governance in production.
-    limits: Only asserts governance is configured; content checks run only where hooks are called.
+    summary: No agent runs without governance in production, and every agent action passes the configured pipeline.
+    limits: >-
+      Orchestrator and Router code outside agents is not wrapped (they call
+      apply_shield / apply_zero_trust explicitly); llm_invoke() called
+      outside an agent is not governed; NoopGovernance is still allowed in
+      development/test.
 
   - id: hil.requires_hil
     kind: component

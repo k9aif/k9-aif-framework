@@ -232,12 +232,14 @@ class TestChatAgentABB:
         result = agent.execute({})
         assert "[WARN]" in result["reply"]
 
-    def test_execute_governance_failure_returns_warn(self):
+    def test_execute_refused_without_governance_in_production(self):
+        # Governance by construction: BaseAgent refuses an ungoverned agent
+        # before its execute() runs (formerly a "[WARN]" reply from the agent).
         with patch.dict(os.environ, {"K9_ENV": "production"}):
-            agent = ChatAgentABB()  # NoopGovernance — enforce_governance will raise
+            agent = ChatAgentABB()  # NoopGovernance
         with patch.dict(os.environ, {"K9_ENV": "production"}):
-            result = agent.execute({"message": "hello"})
-        assert "[WARN]" in result["reply"]
+            with pytest.raises(PermissionError, match="enforce_governance"):
+                agent.execute({"message": "hello"})
 
     def test_execute_publishes_to_message_bus(self):
         bus = MagicMock()

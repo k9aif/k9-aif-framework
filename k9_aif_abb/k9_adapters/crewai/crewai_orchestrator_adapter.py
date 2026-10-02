@@ -8,6 +8,7 @@ import concurrent.futures
 from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
+from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 
@@ -80,6 +81,8 @@ class CrewAIOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         return result
 
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Refuse ungoverned execution outside development/test (same rule as BaseAgent).
+        assert_governed(self.governance, self.layer, self.logger)
         self.validate_payload(payload)
         crew_input = self.adapt_input(payload)
 
