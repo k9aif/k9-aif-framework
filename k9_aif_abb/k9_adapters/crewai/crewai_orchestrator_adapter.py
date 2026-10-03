@@ -8,6 +8,7 @@ import concurrent.futures
 from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
+from k9_aif_abb.k9_core.governance.call_context import governed_call
 from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
@@ -83,25 +84,26 @@ class CrewAIOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         # Refuse ungoverned execution outside development/test (same rule as BaseAgent).
         assert_governed(self.governance, self.layer, self.logger)
-        self.validate_payload(payload)
-        crew_input = self.adapt_input(payload)
+        with governed_call(self):   # model calls inside the flow are governed by it
+            self.validate_payload(payload)
+            crew_input = self.adapt_input(payload)
 
-        governed_input = _run_coro_sync(self.apply_pre_governance(crew_input))
+            governed_input = _run_coro_sync(self.apply_pre_governance(crew_input))
 
-        self.publish_status("CrewAISessionStarted", {"adapter": self.adapter_name})
+            self.publish_status("CrewAISessionStarted", {"adapter": self.adapter_name})
 
-        if hasattr(self.crew, "kickoff"):
-            result = self.crew.kickoff(inputs=governed_input)
-        elif hasattr(self.crew, "run"):
-            result = self.crew.run(governed_input)
-        else:
-            raise AttributeError(
-                "Provided CrewAI crew does not support kickoff() or run()."
-            )
+            if hasattr(self.crew, "kickoff"):
+                result = self.crew.kickoff(inputs=governed_input)
+            elif hasattr(self.crew, "run"):
+                result = self.crew.run(governed_input)
+            else:
+                raise AttributeError(
+                    "Provided CrewAI crew does not support kickoff() or run()."
+                )
 
-        adapted = self.adapt_output(result)
-        governed_output = _run_coro_sync(self.apply_post_governance(adapted))
+            adapted = self.adapt_output(result)
+            governed_output = _run_coro_sync(self.apply_post_governance(adapted))
 
-        self.publish_status("CrewAISessionCompleted", {"adapter": self.adapter_name})
+            self.publish_status("CrewAISessionCompleted", {"adapter": self.adapter_name})
 
-        return governed_output
+            return governed_output

@@ -147,6 +147,7 @@ from claude_agent_sdk import (
 )
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
+from k9_aif_abb.k9_core.governance.call_context import governed_call
 from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_security.tool_result_guard import screen_tool_result, withheld_value
@@ -398,6 +399,10 @@ class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         return self.adapt_output(messages)
 
     async def _execute_flow_governed(self, payload: Dict[str, Any]) -> List[Any]:
+        with governed_call(self):   # model calls inside the flow are governed by it
+            return await self._execute_flow_governed_body(payload)
+
+    async def _execute_flow_governed_body(self, payload: Dict[str, Any]) -> List[Any]:
         """
         The full governed path: zero-trust -> ingress -> query() -> final
         egress -> audit. Both execute_flow() and execute_flow_async() call

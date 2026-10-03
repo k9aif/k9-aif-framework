@@ -26,6 +26,26 @@ from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 from k9_aif_abb.k9_utils.trace_events import register_trace_callback, emit_trace_event
+from k9_aif_abb.k9_core.governance.call_context import inside_governed_call
+from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, assert_governed, governance_from_config
+
+
+def _resolve_sync(value: Any) -> Any:
+    """Governance backends may be sync or async; run an awaitable to completion."""
+    import inspect
+    if not inspect.isawaitable(value):
+        return value
+    import asyncio
+    import concurrent.futures
+
+    async def _await():
+        return await value
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(_await())
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, _await()).result()
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +54,38 @@ log = logging.getLogger(__name__)
 # — re-exported here for backward compatibility with existing callers doing
 # `from k9_aif_abb.k9_utils.llm_invoke import register_trace_callback`.
 __all__ = ["register_trace_callback", "emit_trace_event", "llm_invoke", "llm_invoke_stream"]
+
+
+def _call_governance(config: Dict[str, Any], request: InferenceRequest):
+    """Governance for a model call made outside a governed entry point (an
+    agent's execute()/execute_stream() or an adapter's execute_flow()), or
+    None when the caller already governs it. Built from the same
+    ``security.shield`` config the agents use; refused in production when
+    none is configured."""
+    if inside_governed_call():
+        return None
+    governance = governance_from_config(config)
+    agent = (request.metadata or {}).get("agent", "?")
+    assert_governed(governance or NoopGovernance(), f"llm_invoke(agent={agent})", log)
+    return governance
+
+
+def _gov_ctx(request: InferenceRequest) -> Dict[str, Any]:
+    return {"layer": "llm_invoke", "component": (request.metadata or {}).get("agent", "?"),
+            "component_type": "model_call"}
+
+
+def _check_request(governance, request: InferenceRequest) -> InferenceRequest:
+    payload = {"prompt": request.prompt, "system_prompt": request.system_prompt}
+    checked = _resolve_sync(governance.pre_process(payload, _gov_ctx(request)))
+    if isinstance(checked, dict) and checked.get("prompt") is not None and checked["prompt"] != request.prompt:
+        request = request.model_copy(update={"prompt": checked["prompt"]}) if hasattr(request, "model_copy") else request
+    return request
+
+
+def _check_output(governance, request: InferenceRequest, output: str) -> str:
+    checked = _resolve_sync(governance.post_process(output, _gov_ctx(request)))
+    return checked if isinstance(checked, str) else output
 
 
 def llm_invoke(
@@ -68,6 +120,12 @@ def llm_invoke(
         RuntimeError: if every attempt is unreachable or returns an empty
             response (OllamaLLM signals this with a ``[WARN]`` prefix).
     """
+    # Governance and audit for every inference call: inside an agent or adapter
+    # flow its own checks cover this call; anywhere else they run here.
+    governance = _call_governance(config, request)
+    if governance is not None:
+        request = _check_request(governance, request)
+
     router = ModelRouterFactory.get_router(config)
     agent = (request.metadata or {}).get("agent", "?")
 
@@ -140,6 +198,8 @@ def llm_invoke(
         resp.model_alias,
         elapsed_ms,
     )
+    if governance is not None:
+        resp.output = _check_output(governance, request, resp.output)
     return resp
 
 
@@ -166,6 +226,13 @@ async def llm_invoke_stream(config: Dict[str, Any], request: InferenceRequest):
         and should check the accumulated text themselves if hard failure
         detection is needed.
     """
+    # Same rule as llm_invoke(): governed here unless the caller already is.
+    # The request is checked before the first chunk, the complete reply at the
+    # end (a streamed reply blocked at egress has already been sent).
+    governance = _call_governance(config, request)
+    if governance is not None:
+        request = _check_request(governance, request)
+
     router = ModelRouterFactory.get_router(config)
     t0 = time.monotonic()
     full_output = []
@@ -173,6 +240,9 @@ async def llm_invoke_stream(config: Dict[str, Any], request: InferenceRequest):
     async for chunk in router.ainvoke_stream(request):
         full_output.append(chunk)
         yield chunk
+
+    if governance is not None:
+        _check_output(governance, request, "".join(str(c) for c in full_output))
 
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 

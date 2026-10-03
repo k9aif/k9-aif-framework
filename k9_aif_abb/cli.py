@@ -147,9 +147,10 @@ A: Ollama (default), IBM Watsonx, any OpenAI-compatible endpoint.
    Provider switching is a config change — no code change needed.
 
 Q: How do I add governance to my agents?
-A: Call self.enforce_governance() at the top of execute().
-   In production (K9_ENV=production), agents without a governance
-   policy will raise PermissionError.
+A: Nothing to call. Add a security.shield block to config.yaml: every
+   agent's execute()/execute_stream() and every llm_invoke() call is then
+   checked automatically. In production (K9_ENV unset or production), an
+   agent or model call without governance raises PermissionError.
 
 Q: How do I persist routing decisions?
 A: K9ModelRouter automatically persists every routing decision

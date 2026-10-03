@@ -22,8 +22,9 @@ from k9_aif_abb.k9_core.governance.pipeline import (
 
 # Agents currently inside a governed execute() on this call path: a subclass
 # calling super().execute(), or one agent's wrapper calling another
-# wrapper of the same agent, is governed once, not twice.
-_GOVERNING: contextvars.ContextVar = contextvars.ContextVar("k9_governing", default=frozenset())
+# wrapper of the same agent, is governed once, not twice. The same mark tells
+# llm_invoke() that the model call it makes is already governed.
+from k9_aif_abb.k9_core.governance.call_context import GOVERNED_CALL as _GOVERNING  # noqa: E402
 
 
 def _resolve_sync(value: Any) -> Any:
@@ -79,23 +80,47 @@ def _governed_stream(fn):
             _resolve_sync(self.governance.post_process(
                 "".join(p if isinstance(p, str) else str(p) for p in parts), self._governance_context()))
 
+    # The agent's generator runs step by step in the consumer's context, so
+    # the governed-call mark is set around each step (not across yields).
     if inspect.isasyncgenfunction(fn):
         @functools.wraps(fn)
         async def wrapper(self, *args, **kwargs):
             args, kwargs, pre_post = _pre(self, args, kwargs)
             parts = []
-            async for chunk in fn(self, *args, **kwargs):
-                parts.append(chunk)
-                yield chunk
+            agen = fn(self, *args, **kwargs)
+            try:
+                while True:
+                    token = _GOVERNING.set(_GOVERNING.get() | {id(self)})
+                    try:
+                        chunk = await agen.__anext__()
+                    except StopAsyncIteration:
+                        break
+                    finally:
+                        _GOVERNING.reset(token)
+                    parts.append(chunk)
+                    yield chunk
+            finally:
+                await agen.aclose()
             _post(self, parts, pre_post)
     else:
         @functools.wraps(fn)
         def wrapper(self, *args, **kwargs):
             args, kwargs, pre_post = _pre(self, args, kwargs)
             parts = []
-            for chunk in fn(self, *args, **kwargs):
-                parts.append(chunk)
-                yield chunk
+            gen = fn(self, *args, **kwargs)
+            try:
+                while True:
+                    token = _GOVERNING.set(_GOVERNING.get() | {id(self)})
+                    try:
+                        chunk = next(gen)
+                    except StopIteration:
+                        break
+                    finally:
+                        _GOVERNING.reset(token)
+                    parts.append(chunk)
+                    yield chunk
+            finally:
+                gen.close()
             _post(self, parts, pre_post)
 
     wrapper._k9_governed = True

@@ -92,6 +92,12 @@ caller reports it as stopped). The default yields `execute()`'s output as one
 chunk; an agent that streams model output overrides it (async or sync
 generator) and is governed automatically. Run an agent only through
 `execute()` / `execute_stream()` — other public methods are not entry points.
+**Every model call is governed:** `llm_invoke()` / `llm_invoke_stream()` read a
+call-path mark (`k9_core/governance/call_context.py`) that agents' entry points
+and the adapters' `execute_flow()` set while they run. Inside, the caller's
+checks already cover the call; outside (orchestrator, service or script code),
+`llm_invoke()` runs the same `security.shield` checks itself and refuses in
+production without governance. Call models only through `llm_invoke()`.
 A subclass calling `super().execute()` is governed once (a contextvar guard).
 `BaseValidationLoopAgent` / `BaseCriticActorAgent` set
 `_governs_own_execute = True` (they run pre/post around the loop, on
