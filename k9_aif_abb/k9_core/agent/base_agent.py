@@ -43,19 +43,71 @@ def _resolve_sync(value: Any) -> Any:
         return pool.submit(asyncio.run, _await()).result()
 
 
+def _payload_of(args, kwargs):
+    """The payload argument of an entry point, and how to put a checked one back."""
+    if args:
+        return args[0], (lambda new: ((new,) + tuple(args[1:]), kwargs))
+    if "payload" in kwargs:
+        return kwargs["payload"], (lambda new: (args, {**kwargs, "payload": new}))
+    for key in ("request",):
+        if key in kwargs:
+            return kwargs[key], (lambda new, k=key: (args, {**kwargs, k: new}))
+    return None, None
+
+
+def _governed_stream(fn):
+    """Wrap a streaming entry point (``execute_stream``) the way
+    ``_governed_execute`` wraps ``execute()``: assert real governance,
+    pre_process the request before the first chunk, stream, then
+    post_process the complete reply. Classes with ``_governs_own_execute``
+    get the assertion only. An egress block can only act once the reply is
+    complete: it raises after the chunks were sent, so callers report the
+    reply as stopped (streaming cannot take back what it already sent)."""
+
+    def _pre(self, args, kwargs):
+        assert_governed(self.governance, self.layer, self.logger)
+        if getattr(self, "_governs_own_execute", False):
+            return args, kwargs, False
+        payload, rebuild = _payload_of(args, kwargs)
+        if rebuild is not None:
+            checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
+            args, kwargs = rebuild(checked)
+        return args, kwargs, True
+
+    def _post(self, parts, pre_post):
+        if pre_post and parts:
+            _resolve_sync(self.governance.post_process(
+                "".join(p if isinstance(p, str) else str(p) for p in parts), self._governance_context()))
+
+    if inspect.isasyncgenfunction(fn):
+        @functools.wraps(fn)
+        async def wrapper(self, *args, **kwargs):
+            args, kwargs, pre_post = _pre(self, args, kwargs)
+            parts = []
+            async for chunk in fn(self, *args, **kwargs):
+                parts.append(chunk)
+                yield chunk
+            _post(self, parts, pre_post)
+    else:
+        @functools.wraps(fn)
+        def wrapper(self, *args, **kwargs):
+            args, kwargs, pre_post = _pre(self, args, kwargs)
+            parts = []
+            for chunk in fn(self, *args, **kwargs):
+                parts.append(chunk)
+                yield chunk
+            _post(self, parts, pre_post)
+
+    wrapper._k9_governed = True
+    return wrapper
+
+
 def _governed_execute(fn, *, pre_post: bool):
     """Wrap an agent's execute() so governance runs around it automatically:
     assert real governance (refused in production if none), pre_process the
     payload, run the agent, post_process its output. ``pre_post=False`` for
     classes that run pre/post themselves around their own work (the loop
     agents): those get the assertion only."""
-
-    def _payload_of(args, kwargs):
-        if args:
-            return args[0], (lambda new: ((new,) + tuple(args[1:]), kwargs))
-        if "payload" in kwargs:
-            return kwargs["payload"], (lambda new: (args, {**kwargs, "payload": new}))
-        return None, None
 
     if inspect.iscoroutinefunction(fn):
         @functools.wraps(fn)
@@ -141,6 +193,10 @@ class BaseAgent(ABC):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        stream = cls.__dict__.get("execute_stream")
+        if stream is not None and not getattr(stream, "_k9_governed", False) and (
+                inspect.isasyncgenfunction(stream) or inspect.isgeneratorfunction(stream)):
+            cls.execute_stream = _governed_stream(stream)
         fn = cls.__dict__.get("execute")
         if fn is None or getattr(fn, "_k9_governed", False) or getattr(fn, "__isabstractmethod__", False):
             return
@@ -170,6 +226,24 @@ class BaseAgent(ABC):
     @abstractmethod
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError("Subclasses must implement execute()")
+
+    # ------------------------------------------------------------------
+    async def execute_stream(self, payload: Dict[str, Any]):
+        """Streaming entry point; governed like ``execute()`` (request checked
+        before the first chunk, complete reply checked at the end). The
+        default yields ``execute()``'s output as one chunk; agents that stream
+        model output override it (an async or sync generator) and are
+        governed automatically. ``execute()`` and ``execute_stream()`` are an
+        agent's entry points: callers do not invoke other public methods to
+        run an agent."""
+        token = _GOVERNING.set(_GOVERNING.get() | {id(self)})   # governed by this wrapper, not twice
+        try:
+            result = self.execute(payload)
+            if inspect.isawaitable(result):
+                result = await result
+        finally:
+            _GOVERNING.reset(token)
+        yield result.get("output", "") if isinstance(result, dict) else str(result)
 
     # ------------------------------------------------------------------
     def publish_event(self, event: Dict[str, Any]):
@@ -231,3 +305,6 @@ class BaseAgent(ABC):
             "component": self.__class__.__name__,
             "component_type": "agent",
         }
+
+
+BaseAgent.execute_stream = _governed_stream(BaseAgent.__dict__["execute_stream"])

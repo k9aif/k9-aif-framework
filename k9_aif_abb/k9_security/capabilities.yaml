@@ -281,16 +281,20 @@ capabilities:
       governance by construction: BaseAgent wraps every subclass's execute()
       (assert configured governance, pre_process the payload, post_process
       the output); built from security.shield config when none is passed;
-      overriding execute() is wrapped too; the CrewAI, LangGraph and Claude
-      SDK adapters assert it around execute_flow()
+      overriding execute() is wrapped too; the streaming entry point
+      execute_stream() is wrapped the same way (request checked before the
+      first chunk, complete reply checked at the end); the CrewAI, LangGraph
+      and Claude SDK adapters assert it around execute_flow()
     enabled_by_default: true
     covers: {ASI10: partial}
     summary: No agent runs without governance in production, and every agent action passes the configured pipeline.
     limits: >-
       Orchestrator and Router code outside agents is not wrapped (they call
       apply_shield / apply_zero_trust explicitly); llm_invoke() called
-      outside an agent is not governed; NoopGovernance is still allowed in
-      development/test.
+      outside an agent is not governed; agent methods other than execute()
+      and execute_stream() are not entry points and are not wrapped; a
+      streamed reply blocked at egress has already been sent; NoopGovernance
+      is still allowed in development/test.
 
   - id: hil.requires_hil
     kind: component

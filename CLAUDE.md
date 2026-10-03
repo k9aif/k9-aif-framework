@@ -85,6 +85,13 @@ on every call, with nothing for the agent to do:
 
 A `PermissionError` from governance (Shield BLOCK) propagates to the caller.
 **Overriding `execute()` does not bypass it** — the override is wrapped too.
+**`execute_stream()` is the second entry point** and is governed the same way:
+the request is checked before the first chunk, the complete reply when the
+stream ends (a streamed reply blocked at egress has already been sent, so the
+caller reports it as stopped). The default yields `execute()`'s output as one
+chunk; an agent that streams model output overrides it (async or sync
+generator) and is governed automatically. Run an agent only through
+`execute()` / `execute_stream()` — other public methods are not entry points.
 A subclass calling `super().execute()` is governed once (a contextvar guard).
 `BaseValidationLoopAgent` / `BaseCriticActorAgent` set
 `_governs_own_execute = True` (they run pre/post around the loop, on
