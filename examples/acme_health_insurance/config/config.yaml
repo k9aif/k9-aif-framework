@@ -92,3 +92,19 @@ governance:
 
 flows:
   path: examples/acme_health_insurance/config/flows.yaml
+
+security:
+  # k9x_Shield: built into every agent by the framework (governance by
+  # construction, k9-aif >= 1.15). Same profile as DAS: block known injection
+  # phrases and oversized input; personal data is flagged, not blocked.
+  shield:
+    enabled: true
+    strict: false
+    fail_open: true
+    ingress:
+      checks: [InputSizeCheck, PromptInjectionCheck, PIIBoundaryCheck]
+    egress:
+      checks: [PIIBoundaryCheck]
+    check_config:
+      InputSizeCheck:
+        max_chars: 250000
