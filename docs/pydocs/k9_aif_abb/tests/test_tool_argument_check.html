@@ -48,6 +48,9 @@
             <li>
                     <a class="function" href="#test_semicolon_command_injection_still_blocked">test_semicolon_command_injection_still_blocked</a>
             </li>
+            <li>
+                    <a class="function" href="#test_prose_without_tool_fields_is_not_a_tool_call">test_prose_without_tool_fields_is_not_a_tool_call</a>
+            </li>
     </ul>
 
 
@@ -151,6 +154,14 @@ being fixed here.</p>
 </span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>    <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;; cat /etc/passwd&quot;</span><span class="p">}</span>
 </span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">_check</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
 </span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">CheckStatus</span><span class="o">.</span><span class="n">BLOCK</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_prose_without_tool_fields_is_not_a_tool_call</span><span class="p">():</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Agent prose (markdown rules, dashes) is not a tool argument: no false SQL-comment match.&quot;&quot;&quot;</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_security.vulnerability.checks.tool_argument_check</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToolArgumentCheck</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>    <span class="n">prose</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;extracted&quot;</span><span class="p">:</span> <span class="s2">&quot;Claimant: Liam Tanaka</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">Amount -- $12,400</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;audit_notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Complete -- no gaps.&quot;</span><span class="p">}</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>    <span class="k">assert</span> <span class="ow">not</span> <span class="n">ToolArgumentCheck</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">prose</span><span class="p">)</span><span class="o">.</span><span class="n">blocked</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>    <span class="k">assert</span> <span class="n">ToolArgumentCheck</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">({</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;SELECT * FROM t WHERE id=&#39;1&#39; OR &#39;1&#39;=&#39;1&#39; --&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">blocked</span>
 </span></pre></div>
 
 
@@ -295,6 +306,31 @@ being fixed here.</p>
 
 
     
+
+                </section>
+                <section id="test_prose_without_tool_fields_is_not_a_tool_call">
+                            <input id="test_prose_without_tool_fields_is_not_a_tool_call-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_prose_without_tool_fields_is_not_a_tool_call</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_prose_without_tool_fields_is_not_a_tool_call-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_prose_without_tool_fields_is_not_a_tool_call"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_prose_without_tool_fields_is_not_a_tool_call-76"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-76"><span class="linenos">76</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_prose_without_tool_fields_is_not_a_tool_call</span><span class="p">():</span>
+</span><span id="test_prose_without_tool_fields_is_not_a_tool_call-77"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-77"><span class="linenos">77</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Agent prose (markdown rules, dashes) is not a tool argument: no false SQL-comment match.&quot;&quot;&quot;</span>
+</span><span id="test_prose_without_tool_fields_is_not_a_tool_call-78"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-78"><span class="linenos">78</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_security.vulnerability.checks.tool_argument_check</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToolArgumentCheck</span>
+</span><span id="test_prose_without_tool_fields_is_not_a_tool_call-79"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-79"><span class="linenos">79</span></a>    <span class="n">prose</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;extracted&quot;</span><span class="p">:</span> <span class="s2">&quot;Claimant: Liam Tanaka</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">Amount -- $12,400</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;audit_notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Complete -- no gaps.&quot;</span><span class="p">}</span>
+</span><span id="test_prose_without_tool_fields_is_not_a_tool_call-80"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-80"><span class="linenos">80</span></a>    <span class="k">assert</span> <span class="ow">not</span> <span class="n">ToolArgumentCheck</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">prose</span><span class="p">)</span><span class="o">.</span><span class="n">blocked</span>
+</span><span id="test_prose_without_tool_fields_is_not_a_tool_call-81"><a href="#test_prose_without_tool_fields_is_not_a_tool_call-81"><span class="linenos">81</span></a>    <span class="k">assert</span> <span class="n">ToolArgumentCheck</span><span class="p">()</span><span class="o">.</span><span class="n">check</span><span class="p">({</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="s2">&quot;SELECT * FROM t WHERE id=&#39;1&#39; OR &#39;1&#39;=&#39;1&#39; --&quot;</span><span class="p">})</span><span class="o">.</span><span class="n">blocked</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Agent prose (markdown rules, dashes) is not a tool argument: no false SQL-comment match.</p>
+</div>
+
 
                 </section>
     </main>

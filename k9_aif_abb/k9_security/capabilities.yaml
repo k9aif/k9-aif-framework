@@ -57,7 +57,7 @@ capabilities:
     mechanism: regex over every string in the payload
     enabled_by_default: false
     covers: {LLM01: full, LLM07: partial, ASI01: partial}
-    summary: Known injection phrasings (ignore previous instructions, reveal the system prompt, role resets).
+    summary: Known injection phrasings (ignore previous instructions, role resets) and system-prompt extraction requests (print / quote / reproduce the instructions you were given); also matched with leetspeak digits folded (1.15).
     limits: Paraphrase evades it; Guardian is the semantic layer for that.
 
   - id: shield.semantic_drift
@@ -115,7 +115,7 @@ capabilities:
     mechanism: regex for API keys, tokens, passwords
     enabled_by_default: false
     covers: {LLM02: partial}
-    summary: Secrets appearing in payloads or outputs.
+    summary: Secrets appearing in payloads or outputs, including KEY_NAME=value forms (AWS_SECRET_ACCESS_KEY=...) and markdown table rows (1.15).
 
   - id: shield.tool_argument
     kind: shield_check
@@ -181,7 +181,7 @@ capabilities:
     mechanism: host classification against allowed domains and protected brands
     enabled_by_default: false
     covers: {LLM05: partial, ASI09: partial}
-    summary: Phishing links in agent output (lookalikes, brand-in-subdomain, user@host, IP literals, punycode, shorteners).
+    summary: Phishing links in agent output (lookalikes incl. one-swap typos and combosquatting, brand-in-subdomain incl. brand as a subdomain label, user@host, IP literals, punycode, shorteners, defanged hxxps:// links, unknown links beside debt / payment-hold wording) (1.15).
 
   # ── Guardian: semantic LLM screening (k9_governance/guardian_governance.py) ──
   - id: guardian.screening

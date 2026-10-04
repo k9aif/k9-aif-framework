@@ -4,6 +4,27 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.15.0] — unreleased
+
+Governance by construction, and five k9x_Shield gaps found by a 208-document governance evaluation.
+
+### Changed
+
+- **Governance by construction.** `BaseAgent.__init_subclass__` wraps every subclass's `execute()` and `execute_stream()` when the class is defined: governance is asserted, the payload pre-processed and the output post-processed on every call, and an override is wrapped too. `governance_from_config()` gives every agent `ShieldGovernance` when `security.shield.enabled: true`. With no governance configured, production (`K9_ENV` unset or `production`) raises `PermissionError` before the agent runs.
+- **Every inference call governed.** `llm_invoke()` / `llm_invoke_stream()` read a call-path mark set by agents and orchestration adapters; a call outside any governed entry point runs the configured `security.shield` checks itself, and is refused in production when none is configured.
+- Examples (k9chat, EOC) ship a Shield profile so they run under governance by construction.
+
+### Fixed
+
+- **ToolArgumentCheck** no longer scans the whole payload when it has no tool fields (agent markdown `---` matched its SQL-comment pattern).
+- **OutboundLinkCheck:** a brand used as a subdomain label (`paypal.refund-desk.com`) is `brand_in_subdomain`; one adjacent swap (`acmeinsurnace`) and a brand embedded in the registered name (`acme-insurance-claims.net`) are `lookalike`; defanged links (`hxxps://`, `[.]`) are scanned; an unknown link beside debt or payment-hold wording is a new BLOCK kind, `payment_lure`.
+- **PromptInjectionCheck:** system-prompt extraction requests (print / quote / reproduce the instructions you were given), also with leetspeak digits folded.
+- **HardcodedCredentialCheck:** `AWS_SECRET_ACCESS_KEY=...`-style names and markdown table rows (`| db_password | ... |`).
+
+Tests: `test_check_gaps_v2_eval.py` (each missed form blocks; the benign forms from the evaluation still pass).
+
+---
+
 ## [1.14.1] — 2026-10-01
 
 Maintenance release: dependency floors raised past known vulnerabilities, the security capability catalog, and a per-model timeout.
