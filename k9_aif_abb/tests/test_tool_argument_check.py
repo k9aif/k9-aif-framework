@@ -70,3 +70,11 @@ def test_semicolon_command_injection_still_blocked():
     payload = {"command": "; cat /etc/passwd"}
     result = _check().check(payload)
     assert result.status == CheckStatus.BLOCK
+
+
+def test_prose_without_tool_fields_is_not_a_tool_call():
+    """Agent prose (markdown rules, dashes) is not a tool argument: no false SQL-comment match."""
+    from k9_aif_abb.k9_security.vulnerability.checks.tool_argument_check import ToolArgumentCheck
+    prose = {"extracted": "Claimant: Liam Tanaka\n---\nAmount -- $12,400\n", "audit_notes": "Complete -- no gaps."}
+    assert not ToolArgumentCheck().check(prose).blocked
+    assert ToolArgumentCheck().check({"query": "SELECT * FROM t WHERE id='1' OR '1'='1' --"}).blocked
