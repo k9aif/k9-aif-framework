@@ -1446,6 +1446,29 @@ def list_adapters():
     print("  ○  K9XAnthropicBridgeAdapter   — Anthropic SDK bridge")
 
 
+def inspect_solution(argv) -> int:
+    """k9aif inspect <folder> [--json] [--markdown FILE] [--fail-on critical|violation|warning]
+
+    Static conformance inspection of a solution (k9_aif_abb.k9_inspect). Exit 1
+    when a finding at or above --fail-on (default: violation) is present.
+    """
+    from pathlib import Path
+
+    from k9_aif_abb.k9_inspect import K9Inspector, Severity
+
+    folder, as_json, md_path, fail_on = argv[0], "--json" in argv, None, "violation"
+    if "--markdown" in argv and argv.index("--markdown") + 1 < len(argv):
+        md_path = argv[argv.index("--markdown") + 1]
+    if "--fail-on" in argv and argv.index("--fail-on") + 1 < len(argv):
+        fail_on = argv[argv.index("--fail-on") + 1]
+    report = K9Inspector().inspect(folder, source=folder)
+    if md_path:
+        Path(md_path).write_text(report.to_markdown())
+    print(report.to_json() if as_json else report.to_markdown())
+    limit = Severity(fail_on).rank
+    return 1 if any(f.severity.rank <= limit for f in report.findings) else 0
+
+
 def inspect():
     """Inspect installed framework components."""
     import importlib
@@ -1494,6 +1517,8 @@ MORE COMMANDS:
   k9aif doctor                       Check environment — Python, Ollama, dependencies
   k9aif list [agents|core|factories|adapters|all]   List framework components
   k9aif inspect                      Inspect all installed framework components
+  k9aif inspect <folder> [--json] [--markdown FILE] [--fail-on violation]
+                                     Conformance report for a solution (SBB) folder
   k9aif --generate hello-world       Generate hello_world.py in current folder
   k9aif --generate agent             Generate agent.py template
   k9aif --generate router            Generate router.py template
@@ -1564,6 +1589,8 @@ def main():
     elif cmd == "list-adapters":
         list_adapters()
     elif cmd == "inspect":
+        if len(args) > 1 and not args[1].startswith("-"):
+            sys.exit(inspect_solution(args[1:]))
         inspect()
     elif cmd == "list":
         topic = args[1] if len(args) > 1 else "all"
