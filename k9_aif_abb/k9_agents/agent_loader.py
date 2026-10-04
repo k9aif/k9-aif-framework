@@ -34,6 +34,7 @@ is always stripped from the merged result so agents never see it.
 
 from __future__ import annotations
 
+import importlib
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -89,6 +90,17 @@ class AgentLoader:
         )
 
     Parallel to ``SquadLoader`` in ``k9_aif_abb/k9_squad/squad_loader.py``.
+
+    Registering by name (1.15) keeps the orchestrator free of agent imports
+    (three-layer decoupling): give each agent YAML a ``module:`` next to
+    ``class:`` and let the loader resolve it::
+
+        # agents/yaml/claims_triage_agent.yaml
+        class: ClaimsTriageAgent
+        module: myapp.agents.src.claims_triage_agent
+
+        agent_loader.register_into(agent_registry, self.config,
+                                   ["ClaimsTriageAgent", "AuditAgent"])
     """
 
     def __init__(self, yaml_dir: str | Path) -> None:
@@ -153,6 +165,25 @@ class AgentLoader:
         merged.pop("_policy", None)
 
         return merged
+
+    def resolve_class(self, class_name: str) -> type:
+        """The agent class named in YAML, imported from its ``module:`` field."""
+        spec = self._by_class.get(class_name)
+        if not spec:
+            raise KeyError(f"AgentLoader: no agent YAML with class: {class_name} in {self.yaml_dir}")
+        module = (spec.get("module") or "").strip()
+        if not module:
+            raise KeyError(f"AgentLoader: agent YAML for {class_name} has no 'module:' field")
+        cls = getattr(importlib.import_module(module), class_name, None)
+        if cls is None:
+            raise ImportError(f"AgentLoader: {module} has no class {class_name}")
+        return cls
+
+    def register_into(self, registry: Any, global_config: Dict[str, Any], names: List[str]) -> None:
+        """Register a factory for each named agent: class from YAML, config merged per agent."""
+        for name in names:
+            cls = self.resolve_class(name)
+            registry.register(name, lambda c=cls, n=name: c(config=self.merge_with_global(n, global_config)))
 
     def has_agent(self, class_name: str) -> bool:
         """Return True if a YAML file was found for the given class name."""

@@ -5,7 +5,7 @@ inference:
   llm_factory:
     backend: ollama
     provider: "ollama"
-    base_url: "http://192.168.1.244:11434"
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
     models:
       guardian: "granite3-guardian:latest"
       code: "granite3-dense:2b"
@@ -81,7 +81,7 @@ persistence:
 messaging:
   backend: kafka
   brokers:
-    - 192.168.1.244:9092
+    - "${KAFKA_BROKER:-localhost:9092}"
   topic: acme-events
   client_id: acme-console
   security_protocol: PLAINTEXT
@@ -108,3 +108,9 @@ security:
     check_config:
       InputSizeCheck:
         max_chars: 250000
+
+# Agents the domain orchestrators create, resolved by name (orchestrators do not import agent classes)
+agents:
+  ClaimProcessingAgent: examples.acme_health_insurance.agents.claim_processing_agent
+  RetrieverAgent: examples.acme_health_insurance.agents.retriever_agent
+  AuthAgent: examples.acme_health_insurance.agents.auth_agent

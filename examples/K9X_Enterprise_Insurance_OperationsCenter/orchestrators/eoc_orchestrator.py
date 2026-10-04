@@ -32,10 +32,7 @@ from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.catastroph
 from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.customer_service_orchestrator import CustomerServiceOrchestrator
 from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.audit_compliance_orchestrator import AuditComplianceOrchestrator
 
-# Re-export EOCRouter for any existing imports.
-from examples.K9X_Enterprise_Insurance_OperationsCenter.router.eoc_router import EOCRouter
-
-__all__ = ["EOCOrchestrator", "EOCRouter"]
+__all__ = ["EOCOrchestrator"]
 
 log = logging.getLogger(__name__)
 

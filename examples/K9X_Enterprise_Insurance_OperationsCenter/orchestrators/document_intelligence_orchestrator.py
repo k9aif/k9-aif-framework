@@ -15,10 +15,6 @@ from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_core.messaging.k9_event_bus import K9EventBus
 
 from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.agent_loader import AgentLoader
-from examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.document_extractor_agent import DocumentExtractorAgent
-from examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.guard_agent import GuardAgent
-from examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.graph_sync_agent import GraphSyncAgent
-from examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.audit_agent import AuditAgent
 
 log = logging.getLogger(__name__)
 
@@ -61,16 +57,12 @@ class DocumentIntelligenceOrchestrator(BaseOrchestrator):
         agent_loader = AgentLoader(agents_yaml_dir)
 
         agent_registry = AgentRegistry()
-        for name, cls in [
-            ("DocumentExtractorAgent", DocumentExtractorAgent),
-            ("GuardAgent",             GuardAgent),
-            ("GraphSyncAgent",         GraphSyncAgent),
-            ("AuditAgent",             AuditAgent),
-        ]:
-            agent_registry.register(
-                name,
-                lambda c=cls, n=name: c(config=agent_loader.merge_with_global(n, self.config)),
-            )
+        agent_loader.register_into(agent_registry, self.config, [
+            "DocumentExtractorAgent",
+            "GuardAgent",
+            "GraphSyncAgent",
+            "AuditAgent",
+        ])
 
         loader = SquadLoader(agent_registry)
         squad = loader.load_one(squads_yaml_path, _SQUAD_ID)

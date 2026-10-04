@@ -2,6 +2,7 @@ name: GraphSyncAgent
 
 class: GraphSyncAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.graph_sync_agent
 description: >
   Neo4j graph synchronization agent.
   Translates agent pipeline outputs into Neo4j MERGE operations,

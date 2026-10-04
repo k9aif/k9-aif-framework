@@ -2,6 +2,7 @@ name: AuditAgent
 
 class: AuditAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.audit_agent
 description: >
   Immutable audit record writer and compliance query engine.
   Constructs AuditEntry records for every agent action in the EOC pipeline

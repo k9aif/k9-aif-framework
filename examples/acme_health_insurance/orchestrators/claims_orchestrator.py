@@ -10,7 +10,7 @@ from typing import Dict, Any
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
-from ..agents.claim_processing_agent import ClaimProcessingAgent
+from .agent_resolver import create_agent
 
 
 class ClaimsOrchestrator(BaseOrchestrator):
@@ -24,7 +24,7 @@ class ClaimsOrchestrator(BaseOrchestrator):
         super().__init__(config=config or {}, monitor=monitor, **kwargs)
         self.logger.info(f"[{self.layer}] Initialized ClaimsOrchestrator")
 
-        self.claim_agent = ClaimProcessingAgent(config=self.config, monitor=monitor)
+        self.claim_agent = create_agent(self.config, "ClaimProcessingAgent", monitor=monitor)
 
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         self.publish_status("started", {"event": "claims_flow_started"})

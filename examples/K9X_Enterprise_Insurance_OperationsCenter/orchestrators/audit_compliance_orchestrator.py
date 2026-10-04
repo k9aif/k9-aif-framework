@@ -15,7 +15,6 @@ from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_core.messaging.k9_event_bus import K9EventBus
 
 from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.agent_loader import AgentLoader
-from examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.audit_agent import AuditAgent
 
 log = logging.getLogger(__name__)
 
@@ -58,10 +57,7 @@ class AuditComplianceOrchestrator(BaseOrchestrator):
         agent_loader = AgentLoader(agents_yaml_dir)
 
         agent_registry = AgentRegistry()
-        agent_registry.register(
-            "AuditAgent",
-            lambda: AuditAgent(config=agent_loader.merge_with_global("AuditAgent", self.config)),
-        )
+        agent_loader.register_into(agent_registry, self.config, ["AuditAgent"])
 
         loader = SquadLoader(agent_registry)
         squad = loader.load_one(squads_yaml_path, _SQUAD_ID)

@@ -2,6 +2,7 @@ name: ClaimsTriageAgent
 
 class: ClaimsTriageAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.claims_triage_agent
 description: >
   Performs initial triage of incoming insurance claims.
   Validates completeness, matches claim type against active policy coverage,

@@ -2,6 +2,7 @@ name: EscalationAgent
 
 class: EscalationAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.escalation_agent
 description: >
   Confidence-threshold enforcement and Human-in-the-Loop (HITL) queue packaging.
   Evaluates agent confidence against the configured threshold (default 0.75).

@@ -2,6 +2,7 @@ name: DocumentExtractorAgent
 
 class: DocumentExtractorAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.document_extractor_agent
 description: >
   OCR and structured extraction pipeline agent.
   Accepts raw text or a file path, applies Tesseract OCR when a file is provided,

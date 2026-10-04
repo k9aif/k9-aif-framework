@@ -2,6 +2,7 @@ name: FraudDetectionAgent
 
 class: FraudDetectionAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.fraud_detection_agent
 description: >
   Risk signal correlation and fraud detection agent.
   Combines rule-based keyword/amount detection with LLM-powered

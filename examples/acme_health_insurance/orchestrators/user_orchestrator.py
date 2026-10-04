@@ -6,7 +6,7 @@
 
 from typing import Dict, Any
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from ..agents.auth_agent import AuthAgent
+from .agent_resolver import create_agent
 
 
 class UserOrchestrator(BaseOrchestrator):
@@ -21,7 +21,7 @@ class UserOrchestrator(BaseOrchestrator):
 
     def __init__(self, config=None, monitor=None, **kwargs):
         super().__init__(config=config or {}, monitor=monitor, **kwargs)
-        self.auth_agent = AuthAgent(config=self.config, monitor=self.monitor)
+        self.auth_agent = create_agent(self.config, "AuthAgent", monitor=self.monitor)
         self.logger.info(f"[{self.layer}] Initialized UserOrchestrator")
 
     # ------------------------------------------------------------------

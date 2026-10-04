@@ -2,6 +2,7 @@ name: AdjudicationAgent
 
 class: AdjudicationAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.adjudication_agent
 description: >
   Policy coverage reasoning and liability determination agent.
   Evaluates triage output, performs LLM-based adjudication reasoning,

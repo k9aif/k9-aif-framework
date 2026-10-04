@@ -26,6 +26,8 @@ Tests: `test_check_gaps_v2_eval.py` (each missed form blocks; the benign forms f
 ### Added
 
 - **`k9_inspect`: static conformance inspection of a solution.** `K9Inspector().inspect(folder)` parses a solution's Python (AST) and YAML without importing or running it, and applies registered `BaseInspectionRule`s: ABB contract (agents extend an agent ABB; loop agents keep the loop), three-layer decoupling, the single model path (`llm_invoke`), Kafka ownership, governance by construction (Shield enabled with checks, Guardian, production `K9_ENV`, egress coverage), secrets and `.env`, private IPs, squad/agent YAML, model aliases, the k9-aif version. Findings are ranked critical / violation / warning / recommendation with file, line and fix; the report gives a verdict, a rule pass rate, Markdown and JSON. Organisations add rules with `InspectionRuleRegistry.register()`.
+- **`AgentLoader.register_into(registry, config, names)`**: agents are registered by name, the class resolved from the agent YAML's `class:` + `module:` — orchestrators no longer import agent classes (three-layer decoupling).
+- **Examples conform to the inspection rules** (EOC, ACME Health Insurance, ACME Support Center: compliant with warnings): orchestrators register agents by name; addresses from the environment (`${OLLAMA_BASE_URL}`, `${KAFKA_BROKER}`) instead of a LAN IP; a syntax error in `acme_health_insurance/agents/persistence_agent.py` fixed; a stale `EOCRouter` re-export removed.
 - **`k9aif inspect <folder> [--json] [--markdown FILE] [--fail-on violation]`** runs it from the command line (exit 1 at or above `--fail-on`, for CI). `k9aif inspect` without a folder still lists the installed components.
 
 ---

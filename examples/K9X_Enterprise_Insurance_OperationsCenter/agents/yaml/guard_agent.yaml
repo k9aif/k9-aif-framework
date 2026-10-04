@@ -2,6 +2,7 @@ name: GuardAgent
 
 class: GuardAgent
 
+module: examples.K9X_Enterprise_Insurance_OperationsCenter.agents.src.guard_agent
 description: >
   Pre/post-inference governance agent.
   Applies regex-based PII pattern detection (SSN, credit card, email, phone),

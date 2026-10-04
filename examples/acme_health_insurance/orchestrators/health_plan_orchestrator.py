@@ -7,7 +7,7 @@
 import traceback
 from typing import Dict, Any
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from ..agents.retriever_agent import RetrieverAgent
+from .agent_resolver import create_agent
 
 
 class HealthPlanOrchestrator(BaseOrchestrator):
@@ -57,7 +57,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
             # ------------------------------------------------------------------
             # Step 1  Retrieve relevant plan information
             # ------------------------------------------------------------------
-            retriever = RetrieverAgent(config=self.config, monitor=self.monitor, message_bus=self.message_bus)
+            retriever = create_agent(self.config, "RetrieverAgent", monitor=self.monitor, message_bus=self.message_bus)
             retrieval = retriever.execute({
                 "query": query,
                 "top_k": 5,
