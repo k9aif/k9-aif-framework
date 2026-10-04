@@ -48,10 +48,15 @@ class K9Inspector:
         report = InspectionReport(
             root=str(project.root), source=source or str(project.root), framework_version=_framework_version(),
             files_python=len(project.modules), files_yaml=len(project.yaml_docs), commit=_git_commit(project.root))
+        from .rules.config_rules import framework_status
+        latest = self.config.get("latest_version") or report.framework_version
+        report.framework = framework_status(project, "" if latest == "unknown" else latest)
         for rule_cls in InspectionRuleRegistry.all():
             if self.only and rule_cls.rule_id not in self.only:
                 continue
-            rule = rule_cls(self.config.get(rule_cls.rule_id))
+            rule_cfg = dict(self.config.get(rule_cls.rule_id) or {})
+            rule_cfg.setdefault("latest_version", self.config.get("latest_version"))
+            rule = rule_cls(rule_cfg)
             try:
                 found = rule.inspect(project)
             except Exception as exc:          # a broken rule must not hide the others

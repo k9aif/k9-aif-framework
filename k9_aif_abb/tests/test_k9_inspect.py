@@ -14,6 +14,7 @@ def write(root, rel, text):
 
 
 CLEAN_CONFIG = """
+enable_zero_trust: true
 inference:
   llm_factory:
     models:
@@ -21,6 +22,7 @@ inference:
 governance:
   guardian: {enabled: true}
 security:
+  identity: {mode: signed}
   shield:
     enabled: true
     ingress: {checks: [InputSizeCheck, PromptInjectionCheck, PIIBoundaryCheck]}
@@ -150,3 +152,31 @@ def test_reports_render(tmp_path):
     r = K9Inspector().inspect(clean(tmp_path))
     assert "# K9-AIF Compliance Report" in r.to_markdown()
     assert '"verdict"' in r.to_json()
+
+
+def test_governance_switched_off_is_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "config/config.yaml", CLEAN_CONFIG.replace("enabled: true\n    ingress", "enabled: false\n    ingress")
+          .replace("guardian: {enabled: true}", "guardian: {enabled: false, on_unavailable: fail_open}"))
+    write(tmp_path, "agents/optout_agent.py", """
+        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+        class OptOutAgent(BaseAgent):
+            _governs_own_execute = True
+            def execute(self, payload):
+                return {}
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    msgs = {f.rule_id: f.message for f in r.findings}
+    assert "explicitly disabled" in msgs["K9-GOV-001"]
+    assert "explicitly disabled" in msgs["K9-GOV-004"]
+    assert {"K9-GOV-007", "K9-GOV-010"} <= set(msgs)
+    assert [f for f in r.findings if f.rule_id == "K9-GOV-007"][0].severity == Severity.CRITICAL
+
+
+def test_framework_version_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "pyproject.toml", 'description = "K9-AIF app"\ndependencies = ["k9-aif==1.14.1", "fastapi"]\n')
+    write(tmp_path, "requirements.txt", "fastapi\n")
+    r = K9Inspector(config={"latest_version": "1.15.0"}).inspect(tmp_path)
+    assert r.framework["status"] == "outdated" and r.framework["version"] == "1.14.1"
+    assert "K9-DEP-002" in ids(r) and "latest k9-aif 1.15.0" in r.to_markdown()

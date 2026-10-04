@@ -68,8 +68,10 @@ class ShieldEnabledRule(BaseInspectionRule):
         if any(_get(d.data, "security", "shield", "enabled") is True for d in configs):
             return []
         explicit = _code_mentions(project, "ShieldGovernance(", "GuardianGovernance(", "ChainedGovernance(")
-        d = configs[0]
-        return [self.finding("security.shield.enabled is not true in any application config",
+        off = [d for d in configs if _get(d.data, "security", "shield", "enabled") is False]
+        d = off[0] if off else configs[0]
+        return [self.finding("Shield is explicitly disabled (security.shield.enabled: false)" if off else
+                             "security.shield.enabled is not true in any application config",
                              d.rel, _line_of(d, "security:"),
                              severity=Severity.WARNING if explicit else Severity.VIOLATION,
                              fix=self.fix + (" Governance is passed explicitly in code; the config setting makes "
@@ -116,6 +118,10 @@ class GuardianConfiguredRule(BaseInspectionRule):
                 return []
         if _code_mentions(project, "GuardianGovernance", "ProfanityGovernance"):
             return []
+        off = [d for d in project.config_docs() if _get(d.data, "governance", "guardian", "enabled") is False]
+        if off:
+            return [self.finding("Granite Guardian is explicitly disabled (governance.guardian.enabled: false)",
+                                 off[0].rel, _line_of(off[0], "guardian:"))]
         return [self.finding("no Granite Guardian configuration found")]
 
 
@@ -309,6 +315,114 @@ class ModelAliasRule(BaseInspectionRule):
         return out
 
 
+# A dependency entry: lowercase package name, optional extras and version, then a delimiter
+# ("K9-AIF Workbench" in a description is not a dependency).
+_SPEC_RE = re.compile(r"""(?:^|["'\s,\[])k9[-_]aif(\[[^\]]*\])?\s*(==|>=|~=|<=|<|>)?\s*([0-9][0-9.]*)?\s*(?=["',;\]\s#]|$)""")
+
+
+def declared_framework(project: SolutionProject) -> Optional[Dict[str, Any]]:
+    """The k9-aif requirement the solution declares: {op, version, file, line, text}, or None."""
+    for name in ("requirements.txt", "requirements.in", "pyproject.toml", "setup.cfg"):
+        for p in sorted(project.find_files(name), key=lambda p: len(p.parts)):
+            for i, line in enumerate(p.read_text(errors="replace").splitlines(), 1):
+                m = _SPEC_RE.search(line)
+                if m and not line.lstrip().startswith("#"):
+                    return {"op": m.group(2) or "", "version": m.group(3) or "", "file": project.rel(p),
+                            "line": i, "text": line.strip()}
+    return None
+
+
+def framework_status(project: SolutionProject, latest: str) -> Dict[str, Any]:
+    """What the solution declares versus the latest k9-aif, for the report header."""
+    d = declared_framework(project)
+    out: Dict[str, Any] = {"latest": latest, "declared": d["text"] if d else None,
+                           "file": d["file"] if d else None, "line": d["line"] if d else None}
+    if not d:
+        out["status"] = "undeclared"
+    elif not d["version"]:
+        out["status"] = "unpinned"
+    elif latest and latest != "unknown" and older(d["version"], latest):
+        out["status"] = "outdated" if d["op"] in ("==", "<", "<=", "~=") else "floor-behind"
+    else:
+        out["status"] = "current"
+    out["version"] = d["version"] if d else None
+    return out
+
+
+@InspectionRuleRegistry.register
+class FrameworkLatestRule(BaseInspectionRule):
+    rule_id = "K9-DEP-002"
+    title = "Runs the latest k9-aif"
+    category = "Dependencies"
+    severity = Severity.WARNING
+    description = ("Framework releases close security gaps (new Shield checks, fixed patterns) and governance "
+                   "behaviour. A solution pinned below the latest release does not get them; a >= floor below the "
+                   "latest lets an old environment keep running an old framework.")
+    fix = "Update the requirement to the latest k9-aif (e.g. k9-aif>=<latest>), rebuild and re-run the tests."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        latest = self.config.get("latest_version") or _installed_version()
+        st = framework_status(project, latest)
+        if st["status"] == "outdated":
+            return [self.finding(f"pins k9-aif {st['declared']} — latest is {latest}", st["file"], st["line"],
+                                 st["declared"], fix=self.fix.replace("<latest>", latest))]
+        if st["status"] == "floor-behind":
+            return [self.finding(f"requires {st['declared']} — latest is {latest}; raise the floor",
+                                 st["file"], st["line"], st["declared"], severity=Severity.RECOMMENDATION,
+                                 fix=self.fix.replace("<latest>", latest))]
+        return []
+
+
+def _installed_version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("k9-aif")
+    except Exception:
+        return ""
+
+
+@InspectionRuleRegistry.register
+class GuardianFailOpenRule(BaseInspectionRule):
+    rule_id = "K9-GOV-010"
+    title = "Guardian fails closed"
+    category = "Governance"
+    severity = Severity.WARNING
+    description = ("on_unavailable: fail_open lets every request through while Granite Guardian is down or slow, "
+                   "silently; fail_closed (the default) blocks and reports it.")
+    fix = "Set governance.guardian.on_unavailable: fail_closed (or remove the key)."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for d in project.config_docs():
+            if str(_get(d.data, "governance", "guardian", "on_unavailable") or "").lower() == "fail_open":
+                out.append(self.finding("Guardian is fail_open", d.rel, _line_of(d, "on_unavailable")))
+        return out
+
+
+@InspectionRuleRegistry.register
+class ZeroTrustRule(BaseInspectionRule):
+    rule_id = "K9-GOV-011"
+    title = "Zero Trust enabled with signed identity"
+    category = "Zero Trust"
+    severity = Severity.RECOMMENDATION
+    description = ("Zero Trust at the orchestrator adds identity, role-based authorization, data-loss masking and "
+                   "risk scoring. It is off unless enable_zero_trust is set; with payload identity (the 1.x default) "
+                   "a caller can claim any role, so signed identity is needed for it to mean anything.")
+    fix = "Set enable_zero_trust: true and security.identity.mode: signed (K9_IDENTITY_SECRET in .env)."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        configs = project.config_docs()
+        on = any(d.data.get("enable_zero_trust") is True for d in configs) or \
+            any("enable_zero_trust=True" in m.source.replace(" ", "") for m in project.code_modules())
+        if not on:
+            return [self.finding("Zero Trust is not enabled (enable_zero_trust)")]
+        signed = any(str(_get(d.data, "security", "identity", "mode") or "").lower() == "signed" for d in configs)
+        if not signed:
+            return [self.finding("Zero Trust is on but identity is self-declared in the payload",
+                                 severity=Severity.WARNING)]
+        return []
+
+
 @InspectionRuleRegistry.register
 class FrameworkVersionRule(BaseInspectionRule):
     rule_id = "K9-DEP-001"
@@ -319,27 +433,17 @@ class FrameworkVersionRule(BaseInspectionRule):
                    "An older pin, or no declared dependency, leaves agents ungoverned unless each calls governance itself.")
     fix = "Declare k9-aif>=1.15 in requirements.txt or pyproject.toml."
 
-    _SPEC = re.compile(r"k9[-_]aif\s*(\[[^\]]*\])?\s*(==|>=|~=|<=|<|>)?\s*([0-9][0-9.]*)?", re.I)
-
     def inspect(self, project: SolutionProject) -> List[Finding]:
-        files = project.find_files("requirements.txt", "pyproject.toml", "setup.cfg", "requirements.in")
-        hits = []
-        for p in files:
-            for i, line in enumerate(p.read_text(errors="replace").splitlines(), 1):
-                m = self._SPEC.search(line)
-                if m and not line.lstrip().startswith("#"):
-                    hits.append((p, i, line.strip(), m.group(2), m.group(3)))
-        if not hits:
+        d = declared_framework(project)
+        if not d:
             return [self.finding("no k9-aif dependency declared", severity=Severity.RECOMMENDATION)]
-        out = []
-        for p, i, line, op, ver in hits:
-            if op in ("==", "<=", "<", "~=") and ver and _older(ver, "1.15"):
-                out.append(self.finding(f"pins k9-aif {op}{ver} (before governance by construction)",
-                                        project.rel(p), i, line))
-        return out
+        if d["op"] in ("==", "<=", "<", "~=") and d["version"] and older(d["version"], "1.15"):
+            return [self.finding(f"pins k9-aif {d['op']}{d['version']} (before governance by construction)",
+                                 d["file"], d["line"], d["text"])]
+        return []
 
 
-def _older(v: str, ref: str) -> bool:
+def older(v: str, ref: str) -> bool:
     def t(x): return tuple(int(p) for p in re.findall(r"\d+", x)[:3])
     return t(v) < t(ref)
 

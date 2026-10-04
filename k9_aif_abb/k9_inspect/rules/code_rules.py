@@ -316,3 +316,91 @@ def _dedupe(findings: List[Finding]) -> List[Finding]:
             seen.add(key)
             out.append(f)
     return out
+
+
+@InspectionRuleRegistry.register
+class GovernanceOptOutRule(BaseInspectionRule):
+    rule_id = "K9-GOV-007"
+    title = "No agent opts out of the governance wrapper"
+    category = "Governance"
+    severity = Severity.CRITICAL
+    description = ("_governs_own_execute = True tells BaseAgent not to wrap execute() with pre/post governance. "
+                   "Only the loop ABBs set it, because they govern around their loop; on any other agent it switches "
+                   "the input and output checks off.")
+    fix = "Remove _governs_own_execute from the agent; BaseAgent then checks every call automatically."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for c in project.classes("agent"):
+            if c.framework_bases & LOOP_AGENT_BASES:
+                continue
+            for node in c.node.body:
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+                if any(isinstance(t, ast.Name) and t.id == "_governs_own_execute" for t in targets) and \
+                        isinstance(getattr(node, "value", None), ast.Constant) and node.value.value is True:
+                    out.append(self.at(c.module, node, f"{c.name} sets _governs_own_execute = True (governance wrapper off)"))
+        for m in project.code_modules():
+            for node in ast.walk(m.tree):
+                if isinstance(node, ast.Assign) and any(isinstance(t, ast.Attribute) and t.attr == "_governs_own_execute"
+                                                        for t in node.targets) \
+                        and isinstance(node.value, ast.Constant) and node.value.value is True:
+                    out.append(self.at(m, node, "sets _governs_own_execute = True at runtime (governance wrapper off)"))
+        return _dedupe(out)
+
+
+@InspectionRuleRegistry.register
+class OrchestratorIngressRule(BaseInspectionRule):
+    rule_id = "K9-GOV-008"
+    title = "Orchestrators screen their own ingress"
+    category = "Governance"
+    severity = Severity.WARNING
+    description = ("Governance by construction wraps agents, not orchestrators or routers. An orchestrator that "
+                   "receives external payloads should screen them (apply_shield / apply_pre_governance, or a "
+                   "governance= at construction) and, where identities matter, apply_zero_trust.")
+    fix = ("In execute_flow(): sh = self.apply_shield(payload); if not sh['allowed']: return a denial — or build the "
+           "orchestrator with governance=ShieldGovernance(config).")
+
+    _HOOKS = ("apply_shield", "apply_pre_governance", "apply_zero_trust", "governance=", "ShieldGovernance(",
+              "GuardianGovernance(", "ChainedGovernance(", "assert_governed", "_build_ingress_chain")
+    _ADAPTERS = {"CrewAIOrchestratorAdapter", "LangGraphOrchestratorAdapter", "ClaudeAgentSDKOrchestratorAdapter",
+                 "BaseHILOrchestrator"}
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        wiring = " ".join(m.source for m in project.code_modules() if not m.roles)   # entry points
+        out = []
+        for c in project.classes("orchestrator"):
+            if c.framework_bases & self._ADAPTERS:
+                continue                       # adapters govern their own boundary
+            body = ast.get_source_segment(c.module.source, c.node) or ""
+            screened_here = any(h in body for h in self._HOOKS)
+            governed_at_wiring = "governance=" in wiring or "enable_zero_trust" in wiring
+            if not screened_here and not governed_at_wiring:
+                out.append(self.at(c.module, c.node, f"{c.name} never screens its ingress (acceptable only if every input was screened upstream)"))
+        return out
+
+
+@InspectionRuleRegistry.register
+class LegacyAgentHooksRule(BaseInspectionRule):
+    rule_id = "K9-GOV-009"
+    title = "Pre-1.15 agents call the governance hooks themselves"
+    category = "Governance"
+    severity = Severity.VIOLATION
+    description = ("Before k9-aif 1.15 the base class did not wrap execute(): each agent had to call "
+                   "enforce_governance() / apply_pre_governance() and apply_post_governance(). A solution pinned to an "
+                   "older framework whose agents do not is ungoverned.")
+    fix = "Upgrade to k9-aif>=1.15 (governance by construction), or call the hooks at the top and end of execute()."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        from .config_rules import declared_framework, older
+        spec = declared_framework(project)
+        if not spec or not spec.get("version") or not older(spec["version"], "1.15") or spec.get("op") in (">=", ">"):
+            return []
+        out = []
+        for c in project.classes("agent"):
+            if c.framework_bases & LOOP_AGENT_BASES or "execute" not in c.methods:
+                continue
+            src = ast.get_source_segment(c.module.source, c.methods["execute"]) or ""
+            if not any(h in src for h in ("enforce_governance", "apply_pre_governance", "assert_governed")):
+                out.append(self.at(c.module, c.methods["execute"],
+                                   f"{c.name}.execute() calls no governance hook on k9-aif {spec['op']}{spec['version']}"))
+        return out

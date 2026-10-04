@@ -72,6 +72,7 @@ class InspectionReport:
     rules: List[RuleOutcome] = field(default_factory=list)
     inspected_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     commit: Optional[str] = None
+    framework: Dict[str, Any] = field(default_factory=dict)   # what the solution declares vs the latest k9-aif
 
     # ── summary ───────────────────────────────────────────────────────────────
     def counts(self) -> Dict[str, int]:
@@ -99,6 +100,7 @@ class InspectionReport:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "source": self.source, "commit": self.commit, "framework_version": self.framework_version,
+            "framework": self.framework,
             "inspected_at": self.inspected_at, "verdict": self.verdict, "score": self.score,
             "counts": self.counts(), "files": {"python": self.files_python, "yaml": self.files_yaml},
             "rules": [{**asdict(r), "severity": r.severity.value} for r in self.rules],
@@ -115,6 +117,7 @@ class InspectionReport:
             f"- **Source:** {self.source}" + (f" @ `{self.commit}`" if self.commit else ""),
             f"- **Inspected:** {self.inspected_at} with k9-aif {self.framework_version}",
             f"- **Files:** {self.files_python} Python, {self.files_yaml} YAML",
+            f"- **Framework:** {_framework_line(self.framework)}",
             f"- **Verdict:** {self.verdict} — {self.score}% of {len(self.rules)} rules pass",
             f"- **Findings:** {c['critical']} critical, {c['violation']} violations, "
             f"{c['warning']} warnings, {c['recommendation']} recommendations", "",
@@ -135,3 +138,16 @@ class InspectionReport:
             lines.append(f"| {r.rule_id} {r.title} | {r.category} | {r.severity.value} | "
                          f"{'pass' if r.passed else f'{r.findings} finding(s)'} |")
         return "\n".join(lines) + "\n"
+
+
+_STATUS_TEXT = {"current": "up to date", "outdated": "OUTDATED — update to the latest",
+                "floor-behind": "minimum is behind the latest — raise it", "unpinned": "no version given",
+                "undeclared": "no k9-aif dependency declared"}
+
+
+def _framework_line(fw: Dict[str, Any]) -> str:
+    if not fw:
+        return "not checked"
+    declared = f"`{fw['declared']}` ({fw['file']}:{fw['line']})" if fw.get("declared") else "none"
+    latest = f", latest k9-aif {fw['latest']}" if fw.get("latest") else ""
+    return f"declares {declared}{latest} — {_STATUS_TEXT.get(fw.get('status'), fw.get('status'))}"
