@@ -144,7 +144,9 @@ class EgressCoverageRule(BaseInspectionRule):
             if shield.get("enabled") is not True:
                 continue
             egress = set(_get(shield, "egress", "checks") or [])
-            missing = [c for c in ("PIIBoundaryCheck", "OutboundLinkCheck") if c not in egress]
+            # a check built in code (e.g. an orchestrator's own egress chain) counts too
+            missing = [c for c in ("PIIBoundaryCheck", "OutboundLinkCheck")
+                       if c not in egress and not _code_mentions(project, f"{c}(")]
             if missing:
                 out.append(self.finding(f"egress does not run {', '.join(missing)}", d.rel, _line_of(d, "egress:")))
         return out
