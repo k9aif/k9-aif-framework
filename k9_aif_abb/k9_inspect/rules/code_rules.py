@@ -395,11 +395,20 @@ class LegacyAgentHooksRule(BaseInspectionRule):
         spec = declared_framework(project)
         if not spec or not spec.get("version") or not older(spec["version"], "1.15") or spec.get("op") in (">=", ">"):
             return []
+        # Governance applied at the orchestrator still screens what reaches the agents; then a missing
+        # agent hook is a warning (outputs are not checked per agent), not an ungoverned agent.
+        orch_governed = any(h in m.source for m in project.code_modules() if m.roles & {"orchestrator", "router"} or not m.roles
+                            for h in ("apply_shield", "apply_pre_governance", "apply_zero_trust", "governance="))
         out = []
         for c in project.classes("agent"):
             if c.framework_bases & LOOP_AGENT_BASES or "execute" not in c.methods:
                 continue
             src = ast.get_source_segment(c.module.source, c.methods["execute"]) or ""
+            if orch_governed and not any(h in src for h in ("enforce_governance", "apply_pre_governance", "assert_governed")):
+                out.append(self.at(c.module, c.methods["execute"],
+                                   f"{c.name}.execute() relies on orchestrator governance; its own output is not checked",
+                                   severity=Severity.WARNING))
+                continue
             if not any(h in src for h in ("enforce_governance", "apply_pre_governance", "assert_governed")):
                 out.append(self.at(c.module, c.methods["execute"],
                                    f"{c.name}.execute() calls no governance hook on k9-aif "
