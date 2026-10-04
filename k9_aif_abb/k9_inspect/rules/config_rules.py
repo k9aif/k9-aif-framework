@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
+import os
 import re
+from pathlib import Path
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -320,15 +322,34 @@ class ModelAliasRule(BaseInspectionRule):
 _SPEC_RE = re.compile(r"""(?:^|["'\s,\[])k9[-_]aif(\[[^\]]*\])?\s*(==|>=|~=|<=|<|>)?\s*([0-9][0-9.]*)?\s*(?=["',;\]\s#]|$)""")
 
 
+def _dependency_files(project: SolutionProject):
+    """Dependency files in the solution, then in parent folders up to the repository root
+    (a solution inspected as a subfolder declares its dependencies at the top)."""
+    names = ("requirements.txt", "requirements.in", "pyproject.toml", "setup.cfg")
+    for name in names:
+        for p in sorted(project.find_files(name), key=lambda p: len(p.parts)):
+            yield p
+    d = project.root
+    while d.parent != d and not (d / ".git").exists():
+        d = d.parent
+        for name in names:
+            if (d / name).is_file():
+                yield d / name
+
+
 def declared_framework(project: SolutionProject) -> Optional[Dict[str, Any]]:
     """The k9-aif requirement the solution declares: {op, version, file, line, text}, or None."""
-    for name in ("requirements.txt", "requirements.in", "pyproject.toml", "setup.cfg"):
-        for p in sorted(project.find_files(name), key=lambda p: len(p.parts)):
-            for i, line in enumerate(p.read_text(errors="replace").splitlines(), 1):
-                m = _SPEC_RE.search(line)
-                if m and not line.lstrip().startswith("#"):
-                    return {"op": m.group(2) or "", "version": m.group(3) or "", "file": project.rel(p),
-                            "line": i, "text": line.strip()}
+    for p in _dependency_files(project):
+        try:
+            lines = p.read_text(errors="replace").splitlines()
+        except OSError:
+            continue
+        for i, line in enumerate(lines, 1):
+            m = _SPEC_RE.search(line)
+            if m and not line.lstrip().startswith("#"):
+                rel = os.path.relpath(p, project.root)
+                text = "k9-aif" + (m.group(1) or "") + (m.group(2) or "") + (m.group(3) or "")
+                return {"op": m.group(2) or "", "version": m.group(3) or "", "file": rel, "line": i, "text": text}
     return None
 
 
