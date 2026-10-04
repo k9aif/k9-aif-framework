@@ -346,7 +346,14 @@ def declared_framework(project: SolutionProject) -> Optional[Dict[str, Any]]:
             lines = p.read_text(errors="replace").splitlines()
         except OSError:
             continue
+        if p.name == "pyproject.toml" and any(re.match(r'\s*name\s*=\s*["\']k9[-_]aif["\']', l) for l in lines):
+            # the solution lives inside the framework's own repository (its examples): it runs that framework
+            ver = next((m.group(1) for l in lines for m in [re.match(r'\s*version\s*=\s*["\']([^"\']+)', l)] if m), "")
+            return {"op": "bundled", "version": ver, "file": os.path.relpath(p, project.root), "line": 1,
+                    "text": f"bundled with k9-aif {ver}".strip()}
         for i, line in enumerate(lines, 1):
+            if re.match(r'\s*name\s*=', line):
+                continue
             m = _SPEC_RE.search(line)
             if m and not line.lstrip().startswith("#"):
                 rel = os.path.relpath(p, project.root)
@@ -362,6 +369,8 @@ def framework_status(project: SolutionProject, latest: str) -> Dict[str, Any]:
                            "file": d["file"] if d else None, "line": d["line"] if d else None}
     if not d:
         out["status"] = "undeclared"
+    elif d["op"] == "bundled":
+        out["status"] = "bundled"
     elif not d["version"]:
         out["status"] = "unpinned"
     elif latest and latest != "unknown" and older(d["version"], latest):

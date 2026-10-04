@@ -402,5 +402,6 @@ class LegacyAgentHooksRule(BaseInspectionRule):
             src = ast.get_source_segment(c.module.source, c.methods["execute"]) or ""
             if not any(h in src for h in ("enforce_governance", "apply_pre_governance", "assert_governed")):
                 out.append(self.at(c.module, c.methods["execute"],
-                                   f"{c.name}.execute() calls no governance hook on k9-aif {spec['op']}{spec['version']}"))
+                                   f"{c.name}.execute() calls no governance hook on k9-aif "
+                                   + (f"{spec['version']} (bundled)" if spec['op'] == 'bundled' else f"{spec['op']}{spec['version']}")))
         return out

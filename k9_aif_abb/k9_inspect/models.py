@@ -140,7 +140,7 @@ class InspectionReport:
         return "\n".join(lines) + "\n"
 
 
-_STATUS_TEXT = {"current": "up to date", "outdated": "OUTDATED — update to the latest",
+_STATUS_TEXT = {"bundled": "ships with the framework", "current": "up to date", "outdated": "OUTDATED — update to the latest",
                 "floor-behind": "minimum is behind the latest — raise it", "unpinned": "no version given",
                 "undeclared": "no k9-aif dependency declared"}
 
