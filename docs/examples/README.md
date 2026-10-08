@@ -15,19 +15,24 @@ The examples illustrate:
 
 ## Available Examples
 
-### K9Chat
-A lightweight chat example demonstrating:
-
-- squad-driven execution
-- model abstraction
-- browser and CLI interaction
-- runtime metadata display
+### K9X Enterprise Insurance Operations Center (EOC)
+The canonical example: three processes (app, Kafka router, orchestrator), per-domain
+orchestrators, squads of validation-loop agents, HIL escalation and a custom model router.
 
 ### ACME Support Center
 A support-oriented example showing how K9-AIF can be used to structure customer-facing service workflows and agent collaboration patterns.
 
 ### ACME Health Insurance Claims
 A domain-oriented example demonstrating how K9-AIF can support claims-related workflows, structured processing, and extensible enterprise AI solution patterns.
+
+### More examples in the repository
+`weather_assist` (a CrewAI crew governed through the CrewAI adapter), `weatherAssistLang`
+(LangGraph), `rfp_analyzer`, `zero_trust_execution_demo`, `k9routing` and `prompt_evaluation`,
+all under [`examples/`](https://github.com/k9aif/k9-aif-framework/tree/main/examples).
+
+### K9Chat
+A chat application on `BaseAgent` and `llm_invoke`; it lives in its own repository,
+[k9aif/examples](https://github.com/k9aif/examples).
 
 ---
 
