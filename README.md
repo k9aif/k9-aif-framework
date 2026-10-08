@@ -34,31 +34,33 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 - [A Simple Way to Think About It](#a-simple-way-to-think-about-it)
 - [Understanding K9-AIF](#understanding-k9-aif)
-- [Core Architectural Concepts](#core-architectural-concepts)
-  - [Architecture Building Blocks (ABB)](#architecture-building-blocks-abb)
-  - [Solution Building Blocks (SBB)](#solution-building-blocks-sbb)
-  - [Architectural Layers](#architectural-layers)
-  - [Agent Squads](#agent-squads)
-  - [Zero Trust Execution Layer](#zero-trust-execution-layer)
-  - [Human-in-the-Loop (HIL)](#human-in-the-loop-hil)
+- [Architecture Building Blocks (ABB)](#architecture-building-blocks-abb)
+- [Solution Building Blocks (SBB)](#solution-building-blocks-sbb)
+- [Architectural Layers](#architectural-layers)
+- [Agent Squads](#agent-squads)
+- [Governance by Construction](#governance-by-construction)
+- [Zero Trust Execution Layer](#zero-trust-execution-layer)
+- [Human-in-the-Loop (HIL)](#human-in-the-loop-hil)
 - [Prototype Implementations](#prototype-implementations)
   - [Built on K9-AIF: Defense Acquisition System (DAS)](#built-on-k9-aif-defense-acquisition-system-das)
 - [Design Goals](#design-goals)
 - [Architectural Patterns](#architectural-patterns)
 - [Intelligent Model Routing](#intelligent-model-routing)
 - [Multi-Provider LLM Support](#multi-provider-llm-support)
-- [Using Claude Code with K9-AIF](#using-claude-code-with-k9-aif)
-- [Scaffold Generation](#scaffold-generation)
+- [Example Use Cases](#example-use-cases)
+- [K9X Studio — Visual Builder](#k9x-studio--visual-builder)
+- [K9X Ecosystem](#k9x-ecosystem)
 - [K9-AIF Developer Journey](#k9-aif-developer-journey)
 - [Framework Implementation](#framework-implementation)
 - [Developer Guide](#developer-guide)
-- [Quick Start](#quick-start-linux--ubuntu)
+- [Using Claude Code with K9-AIF](#using-claude-code-with-k9-aif)
+- [Quick Start (Linux / Ubuntu)](#quick-start-linux--ubuntu)
 - [Project Status](#project-status)
 - [License](#license)
 - [Contributions](#contributions)
 - [Architectural Foundations](#architectural-foundations)
-- [Architecture Notes &amp; Blog](#architecture-notes--blog)
-- [Author&#39;s Recommendation](#authors-recommendation)
+- [Architecture Notes & Blog](#architecture-notes--blog)
+- [Author's Recommendation](#authors-recommendation)
 - [Author](#author)
 
 ---
@@ -142,7 +144,7 @@ inference, and persistence.
    and context-aware reasoning.
 5. **Data Layer** Provides persistence, object storage, and messaging infrastructure
    used by the framework.
-6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to enforce policy, auditability, monitoring, and operational control. This includes the **Zero Trust Execution Layer**, which verifies, risk-evaluates, and enforces policy on all actions before execution across routers, orchestrators, agents, and integrations.
+6. **Cross-Cutting Concerns** Security, governance, and observability apply across all layers to enforce policy, auditability, monitoring, and operational control. Every agent call is governed by construction (k9x_Shield checks around `execute()`/`execute_stream()`, and around any `llm_invoke()` call made outside an agent). The opt-in **Zero Trust Execution Layer** (`enable_zero_trust`) adds identity, authorization and risk evaluation at the Router and Orchestrator.
 
 ---
 
@@ -190,17 +192,33 @@ Core squad framework components include:
 
 ---
 
+## Governance by Construction
+
+Since 1.15, governance is a property of the runtime, not something each agent must remember to call:
+
+- `BaseAgent` wraps every subclass's `execute()` and `execute_stream()` when the class is defined, so
+  every call is checked on the way in and on the way out. Overriding `execute()` does not bypass it.
+- One setting governs every agent of an application: `security.shield.enabled: true` (with ingress and
+  egress check lists) in the solution's `config.yaml` gives each agent `ShieldGovernance`.
+- `llm_invoke()`, the single model-call path, runs the same checks itself for any call made outside an
+  agent (orchestrator, service or script code), so every model call is checked exactly once.
+- In production (`K9_ENV` unset or `production`), an agent or model call with no governance configured
+  raises `PermissionError` before anything runs.
+- `k9aif inspect <folder>` checks statically that a solution is wired this way.
+
+---
+
 ## Zero Trust Execution Layer
 
 Once you understand the execution hierarchy (Router → Orchestrator → Squads → Agents), Zero Trust is the cross-cutting layer that governs every step of it.
 
-Traditional Zero Trust focuses on access — who can reach a system.K9-AIF applies Zero Trust to **execution** — every action is verified before it runs.
+Traditional Zero Trust focuses on access — who can reach a system. K9-AIF applies Zero Trust to **execution** — every action is verified before it runs.
 
 - Every action is verified before execution
 - Contextual risk is evaluated (identity, data sensitivity, destination)
 - Policies are enforced at runtime (allow, conditional, deny)
 
-This is not a checkpoint at the edge — it is enforced at every layer:
+Zero Trust is opt-in (`enable_zero_trust`). When enabled, it is enforced at two layers:
 
 - **Router** — pre-routing enforcement
 - **Orchestrator** — pre-execution enforcement before the Squad runs
@@ -294,7 +312,12 @@ Tips from building it:
   → [examples/acme_health_insurance](https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance)
 - **K9Chat** — Reference chat application demonstrating `BaseAgent`, `llm_invoke`, multi-provider model routing, governance, and retrieval grounding. A single-agent app, not a multi-agent Squad/Orchestrator example — see the EOC example above for that.
   → [github.com/k9aif/examples](https://github.com/k9aif/examples) (moved out of this repo 2026-09-21)
-- **WeatherAssist Decision Support System**
+- **WeatherAssist Decision Support System** — a CrewAI crew wrapped by K9-AIF governance through the CrewAI adapter.
+  → [examples/weather_assist](https://github.com/k9aif/k9-aif-framework/tree/main/examples/weather_assist)
+- **ACME Support Center** — the bundled Quick Start demo: a support squad of triage, knowledge, resolution and quality agents.
+  → [examples/acme_support_center](https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center)
+- **Zero Trust Execution Demo** — signed identity at the Router edge, with API-key and Keycloak (OIDC) authentication.
+  → [examples/zero_trust_execution_demo](https://github.com/k9aif/k9-aif-framework/tree/main/examples/zero_trust_execution_demo)
 - **Defense Acquisition System (DAS)** — multi-stage JCIDS, acquisition and systems-engineering pipeline aligned with DoDAF 2.0, built entirely on K9-AIF. See [Built on K9-AIF: Defense Acquisition System (DAS)](#built-on-k9-aif-defense-acquisition-system-das) above.
 
 ---
@@ -312,7 +335,7 @@ Key architectural goals include:
 - Clear orchestration boundaries between agents, tools, squads, and services
 - Scalable integration with enterprise systems and external platforms
 - Architecture-driven routing of inference requests across multiple models and providers
-- Runtime execution control using a Zero Trust model, ensuring that all agentic actions are verified, risk-evaluated, and policy-enforced before execution
+- Governance by construction: every agent call passes the configured k9x_Shield checks, and production refuses ungoverned agents; an opt-in Zero Trust layer adds identity and risk evaluation at the Router and Orchestrator
 
 The framework bridges traditional **enterprise architecture principles**
 with emerging **agentic AI system design**.
@@ -398,7 +421,8 @@ K9-AIF uses a **Provider Adapter** pattern to support multiple LLM backends with
 | -------------------------------- | ------------------------ | --------------------- |
 | Ollama (local)                 | `ollama`               | —                  |
 | OpenAI                         | `openai`               | `OPENAI_API_KEY`    |
-| Anthropic Claude               | `claude`               | `ANTHROPIC_API_KEY` |
+| Azure OpenAI                   | `azure-openai`         | per config          |
+| IBM watsonx.ai                 | `watsonx`              | per config          |
 | Grok / xAI                     | `openai-compatible`    | `GROK_API_KEY`      |
 | Any OpenAI-compatible endpoint | `openai-compatible`    | your choice         |
 
@@ -449,19 +473,19 @@ Extend `BaseProviderAdapter`, implement two methods, register once:
 from k9_aif_abb.k9_core.inference.base_provider_adapter import BaseProviderAdapter
 from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegistry
 
-class WatsonxProviderAdapter(BaseProviderAdapter):
+class BedrockProviderAdapter(BaseProviderAdapter):
 
     @property
     def provider_name(self) -> str:
-        return "watsonx"
+        return "bedrock"
 
     def create_llm(self, model_name, factory_cfg, extra_kwargs):
-        return WatsonxLLM(api_key=..., model=model_name, **extra_kwargs)
+        return BedrockLLM(model=model_name, **extra_kwargs)   # your BaseLLM implementation
 
-ProviderAdapterRegistry.register("watsonx", WatsonxProviderAdapter)
+ProviderAdapterRegistry.register("bedrock", BedrockProviderAdapter)
 ```
 
-Then set `backend: watsonx` in `config.yaml`. Nothing else changes.
+Then set `backend: bedrock` in `config.yaml`. Nothing else changes.
 
 API keys are always resolved from environment variables (`api_key_env: MY_KEY`) — never stored in config files.
 
@@ -500,7 +524,7 @@ This is where every K9-AIF application starts: design your architecture visually
 
 ![K9X Ecosystem — Component Overview](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/k9x_ecosystem.png)
 
-**K9X Studio** generates the framework-compliant scaffold and hands it to the SBB Architect / PM, who builds on **K9-AIF** and publishes the finished SBB to **K9X Enterprise Continuum** for SBB → ABB promotion. At runtime, K9-AIF publishes human-review tasks over Kafka to **K9X HIL**. Continuum's artifact governance is separate from the framework's runtime execution governance (Zero Trust, `enforce_governance()`).
+**K9X Studio** generates the framework-compliant scaffold and hands it to the SBB Architect / PM, who builds on **K9-AIF** and publishes the finished SBB to **K9X Enterprise Continuum** for SBB → ABB promotion. At runtime, K9-AIF publishes human-review tasks over Kafka to **K9X HIL**. Continuum's artifact governance is separate from the framework's runtime execution governance (k9x_Shield governance on every agent by construction, and the opt-in Zero Trust layer).
 
 Products built on top of K9-AIF, beyond the framework itself:
 
@@ -554,7 +578,7 @@ A comprehensive developer guide for contributors and solution developers buildin
 | Markdown | [docs/developers/Developer-guide.md](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.md)   |
 | PDF      | [docs/developers/Developer-guide.pdf](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.pdf) |
 
-The guide covers all 21 chapters — from core architecture and ABB/SBB development model through agent, orchestrator, and router development; the Validation Loop and Critic-Actor iterative reasoning patterns; model routing, governance, testing standards, and developer workflow. It includes accurate class signatures, config examples, and code drawn directly from the `k9_aif_abb` source.
+The guide covers all 31 chapters — from core architecture and ABB/SBB development model through agent, orchestrator, and router development; the Validation Loop and Critic-Actor iterative reasoning patterns; model routing, governance, testing standards, and developer workflow. It includes accurate class signatures, config examples, and code drawn directly from the `k9_aif_abb` source.
 
 ---
 
@@ -568,7 +592,7 @@ K9-AIF is designed to work with **Claude Code** — Anthropic's AI coding assist
 | File                                                                        | How it helps Claude Code                                                                                                                                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`CLAUDE.md`](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md)                                                    | Loaded automatically on repo open. Gives Claude Code the full framework picture — execution hierarchy, ABB/SBB contracts, inference pipeline, governance rules, config structure, and infrastructure endpoints — so it never has to re-derive them by reading source files                                                  |
-| [`SKILLS.md`](https://github.com/k9aif/k9-aif-framework/blob/main/SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full`llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `OllamaLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
+| [`SKILLS.md`](https://github.com/k9aif/k9-aif-framework/blob/main/SKILLS.md)                                                    | Tells Claude Code exactly how to build things: the precise pattern for adding an agent, the full`llm_invoke` → `ModelRouterFactory` → `K9ModelRouter` → `LLMFactory` → `ProviderAdapterRegistry` → provider `BaseLLM` chain, how to wire squads, enforce governance, and write tests — so generated code follows framework conventions correctly every time |
 | [`AGENTS.md`](https://github.com/k9aif/k9-aif-framework/blob/main/examples/K9X_Enterprise_Insurance_OperationsCenter/AGENTS.md) | When extending the EOC, Claude Code knows every agent's model assignment, squad membership, governance coverage, and event contract without reading 8 YAML files — enabling accurate, consistent additions to the existing pipeline                                                                                          |
 
 ### Generating a new example with Claude Code
@@ -590,7 +614,7 @@ Then implement the new example following the same structure and conventions. Rul
 - Every agent must extend BaseAgent and implement execute()
 - Every squad must be defined in a squad YAML with a flow
 - The router must route by event_type
-- Governance must be explicit — do not use NoopGovernance in production code
+- Enable security.shield (with ingress and egress check lists) in the app's config.yaml — every agent is governed by construction, and production refuses ungoverned agents
 - Folder structure, naming, and config patterns must match the reference example
 ```
 
@@ -600,7 +624,7 @@ The combination of `CLAUDE.md`, `SKILLS.md`, and the reference example gives Cla
 
 ### Automated hooks (`.claude/settings.json`)
 
-The repository also ships `.claude/settings.json`, which wires five `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, and `__init__.py` docstring check (see [Hooks](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md#hooks) in `CLAUDE.md`) — that run automatically whenever Claude Code writes or edits a file.
+The repository also ships `.claude/settings.json`, which wires seven `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, `__init__.py` docstring check, single-model-path (`llm_invoke`) check, and README link check (see the Hooks section of [`CLAUDE.md`](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md)) — that run automatically whenever Claude Code writes or edits a file.
 
 **Each hook command uses an absolute path** (e.g. `/Users/<you>/k9-aif-framework/.claude/hooks/check-python.sh`). After cloning, edit `.claude/settings.json` and replace the path prefix with the absolute path of your own clone, or the hooks will fail with "command not found".
 
@@ -608,7 +632,14 @@ The repository also ships `.claude/settings.json`, which wires five `PostToolUse
 
 ## Quick Start (Linux / Ubuntu)
 
-Clone the framework and create a Python virtual environment:
+To use the framework in your own project, install it from PyPI:
+
+```bash
+pip install k9-aif                      # core
+pip install "k9-aif[kafka,postgres]"    # with extras; "k9-aif[all]" for everything
+```
+
+To run the bundled demos, clone the framework and create a Python virtual environment:
 
 ```bash
 git clone https://github.com/k9aif/k9-aif-framework.git
@@ -624,8 +655,7 @@ python -m pip install -r requirements.txt
 
 ```
 
-once this is done: you can directly test out the demos:
-from the k9-aif-framework folder, run the commands:
+Then run the bundled demo from the k9-aif-framework folder:
 
 ```bash
 ./run_acme_support_center.sh
@@ -634,10 +664,11 @@ from the k9-aif-framework folder, run the commands:
 
 (k9chat moved to its own repo, [k9-aif-examples](https://github.com/k9aif/examples) — clone it as a sibling directory and see its `k9chat/README.md` for setup and run instructions.)
 
-test programs from the tests folder can be run like below:
+Run the framework tests with pytest:
 
 ```bash
-python -m k9_aif_abb.tests.<test program name>
+pytest k9_aif_abb/tests/ -v                          # all
+pytest k9_aif_abb/tests/test_framework.py -v         # one file
 
 ```
 
@@ -722,10 +753,10 @@ Claude Code understands:
 - ABB contracts and how to extend them correctly
 - Squad YAML format, agent registration, flow structure
 - Kafka ownership (Router publishes, Orchestrator consumes)
-- Governance enforcement patterns
+- Governance by construction (`security.shield` in config)
 - The full inference pipeline through `llm_invoke`
 
-A dedicated architectural conformance inspector for validating any K9-AIF solution (`k9x_inspector`) is in active development in [k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem) — an earlier, naive per-file version of this check shipped inside the framework itself but produced false positives on legitimate code (it didn't resolve inheritance chains) and has been removed.
+To check a solution, run `k9aif inspect <folder>`: the framework's `k9_inspect` checks it statically against 28 conformance rules (ABB contracts, three-layer decoupling, `llm_invoke`, Kafka ownership, governance by construction, secrets, private IPs, squad/agent YAML). Add `--fail-on violation` in CI to fail the build on a violation; [K9X Inspector](https://github.com/k9aif/k9x-inspector) runs the same rules on every push.
 
 ---
 
