@@ -1,3 +1,3 @@
 # k9_persistence
 
-This folder is part of the K9-AIF stubbed framework.
+SQLite persistence backend (`sqlite_persistence.py`), selected through `PersistenceFactory`.

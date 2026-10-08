@@ -1,3 +1,3 @@
 # supporting
 
-This folder is part of the K9-AIF stubbed framework.
+`LoggingAgent` and `ProcessorAgent`, used by the default flows in `config/flows.yaml`.

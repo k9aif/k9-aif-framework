@@ -30,21 +30,22 @@ The **K9 Inference Layer** solves this by introducing a modular architecture for
 
 The inference layer consists of several architectural components:
 
-``` bash
-
+```text
 k9_inference
 ├── models
 │   ├── inference_request.py
 │   ├── inference_response.py
 │   └── route_decision.py
-│
 ├── routers
 │   ├── base_model_router.py
+│   ├── default_model_router.py
 │   └── k9_model_router.py
-│
 ├── catalog
 │   └── model_catalog.py
-
+├── learning
+│   ├── prompt_embedder.py
+│   └── quality_predictor.py
+└── schemas
 ```
 
 These components provide a modular system for defining inference requests, selecting models, and executing model interactions.
@@ -122,17 +123,13 @@ Prompt vectors come from `learning.embedder`:
 
 Only evidence from the same task type counts, and only prompts at least `min_similarity` (0.15) alike.
 
-## Architecture Diagram
-
 ---
 
 ## Architecture Diagram
 
 <p align="center">
-  <img src="k9_model_routing_architecture.png" width="550"/>
+  <img src="../../docs/diagrams/k9_model_routing_architecture.png" width="550"/>
 </p>
-
-```
 
 
 

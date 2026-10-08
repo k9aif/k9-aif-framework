@@ -1,20 +1,11 @@
-**K9-AIF Squad Module**
+# k9_squad
 
-This module defines the Squad abstraction used in K9-AIF.
+A Squad is a team of agents that runs a capability as an ordered flow inside an orchestration.
 
-A Squad represents a coordinated team of agents working together
-to perform a capability within a larger orchestration flow.
-
-**Key components:**
-
-BaseSquad
-Defines the squad execution unit.
-
-SquadContext
-Shared state used by agents during squad execution.
-
-SquadLoader
-Loads squad definitions from configuration.
-
-SquadMonitor
-Provides observability into squad execution.
+- `BaseSquad`: the squad execution unit; runs its agents in the `flow` order from squad YAML,
+  each agent enriching the shared context.
+- `SquadContext`: shared state during squad execution.
+- `SquadLoader`: builds squads from YAML (`load_one(path, squad_id)`), resolving agents by name
+  from an `AgentRegistry`.
+- `DefaultSquadMonitor`: observability for squad execution.
+- `IntentSquad`: the out-of-the-box intent-classification squad used by `IntentOrchestrator`.

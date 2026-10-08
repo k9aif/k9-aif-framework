@@ -1,3 +1,5 @@
 # k9_monitoring
 
-This folder is part of the K9-AIF stubbed framework.
+Monitor implementations: console, Prometheus, OpenTelemetry and CloudWatch
+(`*_monitor.py`), selected through `MonitorFactory`; `monitor_server.py` and a Grafana dashboard
+(`grafana_dashboard.json`).

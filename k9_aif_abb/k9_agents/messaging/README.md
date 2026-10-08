@@ -1,4 +1,5 @@
+# messaging
 
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
-# Copyright (c) 2025 Ravi Natarajan. All rights reserved.
-This folder is part of the K9-AIF stubbed framework.
+Messaging agents: `MessageAgent`, the `QueueMessageAgent` and `TopicMessageAgent` bases, and
+`KafkaAgent` (topic) and `SQSAgent` (queue). Kafka publishing in an application belongs to the
+Router and Orchestrator, never to domain agents (see `CLAUDE.md`, Kafka ownership).

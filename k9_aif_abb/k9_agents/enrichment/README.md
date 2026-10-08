@@ -1,3 +1,3 @@
 # enrichment
 
-This folder is part of the K9-AIF stubbed framework.
+`enrichment_agent.py`: payload enrichment agent.
