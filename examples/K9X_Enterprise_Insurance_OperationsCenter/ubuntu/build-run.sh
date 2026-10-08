@@ -48,6 +48,27 @@ POD_NAME="k9-eoc-pod"
 
 cmd="${1:-help}"
 
+# Render eoc-pod.yaml into a throwaway copy (never edit the tracked file): <RHEL_HOST_IP> is this host's
+# IP (PODMAN_HOST_IP overrides); <OLLAMA_BASE_URL> comes from .env (OLLAMA_BASE_URL, or OLLAMA_HOST) as
+# written, and only when it is unset or points at localhost/127.0.0.1 -- which inside a container is the
+# container itself -- falls back to this host's IP.
+render_pod() {
+  PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
+  envval() { { grep -E "^$1=" "$EOC_DIR/.env" 2>/dev/null || true; } | tail -1 | cut -d= -f2- | sed -e 's/^["'"'"']//' -e 's/["'"'"']$//'; }
+  local cfg="${OLLAMA_BASE_URL:-$(envval OLLAMA_BASE_URL)}"
+  cfg="${cfg:-$(envval OLLAMA_HOST)}"
+  case "$cfg" in
+    ""|*localhost*|*127.0.0.1*)
+      OLLAMA_URL="http://${PODMAN_HOST_IP}:11434"
+      OLLAMA_SRC="this host's IP: .env OLLAMA_BASE_URL is ${cfg:-unset}, not reachable from a container" ;;
+    *) OLLAMA_URL="$cfg"; OLLAMA_SRC=".env" ;;
+  esac
+  RENDERED_YAML="$(mktemp /tmp/eoc-pod.XXXXXX.yaml)"
+  trap 'rm -f "$RENDERED_YAML"' EXIT
+  sed -e "s/<RHEL_HOST_IP>/${PODMAN_HOST_IP}/g" -e "s|<OLLAMA_BASE_URL>|${OLLAMA_URL}|g" \
+    "$SCRIPT_DIR/eoc-pod.yaml" > "$RENDERED_YAML"
+}
+
 case "$cmd" in
 
   build)
@@ -92,11 +113,9 @@ case "$cmd" in
     # on the tracked file is an uncommitted local edit that a fresh clone/
     # pull/reset can silently wipe out (this bit DAS's das-pod.yaml
     # repeatedly). PODMAN_HOST_IP env var overrides auto-detection.
-    PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
-    RENDERED_YAML="$(mktemp /tmp/eoc-pod.XXXXXX.yaml)"
-    trap 'rm -f "$RENDERED_YAML"' EXIT
-    sed "s/<RHEL_HOST_IP>/${PODMAN_HOST_IP}/g" "$SCRIPT_DIR/eoc-pod.yaml" > "$RENDERED_YAML"
+    render_pod
     echo "Deploying pod: $POD_NAME (3 containers, host IP ${PODMAN_HOST_IP}) ..."
+    echo "Ollama: ${OLLAMA_URL} (from ${OLLAMA_SRC})"
     sudo podman play kube "$RENDERED_YAML" --replace
     echo ""
     echo "Pod running. Containers:"
@@ -115,10 +134,7 @@ case "$cmd" in
 
   down)
     echo "Stopping pod: $POD_NAME ..."
-    PODMAN_HOST_IP="${PODMAN_HOST_IP:-$(hostname -I | awk '{print $1}')}"
-    RENDERED_YAML="$(mktemp /tmp/eoc-pod.XXXXXX.yaml)"
-    trap 'rm -f "$RENDERED_YAML"' EXIT
-    sed "s/<RHEL_HOST_IP>/${PODMAN_HOST_IP}/g" "$SCRIPT_DIR/eoc-pod.yaml" > "$RENDERED_YAML"
+    render_pod
     sudo podman play kube "$RENDERED_YAML" --down || true
     echo "Pod stopped."
     ;;

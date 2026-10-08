@@ -6,7 +6,7 @@
 # └── eoc_orchestrator EOCOrchestrator — consumes domain topics, runs squads
 #
 # External services (on the RHEL host — see hostAliases below):
-#   Ollama    → rhel-host:11434
+#   Ollama    → OLLAMA_BASE_URL from .env (this host's IP only if unset or localhost)
 #   Kafka     → rhel-host:9092
 #   PostgreSQL → rhel-host:5432
 #   Neo4j     → rhel-host:7687
@@ -95,8 +95,8 @@ spec:
       value: "1"
     - name: K9_KAFKA_BROKERS
       value: "rhel-host:9092"
-    - name: K9_INFERENCE_BASE_URL
-      value: "http://rhel-host:11434"
+    - name: OLLAMA_BASE_URL
+      value: "<OLLAMA_BASE_URL>"
     - name: K9_PG_HOST
       value: "rhel-host"
     - name: K9_PG_PORT
@@ -189,8 +189,8 @@ spec:
     env:
     - name: K9_KAFKA_BROKERS
       value: "rhel-host:9092"
-    - name: K9_INFERENCE_BASE_URL
-      value: "http://rhel-host:11434"
+    - name: OLLAMA_BASE_URL
+      value: "<OLLAMA_BASE_URL>"
     - name: K9_PG_HOST
       value: "rhel-host"
     - name: K9_PG_PORT
