@@ -119,7 +119,7 @@ Each squad composes multiple agents into a governed execution flow.
 
 The EOC demonstrates multiple specialized agent types.
 
-| **gent**         | **Purpose**              |
+| **Agent**        | **Purpose**              |
 | ---------------------- | ------------------------------ |
 | ClaimsTriageAgent      | initial claim analysis         |
 | AdjudicationAgent      | adjudication reasoning         |
@@ -140,14 +140,15 @@ Every agent declares a `task_type`.
 
 The `EOCModelRouter` resolves the correct model dynamically based on routing policy.
 
-Example routing logic:
+Routing policy (`router/eoc_model_router.py`): the task type selects a model alias, and
+`config/config.yaml` maps each alias to a model.
 
-| **Condition**       | **Model**   |
-| ------------------------- | ----------------- |
-| compliance / PII          | granite3-guardian |
-| lightweight realtime task | llama3.2:1b       |
-| reasoning / adjudication  | granite3-dense:2b |
-| fallback                  | llama3.2:1b       |
+| **Task type**                       | **Alias (model)**                    | **Fallback** |
+| ----------------------------------- | ------------------------------------ | ------------ |
+| PII detection / policy              | guardian (`granite4.1-guardian:8b`)  | none         |
+| adjudication, fraud, audit report   | reasoning (`qwen3.8:27b`)            | general      |
+| extraction / OCR                    | extraction (`qwen3.8:27b`)           | general      |
+| customer intent / chat, summaries   | general (`qwen3.8:27b`)              | reasoning    |
 
 The model router makes:
 
@@ -194,7 +195,9 @@ Policies include:
 * model routing constraints
 * runtime obligations
 
-All governance is declarative.
+All governance is declarative. Agents also run under governance by construction (k9-aif 1.15):
+`security.shield` in `config/config.yaml` (`enabled: true`) gives every agent `ShieldGovernance`,
+and `governance.yaml` holds the thresholds and escalation policy.
 
 ---
 
@@ -232,6 +235,8 @@ It is a reference implementation showing how:
 * auditability
 * graph synchronization
 
+can operate together inside a single architecture-first AI system.
+
 ---
 
 # **K9-AIF**
@@ -249,12 +254,19 @@ Core concepts include:
 * event-oriented execution
 * enterprise observability
 
-can operate together inside a single architecture-first AI system.
-
 The goal is to demonstrate what a production-oriented governed K9-AIF application actually looks like.
 
 ---
 
-License
+## Run
 
-See repository root license information.
+Copy `env-example` to `.env` (`OLLAMA_BASE_URL`, `KAFKA_BROKER`, `POSTGRES_HOST`, ...), then start the
+three processes: `./start_eoc_router.sh`, `./start_eoc_orchestrator.sh`, `./start_eoc_app.sh`.
+Orchestrators register agents by name (`AgentLoader.register_into`). Container deployment:
+[docs/deployment/README.md](docs/deployment/README.md).
+
+---
+
+## License
+
+Apache-2.0 (see the repository root `LICENSE`).

@@ -33,45 +33,27 @@ k9-aif-framework/
   examples/
     K9X_Enterprise_Insurance_OperationsCenter/   ← this example
   requirements.txt
-  Containerfile        ← build from repo root
+  Dockerfile           ← built by run_eoc_pod.sh from the repo root
 ```
 
 ---
 
-## Step 2 — Configure `config.yaml`
+## Step 2 — Configure the environment (`.env`)
 
-All endpoint configuration lives in one place:
+`config/config.yaml` reads every host and secret from environment variables
+(`${OLLAMA_BASE_URL:-http://localhost:11434}`, `${POSTGRES_HOST:-localhost}`, `${KAFKA_BROKER:-localhost:9092}`,
+`${NEO4J_URI:-bolt://localhost:7687}`, ...). Do not edit hosts or passwords into `config.yaml`.
 
-```
-examples/K9X_Enterprise_Insurance_OperationsCenter/config/config.yaml
-```
-
-Edit this file to match your environment before building. Key sections:
-
-```yaml
-inference:
-  llm_factory:
-    base_url: "http://<your-ollama-host>:11434"
-
-postgres:
-  host: "<your-postgres-host>"
-  port: 5432
-  user: "postgres"
-  password: "yourpassword"
-  database: "eoc"
-  schema: "eoc"
-
-messaging:
-  broker_url: <your-kafka-host>:9092
-
-external_services:
-  docling:
-    endpoint: "http://<your-docling-host>:5001/v1/parse"
+```bash
+cd examples/K9X_Enterprise_Insurance_OperationsCenter
+cp env-example .env        # gitignored; never commit it
 ```
 
-Neo4j connection is configured in the same file under the agent config section.
+Set `OLLAMA_BASE_URL`, `POSTGRES_HOST` and `K9_PG_PASSWORD`, `NEO4J_URI`/`NEO4J_USER`/`NEO4J_PASSWORD`,
+`KAFKA_BROKER`, and `REDIS_HOST`/`REDIS_PORT`/`REDIS_PASSWORD` for your environment.
 
-At runtime, `config.yaml` is **volume-mounted** into the containers — so you can update it and restart without rebuilding the image (see Step 6).
+At runtime, `config.yaml` is **volume-mounted** into the containers — so you can update it and restart
+without rebuilding the image (see Step 6).
 
 ---
 
@@ -99,14 +81,9 @@ All deployment scripts are in this folder. Edit these values before running:
 **`run_eoc_pod.sh`**
 
 ```bash
-HOST_IP="10.0.0.5"             # replace with the IP where the pod is reachable
+HOST_IP=<pod-host-ip>          # required: export it or prefix the command (HOST_IP=... bash run_eoc_pod.sh)
 HOST_PORT=8010                 # host port mapped to container port 8000
 VOLUME_BASE="/home/container_storage/volumes/eoc-dev"  # volume root on host
-```
-
-The script also does:
-```bash
-sudo chown -R ravinata:ravinata ${VOLUME_BASE}   # ← change to your username
 ```
 
 **`update_config_volume_mapped.sh`**
@@ -172,7 +149,7 @@ bash run_eoc_pod.sh          # rebuilds image + recreates pod
 If you changed `config.yaml` only (no code change), use the faster update:
 
 ```bash
-bash docs/deployment/update_config_volume_mapped.sh
+bash examples/K9X_Enterprise_Insurance_OperationsCenter/docs/deployment/update_config_volume_mapped.sh
 sudo podman restart eoc-app-backend eoc-orchestrator eoc-router
 ```
 

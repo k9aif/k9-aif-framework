@@ -16,11 +16,11 @@ The same request, three ways: an agent writes `roles: ["claims_approver"]` into 
 2. **signed mode**: self-declared identity is ignored; the caller is anonymous. Denied.
 3. **signed mode, admitted**: `BaseRouter.admit()` authenticates the agent's API key, strips the claims and stamps an HMAC-signed identity; the orchestrator verifies it. Approved.
 
-See `k9_security/zero_trust/identity.py` and `security.identity.mode` in the framework `config.yaml`.
+See `k9_aif_abb/k9_security/zero_trust/identity.py` and `security.identity.mode` in the framework `config.yaml`.
 
 ### With a real identity provider: Keycloak
 
-`keycloak_demo.py` runs the same flow with real Keycloak users and tokens (`pip install "k9-aif[oidc]"`; Keycloak with a `k9x` realm, client `k9x-cli` and test users). Each request: Keycloak token → `EdgeRouter.admit()` (`OIDCAuthenticator` verifies it) → Zero Trust with a role policy → k9x Shield.
+`keycloak_demo.py` runs the same flow with real Keycloak users and tokens (`pip install "k9-aif[oidc]"`; Keycloak with a `k9x` realm, client `k9x-cli` and test users). Run it with `K9_ENV=development python examples/zero_trust_execution_demo/keycloak_demo.py`. Each request: Keycloak token → `EdgeRouter.admit()` (`EdgeRouter` is the demo's router, defined in `keycloak_demo.py`; `OIDCAuthenticator` verifies the token) → Zero Trust with a role policy → k9x Shield.
 
 ```
 OK       k9x (claims_approver) approves a claim
@@ -54,7 +54,7 @@ This demo introduces a **runtime execution control layer** that evaluates:
 
 ## Architecture Concept
 
-Governance (policies, rules). → Zero Trust Execution Layer → Orchestrator → Agents → Tools / APIs / Models
+Governance (policies, rules) → Zero Trust Execution Layer → Orchestrator → Agents → Tools / APIs / Models
 
 ---
 

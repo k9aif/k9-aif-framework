@@ -28,6 +28,8 @@ cd examples/rfp_analyzer
 python main.py
 ```
 
+Web UI: `bash examples/rfp_analyzer/runit.sh` (runs `app.py`; http://localhost:8087).
+
 ## Config
 
 ```yaml

@@ -4,7 +4,7 @@
 
 The demo illustrates how a **single architecture (ABB layer)** can support multiple **agent behavior strategies implemented as Solution Building Blocks (SBBs)** through configuration.
 
-The goal is to demonstrate that **agentic patterns are not part of the framework architecture itself**, but rather **behavior strategies that agents and squads can adopt depending on the task.
+The goal is to demonstrate that **agentic patterns are not part of the framework architecture itself**, but rather **behavior strategies** that agents and squads can adopt depending on the task.
 
 ---
 
@@ -33,7 +33,7 @@ The agent alternates between reasoning and tool usage until a task is solved.
 
 ---
 
-## CodeAct
+## CodeAct (described for reference; not used by an agent in this demo)
 
 **Code as the action space**
 
@@ -172,6 +172,12 @@ while **Solution Building Blocks (SBB)** define the implementation and behavior.
 
 ## Runtime Logs
 
+Run the demo from the repository root:
+
+```bash
+./run_acme_support_center.sh        # or: python -m examples.acme_support_center.main
+```
+
 K9-AIF uses the framework logging system (ABB logging) to capture runtime activity.
 
 When you run the ACME Support Center example, logs are written to:
@@ -191,7 +197,7 @@ tail -f runtime/logs/acme_support_center.log
 ```text
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.UTILS.BOOTSTRAP | Initializing acme_support_center ...
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.AGENTS.SRC.TRIAGE_AGENT | Initialized TriageAgent | pattern=react | model=general
-2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.AGENTS.SRC.KNOWLEDGE_AGENT | Initialized KnowledgeAgent | pattern=rag | model=general
+2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.AGENTS.SRC.KNOWLEDGE_AGENT | Initialized KnowledgeAgent | pattern=agentic_rag | model=general
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.UTILS.BOOTSTRAP | Bootstrap complete | squads=['support_squad'] | orchestrators=['support_orchestrator']
 2026-04-02 02:52:14 | EXAMPLES.ACME_SUPPORT_CENTER.ORCHESTRATORS.SUPPORT_ORCHESTRATOR | Starting orchestrator runtime: support_orchestrator
 ```

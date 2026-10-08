@@ -1,7 +1,8 @@
 # ACME Health Insurance Demo UI
 
 The ACME demo includes a simple web interface that allows users to interact
-with the multi-agent system built using the K9-AIF (K9 Agentic Integration Framework)
+with the multi-agent system built using the K9-AIF (K9 Agentic Integration Framework).
+It is served by `app_backend.py` at http://localhost:8000.
 
 ## Main Application Interface
 

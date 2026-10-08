@@ -56,16 +56,27 @@ The demo includes:
 
 ## Directory Structure
 
-``` text
-acme-health-insurance/
-├── agents/             # Domain agents for auth, claims, retrieval, monitoring, notifications
-├── config/             # YAML configuration for flows, governance, orchestrators, MCP servers
-├── data/               # Schema, seed files, and health plan knowledge content
-├── orchestrators/      # Workflow orchestrators for claims, plans, providers, and users
-├── tools/              # Knowledge loaders and helper utilities
-├── run_demo.py         # Entry point for running the demo
+```text
+acme_health_insurance/
+├── agents/          # domain agents: auth, claims, retrieval, monitoring, notifications
+├── config/          # config.yaml (with a security.shield profile), flows, governance, orchestrators
+├── data/            # schema, seed files, health plan knowledge content
+├── orchestrators/   # workflow orchestrators for claims, plans, providers and users
+├── ui/              # web pages served by the backend
+├── images/          # UI screenshots
+├── tests/
+├── app_backend.py   # FastAPI backend and entry point
 └── README.md
-
 ```
 
-**Note:** This demo will be updated to use the latest version of the framework incorporating the **Squads** and **K9 Model Router** patterns.
+## Run
+
+From the repository root:
+
+```bash
+python -m examples.acme_health_insurance.app_backend     # http://localhost:8000
+```
+
+Agents run under governance by construction: `config/config.yaml` ships a `security.shield`
+profile. Orchestrators create agents by name from configuration
+(`orchestrators/agent_resolver.py`) instead of importing agent classes.
