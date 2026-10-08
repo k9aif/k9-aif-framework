@@ -48,57 +48,41 @@ configurable AI systems.
 
 ## Package Structure
 
-``` code
-
+```text
 k9_aif_abb/
-│
-├── k9_core
-│   Core framework abstractions and base classes
-│
-├── k9_agents
-│   Implementations of agents for orchestration, messaging,
-│   enrichment, security, storage, and integrations
-│
-├── k9_orchestrators
-│   Orchestrator implementations coordinating multi-agent workflows
-│
-├── k9_factories
-│   Factory classes for dynamically constructing framework components
-│
-├── k9_monitoring
-│   Monitoring infrastructure and observability integrations
-│
-├── k9_persistence
-│   Persistence layer implementations (SQLite, vector DB, etc.)
-│
-├── k9_storage
-│   Storage abstractions for files, databases, and object storage
-│
-├── k9_data
-│   Data adapters and vector database integrations
-│
-├── k9_utils
-│   Utility modules supporting configuration, logging, and helpers
-│
-├── k9_governance
-│   Governance policies and rule enforcement mechanisms
-│
-├── k9_mcp
-│   MCP-based service integration and inference servers
-│
-├── config
-│   Configuration files defining flows, governance policies,
-│   orchestrators, and tools
-│
-└── policies
-Governance policy definitions
+├── k9_core            ABB contracts: BaseAgent, BaseOrchestrator, BaseRouter, governance,
+│                      inference, sessions, streaming, HIL signal
+├── k9_agents          OOB agents: loop agents (validation, planning, critic-actor), intent,
+│                      router, messaging, enrichment, security, supporting; AgentLoader, registry
+├── k9_squad           SquadLoader, BaseSquad, IntentSquad
+├── k9_orchestrators   OOB orchestrators (intent, governance, diagnostic, live agent),
+│                      orchestrator loader and registry
+├── k9_adapters        CrewAI, LangGraph and Claude Agent SDK adapters
+├── k9_inference       K9 Model Router, model catalog, learned routing
+├── k9_factories       factories: LLM, model router, storage, cache, sessions, monitors,
+│                      authenticators, MCP connections, and more
+├── k9_security        k9x_Shield vulnerability checks (ShieldGovernance), Zero Trust,
+│                      identity, tool-result guard, security capability catalog
+├── k9_governance      Guardian, chained and profanity governance
+├── k9_inspect         static conformance inspection (28 rules; `k9aif inspect <folder>`)
+├── k9_mcp             MCP client connectors and server ABBs
+├── k9_data            vector DB adapters, embedding, retrieval
+├── k9_storage         file, database and object storage; RoutingStateStore
+├── k9_persistence     SQLite persistence
+├── k9_sessions        session stores: in-memory, SQLite, Redis
+├── k9_cache           cache adapters
+├── k9_streams         in-memory and Kafka streams
+├── k9_monitoring      console, Prometheus, OpenTelemetry, CloudWatch monitors; Grafana dashboard
+├── k9_utils           llm_invoke (the single model-call path), config, logging helpers
+├── config             framework default configuration (flows, governance, orchestrators, tools)
+├── policies           governance policy definitions
+├── db                 database schema
+├── webui              minimal web UI
+├── cli.py             the `k9aif` command
+└── tests              framework test suite (pytest)
 ```
 
 ---
-
-## Architectural Principles
-
-The K9-AIF framework is built around several architectural principles:
 
 ## Architectural Principles
 
@@ -116,9 +100,12 @@ The K9-AIF framework is built around the following architectural principles:
    AI systems are constructed by composing specialized agents coordinated by orchestrators,
    allowing modular and scalable agent workflows.
 
-4. **Governed AI Systems**  
-   Governance policies can be applied across agent workflows to support compliance,
-   safety, and responsible AI behavior.
+4. **Governance by Construction**  
+   Every `BaseAgent` subclass's `execute()` and `execute_stream()` are wrapped with governance
+   when the class is defined, and `llm_invoke()` checks any model call made outside an agent.
+   Setting `security.shield.enabled: true` (with check lists) in a solution's config gives every
+   agent `ShieldGovernance`; in production (`K9_ENV` unset or `production`) an agent with no
+   governance configured refuses to run.
 
 5. **Extensible Integration Layer**  
    External services, LLM providers, and tools are integrated through adapter-based
@@ -145,11 +132,15 @@ pip install k9-aif
 ### Local install (development)
 
 ```bash
-# Standard install from local source
-pip install /path/to/k9-aif-framework/k9_aif_abb
+# Standard install from local source (the repository root holds pyproject.toml)
+pip install /path/to/k9-aif-framework
 
 # Editable install — changes to the ABB are reflected immediately (recommended for development)
-pip install -e /path/to/k9-aif-framework/k9_aif_abb
+pip install -e /path/to/k9-aif-framework
+
+# Optional extras, e.g. Kafka and PostgreSQL, or everything
+pip install "k9-aif[kafka,postgres]"
+pip install "k9-aif[all]"
 ```
 
 ### Verify installation
@@ -168,7 +159,20 @@ print("k9-aif installed successfully")
 
 ### Inspect your solution
 
-A dedicated architectural conformance inspector (`k9x_inspector`) is in active development in [k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem). An earlier, naive per-file version of this check shipped inside the framework itself but produced false positives on legitimate code (it didn't resolve inheritance chains) and has been removed.
+`k9_inspect` checks a solution statically (Python AST and YAML; nothing is imported or run)
+against 28 conformance rules: ABB contracts, three-layer decoupling, the single model path
+(`llm_invoke`), Kafka ownership, governance by construction, secrets, private IPs, and
+squad/agent YAML.
+
+```bash
+k9aif inspect /path/to/your-solution                 # report in the terminal
+k9aif inspect . --markdown report.md --json          # also write Markdown, print JSON
+k9aif inspect . --fail-on violation                  # exit 1 at or above a severity (for CI)
+```
+
+Organisations add their own rules with `InspectionRuleRegistry.register()`. The
+[K9X Inspector](https://github.com/k9aif/k9x-inspector) web front end runs the same rules on
+every push.
 
 ---
 
@@ -200,7 +204,7 @@ Claude Code understands:
 - ABB contracts and how to extend them correctly
 - Squad YAML format, agent registration, flow structure
 - Kafka ownership (Router publishes, Orchestrator consumes)
-- Governance enforcement patterns
+- Governance by construction (`security.shield` in config)
 - The full inference pipeline through `llm_invoke`
 
 ### 3. No Claude Code? Use K9X Studio
