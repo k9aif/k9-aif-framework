@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
 # ABB-level configuration: defines reusable inference backends
 # k9_aif_abb/config/config.yaml
 # ============================================================

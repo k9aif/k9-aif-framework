@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+-- SPDX-License-Identifier: Apache-2.0
 -- K9-AIF™ — Seed ZIP Code Reference Data (Austin, TX)
 
 CREATE TABLE IF NOT EXISTS zipcodes (

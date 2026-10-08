@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
-# (c) 2025 Ravi Natarajan. All rights reserved.
+# Copyright (c) 2025 Ravi Natarajan
 
 """
 XML <-> JSON Data Transformers

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LicenseRef-K9AIF-Proprietary
+# SPDX-License-Identifier: Apache-2.0
 # ACME HealthCare™ — Orchestrator Registry (SBB-level)
 # Extends ABB orchestrators.yaml with domain-specific orchestration flows.
 
