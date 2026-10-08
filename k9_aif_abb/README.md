@@ -1,13 +1,13 @@
 # K9-AIF Framework
 
-**pip package:** `k9_aif_framework` — **import namespace:** `k9_aif_abb`
+**pip package:** `k9-aif` — **import namespace:** `k9_aif_abb`
 
-The pip package is named `k9_aif_framework` to communicate what it is — a framework.  
+The pip package is `k9-aif` ([PyPI](https://pypi.org/project/k9-aif/)).  
 The framework code lives in the `k9_aif_abb` module — ABB stands for **Architecture Building Blocks**,  
 reflecting that this is the architectural foundation other solutions are built upon, not an application itself.
 
 ```bash
-pip install k9_aif_framework        # install the framework
+pip install k9-aif        # install the framework
 ```
 
 ```python
@@ -136,10 +136,10 @@ The K9-AIF framework is built around the following architectural principles:
 
 ## Installation
 
-### From PyPI (once published)
+### From PyPI
 
 ```bash
-pip install k9_aif_framework
+pip install k9-aif
 ```
 
 ### Local install (development)
@@ -157,12 +157,12 @@ pip install -e /path/to/k9-aif-framework/k9_aif_abb
 ```python
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
-print("k9_aif_framework installed successfully")
+print("k9-aif installed successfully")
 ```
 
-> **Note:** The pip package name is `k9_aif_framework`. The Python import namespace remains `k9_aif_abb`.
+> **Note:** The pip package name is `k9-aif`. The Python import namespace is `k9_aif_abb`.
 > ```python
-> # pip install k9_aif_framework
+> # pip install k9-aif
 > from k9_aif_abb.k9_core.agent.base_agent import BaseAgent   # import path unchanged
 > ```
 
