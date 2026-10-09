@@ -49,13 +49,18 @@ class TestWebUIFiles:
 
 # ─── Scenarios endpoint ────────────────────────────────────────────────────────
 
+# Granite Guardian (config.yaml governance.guardian) is an HTTP call to Ollama; mocked like the model.
+_GUARDIAN = "k9_aif_abb.k9_governance.guardian_governance.GuardianGovernance._call_guardian"
+
+
 @pytest.fixture(scope="module")
 def client():
     """TestClient with mocked LLM/orchestrator to avoid real I/O."""
     with patch("k9_aif_abb.k9_factories.model_router_factory.ModelRouterFactory.get_router",
                return_value=MagicMock()), \
          patch("k9_aif_abb.k9_factories.llm_factory.LLMFactory.bootstrap"), \
-         patch("k9_aif_abb.k9_factories.llm_factory.LLMFactory.is_bootstrapped", return_value=False):
+         patch("k9_aif_abb.k9_factories.llm_factory.LLMFactory.is_bootstrapped", return_value=False), \
+         patch(_GUARDIAN, return_value=("SAFE", "mocked")):
         from examples.K9X_Enterprise_Insurance_OperationsCenter.api.app import app
         with TestClient(app, raise_server_exceptions=False) as c:
             # The run endpoints require a session (demo sign-in), as in the UI.
@@ -65,7 +70,8 @@ def client():
 
 def test_run_requires_sign_in():
     from examples.K9X_Enterprise_Insurance_OperationsCenter.api.app import app
-    with TestClient(app, raise_server_exceptions=False) as anonymous:
+    with patch(_GUARDIAN, return_value=("SAFE", "mocked")), \
+         TestClient(app, raise_server_exceptions=False) as anonymous:
         assert anonymous.post("/api/eoc/run", json={"event_type": "claim_submitted"}).status_code == 401
 
 

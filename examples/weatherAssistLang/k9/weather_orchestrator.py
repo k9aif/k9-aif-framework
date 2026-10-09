@@ -33,13 +33,12 @@ class WeatherAssistLangOrchestrator(BaseOrchestrator):
     same role as weather_assist's WeatherAssistOrchestrator, wrapping a
     compiled LangGraph instead of a CrewAI Crew.
 
-    Loads config.yaml (governance.provider, security.shield) and constructs
-    the matching governance instance, then passes it through to
+    Loads config.yaml (security.shield, governance.guardian) and builds
+    its governance (governance_from_config), then passes it through to
     K9LangGraphAdapter so the LangGraph-wrapped graph is genuinely
     governed -- not just structurally eligible to be. With the default
-    config.yaml shipped here (governance.provider: shield), this is real
-    enforcement: ShieldGovernance raises PermissionError on a BLOCK from
-    either configured check.
+    config.yaml shipped here, this is real enforcement: Shield, then
+    Granite Guardian, and a BLOCK from either raises PermissionError.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:

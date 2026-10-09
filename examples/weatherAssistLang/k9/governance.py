@@ -1,21 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from k9_aif_abb.k9_core.governance.pipeline import governance_from_config
+
 
 def make_governance(config: Dict[str, Any]) -> Optional[Any]:
     """
-    Return the configured governance instance, or None for NoopGovernance
-    default (require_governance() resolves None to NoopGovernance, gated
-    only by K9_ENV).
-
-    Identical to weather_assist/k9/governance.py's make_governance() --
-    same wiring, different wrapped framework. "shield" wires in
-    ShieldGovernance (k9_aif_abb.k9_security.vulnerability) using the
-    security.shield block in config.yaml.
+    The governance this app's agents run under, built by the framework from
+    config.yaml (governance_from_config, k9-aif >= 1.15): security.shield ->
+    ShieldGovernance, governance.guardian -> GuardianGovernance, both ->
+    ChainedGovernance(Shield, Guardian). None means nothing is configured
+    (require_governance() then decides by K9_ENV).
     """
-    provider = (config or {}).get("governance", {}).get("provider", "noop")
-    if provider == "shield":
-        from k9_aif_abb.k9_security.vulnerability.shield_governance import ShieldGovernance
-        return ShieldGovernance(config=config)
-    return None
+    return governance_from_config(config)

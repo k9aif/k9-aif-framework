@@ -154,8 +154,8 @@
       <p>
         Governance is invoked on every call — not just structurally
         available — via <code>config.yaml</code>'s
-        <code>governance.provider: shield</code>, which wires in
-        <code>ShieldGovernance</code>. Wired in from this adapter's first
+        <code>security.shield</code> and <code>governance.guardian</code>, from which
+        the framework builds <code>ShieldGovernance</code> followed by Granite Guardian. Wired in from this adapter's first
         version, not added as a later fix (unlike the CrewAI adapter's own
         history):
       </p>

@@ -39,6 +39,12 @@ def _resolve_sync(value: Any) -> Any:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
+        loop_running = False
+    else:
+        loop_running = True
+    if not loop_running:
+        # Outside the except block: a governance PermissionError then reads as itself in a
+        # traceback, not "during handling of RuntimeError: no running event loop".
         return asyncio.run(_await())
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         return pool.submit(asyncio.run, _await()).result()

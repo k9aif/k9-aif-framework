@@ -145,8 +145,8 @@
       <p>
         Governance is invoked on every call — not just structurally
         available — via <code>config.yaml</code>'s
-        <code>governance.provider: shield</code>, which wires in
-        <code>ShieldGovernance</code>:
+        <code>security.shield</code> and <code>governance.guardian</code>, from which
+        the framework builds <code>ShieldGovernance</code> followed by Granite Guardian:
       </p>
       <p class="checks">
         Ingress (before CrewAI's <code>kickoff()</code> runs):

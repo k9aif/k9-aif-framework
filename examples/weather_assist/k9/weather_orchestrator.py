@@ -30,13 +30,12 @@ class WeatherAssistOrchestrator(BaseOrchestrator):
     """
     K9-AIF application orchestrator for the Weather Assist demo.
 
-    Loads config.yaml (governance.provider, security.shield) and constructs
-    the matching governance instance, then passes it through to
+    Loads config.yaml (security.shield, governance.guardian) and builds
+    its governance (governance_from_config), then passes it through to
     K9CrewAIAdapter so the CrewAI-wrapped agents are genuinely governed —
     not just structurally eligible to be. With the default config.yaml
-    shipped here (governance.provider: shield), this is real enforcement:
-    ShieldGovernance raises PermissionError on a BLOCK from either
-    configured check.
+    shipped here, this is real enforcement:
+    Shield, then Granite Guardian, and a BLOCK from either raises PermissionError.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:

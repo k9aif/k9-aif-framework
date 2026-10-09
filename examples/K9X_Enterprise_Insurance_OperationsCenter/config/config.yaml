@@ -143,6 +143,14 @@ logging:
 governance:
   enabled: true
   policy_path: "examples/K9X_Enterprise_Insurance_OperationsCenter/config/governance.yaml"
+  # Granite Guardian: semantic screening after Shield (k9-aif >= 1.15 builds
+  # ChainedGovernance(Shield, Guardian) for every agent). Needs the model in Ollama:
+  #   ollama pull granite4.1-guardian:8b
+  # fail_closed: if Guardian is unreachable, requests are refused, not passed unscreened.
+  guardian:
+    enabled: true
+    model: granite4.1-guardian:8b
+    on_unavailable: fail_closed
 
 flows:
   path: "examples/K9X_Enterprise_Insurance_OperationsCenter/config/flows.yaml"

@@ -7,15 +7,19 @@ ollama:
   base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
   model: "${OLLAMA_MODEL:-llama3.2:1b}"
 
-# governance.provider selects what K9LangGraphAdapter's execute_flow() actually
-# enforces on every call (real code, not documentation): "noop" leaves the
-# framework's default NoopGovernance in place (pass-through, K9_ENV-gated
-# warning only); "shield" wires in ShieldGovernance
-# (k9_aif_abb.k9_security.vulnerability), a framework OOB class, which runs
-# the checks configured under security.shield below and raises
-# PermissionError on a real BLOCK. See k9/governance.py.
+# What K9LangGraphAdapter's execute_flow() enforces on every call is built by the
+# framework from this file (governance_from_config, k9-aif >= 1.15):
+# security.shield below -> ShieldGovernance (raises PermissionError on a BLOCK);
+# governance.guardian -> Granite Guardian after Shield. See k9/governance.py.
 governance:
-  provider: shield   # noop | shield
+  # Granite Guardian: semantic screening after Shield (k9-aif >= 1.15 builds
+  # ChainedGovernance(Shield, Guardian) for every agent). Needs the model in Ollama:
+  #   ollama pull granite4.1-guardian:8b
+  # fail_closed: if Guardian is unreachable, requests are refused, not passed unscreened.
+  guardian:
+    enabled: true
+    model: granite4.1-guardian:8b
+    on_unavailable: fail_closed
 
 # Same checks as weather_assist (CrewAI) — deliberately lighter than a PII-
 # or document-heavy domain like EOC's, since weather queries carry no

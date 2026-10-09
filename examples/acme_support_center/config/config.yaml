@@ -144,6 +144,14 @@ governance:
   human_in_loop: false
   mask_sensitive_data: true
   policy_checks: false
+  # Granite Guardian: semantic screening after Shield (k9-aif >= 1.15 builds
+  # ChainedGovernance(Shield, Guardian) for every agent). Needs the model in Ollama:
+  #   ollama pull granite4.1-guardian:8b
+  # fail_closed: if Guardian is unreachable, requests are refused, not passed unscreened.
+  guardian:
+    enabled: true
+    model: granite4.1-guardian:8b
+    on_unavailable: fail_closed
 
 security:
   # k9x_Shield: built into every agent by the framework (governance by
