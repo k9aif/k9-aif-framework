@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="generator" content="pdoc 16.0.0"/>
-    <title>k9_aif_abb.k9_utils API documentation</title>
+    <title>k9_aif_abb.k9_utils.config_flags API documentation</title>
 
     <style>/*! * Bootstrap Reboot v5.0.0 (https://getbootstrap.com/) * Copyright 2011-2021 The Bootstrap Authors * Copyright 2011-2021 Twitter, Inc. * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE) * Forked from Normalize.css, licensed MIT (https://github.com/necolas/normalize.css/blob/master/LICENSE.md) */*,::after,::before{box-sizing:border-box}@media (prefers-reduced-motion:no-preference){:root{scroll-behavior:smooth}}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";font-size:1rem;font-weight:400;line-height:1.5;color:#212529;background-color:#fff;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}hr{margin:1rem 0;color:inherit;background-color:currentColor;border:0;opacity:.25}hr:not([size]){height:1px}h1,h2,h3,h4,h5,h6{margin-top:0;margin-bottom:.5rem;font-weight:500;line-height:1.2}h1{font-size:calc(1.375rem + 1.5vw)}@media (min-width:1200px){h1{font-size:2.5rem}}h2{font-size:calc(1.325rem + .9vw)}@media (min-width:1200px){h2{font-size:2rem}}h3{font-size:calc(1.3rem + .6vw)}@media (min-width:1200px){h3{font-size:1.75rem}}h4{font-size:calc(1.275rem + .3vw)}@media (min-width:1200px){h4{font-size:1.5rem}}h5{font-size:1.25rem}h6{font-size:1rem}p{margin-top:0;margin-bottom:1rem}abbr[data-bs-original-title],abbr[title]{-webkit-text-decoration:underline dotted;text-decoration:underline dotted;cursor:help;-webkit-text-decoration-skip-ink:none;text-decoration-skip-ink:none}address{margin-bottom:1rem;font-style:normal;line-height:inherit}ol,ul{padding-left:2rem}dl,ol,ul{margin-top:0;margin-bottom:1rem}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}dt{font-weight:700}dd{margin-bottom:.5rem;margin-left:0}blockquote{margin:0 0 1rem}b,strong{font-weight:bolder}small{font-size:.875em}mark{padding:.2em;background-color:#fcf8e3}sub,sup{position:relative;font-size:.75em;line-height:0;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}a{color:#0d6efd;text-decoration:underline}a:hover{color:#0a58ca}a:not([href]):not([class]),a:not([href]):not([class]):hover{color:inherit;text-decoration:none}code,kbd,pre,samp{font-family:SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:1em;direction:ltr;unicode-bidi:bidi-override}pre{display:block;margin-top:0;margin-bottom:1rem;overflow:auto;font-size:.875em}pre code{font-size:inherit;color:inherit;word-break:normal}code{font-size:.875em;color:#d63384;word-wrap:break-word}a>code{color:inherit}kbd{padding:.2rem .4rem;font-size:.875em;color:#fff;background-color:#212529;border-radius:.2rem}kbd kbd{padding:0;font-size:1em;font-weight:700}figure{margin:0 0 1rem}img,svg{vertical-align:middle}table{caption-side:bottom;border-collapse:collapse}caption{padding-top:.5rem;padding-bottom:.5rem;color:#6c757d;text-align:left}th{text-align:inherit;text-align:-webkit-match-parent}tbody,td,tfoot,th,thead,tr{border-color:inherit;border-style:solid;border-width:0}label{display:inline-block}button{border-radius:0}button:focus:not(:focus-visible){outline:0}button,input,optgroup,select,textarea{margin:0;font-family:inherit;font-size:inherit;line-height:inherit}button,select{text-transform:none}[role=button]{cursor:pointer}select{word-wrap:normal}select:disabled{opacity:1}[list]::-webkit-calendar-picker-indicator{display:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]:not(:disabled),[type=reset]:not(:disabled),[type=submit]:not(:disabled),button:not(:disabled){cursor:pointer}::-moz-focus-inner{padding:0;border-style:none}textarea{resize:vertical}fieldset{min-width:0;padding:0;margin:0;border:0}legend{float:left;width:100%;padding:0;margin-bottom:.5rem;font-size:calc(1.275rem + .3vw);line-height:inherit}@media (min-width:1200px){legend{font-size:1.5rem}}legend+*{clear:left}::-webkit-datetime-edit-day-field,::-webkit-datetime-edit-fields-wrapper,::-webkit-datetime-edit-hour-field,::-webkit-datetime-edit-minute,::-webkit-datetime-edit-month-field,::-webkit-datetime-edit-text,::-webkit-datetime-edit-year-field{padding:0}::-webkit-inner-spin-button{height:auto}[type=search]{outline-offset:-2px;-webkit-appearance:textfield}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-color-swatch-wrapper{padding:0}::file-selector-button{font:inherit}::-webkit-file-upload-button{font:inherit;-webkit-appearance:button}output{display:inline-block}iframe{border:0}summary{display:list-item;cursor:pointer}progress{vertical-align:baseline}[hidden]{display:none!important}</style>
     <style>/*! syntax-highlighting.css */pre{line-height:125%;}span.linenos{color:inherit; background-color:transparent; padding-left:5px; padding-right:20px;}.pdoc-code .hll{background-color:#ffffcc}.pdoc-code{background:#f8f8f8;}.pdoc-code .c{color:#3D7B7B; font-style:italic}.pdoc-code .err{border:1px solid #FF0000}.pdoc-code .k{color:#008000; font-weight:bold}.pdoc-code .o{color:#666666}.pdoc-code .ch{color:#3D7B7B; font-style:italic}.pdoc-code .cm{color:#3D7B7B; font-style:italic}.pdoc-code .cp{color:#9C6500}.pdoc-code .cpf{color:#3D7B7B; font-style:italic}.pdoc-code .c1{color:#3D7B7B; font-style:italic}.pdoc-code .cs{color:#3D7B7B; font-style:italic}.pdoc-code .gd{color:#A00000}.pdoc-code .ge{font-style:italic}.pdoc-code .gr{color:#E40000}.pdoc-code .gh{color:#000080; font-weight:bold}.pdoc-code .gi{color:#008400}.pdoc-code .go{color:#717171}.pdoc-code .gp{color:#000080; font-weight:bold}.pdoc-code .gs{font-weight:bold}.pdoc-code .gu{color:#800080; font-weight:bold}.pdoc-code .gt{color:#0044DD}.pdoc-code .kc{color:#008000; font-weight:bold}.pdoc-code .kd{color:#008000; font-weight:bold}.pdoc-code .kn{color:#008000; font-weight:bold}.pdoc-code .kp{color:#008000}.pdoc-code .kr{color:#008000; font-weight:bold}.pdoc-code .kt{color:#B00040}.pdoc-code .m{color:#666666}.pdoc-code .s{color:#BA2121}.pdoc-code .na{color:#687822}.pdoc-code .nb{color:#008000}.pdoc-code .nc{color:#0000FF; font-weight:bold}.pdoc-code .no{color:#880000}.pdoc-code .nd{color:#AA22FF}.pdoc-code .ni{color:#717171; font-weight:bold}.pdoc-code .ne{color:#CB3F38; font-weight:bold}.pdoc-code .nf{color:#0000FF}.pdoc-code .nl{color:#767600}.pdoc-code .nn{color:#0000FF; font-weight:bold}.pdoc-code .nt{color:#008000; font-weight:bold}.pdoc-code .nv{color:#19177C}.pdoc-code .ow{color:#AA22FF; font-weight:bold}.pdoc-code .w{color:#bbbbbb}.pdoc-code .mb{color:#666666}.pdoc-code .mf{color:#666666}.pdoc-code .mh{color:#666666}.pdoc-code .mi{color:#666666}.pdoc-code .mo{color:#666666}.pdoc-code .sa{color:#BA2121}.pdoc-code .sb{color:#BA2121}.pdoc-code .sc{color:#BA2121}.pdoc-code .dl{color:#BA2121}.pdoc-code .sd{color:#BA2121; font-style:italic}.pdoc-code .s2{color:#BA2121}.pdoc-code .se{color:#AA5D1F; font-weight:bold}.pdoc-code .sh{color:#BA2121}.pdoc-code .si{color:#A45A77; font-weight:bold}.pdoc-code .sx{color:#008000}.pdoc-code .sr{color:#A45A77}.pdoc-code .s1{color:#BA2121}.pdoc-code .ss{color:#19177C}.pdoc-code .bp{color:#008000}.pdoc-code .fm{color:#0000FF}.pdoc-code .vc{color:#19177C}.pdoc-code .vg{color:#19177C}.pdoc-code .vi{color:#19177C}.pdoc-code .vm{color:#19177C}.pdoc-code .il{color:#666666}</style>
@@ -16,37 +16,24 @@
     <nav class="pdoc">
         <label id="navtoggle" for="togglestate" class="pdoc-button"><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'><path stroke-linecap='round' stroke="currentColor" stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/></svg></label>
         <input id="togglestate" type="checkbox" aria-hidden="true" tabindex="-1">
-        <div>            <a class="pdoc-button module-list-button" href="../k9_aif_abb.html">
+        <div>            <a class="pdoc-button module-list-button" href="../k9_utils.html">
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-in-left" viewBox="0 0 16 16">
   <path fill-rule="evenodd" d="M10 3.5a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 1 1 0v2A1.5 1.5 0 0 1 9.5 14h-8A1.5 1.5 0 0 1 0 12.5v-9A1.5 1.5 0 0 1 1.5 2h8A1.5 1.5 0 0 1 11 3.5v2a.5.5 0 0 1-1 0v-2z"/>
   <path fill-rule="evenodd" d="M4.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H14.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3z"/>
-</svg>                &nbsp;k9_aif_abb</a>
+</svg>                &nbsp;k9_aif_abb.k9_utils</a>
 
 
             <input type="search" placeholder="Search..." role="searchbox" aria-label="search"
                    pattern=".+" required>
 
-            <h2>Contents</h2>
-            <ul>
-  <li><a href="#key-responsibilities">Key Responsibilities</a></li>
-  <li><a href="#architectural-positioning">Architectural Positioning</a></li>
-  <li><a href="#architectural-note">Architectural Note</a></li>
-</ul>
 
 
-            <h2>Submodules</h2>
-            <ul>
-                    <li><a href="k9_utils/config_flags.html">config_flags</a></li>
-                    <li><a href="k9_utils/config_loader.html">config_loader</a></li>
-                    <li><a href="k9_utils/guardian_check.html">guardian_check</a></li>
-                    <li><a href="k9_utils/k9_ascii.html">k9_ascii</a></li>
-                    <li><a href="k9_utils/llm_invoke.html">llm_invoke</a></li>
-                    <li><a href="k9_utils/logging_loader.html">logging_loader</a></li>
-                    <li><a href="k9_utils/ocr.html">ocr</a></li>
-                    <li><a href="k9_utils/timer.html">timer</a></li>
-                    <li><a href="k9_utils/trace_events.html">trace_events</a></li>
-                    <li><a href="k9_utils/xml_json_transformer.html">xml_json_transformer</a></li>
-            </ul>
+            <h2>API Documentation</h2>
+                <ul class="memberlist">
+            <li>
+                    <a class="function" href="#config_flag">config_flag</a>
+            </li>
+    </ul>
 
 
 
@@ -60,85 +47,112 @@
     <main class="pdoc">
             <section class="module-info">
                     <h1 class="modulename">
-<a href="./../k9_aif_abb.html">k9_aif_abb</a><wbr>.k9_utils    </h1>
+<a href="./../../k9_aif_abb.html">k9_aif_abb</a><wbr>.<a href="./../k9_utils.html">k9_utils</a><wbr>.config_flags    </h1>
 
-                        <div class="docstring"><p>K9-AIF Utilities Package</p>
+                        <div class="docstring"><p>On/off settings read from configuration.</p>
 
-<p>The <code>k9_utils</code> package provides shared utility functions and helper components
-used across the K9-AIF framework.</p>
-
-<p>These utilities support common concerns such as configuration loading,
-logging setup, timing, transformation, and auxiliary processing.</p>
-
-<h2 id="key-responsibilities">Key Responsibilities</h2>
-
-<ul>
-<li>Configuration loading and parsing</li>
-<li>Logging initialization and setup</li>
-<li>Timing and performance utilities</li>
-<li>Data transformation helpers (XML/JSON)</li>
-<li>Miscellaneous support utilities</li>
-</ul>
-
-<h2 id="architectural-positioning">Architectural Positioning</h2>
-
-<p>The utilities package supports all layers of K9-AIF but does not define
-core architectural building blocks.</p>
-
-<p>It provides reusable helper functions that simplify implementation while
-keeping the core architecture clean and focused.</p>
-
-<h2 id="architectural-note">Architectural Note</h2>
-
-<blockquote>
-  <p>k9_utils provides supporting helper functions, while core framework packages define architectural behavior.</p>
-</blockquote>
+<p>A setting such as <code>security.shield.enabled</code> or <code>governance.guardian.enabled</code>
+is often driven from <code>.env</code> (<code>enabled: "${K9_GUARDIAN_ENABLED:-true}"</code>). After
+<code>load_yaml</code> expands it, the value is the <em>string</em> <code>"true"</code>, not the boolean
+<code>True</code>; a check written as <code>value is True</code> then treats it as off, and a plain
+<code>if value</code> treats the string <code>"false"</code> as on. <code><a href="#config_flag">config_flag</a></code> reads all of
+these the same way, for the framework at run time and for <code>k9_inspect</code> reading
+the raw YAML (where an unexpanded <code>${VAR:-default}</code> is judged by its default).</p>
 </div>
 
-                        <input id="mod-k9_utils-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                        <input id="mod-config_flags-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
-                        <label class="view-source-button" for="mod-k9_utils-view-source"><span>View Source</span></label>
+                        <label class="view-source-button" for="mod-config_flags-view-source"><span>View Source</span></label>
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">K9-AIF Utilities Package</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">The `k9_utils` package provides shared utility functions and helper components</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">used across the K9-AIF framework.</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">These utilities support common concerns such as configuration loading,</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">logging setup, timing, transformation, and auxiliary processing.</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">&quot;&quot;&quot;On/off settings read from configuration.</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">A setting such as ``security.shield.enabled`` or ``governance.guardian.enabled``</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">is often driven from ``.env`` (``enabled: &quot;${K9_GUARDIAN_ENABLED:-true}&quot;``). After</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">``load_yaml`` expands it, the value is the *string* ``&quot;true&quot;``, not the boolean</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">``True``; a check written as ``value is True`` then treats it as off, and a plain</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">``if value`` treats the string ``&quot;false&quot;`` as on. ``config_flag`` reads all of</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">these the same way, for the framework at run time and for ``k9_inspect`` reading</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">the raw YAML (where an unexpanded ``${VAR:-default}`` is judged by its default).</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">## Key Responsibilities</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">- Configuration loading and parsing</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">- Logging initialization and setup</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">- Timing and performance utilities</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">- Data transformation helpers (XML/JSON)</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">- Miscellaneous support utilities</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="n">_TRUE</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">}</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="n">_FALSE</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="n">_PLACEHOLDER</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\$\{[^}:]+(?::-([^}]*))?\}&quot;</span><span class="p">)</span>
 </span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">## Architectural Positioning</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">The utilities package supports all layers of K9-AIF but does not define</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">core architectural building blocks.</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">It provides reusable helper functions that simplify implementation while</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">keeping the core architecture clean and focused.</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="sd">## Architectural Note</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">&gt; k9_utils provides supporting helper functions, while core framework packages define architectural behavior.</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="k">def</span><span class="w"> </span><span class="nf">config_flag</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;True / False for a configuration on/off value; ``default`` if it is unset</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">    or not recognisable as either.&quot;&quot;&quot;</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>        <span class="k">return</span> <span class="n">value</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>        <span class="k">return</span> <span class="n">default</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="n">placeholder</span> <span class="o">=</span> <span class="n">_PLACEHOLDER</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="k">if</span> <span class="n">placeholder</span><span class="p">:</span>                      <span class="c1"># unexpanded ${VAR:-default}: judge the default</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>        <span class="k">if</span> <span class="n">placeholder</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>            <span class="k">return</span> <span class="n">default</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">placeholder</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">_TRUE</span><span class="p">:</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">_FALSE</span><span class="p">:</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>    <span class="k">return</span> <span class="n">default</span>
 </span></pre></div>
 
 
             </section>
+                <section id="config_flag">
+                            <input id="config_flag-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">config_flag</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">value</span><span class="p">:</span> <span class="n">Any</span>, </span><span class="param"><span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="config_flag-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#config_flag"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="config_flag-25"><a href="#config_flag-25"><span class="linenos">25</span></a><span class="k">def</span><span class="w"> </span><span class="nf">config_flag</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+</span><span id="config_flag-26"><a href="#config_flag-26"><span class="linenos">26</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;True / False for a configuration on/off value; ``default`` if it is unset</span>
+</span><span id="config_flag-27"><a href="#config_flag-27"><span class="linenos">27</span></a><span class="sd">    or not recognisable as either.&quot;&quot;&quot;</span>
+</span><span id="config_flag-28"><a href="#config_flag-28"><span class="linenos">28</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+</span><span id="config_flag-29"><a href="#config_flag-29"><span class="linenos">29</span></a>        <span class="k">return</span> <span class="n">value</span>
+</span><span id="config_flag-30"><a href="#config_flag-30"><span class="linenos">30</span></a>    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="config_flag-31"><a href="#config_flag-31"><span class="linenos">31</span></a>        <span class="k">return</span> <span class="n">default</span>
+</span><span id="config_flag-32"><a href="#config_flag-32"><span class="linenos">32</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+</span><span id="config_flag-33"><a href="#config_flag-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="config_flag-34"><a href="#config_flag-34"><span class="linenos">34</span></a>    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="config_flag-35"><a href="#config_flag-35"><span class="linenos">35</span></a>    <span class="n">placeholder</span> <span class="o">=</span> <span class="n">_PLACEHOLDER</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span id="config_flag-36"><a href="#config_flag-36"><span class="linenos">36</span></a>    <span class="k">if</span> <span class="n">placeholder</span><span class="p">:</span>                      <span class="c1"># unexpanded ${VAR:-default}: judge the default</span>
+</span><span id="config_flag-37"><a href="#config_flag-37"><span class="linenos">37</span></a>        <span class="k">if</span> <span class="n">placeholder</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="config_flag-38"><a href="#config_flag-38"><span class="linenos">38</span></a>            <span class="k">return</span> <span class="n">default</span>
+</span><span id="config_flag-39"><a href="#config_flag-39"><span class="linenos">39</span></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">placeholder</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span id="config_flag-40"><a href="#config_flag-40"><span class="linenos">40</span></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="config_flag-41"><a href="#config_flag-41"><span class="linenos">41</span></a>    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">_TRUE</span><span class="p">:</span>
+</span><span id="config_flag-42"><a href="#config_flag-42"><span class="linenos">42</span></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="config_flag-43"><a href="#config_flag-43"><span class="linenos">43</span></a>    <span class="k">if</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">_FALSE</span><span class="p">:</span>
+</span><span id="config_flag-44"><a href="#config_flag-44"><span class="linenos">44</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="config_flag-45"><a href="#config_flag-45"><span class="linenos">45</span></a>    <span class="k">return</span> <span class="n">default</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>True / False for a configuration on/off value; <code>default</code> if it is unset
+or not recognisable as either.</p>
+</div>
+
+
+                </section>
     </main>
 <script>
     function escapeHTML(html) {
@@ -192,7 +206,7 @@ keeping the core architecture clean and focused.</p>
                 script.async = true;
                 script.onload = () => resolve(window.pdocSearch);
                 script.onerror = (e) => reject(e);
-                script.src = "../search.js";
+                script.src = "../../search.js";
                 document.getElementsByTagName("head")[0].appendChild(script);
             });
         } catch (e) {
@@ -234,7 +248,7 @@ keeping the core architecture clean and focused.</p>
             }
             for (let result of results.slice(0, 10)) {
                 let doc = result.doc;
-                let url = `../${doc.modulename.replaceAll(".", "/")}.html`;
+                let url = `../../${doc.modulename.replaceAll(".", "/")}.html`;
                 if (doc.qualname) {
                     url += `#${doc.qualname}`;
                 }

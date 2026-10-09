@@ -4,6 +4,7 @@
 import logging
 import os
 from typing import Any
+from k9_aif_abb.k9_utils.config_flags import config_flag
 
 log = logging.getLogger(__name__)
 
@@ -82,11 +83,11 @@ def governance_from_config(config: dict | None) -> Any:
     cfg = config or {}
     stages = []
     shield = (cfg.get("security") or {}).get("shield") or {}
-    if shield.get("enabled") is True:
+    if config_flag(shield.get("enabled")) is True:
         from k9_aif_abb.k9_security.vulnerability.shield_governance import ShieldGovernance
         stages.append(ShieldGovernance(cfg))
     guardian = (cfg.get("governance") or {}).get("guardian") or {}
-    if isinstance(guardian, dict) and guardian.get("enabled") is True:
+    if isinstance(guardian, dict) and config_flag(guardian.get("enabled")) is True:
         from k9_aif_abb.k9_governance.guardian_governance import GuardianGovernance
         stages.append(GuardianGovernance(config=cfg))
     if not stages:

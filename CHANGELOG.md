@@ -4,6 +4,15 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.15.1] — 2026-10-09
+
+### Fixed
+
+- **On/off settings from `.env` are read correctly.** After `load_yaml` expands `"${K9_GUARDIAN_ENABLED:-true}"` the value is the string `"true"`. `governance_from_config()` required the boolean `True`, so Shield or Guardian driven from `.env` was silently left out; `enable_zero_trust` (orchestrator and router) and Shield's own `enabled` read the string `"false"` as on. A shared `config_flag()` (`k9_utils/config_flags.py`) now reads booleans, `"true"`/`"false"`, `yes`/`no`, `on`/`off`, `1`/`0` the same way everywhere.
+- **k9_inspect** uses the same reading for its governance rules, and judges an unexpanded `${VAR:-default}` by its default: a Guardian or Shield setting taken from `.env` is no longer reported missing (or passed when its default is off).
+
+Tests: `test_config_flags.py`.
+
 ## [1.15.0] — 2026-10-08
 
 Governance by construction, and five k9x_Shield gaps found by a 208-document governance evaluation.

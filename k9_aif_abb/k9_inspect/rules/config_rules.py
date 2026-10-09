@@ -14,6 +14,7 @@ from ..base_inspection_rule import BaseInspectionRule
 from ..models import Finding, Severity
 from ..project import SolutionProject, YamlDoc
 from ..registry import InspectionRuleRegistry
+from k9_aif_abb.k9_utils.config_flags import config_flag
 
 _SECRET_KEY = re.compile(r"(?i)(password|passwd|secret|api[_-]?key|token|access[_-]?key|private[_-]?key)$")
 _PLACEHOLDER = re.compile(r"^\s*(\$\{.*\}|\$[A-Z_]+|env:|<.*>|\*+|x+|your[_-].*|changeme.*|example.*|none|null|)\s*$", re.I)
@@ -67,10 +68,10 @@ class ShieldEnabledRule(BaseInspectionRule):
             return [self.finding("no application config.yaml found (inference/security/governance sections)",
                                  severity=Severity.WARNING,
                                  fix="Add config/config.yaml; see the framework's config.yaml for the sections.")]
-        if any(_get(d.data, "security", "shield", "enabled") is True for d in configs):
+        if any(config_flag(_get(d.data, "security", "shield", "enabled")) is True for d in configs):
             return []
         explicit = _code_mentions(project, "ShieldGovernance(", "GuardianGovernance(", "ChainedGovernance(")
-        off = [d for d in configs if _get(d.data, "security", "shield", "enabled") is False]
+        off = [d for d in configs if config_flag(_get(d.data, "security", "shield", "enabled")) is False]
         d = off[0] if off else configs[0]
         return [self.finding("Shield is explicitly disabled (security.shield.enabled: false)" if off else
                              "security.shield.enabled is not true in any application config",
@@ -94,7 +95,7 @@ class ShieldChecksConfiguredRule(BaseInspectionRule):
         out = []
         for d in project.config_docs():
             shield = _get(d.data, "security", "shield") or {}
-            if shield.get("enabled") is not True:
+            if config_flag(shield.get("enabled")) is not True:
                 continue
             for side in ("ingress", "egress"):
                 if not (_get(shield, side, "checks") or []):
@@ -115,12 +116,12 @@ class GuardianConfiguredRule(BaseInspectionRule):
     def inspect(self, project: SolutionProject) -> List[Finding]:
         for d in project.config_docs():
             g = d.data.get("governance") or {}
-            if isinstance(g, dict) and (_get(g, "guardian", "enabled") or str(g.get("provider", "")).lower() == "guardian"
+            if isinstance(g, dict) and (config_flag(_get(g, "guardian", "enabled")) is True or str(g.get("provider", "")).lower() == "guardian"
                                         or "guardian" in str(g.get("model_alias", "")).lower()):
                 return []
         if _code_mentions(project, "GuardianGovernance", "ProfanityGovernance"):
             return []
-        off = [d for d in project.config_docs() if _get(d.data, "governance", "guardian", "enabled") is False]
+        off = [d for d in project.config_docs() if config_flag(_get(d.data, "governance", "guardian", "enabled")) is False]
         if off:
             return [self.finding("Granite Guardian is explicitly disabled (governance.guardian.enabled: false)",
                                  off[0].rel, _line_of(off[0], "guardian:"))]
@@ -141,7 +142,7 @@ class EgressCoverageRule(BaseInspectionRule):
         out = []
         for d in project.config_docs():
             shield = _get(d.data, "security", "shield") or {}
-            if shield.get("enabled") is not True:
+            if config_flag(shield.get("enabled")) is not True:
                 continue
             egress = set(_get(shield, "egress", "checks") or [])
             # a check built in code (e.g. an orchestrator's own egress chain) counts too
@@ -444,7 +445,7 @@ class ZeroTrustRule(BaseInspectionRule):
 
     def inspect(self, project: SolutionProject) -> List[Finding]:
         configs = project.config_docs()
-        on = any(d.data.get("enable_zero_trust") is True for d in configs) or \
+        on = any(config_flag(d.data.get("enable_zero_trust")) is True for d in configs) or \
             any("enable_zero_trust=True" in m.source.replace(" ", "") for m in project.code_modules())
         if not on:
             return [self.finding("Zero Trust is not enabled (enable_zero_trust)")]

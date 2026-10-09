@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
+from k9_aif_abb.k9_utils.config_flags import config_flag
 
 try:
     from k9_aif_abb.k9_security.zero_trust.context import (
@@ -85,7 +86,7 @@ class BaseRouter(ABC):
         self.enable_zero_trust = (
             enable_zero_trust
             if enable_zero_trust is not None
-            else self.config.get("enable_zero_trust", False)
+            else bool(config_flag(self.config.get("enable_zero_trust"), False))
         )
 
         if self.enable_zero_trust and ZERO_TRUST_AVAILABLE:

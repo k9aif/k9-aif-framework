@@ -14,6 +14,7 @@ from typing import Any, Coroutine, Dict, Optional
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event
+from k9_aif_abb.k9_utils.config_flags import config_flag
 
 
 def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
@@ -117,7 +118,7 @@ class BaseOrchestrator(ABC):
         self.enable_zero_trust = (
             enable_zero_trust
             if enable_zero_trust is not None
-            else self.config.get("enable_zero_trust", False)
+            else bool(config_flag(self.config.get("enable_zero_trust"), False))
         )
 
         if self.enable_zero_trust and ZERO_TRUST_AVAILABLE:
