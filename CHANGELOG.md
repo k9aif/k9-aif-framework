@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [1.15.0] — unreleased
+## [1.15.0] — 2026-10-08
 
 Governance by construction, and five k9x_Shield gaps found by a 208-document governance evaluation.
 
@@ -17,6 +17,8 @@ Governance by construction, and five k9x_Shield gaps found by a 208-document gov
 
 ### Fixed
 
+- **k9_inspect:** an agent definition YAML with its own `governance:` block is not taken for the application config; version `1.15` equals `1.15.0` (a `>=1.15` floor was reported behind).
+- A governance `PermissionError` raised outside an event loop no longer carries a misleading "during handling of RuntimeError: no running event loop" context.
 - **GuardianGovernance egress** accepts the agent's output string (governance by construction passes `result["output"]`, not a dict); it raised `AttributeError` on every reply.
 - **ToolArgumentCheck** no longer scans the whole payload when it has no tool fields (agent markdown `---` matched its SQL-comment pattern).
 - **OutboundLinkCheck:** a brand used as a subdomain label (`paypal.refund-desk.com`) is `brand_in_subdomain`; one adjacent swap (`acmeinsurnace`) and a brand embedded in the registered name (`acme-insurance-claims.net`) are `lookalike`; defanged links (`hxxps://`, `[.]`) are scanned; an unknown link beside debt or payment-hold wording is a new BLOCK kind, `payment_lure`.
@@ -29,7 +31,7 @@ Tests: `test_check_gaps_v2_eval.py` (each missed form blocks; the benign forms f
 
 - **`k9_inspect`: static conformance inspection of a solution.** `K9Inspector().inspect(folder)` parses a solution's Python (AST) and YAML without importing or running it, and applies registered `BaseInspectionRule`s: ABB contract (agents extend an agent ABB; loop agents keep the loop), three-layer decoupling, the single model path (`llm_invoke`), Kafka ownership, governance by construction (Shield enabled with checks, Guardian, production `K9_ENV`, egress coverage), secrets and `.env`, private IPs, squad/agent YAML, model aliases, the k9-aif version. Findings are ranked critical / violation / warning / recommendation with file, line and fix; the report gives a verdict, a rule pass rate, Markdown and JSON. Organisations add rules with `InspectionRuleRegistry.register()`.
 - **`AgentLoader.register_into(registry, config, names)`**: agents are registered by name, the class resolved from the agent YAML's `class:` + `module:` — orchestrators no longer import agent classes (three-layer decoupling).
-- **Examples conform to the inspection rules** (EOC, ACME Health Insurance, ACME Support Center: compliant with warnings): orchestrators register agents by name; addresses from the environment (`${OLLAMA_BASE_URL}`, `${KAFKA_BROKER}`) instead of a LAN IP; a syntax error in `acme_health_insurance/agents/persistence_agent.py` fixed; a stale `EOCRouter` re-export removed.
+- **Examples conform to the inspection rules: no example has a violation** (`k9aif inspect examples/<app>`; ACME Health, ACME Support, prompt_evaluation, rfp_analyzer and weather_assist fully compliant). Orchestrators register agents by name; addresses come from the environment (`${OLLAMA_BASE_URL}`, `${KAFKA_BROKER}`), no LAN IPs; Shield and Granite Guardian are configured in each application's `config.yaml`; ACME Health's and k9routing's orchestrators screen their own ingress; each `llm_invoke()` failure is handled the way its agent needs (adjudication escalates to a person, the guard agent fails closed); one squad definition per app (`config/squads.yaml`; drifted per-squad copies removed); example tests run offline and match the rules (EOC 149, ACME Support 16). Also fixed: a syntax error in `acme_health_insurance/agents/persistence_agent.py`, a stale `EOCRouter` re-export.
 - **`k9aif inspect <folder> [--json] [--markdown FILE] [--fail-on violation]`** runs it from the command line (exit 1 at or above `--fail-on`, for CI). `k9aif inspect` without a folder still lists the installed components.
 
 ---
