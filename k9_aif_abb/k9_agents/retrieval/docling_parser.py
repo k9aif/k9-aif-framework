@@ -40,6 +40,8 @@ class DoclingParser(BaseAgent):
     """
     DoclingParser - Retrieval ABB
     -----------------------------
+    Install: ``pip install "k9-aif[docling]"`` (adds httpx).
+
     Converts PDF, Word, PowerPoint, Excel, HTML and image files to Markdown through a
     Docling-Serve instance (``POST /v1/convert/file``), with layout analysis and OCR
     for scanned pages.

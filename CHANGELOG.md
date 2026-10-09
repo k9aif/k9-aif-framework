@@ -4,6 +4,12 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.15.3] — 2026-10-09
+
+### Fixed
+
+- **`pip install "k9-aif[docling]"`** installs what `DoclingParser` imports (`httpx`). On 1.15.2 a clean install without httpx failed with `ModuleNotFoundError` when the parser was imported. Also in `all`.
+
 ## [1.15.2] — 2026-10-09
 
 ### Fixed

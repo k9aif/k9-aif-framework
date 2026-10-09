@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "k9-aif"
-version = "1.15.2"
+version = "1.15.3"
 description = "K9-AIF: Architecture-First Framework for Governed, Modular Agentic AI Systems"
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -40,6 +40,7 @@ s3        = ["boto3>=1.28"]
 ibm-cos   = ["ibm-cos-sdk>=2.13"]
 openai    = ["openai>=1.0"]
 mcp       = ["mcp>=1.28.1"]
+docling   = ["httpx>=0.27"]          # DoclingParser (Docling-Serve client)
 all       = [
     "aiokafka>=0.10",
     "kafka-python>=2.3.2",
@@ -55,6 +56,7 @@ all       = [
     "ibm-cos-sdk>=2.13",
     "openai>=1.0",
     "mcp>=1.28.1",
+    "httpx>=0.27",
 ]
 
 [project.urls]
