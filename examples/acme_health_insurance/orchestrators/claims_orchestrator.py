@@ -27,6 +27,12 @@ class ClaimsOrchestrator(BaseOrchestrator):
         self.claim_agent = create_agent(self.config, "ClaimProcessingAgent", monitor=monitor)
 
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Screen ingress with this orchestrator's governance (Shield from config.yaml).
+        try:
+            payload = await self.apply_pre_governance(payload)
+        except PermissionError as exc:
+            self.logger.warning(f"[{self.layer}] request blocked by governance: {exc}")
+            return {"reply": "Request blocked by governance.", "status": "denied", "reason": str(exc)}
         self.publish_status("started", {"event": "claims_flow_started"})
         self.logger.info(f"[{self.layer}] Execution started")
 

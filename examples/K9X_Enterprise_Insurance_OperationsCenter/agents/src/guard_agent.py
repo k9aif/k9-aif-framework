@@ -108,14 +108,19 @@ class GuardAgent(BaseAgent):
                 sensitivity="confidential",
                 metadata={"agent": "GuardAgent", "correlation_id": correlation_id},
             )
-            resp = llm_invoke(self.config, req)
-            guardian_output = (resp.output or "").strip()
-            policy_violations, passed = self._parse_guardian_output(guardian_output, pii_findings)
+            try:
+                resp = llm_invoke(self.config, req)
+                guardian_output, model_alias = (resp.output or "").strip(), resp.model_alias
+                policy_violations, passed = self._parse_guardian_output(guardian_output, pii_findings)
+            except RuntimeError as exc:
+                # A guard that cannot check does not pass: fail closed.
+                model_alias, passed = None, False
+                policy_violations = [f"guardrail model unavailable: {exc}"]
 
             self.logger.info(
                 f"[{self.layer}] Guard check: passed={passed} pii={len(pii_findings)} "
                 f"tokens_issued={len(token_vault)} violations={len(policy_violations)} "
-                f"model={resp.model_alias}"
+                f"model={model_alias}"
             )
 
         result = {

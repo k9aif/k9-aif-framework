@@ -30,7 +30,7 @@ export PYTHONPATH="$REPO_ROOT"
 export K9_ENV="${K9_ENV:-development}"
 
 # Override broker if you need to point at a different host
-# export K9_KAFKA_BROKERS="10.0.0.5:9092"
+# export K9_KAFKA_BROKERS="<broker-host>:9092"   (or set it in .env)
 
 echo "------------------------------------------------------------"
 echo " K9-AIF EOC — eoc_router"

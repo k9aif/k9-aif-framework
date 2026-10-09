@@ -27,6 +27,12 @@ class UserOrchestrator(BaseOrchestrator):
     # ------------------------------------------------------------------
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Executes the user authentication workflow."""
+        # Screen ingress with this orchestrator's governance (Shield from config.yaml).
+        try:
+            payload = await self.apply_pre_governance(payload)
+        except PermissionError as exc:
+            self.logger.warning(f"[{self.layer}] request blocked by governance: {exc}")
+            return {"reply": "Request blocked by governance.", "status": "denied", "reason": str(exc)}
         self.logger.info(f"[{self.layer}]  Starting auth orchestration with payload={payload}")
         try:
             result = self.auth_agent.execute(payload)

@@ -26,7 +26,10 @@ class AcmeBaseAgent(BaseAgent):
             task_type=task_type
         )
 
-        response = llm_invoke(self.config, inf_req)
+        try:
+            response = llm_invoke(self.config, inf_req)
+        except RuntimeError as exc:
+            return {"text": "", "model": None, "error": f"model unavailable: {exc}"}
 
         return {
             "text": response.output,

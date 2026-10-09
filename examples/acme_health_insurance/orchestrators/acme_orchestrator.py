@@ -35,7 +35,7 @@ class AcmeOrchestrator(BaseOrchestrator):
     layer = "SBB Orchestration Layer"
 
     # ------------------------------------------------------------------
-    def __init__(self, config=None, monitor=None):
+    def __init__(self, config=None, monitor=None, **kwargs):
         """
         Initialize the ACME Orchestrator registry.
 
@@ -46,7 +46,7 @@ class AcmeOrchestrator(BaseOrchestrator):
         monitor : object, optional
             Monitoring instance for observability hooks.
         """
-        super().__init__(config=config, monitor=monitor)
+        super().__init__(config=config, monitor=monitor, **kwargs)
         self.registry = []
         try:
             self.registry = self._load_registry()
@@ -82,6 +82,12 @@ class AcmeOrchestrator(BaseOrchestrator):
         Dict[str, Any]
             Response from the delegated orchestrator.
         """
+        # Screen ingress with this orchestrator's governance (Shield from config.yaml).
+        try:
+            payload = await self.apply_pre_governance(payload)
+        except PermissionError as exc:
+            self.logger.warning(f"[{self.layer}] request blocked by governance: {exc}")
+            return {"reply": "Request blocked by governance.", "status": "denied", "reason": str(exc)}
         intent = payload.get("intent", "")
         self.logger.info(f"[{self.layer}]  Handling intent={intent}")
 
@@ -93,7 +99,8 @@ class AcmeOrchestrator(BaseOrchestrator):
         try:
             module = importlib.import_module(entry["module"])
             cls = getattr(module, entry["name"])
-            orchestrator = cls(config=self.config, monitor=self.monitor)
+            # The sub-orchestrator gets the same governance, so it screens whatever reaches it.
+            orchestrator = cls(config=self.config, monitor=self.monitor, governance=self.governance)
             self.logger.info(f"[{self.layer}]  Delegating to {entry['name']} ({entry['module']})")
 
             # Execute the sub-orchestrator (supports async)

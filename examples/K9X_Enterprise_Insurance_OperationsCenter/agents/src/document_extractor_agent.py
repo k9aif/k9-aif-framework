@@ -118,7 +118,12 @@ class DocumentExtractorAgent(K9ValidationLoopAgent):
             task_type="extraction",
             metadata={"agent": self.layer, "iteration": loop_ctx.iteration},
         )
-        resp = llm_invoke(self.config, req)
+        try:
+            resp = llm_invoke(self.config, req)
+        except RuntimeError as exc:
+            # Nothing extracted this iteration: confidence is 0 and the loop decides.
+            self.logger.warning(f"[{self.layer}] extraction model unavailable: {exc}")
+            return ""
         return (resp.output or "").strip()
 
     def evaluate_observation(self, tool_result: str, loop_ctx: ValidationLoopContext) -> Dict[str, Any]:

@@ -71,13 +71,20 @@ class AdjudicationAgent(BaseAgent):
             task_type="adjudication",
             metadata={"agent": "AdjudicationAgent", "correlation_id": correlation_id},
         )
-        resp = llm_invoke(self.config, req)
-        raw = (resp.output or "").strip()
+        try:
+            resp = llm_invoke(self.config, req)
+            raw, model_alias, unavailable = (resp.output or "").strip(), resp.model_alias, ""
+        except RuntimeError as exc:
+            # No model, no automated decision: the claim goes to a human adjuster.
+            raw, model_alias, unavailable = "", None, str(exc)
 
         decision, confidence, rationale, recommendation = self._parse_response(raw)
+        if unavailable:
+            decision, confidence = "escalate", 0.0
+            rationale = f"Adjudication model unavailable ({unavailable}); referred to a human adjuster."
         self.logger.info(
             f"[{self.layer}] Adjudication: {decision} (confidence={confidence:.2f}) "
-            f"model={resp.model_alias}"
+            f"model={model_alias}"
         )
 
         prompt_hash = hashlib.sha256((claim_id or "").encode()).hexdigest()[:16]

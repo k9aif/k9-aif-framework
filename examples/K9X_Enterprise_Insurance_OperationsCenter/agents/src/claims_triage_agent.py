@@ -79,8 +79,12 @@ class ClaimsTriageAgent(BaseAgent):
                 task_type="reasoning",
                 metadata={"agent": "ClaimsTriageAgent", "correlation_id": correlation_id},
             )
-            resp = llm_invoke(self.config, req)
-            reasoning = resp.output.strip()
+            try:
+                reasoning = llm_invoke(self.config, req).output.strip()
+            except RuntimeError as exc:
+                # Triage scoring above is rule-based; only the narrative is lost.
+                self.logger.warning(f"[{self.layer}] reasoning model unavailable: {exc}")
+                reasoning = f"Reasoning unavailable (model error: {exc}); scores are rule-based."
 
         result = {
             "agent": "ClaimsTriageAgent",

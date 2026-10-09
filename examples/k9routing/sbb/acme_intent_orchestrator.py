@@ -23,6 +23,12 @@ class AcmeIntentOrchestrator(IntentOrchestrator):
     layer = "AcmeIntentOrchestrator SBB"
 
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Screen ingress first (Shield, when built with governance=governance_from_config(config)).
+        sh = self.apply_shield(payload)
+        if not sh["allowed"]:
+            return {"status": "denied", "reason": sh["reason"]}
+        payload = sh["payload"]
+
         # Pre-processing: normalise message casing, strip noise
         if "message" in payload:
             payload = {**payload, "message": payload["message"].strip().lower()}

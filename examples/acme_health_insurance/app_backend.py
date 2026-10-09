@@ -18,6 +18,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from aiokafka import AIOKafkaConsumer
+from k9_aif_abb.k9_core.governance.pipeline import governance_from_config
 from k9_aif_abb.k9_utils.config_loader import load_yaml
 from .orchestrators.acme_orchestrator import AcmeOrchestrator
 from .orchestrators.user_orchestrator import UserOrchestrator
@@ -41,8 +42,10 @@ active_clients: Set[WebSocket] = set()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.acme_orch = AcmeOrchestrator(config=config)
-    app.state.user_orch = UserOrchestrator(config=config)
+    # Orchestrators screen their own ingress with Shield, built from config.yaml's security.shield.
+    governance = governance_from_config(config)
+    app.state.acme_orch = AcmeOrchestrator(config=config, governance=governance)
+    app.state.user_orch = UserOrchestrator(config=config, governance=governance)
     app.state.kafka_consumer = None
     app.state.kafka_task = None
 

@@ -45,6 +45,12 @@ class FallbackOrchestrator(BaseOrchestrator):
         Dict[str, Any]
             Standardized reply payload with fallback guidance.
         """
+        # Screen ingress with this orchestrator's governance (Shield from config.yaml).
+        try:
+            payload = await self.apply_pre_governance(payload)
+        except PermissionError as exc:
+            self.logger.warning(f"[{self.layer}] request blocked by governance: {exc}")
+            return {"reply": "Request blocked by governance.", "status": "denied", "reason": str(exc)}
         self.logger.info(f"[{self.layer}]  Execution started with payload={payload}")
         self.publish_status("started", {"event": "fallback_invoked"})
 

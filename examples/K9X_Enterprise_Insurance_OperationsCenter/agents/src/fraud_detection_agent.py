@@ -105,12 +105,18 @@ class FraudDetectionAgent(K9ValidationLoopAgent):
             task_type="fraud",
             metadata={"agent": self.layer, "iteration": loop_ctx.iteration},
         )
-        resp = llm_invoke(self.config, req)
+        try:
+            resp = llm_invoke(self.config, req)
+            llm_output, model_alias = (resp.output or "").strip(), resp.model_alias
+        except RuntimeError as exc:
+            # The rule-based signals still stand; the model's view is missing.
+            self.logger.warning(f"[{self.layer}] fraud model unavailable: {exc}")
+            llm_output, model_alias = "", None
         return {
             "rule_signals": rule_signals,
             "rule_score":   hypothesis["rule_score"],
-            "llm_output":   (resp.output or "").strip(),
-            "model_alias":  resp.model_alias,
+            "llm_output":   llm_output,
+            "model_alias":  model_alias,
         }
 
     def evaluate_observation(self, tool_result: Dict[str, Any], loop_ctx: ValidationLoopContext) -> Dict[str, Any]:

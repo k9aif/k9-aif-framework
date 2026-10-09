@@ -9,13 +9,18 @@ Test producer for Redpanda - publishes messages to acme-events topic
 
 from kafka import KafkaProducer
 import json
+import os
 import time
 from datetime import datetime
+
+# Same variable as config/config.yaml (messaging); set it in .env, never hardcode an address.
+BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
+
 
 def create_producer():
     """Create and configure Kafka producer"""
     producer = KafkaProducer(
-        bootstrap_servers=['192.168.1.98:9092'],
+        bootstrap_servers=[BROKER],
         value_serializer=lambda v: json.dumps(v).encode('utf-8'),
         key_serializer=lambda k: k.encode('utf-8') if k else None,
         acks='all',  # Wait for all replicas to acknowledge
@@ -24,7 +29,7 @@ def create_producer():
     return producer
 
 def main():
-    print("Connecting to Redpanda at 192.168.1.98:9092...")
+    print(f"Connecting to Redpanda at {BROKER}...")
     
     producer = create_producer()
     topic = 'acme-events'

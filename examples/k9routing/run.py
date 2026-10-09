@@ -38,6 +38,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
+from k9_aif_abb.k9_core.governance.pipeline import governance_from_config
 from k9_aif_abb.k9_core.router.k9_event_router import K9EventRouter
 from k9_aif_abb.k9_orchestrators.intent_orchestrator import IntentOrchestrator
 from k9_aif_abb.k9_squad.intent_squad import IntentSquad
@@ -260,7 +261,8 @@ def scenario_5_sbb_orchestrator(cfg: dict, bus: MockBus):
 
     agent = ConfigListIntentAgent(config=sbb_cfg)
     squad = IntentSquad(squad_id="AcmeSquad", agents=[agent])
-    orch = AcmeIntentOrchestrator(config=sbb_cfg, squad=squad, message_bus=bus)
+    orch = AcmeIntentOrchestrator(config=sbb_cfg, squad=squad, message_bus=bus,
+                                   governance=governance_from_config(sbb_cfg))
 
     # Known intent — routes after normalising message casing
     bus.clear()

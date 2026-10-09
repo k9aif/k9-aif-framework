@@ -28,8 +28,10 @@ class CrewGovernedAgent(BaseAgent):
             metadata={"agent": "crewai_governed_agent"},
         )
 
-        response = llm_invoke(self.config, req)
-        output = response.output
+        try:
+            output = llm_invoke(self.config, req).output
+        except RuntimeError as exc:
+            return {"response": "", "error": f"model unavailable: {exc}"}
 
         # Store response for post-governance inspection
         self.config["last_output"] = output
