@@ -29,6 +29,8 @@ security:
     egress: {checks: [PIIBoundaryCheck, OutboundLinkCheck]}
 """
 
+from k9_aif_abb.k9_inspect.rules.config_rules import _installed_version
+
 CLEAN_AGENT = """
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
@@ -48,7 +50,8 @@ def clean(tmp_path):
     write(tmp_path, "config/config.yaml", CLEAN_CONFIG)
     write(tmp_path, "agents/summary_agent.py", CLEAN_AGENT)
     write(tmp_path, "squads/s.yaml", "squads:\n  s1:\n    agents: [SummaryAgent]\n    flow:\n      - {agent: SummaryAgent}\n")
-    write(tmp_path, "requirements.txt", "k9-aif>=1.15\n")
+    # The floor tracks the release under test, or K9-DEP-002 recommends raising it.
+    write(tmp_path, "requirements.txt", f"k9-aif>={_installed_version()}\n")
     return tmp_path
 
 

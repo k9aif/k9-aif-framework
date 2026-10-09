@@ -150,7 +150,7 @@ measurements:
 
 external_services:
   docling:
-    endpoint: "${DOCLING_ENDPOINT:-http://localhost:5001/v1/parse}"
+    endpoint: "${DOCLING_ENDPOINT:-http://localhost:5001/v1/convert/file}"
 
 messaging:
   backend: redpanda

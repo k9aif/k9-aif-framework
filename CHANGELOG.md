@@ -4,6 +4,16 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.15.2] — 2026-10-09
+
+### Fixed
+
+- **`DoclingParser` works again.** Its constructor passed `name=` to `BaseAgent`, which raises `TypeError` on 1.15; it now takes `config` / `monitor` like every agent. The framework config defaulted `DOCLING_ENDPOINT` to `/v1/parse`, which Docling-Serve does not serve; the default is now `/v1/convert/file`, and the parser reads `external_services.docling.endpoint` (then `retrieval.docling.host`).
+- **It converts any supported file, with OCR.** It sends the MIME type from the file suffix (it always said `application/pdf`), asks for Markdown with OCR on (`to_formats=md`, `do_ocr=true`), and returns `{"status": "ok", "filename", "markdown", "seconds"}`; an empty conversion is an error.
+- **`execute({"path": ...})`** names the file rather than carrying its bytes, so governance checks the payload and not the document (Shield's InputSizeCheck refused a 4 MB PDF). The Markdown comes back under `markdown`, not `output`: it is untrusted text for the caller to screen before a model reads it.
+
+Tests: `test_docling_parser.py` (set `DOCLING_ENDPOINT` to run the live conversion). The k9_inspect clean-solution fixture now pins the release under test.
+
 ## [1.15.1] — 2026-10-09
 
 ### Fixed
