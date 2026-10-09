@@ -80,6 +80,10 @@ class PyModule:
         return lines[n - 1].strip() if 0 < n <= len(lines) else ""
 
 
+def _is_agent_definition(data: dict) -> bool:
+    return "class" in data and bool({"role", "goal", "instructions"} & set(data))
+
+
 @dataclass
 class YamlDoc:
     path: Path
@@ -188,9 +192,12 @@ class SolutionProject:
         return [m for m in self.modules if not m.is_test and m.tree is not None]
 
     def config_docs(self) -> List[YamlDoc]:
-        """YAML files that look like a K9-AIF application config (have inference/security/governance)."""
+        """YAML files that look like a K9-AIF application config (have inference/security/governance).
+        An agent definition (class + role/goal/instructions) is not one, even with its own governance:
+        pre_process/post_process block."""
         return [d for d in self.yaml_docs if isinstance(d.data, dict)
-                and ({"inference", "security", "governance", "messaging", "llm_factory"} & set(d.data))]
+                and ({"inference", "security", "governance", "messaging", "llm_factory"} & set(d.data))
+                and not _is_agent_definition(d.data)]
 
     def find_files(self, *names: str) -> List[Path]:
         wanted = {n.lower() for n in names}

@@ -44,6 +44,7 @@ from k9_aif_abb.k9_squad.intent_squad import IntentSquad
 
 from examples.k9routing.sbb.config_list_intent_agent import ConfigListIntentAgent
 from examples.k9routing.sbb.acme_intent_orchestrator import AcmeIntentOrchestrator
+from examples.k9routing.sbb.always_unknown_agent import AlwaysUnknownAgent
 
 _THIS_DIR = os.path.dirname(__file__)
 
@@ -173,12 +174,6 @@ def scenario_3_clarification(cfg: dict, bus: MockBus):
     bus.clear()
 
     # Use a squad whose agent always returns "unknown" — no LLM needed.
-    from k9_aif_abb.k9_agents.intent.k9_intent_agent import K9IntentAgent
-
-    class AlwaysUnknownAgent(K9IntentAgent):
-        def classify(self, payload):
-            return "unknown"
-
     agent = AlwaysUnknownAgent(config=cfg)
     squad = IntentSquad(squad_id="TestSquad", agents=[agent])
     orch = IntentOrchestrator(config=cfg, squad=squad, message_bus=bus)

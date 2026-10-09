@@ -114,6 +114,21 @@ def test_governance_config_rules(tmp_path):
     assert "K9-GOV-001" in ids(K9Inspector().inspect(tmp_path))
 
 
+def test_agent_definition_is_not_an_application_config(tmp_path):
+    # An agent YAML carries its own governance: {pre_process, post_process}; it is not the app's
+    # config, so it must not decide whether Shield is enabled (examples/myapp/agents/yaml/zx.yaml).
+    write(tmp_path, "agents/summary_agent.py", CLEAN_AGENT)
+    write(tmp_path, "agents/yaml/summary.yaml", """
+        name: SummaryAgent
+        class: SummaryAgent
+        role: Summarizes text
+        governance: {pre_process: true, post_process: false}
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    gov = [f for f in r.findings if f.rule_id == "K9-GOV-001"]
+    assert gov and all(f.severity == Severity.WARNING for f in gov)     # "no application config", not a violation
+
+
 def test_yaml_hygiene_and_ip(tmp_path):
     clean(tmp_path)
     write(tmp_path, "squads/bad.yaml", "squads:\n  s2:\n    orchestrator: X\n    agents: [A]\n    flow: [A, {agent: B}]\n")

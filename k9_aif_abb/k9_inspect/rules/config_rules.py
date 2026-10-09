@@ -476,7 +476,9 @@ class FrameworkVersionRule(BaseInspectionRule):
 
 
 def older(v: str, ref: str) -> bool:
-    def t(x): return tuple(int(p) for p in re.findall(r"\d+", x)[:3])
+    def t(x):                      # "1.15" == "1.15.0": pad to three parts
+        parts = [int(p) for p in re.findall(r"\d+", x)[:3]]
+        return tuple(parts + [0] * (3 - len(parts)))
     return t(v) < t(ref)
 
 
