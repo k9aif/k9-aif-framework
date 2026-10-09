@@ -58,7 +58,15 @@ def client():
          patch("k9_aif_abb.k9_factories.llm_factory.LLMFactory.is_bootstrapped", return_value=False):
         from examples.K9X_Enterprise_Insurance_OperationsCenter.api.app import app
         with TestClient(app, raise_server_exceptions=False) as c:
+            # The run endpoints require a session (demo sign-in), as in the UI.
+            assert c.post("/api/auth/login", json={"username": "demo", "password": "demo"}).status_code == 200
             yield c
+
+
+def test_run_requires_sign_in():
+    from examples.K9X_Enterprise_Insurance_OperationsCenter.api.app import app
+    with TestClient(app, raise_server_exceptions=False) as anonymous:
+        assert anonymous.post("/api/eoc/run", json={"event_type": "claim_submitted"}).status_code == 401
 
 
 class TestScenariosEndpoint:

@@ -261,9 +261,9 @@ def test_eoc_orchestrator_routes_all_event_types():
         EOCOrchestrator, _ROUTING,
     )
 
-    orch = EOCOrchestrator.__new__(EOCOrchestrator)
-    orch.config = {}
-    orch._handlers = {}
+    # Real constructor (base-class state such as governance and Zero Trust), without loading squads.
+    with patch.object(EOCOrchestrator, "_initialize", lambda self: None):
+        orch = EOCOrchestrator(config={})
 
     for event_type in _ROUTING:
         mock_handler = MagicMock()

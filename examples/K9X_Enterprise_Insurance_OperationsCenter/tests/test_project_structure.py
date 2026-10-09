@@ -117,10 +117,11 @@ def test_squads_yaml_contains_all_squads():
     assert not missing, f"squads.yaml missing squads: {missing}"
 
 
-def test_each_squad_has_orchestrator_and_agents():
+def test_each_squad_has_agents_and_does_not_name_its_orchestrator():
+    # Three-layer decoupling: the orchestrator picks its squad; a squad never names its orchestrator.
     data = yaml.safe_load((EOC / "config/squads.yaml").read_text())
     for squad_id, cfg in data.get("squads", {}).items():
-        assert "orchestrator" in cfg, f"{squad_id}: missing 'orchestrator'"
+        assert "orchestrator" not in cfg, f"{squad_id}: names an orchestrator"
         assert "agents" in cfg and len(cfg["agents"]) > 0, f"{squad_id}: missing 'agents'"
 
 

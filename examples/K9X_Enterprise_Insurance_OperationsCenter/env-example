@@ -26,6 +26,7 @@ REDIS_HOST=your-redis-host
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 
-# K9_ENV controls governance enforcement
-# development | test | staging | production
-K9_ENV=development
+# K9_ENV controls governance enforcement: production refuses an ungoverned agent
+# (EOC is governed by Shield, config.yaml security.shield). development | test relax
+# that check; use them only while developing.
+K9_ENV=production

@@ -171,7 +171,6 @@ case "$cmd" in
       --add-host "rhel-host:${PODMAN_HOST_IP}" \
       -v "$REPO_ROOT:/app:ro,z" \
       -e PYTHONPATH=/app \
-      -e K9_ENV=development \
       --name eoc-dev \
       python:3.11-slim \
       uvicorn \

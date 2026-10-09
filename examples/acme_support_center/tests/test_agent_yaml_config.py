@@ -111,9 +111,9 @@ class TestAgentLoader:
 # Integration: KnowledgeAgent receives YAML config
 # ---------------------------------------------------------------------------
 
-_MOCK_ROUTER_PATH = (
-    "examples.acme_support_center.agents.src.acme_base_agent.ModelRouterFactory.get_router"
-)
+# Agents reach the model only through llm_invoke() (one model path); constructing one makes no call,
+# so this patch only guards against an accidental one.
+_MOCK_ROUTER_PATH = "examples.acme_support_center.agents.src.acme_base_agent.llm_invoke"
 
 
 @patch(_MOCK_ROUTER_PATH)
