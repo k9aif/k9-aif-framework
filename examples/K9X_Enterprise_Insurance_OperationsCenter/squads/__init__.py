@@ -59,7 +59,7 @@ Runtime Loading
 ---------------
 
 Squads are loaded at boot time by ``SquadLoader`` using the YAML
-descriptors in ``squads/yaml/``. The ``EOCBootstrap`` class in
+definitions in ``config/squads.yaml`` (one file, top-level ``squads:`` key). The ``EOCBootstrap`` class in
 ``utils/bootstrap.py`` orchestrates this process::
 
     loader = SquadLoader(agent_registry, orchestrator_registry)

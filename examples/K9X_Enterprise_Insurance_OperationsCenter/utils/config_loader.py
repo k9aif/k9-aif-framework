@@ -91,8 +91,7 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
     Expected structure under ``base_path``::
 
         agents/yaml/    ← per-agent YAML descriptors
-        squads/yaml/    ← per-squad YAML descriptors
-        config/         ← main config.yaml, squads.yaml, governance.yaml
+        config/         ← main config.yaml, squads.yaml (every squad, under squads:), governance.yaml
 
     Args:
         base_path: Root path of the EOC project directory.
@@ -108,14 +107,14 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
             }
     """
     agents_path = os.path.join(base_path, "agents", "yaml")
-    squads_path = os.path.join(base_path, "squads", "yaml")
+    squads_path = os.path.join(base_path, "config", "squads.yaml")      # what SquadLoader loads
     config_path = os.path.join(base_path, "config", "config.yaml")
     governance_path = os.path.join(base_path, "config", "governance.yaml")
 
     bundle: Dict[str, Any] = {}
 
     bundle["agents"] = load_yaml_dir(agents_path) if os.path.isdir(agents_path) else {}
-    bundle["squads"] = load_yaml_dir(squads_path) if os.path.isdir(squads_path) else {}
+    bundle["squads"] = (load_yaml_file(squads_path).get("squads") or {}) if os.path.exists(squads_path) else {}
 
     if not os.path.exists(config_path):
         raise ConfigLoaderError(f"Required config file not found: {config_path}")

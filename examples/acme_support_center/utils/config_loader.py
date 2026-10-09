@@ -72,7 +72,7 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
     Expected structure:
         base_path/
             agents/yaml/
-            squads/yaml/
+            config/squads.yaml   (every squad, under squads:; what SquadLoader loads)
             config.yaml (optional)
 
     Returns:
@@ -83,7 +83,7 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
         }
     """
     agents_path = os.path.join(base_path, "agents", "yaml")
-    squads_path = os.path.join(base_path, "squads", "yaml")
+    squads_path = os.path.join(base_path, "config", "squads.yaml")
     config_path = os.path.join(base_path, "config.yaml")
 
     bundle: Dict[str, Any] = {}
@@ -96,10 +96,10 @@ def load_config_bundle(base_path: str) -> Dict[str, Any]:
         bundle["agents"] = {}
 
     # Squads
-    if os.path.isdir(squads_path):
-        bundle["squads"] = load_yaml_dir(squads_path)
+    if os.path.exists(squads_path):
+        bundle["squads"] = load_yaml_file(squads_path).get("squads") or {}
     else:
-        log.warning("Squads directory not found: %s", squads_path)
+        log.warning("Squads file not found: %s", squads_path)
         bundle["squads"] = {}
 
     # Optional global config

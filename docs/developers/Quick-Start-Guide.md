@@ -120,7 +120,7 @@ The **Palette** (left side) has one entry per K9-AIF layer:
 |---|---|---|
 | **Router** | `K9EventRouter` | `router/` — Python + config |
 | **Orchestrator** | `BaseOrchestrator` | `orchestrators/` — Python + config |
-| **Squad** | `BaseSquad` | `squads/yaml/<name>.yaml` |
+| **Squad** | `BaseSquad` | `config/squads.yaml` (all squads, under `squads:`) |
 | **Agent** | `BaseAgent` | `agents/yaml/<name>.yaml` + `agents/src/<name>.py` |
 | **Validation Loop** | `K9ValidationLoopAgent` | Agent with an iterative confidence-loop scaffold |
 | **Critic-Actor** | `K9CriticActorAgent` | Agent with an actor/critic refinement scaffold |

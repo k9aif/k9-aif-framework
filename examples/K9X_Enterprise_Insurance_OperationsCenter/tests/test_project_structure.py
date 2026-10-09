@@ -17,7 +17,6 @@ REQUIRED_DIRS = [
     "agents/src",
     "agents/yaml",
     "squads/src",
-    "squads/yaml",
     "orchestrators",
     "router",
     "config",
@@ -78,15 +77,12 @@ REQUIRED_YAML_FILES = [
     "agents/yaml/adjudication_agent.yaml",
     "agents/yaml/guard_agent.yaml",
     "agents/yaml/audit_agent.yaml",
-    # Squad YAMLs
-    "squads/yaml/claims_processing_squad.yaml",
-    "squads/yaml/document_intelligence_squad.yaml",
-    "squads/yaml/risk_assessment_squad.yaml",
-    "squads/yaml/policy_management_squad.yaml",
-    "squads/yaml/catastrophe_response_squad.yaml",
-    "squads/yaml/customer_service_squad.yaml",
-    "squads/yaml/audit_compliance_squad.yaml",
 ]
+
+
+def test_squads_have_one_definition():
+    # config/squads.yaml is what SquadLoader loads; per-squad copies drifted from it (removed).
+    assert not (EOC / "squads/yaml").exists(), "squad definitions belong in config/squads.yaml only"
 
 @pytest.mark.parametrize("yamlpath", REQUIRED_YAML_FILES)
 def test_required_yaml_file_exists(yamlpath):

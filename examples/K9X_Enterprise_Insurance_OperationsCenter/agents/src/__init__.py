@@ -10,7 +10,7 @@ which declares its name, role, goal, instructions, model assignment, and tools.
 
 At runtime, :class:`~...utils.bootstrap.EOCBootstrap` uses
 ``AgentRegistry`` to register all agents and ``SquadLoader`` to assemble squads
-from ``squads/yaml/``. Agents are loaded lazily from their source classes here.
+from ``config/squads.yaml``. Agents are loaded lazily from their source classes here.
 
 Exported Agents
 ---------------
