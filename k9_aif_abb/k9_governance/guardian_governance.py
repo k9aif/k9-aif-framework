@@ -118,10 +118,16 @@ RISK_DEFINITIONS: Dict[str, str] = {
 }
 
 
-def _extract_text(payload: Dict[str, Any], *keys: str) -> str:
+def _extract_text(payload: Any, *keys: str) -> str:
     """First non-empty string found among the given keys, else the whole
     payload stringified and truncated. Checked in the order given by the
-    caller — pre_process/post_process each pass their own priority order."""
+    caller — pre_process/post_process each pass their own priority order.
+    A plain string is the text itself: governance by construction (1.15)
+    passes an agent's ``result["output"]`` to post_process, not a dict."""
+    if isinstance(payload, str):
+        return payload
+    if not isinstance(payload, dict):
+        return str(payload)[:2000]
     for key in keys:
         value = payload.get(key)
         if isinstance(value, str) and value.strip():
@@ -288,7 +294,7 @@ class GuardianGovernance(BaseGovernance):
 
         return payload
 
-    def post_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  # type: ignore[override]
+    def post_process(self, payload: Any, ctx: Optional[Dict[str, Any]] = None) -> Any:  # type: ignore[override]
         """Screen agent output after the LLM responds."""
         text = _extract_text(payload, "output", "conclusion", "draft", "summary", "extracted", "audit_notes")
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))

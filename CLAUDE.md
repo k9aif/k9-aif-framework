@@ -106,9 +106,12 @@ A subclass calling `super().execute()` is governed once (a contextvar guard).
 
 **Where governance comes from.** `governance=` if passed; otherwise
 `governance_from_config(config)`: `security.shield.enabled: true` →
-`ShieldGovernance(config)`. One config setting therefore governs every agent
-of an application. Nothing configured → `NoopGovernance` (fine in
-development/test, refused in production).
+`ShieldGovernance(config)`; `governance.guardian.enabled: true` →
+`GuardianGovernance` (Granite Guardian, `on_unavailable` default
+`fail_closed`); both → `ChainedGovernance(Shield, Guardian)`, Shield first.
+One config setting therefore governs every agent of an application.
+Nothing configured → `NoopGovernance` (fine in development/test, refused in
+production).
 
 **Adapters.** The CrewAI, LangGraph and Claude SDK orchestrator adapters
 run pre/post at their boundary and call `assert_governed()` at the top of

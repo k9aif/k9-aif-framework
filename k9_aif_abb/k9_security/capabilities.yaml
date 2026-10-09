@@ -192,6 +192,8 @@ capabilities:
     enabled_by_default: false
     covers: {LLM01: full, ASI01: partial, LLM09: partial}
     summary: Harm, jailbreak and paraphrased injection that pattern checks miss; mandatory per product policy.
+      Configured with governance.guardian.enabled (1.15), every agent gets it by construction, chained after
+      Shield (ChainedGovernance) so the deterministic checks run first; unavailable is fail_closed by default.
     limits: Not yet invoked by Shield as an escalation on a pending BLOCK.
 
   - id: guardian.risk.process_manipulation

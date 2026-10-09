@@ -72,13 +72,29 @@ def governance_from_config(config: dict | None) -> Any:
 
     ``security.shield.enabled: true`` → :class:`ShieldGovernance` over the
     whole config (it reads ``security.shield.ingress/egress.checks``).
-    Otherwise ``None`` (→ :func:`require_governance` decides).
+    ``governance.guardian.enabled: true`` → :class:`GuardianGovernance`
+    (Granite Guardian, the semantic layer; ``governance.guardian.model`` /
+    ``on_unavailable``, default fail_closed).
+    Both → :class:`ChainedGovernance`, Shield first (deterministic and cheap,
+    so the obvious cases never reach the model), then Guardian.
+    Neither → ``None`` (→ :func:`require_governance` decides).
     """
-    shield = ((config or {}).get("security") or {}).get("shield") or {}
+    cfg = config or {}
+    stages = []
+    shield = (cfg.get("security") or {}).get("shield") or {}
     if shield.get("enabled") is True:
         from k9_aif_abb.k9_security.vulnerability.shield_governance import ShieldGovernance
-        return ShieldGovernance(config)
-    return None
+        stages.append(ShieldGovernance(cfg))
+    guardian = (cfg.get("governance") or {}).get("guardian") or {}
+    if isinstance(guardian, dict) and guardian.get("enabled") is True:
+        from k9_aif_abb.k9_governance.guardian_governance import GuardianGovernance
+        stages.append(GuardianGovernance(config=cfg))
+    if not stages:
+        return None
+    if len(stages) == 1:
+        return stages[0]
+    from k9_aif_abb.k9_governance.chained_governance import ChainedGovernance
+    return ChainedGovernance(*stages, config=cfg)
 
 
 def is_permissive_env(env: str | None = None) -> bool:

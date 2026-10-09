@@ -12,10 +12,12 @@ Governance by construction, and five k9x_Shield gaps found by a 208-document gov
 
 - **Governance by construction.** `BaseAgent.__init_subclass__` wraps every subclass's `execute()` and `execute_stream()` when the class is defined: governance is asserted, the payload pre-processed and the output post-processed on every call, and an override is wrapped too. `governance_from_config()` gives every agent `ShieldGovernance` when `security.shield.enabled: true`. With no governance configured, production (`K9_ENV` unset or `production`) raises `PermissionError` before the agent runs.
 - **Every inference call governed.** `llm_invoke()` / `llm_invoke_stream()` read a call-path mark set by agents and orchestration adapters; a call outside any governed entry point runs the configured `security.shield` checks itself, and is refused in production when none is configured.
+- **Granite Guardian from config.** `governance_from_config()` also builds `GuardianGovernance` when `governance.guardian.enabled: true`; with Shield enabled too, every agent gets `ChainedGovernance(Shield, Guardian)` — Shield's deterministic checks first, so an obvious injection never reaches the model, then Guardian's semantic screening. Before, the flag configured nothing by construction. Verified live (`granite4.1-guardian:8b`): a benign request passes both, an injection stops at Shield, a paraphrased jailbreak passes Shield and is blocked by Guardian.
 - Examples (k9chat, EOC) ship a Shield profile so they run under governance by construction.
 
 ### Fixed
 
+- **GuardianGovernance egress** accepts the agent's output string (governance by construction passes `result["output"]`, not a dict); it raised `AttributeError` on every reply.
 - **ToolArgumentCheck** no longer scans the whole payload when it has no tool fields (agent markdown `---` matched its SQL-comment pattern).
 - **OutboundLinkCheck:** a brand used as a subdomain label (`paypal.refund-desk.com`) is `brand_in_subdomain`; one adjacent swap (`acmeinsurnace`) and a brand embedded in the registered name (`acme-insurance-claims.net`) are `lookalike`; defanged links (`hxxps://`, `[.]`) are scanned; an unknown link beside debt or payment-hold wording is a new BLOCK kind, `payment_lure`.
 - **PromptInjectionCheck:** system-prompt extraction requests (print / quote / reproduce the instructions you were given), also with leetspeak digits folded.
