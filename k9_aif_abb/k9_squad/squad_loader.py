@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 import yaml
 
-from .base_squad import BaseSquad
+from .base_squad import BaseSquad, synthesis_config
 from .squad_monitor import DefaultSquadMonitor
 
 
@@ -113,6 +113,12 @@ class SquadLoader:
         squad.description = cfg.get("description", "")
         squad.flow = cfg.get("flow", [])
         squad.metadata = cfg
+
+        # Squad coordinator (1.16): a solution may name its own synthesizer agent;
+        # otherwise BaseSquad creates K9ContextSynthesizerAgent on first use.
+        synthesis = synthesis_config(cfg)
+        if synthesis["mode"] != "off" and synthesis.get("agent"):
+            squad.synthesizer = self._create_agent(synthesis["agent"], squad_id)
 
         return squad
 

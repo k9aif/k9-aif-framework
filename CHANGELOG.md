@@ -4,6 +4,17 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.16.0] — 2026-10-11
+
+### Added
+
+- **Squad coordinator: bounded squad context.** A squad's agents run in sequence and each reads the full accumulated context, so prompts grow with every step. A squad can now set `synthesis:` (`off`, the default and the previous behaviour; `auto`; `always`). With `auto`, once the upstream results a step would receive exceed `max_context_chars` (default 24000, about 6k tokens), the step gets a digest (`squad_digest`, with `squad_digest_keys`) instead of the full outputs; `always` digests whenever there are upstream results.
+- **`K9ContextSynthesizerAgent`** (`k9_agents/synthesis/`) writes the digest through `llm_invoke` (task type `summarization`). It is an ordinary `BaseAgent`, so governance by construction screens the digest like any agent output. A solution can name its own synthesizer in `synthesis.agent`.
+- **Audit:** the squad's results keep every full output; `squad_synthesis` records each digest made (step, agent, source keys, characters in and out).
+- Steps with `context_keys` (explicit scoping) or `synthesis: false` are never synthesized.
+
+Tests: `test_squad_synthesis.py`. Recipe: `SKILLS.md` Skill 4, "Bounding squad context".
+
 ## [1.15.3] — 2026-10-09
 
 ### Fixed

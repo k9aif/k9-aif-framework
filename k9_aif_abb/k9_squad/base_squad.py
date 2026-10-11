@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
+import json
 import logging
 import time
 
@@ -48,6 +49,32 @@ def _eval_when(when_cfg, ctx: dict) -> bool:
     return True
 
 
+SYNTHESIS_MODES = ("off", "auto", "always")
+DEFAULT_SYNTHESIS_MAX_CHARS = 24000   # about 6k tokens of upstream results
+
+
+def synthesis_config(metadata) -> dict:
+    """Normalize a squad's ``synthesis:`` setting.
+
+    ``synthesis: auto`` or ``synthesis: {mode: auto, max_context_chars: 24000,
+    agent: MySynthesizer}``. Missing or ``off`` means no synthesis (pre-1.16
+    behaviour)."""
+    cfg = (metadata or {}).get("synthesis") if isinstance(metadata, dict) else None
+    if cfg is None or cfg is False:
+        cfg = {"mode": "off"}
+    elif cfg is True:
+        cfg = {"mode": "auto"}
+    elif isinstance(cfg, str):
+        cfg = {"mode": cfg}
+    cfg = dict(cfg)
+    mode = str(cfg.get("mode", "off")).lower()
+    if mode not in SYNTHESIS_MODES:
+        raise ValueError(f"synthesis.mode must be one of {SYNTHESIS_MODES}, got {mode!r}")
+    cfg["mode"] = mode
+    cfg["max_context_chars"] = int(cfg.get("max_context_chars", DEFAULT_SYNTHESIS_MAX_CHARS))
+    return cfg
+
+
 class BaseSquad:
     """
     ABB: Represents a coordinated team of agents
@@ -65,6 +92,7 @@ class BaseSquad:
         self.description = ""
         self.flow = []
         self.metadata = {}
+        self.synthesizer = None   # set by SquadLoader, or created on first use
 
     def execute(self, payload: dict) -> dict:
         """
@@ -76,6 +104,15 @@ class BaseSquad:
           controls which *upstream result keys* are passed through.
         - When ``context_keys`` is absent the agent receives the full
           accumulated context (backwards compatible).
+
+        Squad coordinator (1.16): with ``synthesis: auto`` the upstream
+        results a step would receive are replaced by a digest
+        (``squad_digest``) once they exceed ``max_context_chars``;
+        ``synthesis: always`` does so whenever there are upstream results.
+        Steps with ``context_keys`` (explicit scoping) or ``synthesis: false``
+        are never synthesized. The squad's results keep every full output,
+        and ``squad_synthesis`` records each digest made (step, source keys,
+        sizes) for audit.
 
         Steps with a ``when:`` field are skipped if the condition evaluates
         to False against the current context.
@@ -106,6 +143,9 @@ class BaseSquad:
 
         context = {**payload, "squad_id": self.squad_id}
         results = {}
+        synthesis = synthesis_config(self.metadata)
+        synthesis_log = []
+        digest_cache = {}
 
         for step_idx, step in enumerate(self.flow):
             agent_name = step["agent"]
@@ -131,6 +171,10 @@ class BaseSquad:
                 }
             else:
                 step_context = {**context}
+            if context_keys is None and step.get("synthesis", True) is not False:
+                step_context = self._apply_synthesis(
+                    step_idx, agent_name, step_context, results, synthesis,
+                    digest_cache, synthesis_log)
             step_context.update(step.get("context", {}))
             log.info("[%s] step %d executing agent=%s", self.squad_id, step_idx + 1, agent_name)
             t0 = time.monotonic()
@@ -150,7 +194,45 @@ class BaseSquad:
         if self.monitor:
             self.monitor.on_squad_end(self.squad_id)
 
-        return {"status": "completed", "squad_id": self.squad_id, **results}
+        out = {"status": "completed", "squad_id": self.squad_id, **results}
+        if synthesis_log:
+            out["squad_synthesis"] = synthesis_log
+        return out
+
+    # ------------------------------------------------------------------
+    def _apply_synthesis(self, step_idx, agent_name, step_context, results,
+                         synthesis, digest_cache, synthesis_log):
+        """Replace upstream results in ``step_context`` by a digest when the
+        squad's synthesis setting calls for it; otherwise return it unchanged."""
+        mode = synthesis["mode"]
+        upstream = {k: v for k, v in step_context.items() if k in results}
+        if mode == "off" or not upstream:
+            return step_context
+        size = len(json.dumps(upstream, default=str, ensure_ascii=False))
+        if mode == "auto" and size <= synthesis["max_context_chars"]:
+            return step_context
+        keys = tuple(upstream)
+        if keys not in digest_cache:
+            synthesizer = self._get_synthesizer(synthesis)
+            res = synthesizer.execute({"results": upstream, "task": self.description})
+            digest_cache[keys] = (res or {}).get("output", "") if isinstance(res, dict) else str(res)
+        digest = digest_cache[keys]
+        synthesis_log.append({"step": step_idx + 1, "agent": agent_name,
+                              "source_keys": list(keys), "chars_in": size,
+                              "chars_out": len(digest)})
+        log.info("[%s] step %d agent=%s gets a digest of %s (%d -> %d chars)",
+                 self.squad_id, step_idx + 1, agent_name, list(keys), size, len(digest))
+        scoped = {k: v for k, v in step_context.items() if k not in results}
+        scoped["squad_digest"] = digest
+        scoped["squad_digest_keys"] = list(keys)
+        return scoped
+
+    def _get_synthesizer(self, synthesis):
+        if self.synthesizer is None:
+            from k9_aif_abb.k9_agents.synthesis import K9ContextSynthesizerAgent
+            config = getattr(self.agents[0], "config", {}) if self.agents else {}
+            self.synthesizer = K9ContextSynthesizerAgent(config=config)
+        return self.synthesizer
 
     def run(self, payload):
         """Delegates to execute() — kept for backwards compatibility."""
