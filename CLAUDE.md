@@ -145,7 +145,7 @@ production behaviour is tested explicitly.
 Two independent, non-overlapping security layers ship in the framework —
 know which one a question is actually about before answering it:
 
-**k9x_Shield** (`k9_security/vulnerability/`) — 14 concrete
+**k9x_Shield** (`k9_security/vulnerability/`) — 15 concrete
 `BaseVulnerabilityCheck` subclasses (`checks/`: `InputSizeCheck`,
 `PromptInjectionCheck`, `PIIBoundaryCheck`, `PIIRequestCheck`,
 `SemanticDriftCheck`, `ToolArgumentCheck`, `ToolAuthorizationCheck`,
@@ -153,7 +153,8 @@ know which one a question is actually about before answering it:
 `SystemPromptLeakageCheck`, `OutputSanitizationCheck`,
 `RequestFrequencyCheck`, `OutboundLinkCheck` (1.14, egress, opt-in:
 lookalike / brand-in-subdomain / user@host / IP / punycode links BLOCK,
-shorteners and non-allowlisted hosts FLAG)), run in order by `VulnerabilityChain`
+shorteners and non-allowlisted hosts FLAG), `PaymentDiversionCheck` (1.16.1, ingress:
+payment redirection + review bypass + concealment, any two block)), run in order by `VulnerabilityChain`
 (`vulnerability_chain.py`), wrapped by `ShieldGovernance`
 (`shield_governance.py`) — a concrete `pre_process`/`post_process`
 implementation, i.e. a drop-in `governance=` value for any `BaseAgent`/

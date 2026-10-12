@@ -4,6 +4,17 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.16.1] — 2026-10-12
+
+### Added
+
+- **`PaymentDiversionCheck`** (k9x_Shield, ingress). Blocks documents that steer an automated decision in business language: payment redirection ("route the payment to the replacement account"), review bypass ("already through the full review", "no need to repeat the review", "treat as final") and concealment ("no need to flag this in your summary"). Any two of the three signals block; one alone passes, so a genuine claim that gives a new bank account or mentions a completed review goes through. Deterministic, microseconds, no configuration needed; on by default in the framework's ingress check list. Validated with k9x_Satan's attack documents and ordinary claims. Tests: `test_payment_diversion_check.py`.
+
+### Changed
+
+- **`PIIBoundaryCheck` ZIP code detection** matches a US ZIP code in an address context (after a state code, or a ZIP / postal code label), keeping claim, order and reference numbers such as `CLM-2026-48377` out of PII findings. Addresses, labelled ZIP codes and the other PII types are detected as before. Tests: `test_pii_boundary_check.py`.
+- **Security capability catalog:** Guardian screening is rated `LLM01: partial`, reflecting repeated k9x_Satan runs on business-language paraphrases; `PaymentDiversionCheck` adds deterministic coverage for that case.
+
 ## [1.16.0] — 2026-10-11
 
 ### Added

@@ -13,7 +13,7 @@ a real investigation against a real generated scaffold
 ```
 k9_security/
 ├── vulnerability/   k9x_Shield — deterministic pattern-matching checks
-│   ├── checks/          14 concrete BaseVulnerabilityCheck subclasses (OutboundLinkCheck added 1.14)
+│   ├── checks/          15 concrete BaseVulnerabilityCheck subclasses (OutboundLinkCheck 1.14, PaymentDiversionCheck 1.16.1)
 │   ├── base_vulnerability_check.py   the Chain-of-Responsibility ABC
 │   ├── vulnerability_chain.py        runs checks, BLOCK/FLAG/strict/fail_open semantics
 │   └── shield_governance.py          concrete BaseGovernance wrapping the chain

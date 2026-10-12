@@ -76,6 +76,7 @@ security:
       checks:
         - InputSizeCheck
         - PromptInjectionCheck
+        - PaymentDiversionCheck   # 1.16.1: payment redirection + review bypass + concealment (2 of 3)
         - PIIBoundaryCheck
     egress:                # runs after the LLM — inspect output before any tool executes
       checks:
