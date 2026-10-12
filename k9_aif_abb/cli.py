@@ -662,6 +662,16 @@ K9_ENV=development
 # POSTGRES_USER=k9aif
 # POSTGRES_PASSWORD=
 
+# ── Squad context synthesis (k9-aif 1.16) ────────────────
+# Not an environment variable: set it per squad in the squads YAML.
+#   squads:
+#     MySquad:
+#       synthesis: auto   # off (default) | auto | always
+# auto: from step 2 on, a step gets a digest (squad_digest) instead of
+# the earlier agents' full outputs once they exceed max_context_chars
+# (default 24000). The synthesizer is not listed in agents:/flow:.
+# See the framework README (Squad Coordinator) / Developer Guide 3.5.1.
+
 # Kafka / Redpanda (optional — for event-driven squads)
 # KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 """,
