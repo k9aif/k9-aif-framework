@@ -5,7 +5,7 @@
 
 **Author:** Ravi Natarajan  
 **Project:** K9-AIF Framework, K9X Ecosystem  
-**Last Updated:** 2026-07-21  
+**Last Updated:** 2026-10-12  
 **New here?** Start with the [Quick Start Guide](Quick-Start-Guide.pdf) — zero to a running agent in 15 minutes using K9X Studio  
 **Website:** [https://k9x.ai](https://k9x.ai)  
 **Architecture Graph:** [https://graph.k9x.ai](https://graph.k9x.ai)  
@@ -451,7 +451,9 @@ class BaseSquad:
     def execute(self, payload: dict) -> dict:
         """
         Execute agents in flow order.
-        Each step receives the accumulated context from all prior steps.
+        Each step receives the accumulated context from all prior steps,
+        unless context_keys scopes it or synthesis: replaces it with a
+        digest (see 3.5.1).
         Conditional steps (when:) are skipped if condition is false.
         Returns {"status": "completed", "squad_id": ..., **step_results}
         """
@@ -461,6 +463,91 @@ class BaseSquad:
 ```
 
 `BaseSquad` is not abstract — it is a concrete implementation. Domain solutions rarely need to subclass it. The flow behavior is fully driven by the YAML definition loaded by `SquadLoader`.
+
+### 3.5.1 Squad Coordinator: Bounding Squad Context (1.16)
+
+By default each step receives the original payload plus every earlier agent's full output, so the prompt grows with every step. A long squad can push later agents past their model's context window. Two controls bound it:
+
+- **`context_keys` on a step** (deterministic scoping): the agent sees only the named upstream result keys plus the original payload.
+- **`synthesis:` on the squad** (the squad coordinator): the upstream results a step would receive are replaced by a digest.
+
+```yaml
+squads:
+  ClaimsSquad:
+    synthesis: auto                 # off (default) | auto | always; true means auto
+    # long form:
+    # synthesis: {mode: auto, max_context_chars: 24000, agent: MySynthesizerAgent}
+    agents:
+      - IntakeAgent
+      - AssessmentAgent
+      - AuditAgent
+    flow:
+      - agent: IntakeAgent
+        result_key: intake
+      - agent: AssessmentAgent
+        result_key: assessment
+      - agent: AuditAgent
+        result_key: audit
+        synthesis: false            # this step always gets the full results
+```
+
+**The synthesizer is not a member of the squad.** Do not list it under `agents:` or `flow:`; it never runs as a step. The squad holds it on the side:
+
+| Configuration | Who creates the synthesizer | When |
+|---|---|---|
+| `synthesis: auto` or `always`, no `agent` | `BaseSquad` creates the OOB `K9ContextSynthesizerAgent` with the first agent's config | Lazily, the first time a digest is needed; never if no step needs one |
+| `synthesis.agent: MySynthesizerAgent` | `SquadLoader` creates it from the agent registry | When the squad loads |
+| `synthesis: off` or absent | Nobody | Never (pre-1.16 behaviour) |
+
+**When a step gets a digest.** Before each step `BaseSquad` checks, in order:
+
+1. The squad's mode is `auto` or `always`.
+2. The step has upstream results. Step 1 never does, so a digest is only possible from step 2 onward, and a single-agent squad never synthesizes.
+3. The step sets neither `context_keys` nor `synthesis: false`.
+4. In `auto` mode only, the upstream results serialized as JSON exceed `max_context_chars` (default 24000, about 6k tokens). `always` skips this check.
+
+If any check fails, the step receives its context exactly as before.
+
+**What the step receives.** The upstream result keys are removed from its context and replaced by:
+
+- `squad_digest`: the digest text.
+- `squad_digest_keys`: the result keys the digest covers.
+
+The original payload keys and any step-level `context:` entries are untouched. A digest is made once per set of upstream keys and reused by any later step that would digest the same set.
+
+**What the squad returns.** Full outputs of every agent stay in the squad's results; nothing is lost for audit. When at least one digest was made, the result also carries `squad_synthesis`, one entry per digest:
+
+```python
+{"step": 3, "agent": "AuditAgent", "source_keys": ["intake", "assessment"],
+ "chars_in": 31250, "chars_out": 2840}
+```
+
+**Governance.** `K9ContextSynthesizerAgent` is an ordinary `BaseAgent`, so governance by construction screens its digest like any agent output (Shield, Guardian). Its model call goes through `llm_invoke()`.
+
+**Writing your own synthesizer.** Extend `BaseAgent`, register it with the `AgentRegistry`, and name it in `synthesis.agent`. The contract:
+
+```python
+# input
+{"results": {"intake": {...}, "assessment": {...}}, "task": "<squad description>"}
+# output
+{"output": "<digest text>", "source_keys": ["intake", "assessment"]}
+```
+
+Only `output` is read; return plain text that keeps every fact, number, identifier, decision and open issue the next agent needs.
+
+**Choosing a mode.**
+
+| Situation | Use |
+|---|---|
+| Short squads, small outputs | `off` (default) |
+| Squads whose outputs can grow (documents, multi-section analysis) | `auto` |
+| Later agents should always work from a condensed view | `always` |
+| One step needs specific upstream keys only | `context_keys` on that step |
+| One step must see the raw outputs (audit, final assembly) | `synthesis: false` on that step |
+
+K9X Studio scaffolds set `synthesis: auto` on every squad with two or more agents; below the threshold, those squads run exactly as they would without it.
+
+Implementation: `k9_squad/base_squad.py` (`synthesis_config`, `_apply_synthesis`), `k9_agents/synthesis/context_synthesizer_agent.py`. Tests: `tests/test_squad_synthesis.py`.
 
 ### 3.6 Configuration-Driven Loading
 
@@ -502,7 +589,7 @@ sequenceDiagram
     Orchestrator-->>Client: final result
 ```
 
-Context accumulation is the key concept: each agent in a squad enriches the shared context progressively. Agent 2 receives both the original payload and Agent 1's output. By the final agent, the context contains the full enriched state of the workflow.
+Context accumulation is the key concept: each agent in a squad enriches the shared context progressively. Agent 2 receives both the original payload and Agent 1's output. By the final agent, the context contains the full enriched state of the workflow. When that state grows too large, the squad coordinator can hand later agents a digest instead (3.5.1).
 
 ### 3.8 Layering Strategy
 
