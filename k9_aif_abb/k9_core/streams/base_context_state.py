@@ -208,6 +208,10 @@ class BaseContextState(ABC):
         """Recorded changes for one entity, oldest first: {"at": datetime, "type", "fields", "source"}."""
         raise NotImplementedError
 
+    def mark_history_unavailable(self, key: EntityKey) -> None:
+        """The entity's value came from its system of record (read-through, e.g. after eviction):
+        its change history is unknown, which answers must say rather than report 'no changes'."""
+
     @abstractmethod
     def clear(self) -> None:
         raise NotImplementedError

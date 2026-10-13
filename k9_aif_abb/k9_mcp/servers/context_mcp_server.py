@@ -168,11 +168,18 @@ class ContextMCPServer(BaseMCPServer):
             kwargs.setdefault("stateless_http", True)
         mcp = _Server(self.name, instructions=self.instructions, **kwargs)
         self.mcp = mcp
+        self.register_on(mcp)
+        return mcp
+
+    def register_on(self, mcp: Any) -> Any:
+        """Add this server's tools (and the context:// resource) to an MCP SDK server — this
+        one's own, or a solution's existing MCP server, so agents reach one endpoint for both
+        knowing (these tools) and doing (the solution's action tools)."""
         server = self
 
         @mcp.tool()
         def get_current(entity: str, id: str) -> Dict[str, Any]:
-            """Latest state of one entity, with as_of, age_seconds, stale and its source event."""
+            """Latest state of one entity, with as_of, age_seconds and its source event."""
             return server.get_current(entity, id)
 
         @mcp.tool()

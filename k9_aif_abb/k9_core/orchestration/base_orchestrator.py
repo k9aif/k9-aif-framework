@@ -98,6 +98,7 @@ class BaseOrchestrator(ABC):
         session_manager=None,
         hil_state_store=None,
         context_state=None,
+        origin=None,
     ):
         self.config = config or {}
         self.monitor = monitor
@@ -117,6 +118,9 @@ class BaseOrchestrator(ABC):
         # current value of every entity named in payload["live_context_refs"]
         # as payload["live_context"]. None (default) changes nothing.
         self.context_state = context_state
+        # k9x Origin (1.18): each squad gets the live_context it declares in origin.yaml,
+        # resolved before it runs. Supersedes context_state when both are given.
+        self.origin = origin
 
         # Where Zero Trust gets caller identity from (None -> security.identity.mode,
         # default 'payload' in 1.x). See k9_security/zero_trust/identity.py.
@@ -165,7 +169,8 @@ class BaseOrchestrator(ABC):
         if not squads:
             return {}
 
-        payload = self.enrich_with_live_context(payload)
+        if self.origin is None:
+            payload = self.enrich_with_live_context(payload)
 
         if not parallel or len(squads) <= 1:
             results = {}
@@ -173,7 +178,7 @@ class BaseOrchestrator(ABC):
                 self.logger.info(
                     "[%s] Executing squad: %s (sequential)", self.layer, squad.squad_id,
                 )
-                result = squad.execute(payload)
+                result = squad.execute(self._with_origin(squad, payload))
                 results[squad.squad_id] = result
             return results
 
@@ -186,7 +191,7 @@ class BaseOrchestrator(ABC):
         results = {}
         with ThreadPoolExecutor(max_workers=len(squads)) as executor:
             futures = {
-                executor.submit(squad.execute, {**payload}): squad
+                executor.submit(squad.execute, self._with_origin(squad, {**payload})): squad
                 for squad in squads
             }
             for future in as_completed(futures):
@@ -211,6 +216,22 @@ class BaseOrchestrator(ABC):
                         "error": str(exc),
                     }
         return results
+
+    # ------------------------------------------------------------------
+    def _with_origin(self, squad, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """The squad's declared live_context from k9x Origin (plus any live_context_refs)."""
+        if self.origin is None or not isinstance(payload, dict):
+            return payload
+        live = self.origin.resolve_for_squad(getattr(squad, "squad_id", ""), payload)
+        if not live:
+            return payload
+        emit_trace_event({
+            "type": "LiveContext", "agent": self.layer, "squad": getattr(squad, "squad_id", ""),
+            "refs": list(live), "ages": {k: v.get("age_seconds") for k, v in live.items()},
+            "flagged": [k for k, v in live.items()
+                        if any((v.get("flags") or {}).get(f) for f in ("quarantined", "in_review", "conflict"))],
+        })
+        return {**payload, "live_context": {**(payload.get("live_context") or {}), **live}}
 
     # ------------------------------------------------------------------
     def enrich_with_live_context(self, payload: Dict[str, Any]) -> Dict[str, Any]:

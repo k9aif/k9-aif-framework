@@ -108,6 +108,13 @@ class InMemoryContextState(BaseContextState):
         return replace(cv, value=dict(cv.value), source=dict(cv.source), quarantined=list(cv.quarantined),
                        field_times=dict(cv.field_times))
 
+    def mark_history_unavailable(self, key: EntityKey) -> None:
+        with self._lock:
+            cv = self._values.get(key)
+            if cv is not None:
+                cv.history_available = False
+                self._history.pop(key, None)
+
     def _read(self, key: EntityKey) -> Optional[ContextValue]:
         with self._lock:
             cv = self._values.get(key)
