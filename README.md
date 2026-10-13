@@ -590,8 +590,10 @@ Products built on top of K9-AIF, beyond the framework itself:
 | HIL (Human in the Loop) | Kafka-native case management for agent escalations | [hil.k9x.ai](https://hil.k9x.ai) |
 | Security Analysis Tool (SATAN) | Adversarial red-team harness proving k9x_Shield containment | [satan.k9x.ai](https://satan.k9x.ai) |
 | K9X Streams | Live, governed context for agents: event streams through a k9x Shield gate into live state, served over MCP (reference model for the context fabric) | [streams.k9x.ai](https://streams.k9x.ai) |
-
-In the pipeline: **dashboard.k9x.ai** (read-only ecosystem catalog + launch point), **inspector.k9x.ai** (architectural conformance scanner for any K9-AIF solution).
+| K9X Sentinel | Reads new AI-security research every morning, checks it against the framework's security capability catalog, and sends the gaps to human review | [sentinel.k9x.ai](https://sentinel.k9x.ai) |
+| K9X Inspector | Checks K9-AIF solutions against the framework's conformance rules on every push, with a remediation guide | [inspector.k9x.ai](https://inspector.k9x.ai) |
+| K9X Arena | LLMs head to head on your own GPU, graded against right answers, feeding the model router | [arena.k9x.ai](https://arena.k9x.ai) |
+| K9X Dashboard | Catalog and health of every live K9X component, with a launch point to each | [dashboard.k9x.ai](https://dashboard.k9x.ai) |
 
 Source for all of the above: **[k9aif/k9x-ecosystem](https://github.com/k9aif/k9x-ecosystem)**
 
