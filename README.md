@@ -311,7 +311,7 @@ Agents decide on what they are given. If that is last night's extract, or a reco
 - **Two ways in.** The Orchestrator adds `live_context` for the entities a flow names (`live_context_refs`); an agent that must re-check just before acting asks `ContextMCPServer` (`get_current`, `recent_changes`, `query`) with the framework's MCP client.
 - **Your broker.** `streams.provider: kafka`; `KAFKA_SECURITY_PROTOCOL` / `KAFKA_SASL_*` in `.env` for SSL and SASL (Confluent Cloud: SASL_SSL + PLAIN, API key and secret).
 
-Agents still never subscribe to Kafka. Recipe: [Developer Guide 15.7](docs/developers/Developer-guide.md#157-live-context-from-event-streams-context-fabric-117). Reference application: [K9X Streams](https://github.com/k9aif/k9x-streams).
+Agents still never subscribe to Kafka. Recipe: [Developer Guide 15.7](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.md#157-live-context-from-event-streams-context-fabric-117). Reference application: [K9X Streams](https://github.com/k9aif/k9x-streams).
 
 ![Context fabric flow](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/context_fabric_flow.png)
 
