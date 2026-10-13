@@ -265,9 +265,13 @@ def test_pii_values_in_answers_are_withheld_when_pii_check_blocks():
 
 def test_build_fastmcp_registers_the_tools():
     pytest.importorskip("mcp")
-    mcp = ContextMCPServer(make_state(), name="test-context").build_fastmcp()
-    names = {t.name for t in asyncio.run(mcp.list_tools())}
-    assert names == {"get_current", "recent_changes", "query"}
+    server = ContextMCPServer(make_state(), name="test-context")
+    mcp = server.build_fastmcp()
+    listed = mcp.list_tools()
+    if asyncio.iscoroutine(listed):
+        listed = asyncio.run(listed)
+    assert {t.name for t in listed} == {"get_current", "recent_changes", "query"}
+    assert server.http_app() is not None and server.mcp is mcp
 
 
 # ── Orchestrator live-context injection ─────────────────────────────────

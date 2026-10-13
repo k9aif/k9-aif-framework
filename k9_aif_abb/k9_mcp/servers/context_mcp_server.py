@@ -49,12 +49,13 @@ class ContextMCPServer(BaseMCPServer):
     A refused request returns ``{"refused_by_governance": True, "reason": ...}``.
 
     ``handle_request()`` serves the K9-AIF request shape without a network;
-    ``build_fastmcp()`` returns a FastMCP server (``pip install "k9-aif[mcp]"``)
-    whose ``streamable_http_app()`` can be mounted in any ASGI app::
+    ``build_fastmcp()`` returns the MCP SDK server (``pip install "k9-aif[mcp]"``):
+    ``FastMCP`` on SDK 1.x, ``MCPServer`` on SDK 2.x. ``http_app()`` returns its
+    stateless streamable-HTTP ASGI app on either, ready to mount::
 
         server = ContextMCPServer(state, name="k9x-streams")
         mcp = server.build_fastmcp()
-        app.mount("/", mcp.streamable_http_app())   # MCP at /mcp
+        app.mount("/", server.http_app())          # MCP at /mcp
         # FastAPI lifespan:  async with mcp.session_manager.run(): yield
     """
 
@@ -146,15 +147,27 @@ class ContextMCPServer(BaseMCPServer):
 
     # ── network transport ───────────────────────────────────────────────
     def build_fastmcp(self, **kwargs: Any) -> Any:
-        """A FastMCP server exposing the three tools and the context:// resource.
-        kwargs go to FastMCP (default stateless_http=True: one request, one answer)."""
-        try:
-            from mcp.server.fastmcp import FastMCP
-        except ImportError as exc:   # pragma: no cover - depends on the extra
-            raise RuntimeError('pip install "k9-aif[mcp]" required for ContextMCPServer.build_fastmcp') from exc
+        """The MCP SDK server exposing the three tools and the context:// resource.
 
-        kwargs.setdefault("stateless_http", True)
-        mcp = FastMCP(self.name, instructions=self.instructions, **kwargs)
+        SDK 1.x: ``FastMCP`` (kwargs go to it; default ``stateless_http=True``).
+        SDK 2.x: ``MCPServer`` (renamed; statelessness is set on the HTTP app instead,
+        which ``http_app()`` does). The instance is kept as ``self.mcp``."""
+        try:
+            from mcp.server.mcpserver import MCPServer as _Server   # SDK 2.x
+            self._sdk2 = True
+        except ImportError:
+            try:
+                from mcp.server.fastmcp import FastMCP as _Server   # SDK 1.x
+                self._sdk2 = False
+            except ImportError as exc:   # pragma: no cover - depends on the extra
+                raise RuntimeError('pip install "k9-aif[mcp]" required for ContextMCPServer.build_fastmcp') from exc
+
+        if self._sdk2:
+            self._stateless = kwargs.pop("stateless_http", True)
+        else:
+            kwargs.setdefault("stateless_http", True)
+        mcp = _Server(self.name, instructions=self.instructions, **kwargs)
+        self.mcp = mcp
         server = self
 
         @mcp.tool()
@@ -178,3 +191,12 @@ class ContextMCPServer(BaseMCPServer):
             return server.state.get_current(entity, id)
 
         return mcp
+
+    def http_app(self, **kwargs: Any) -> Any:
+        """The streamable-HTTP ASGI app (MCP at ``/mcp``), stateless on SDK 1.x and 2.x.
+        Run ``self.mcp.session_manager.run()`` in the host app's lifespan."""
+        if getattr(self, "mcp", None) is None:
+            self.build_fastmcp()
+        if getattr(self, "_sdk2", False):
+            kwargs.setdefault("stateless_http", getattr(self, "_stateless", True))
+        return self.mcp.streamable_http_app(**kwargs)
