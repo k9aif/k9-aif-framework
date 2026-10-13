@@ -289,6 +289,22 @@ in `execute_squads()`; `ContextMCPServer` serves `get_current`/
 Recipe: Developer Guide 15.7. Tests: `tests/test_context_fabric.py`.
 Reference app: `k9x-ecosystem/k9x_streams`.
 
+## k9x Origin (1.18)
+
+`k9_origin`: built in like Shield. Agents make one call, `get_current(entity, id)`
+(plus `recent_changes`, `query`); `K9Origin` resolves: per-agent scope →
+request Shield → live state → read-through to the system of record on a miss
+→ verify for `verify_before` steps → flags (quarantined, in_review, conflict)
+→ answer Shield. Answers are facts (`as_of`, `version`, `source`, flags); Origin
+makes no business decisions — `K9RulesAgent` (+ `K9RulesAdapter` /
+`RestRulesAdapter`) decides and raises `RequiresHIL`. Config:
+`config/origin.yaml` (`OriginConfig`); build with `OriginFactory.create`;
+orchestrators take `origin=`; `OriginMCPServer` serves it. Live state applies
+events by source order (shared `merge_update`); `RedisContextState` for
+clusters (`volatile-lru`, quarantine pinned). Design:
+`docs/roadmap/k9x-origin-design.md`. Tests: `test_k9x_origin.py`,
+`test_redis_context_state.py` (needs `K9_TEST_REDIS_URL`).
+
 ## Model routers
 
 Every call goes through `llm_invoke` → `ModelRouterFactory.get_router(config)`

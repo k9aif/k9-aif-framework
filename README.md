@@ -312,6 +312,8 @@ Agents decide on what they are given. If that is last night's extract, or a reco
 - **Any source.** Envelope mappers turn raw messages into events: Debezium change records from databases, application log lines, or your own format (`streams.mappers`, per topic).
 - **Your broker.** `streams.provider: kafka`; `KAFKA_SECURITY_PROTOCOL` / `KAFKA_SASL_*` in `.env` for SSL and SASL (Confluent Cloud: SASL_SSL + PLAIN, API key and secret).
 
+**k9x Origin (1.18)** puts all of this behind one call. An agent asks `get_current(entity, id)`; Origin answers from live state, reads through to the system of record when needed, verifies before irreversible steps, flags quarantine and conflicts, and screens the request and the answer with k9x Shield. It states facts; business rules (`K9RulesAgent`) decide, for example "a claim over $5,000 goes to a person". Configured in `config/origin.yaml`; design: [k9x Origin design](https://github.com/k9aif/k9-aif-framework/blob/main/docs/roadmap/k9x-origin-design.md).
+
 Agents still never subscribe to Kafka. Recipe: [Developer Guide 15.7](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.md#157-live-context-from-event-streams-context-fabric-117). Reference application: [K9X Streams](https://github.com/k9aif/k9x-streams).
 
 ![Context fabric flow](https://raw.githubusercontent.com/k9aif/k9-aif-framework/main/docs/diagrams/context_fabric_flow.png)

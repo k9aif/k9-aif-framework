@@ -1,0 +1,33 @@
+@startuml k9x_origin_flow
+title k9x Origin: one call from an agent
+
+participant Agent
+participant "k9x Origin" as O
+participant "k9x Shield" as S
+participant "Live state\n(memory / Redis)" as ST
+participant "System of record\n(MCP / API / SQL)" as SOR
+
+Agent -> O : get_current("claim", "C-1")
+O -> O : scope (agent's allowed_entities)
+O -> S : screen the request
+S --> O : passed
+O -> ST : lookup
+alt found
+  ST --> O : value, as_of, version, source
+else not in live state
+  O -> SOR : read-through
+  SOR --> O : record
+  O -> ST : store (history unknown)
+end
+opt agent is a verify_before step
+  O -> SOR : fetch owned fields
+  O -> O : compare; disagreement → conflict flag
+end
+O -> O : attach flags (quarantined, in_review, conflict)
+O -> S : screen the answer
+O --> Agent : one answer: value, as_of, source, version, flags
+note right of Agent
+  Business rules (K9RulesAgent) decide on these facts,
+  e.g. claim over $5,000 or a conflict → RequiresHIL
+end note
+@enduml

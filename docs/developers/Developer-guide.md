@@ -2809,6 +2809,60 @@ Out-of-scope entities, instructions hidden in tool arguments and requests for PI
 
 Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an accounts-payable agent that stops a duplicate payment posted while it was reviewing the invoice. Tests: `k9_aif_abb/tests/test_context_fabric.py`, `test_envelope_mappers.py`.
 
+### 15.8 k9x Origin: one call for current truth (1.18)
+
+k9x Origin is built into the framework like k9x Shield. An agent asks one question, `get_current(entity, id)`, and gets **what is true right now and where it came from**: the value, `as_of`, `version`, `source` (stream, system of record, or both) and flags (quarantined, in review, conflict). Origin states facts; business rules decide. Full design: `docs/roadmap/k9x-origin-design.md`.
+
+![k9x Origin flow](../diagrams/k9x_origin_flow.png)
+
+**Switch it on** in `config/config.yaml`, and describe the solution in `config/origin.yaml`:
+
+```yaml
+# config/config.yaml
+origin:
+  enabled: true
+  config: config/origin.yaml
+  state: { provider: redis }          # in_memory (default) | redis (shared, LRU-bounded)
+```
+
+```yaml
+# config/origin.yaml
+entities:
+  claim:
+    key: claim_id
+    system_of_record: claims_api       # read-through on a miss; verify for verify_before steps
+    owned_fields: [status, amount]
+    conflicts:
+      status: { transitions: ["approved -> disapproved", "disapproved -> approved"], within_seconds: 300 }
+sources:
+  claims_api: { type: mcp, server: "${CLAIMS_MCP_URL}", tool: get_claim, args: { claim_id: "{id}" } }
+squads:
+  payout: { live_context: ["claim:{claim_id}", "policy:{policy_id}"], verify_before: [PayoutAgent] }
+agents:
+  PayoutAgent: { allowed_entities: [claim, policy] }
+governance:
+  request_checks: [PromptInjectionCheck, PIIRequestCheck]
+  answer_checks:  [PromptInjectionCheck, PIIBoundaryCheck]
+```
+
+**Wire it** at the entry point: `origin = OriginFactory.create(config, projections=[...])`; attach the context fabric to `origin.state` (`ContextIngest`); give orchestrators `origin=origin`; serve agents with `OriginMCPServer(origin).http_app()` (or `register_on` an existing MCP server). Route `origin.conflict_listeners` to your Router.
+
+**Decide with rules, not in Origin.** Add a `K9RulesAgent` step to the squad; it evaluates the payload, including `live_context`, and raises `RequiresHIL` when a rule says so:
+
+```yaml
+rules_agent:
+  adapter: k9_rules                    # or rest_rules (a decision service)
+  hil_queue: claims-review
+  rules:
+    - { name: large claim,   when: "claim.amount > 5000",           then: hil }
+    - { name: data conflict, when: "live_context.*.flags.conflict", then: hil }
+```
+
+**What the solutions architect does:** list the irreversible decisions; list the entities they read and each one's system of record and owned fields; find each entity's events (and whether they need curation first, e.g. Flink); write one projection per business event; point at the existing sources; mark `verify_before` steps; define conflict transitions; write the business rules; scope each agent; make actions conditional on Origin's `version` in the system of record; size the state (memory or Redis with `volatile-lru`) and test the scenarios.
+
+![k9x Origin classes](../diagrams/k9x_origin_class.png)
+
+Reference application: K9X Streams (`config/origin.yaml`). Tests: `test_k9x_origin.py`, `test_redis_context_state.py`.
 
 ---
 

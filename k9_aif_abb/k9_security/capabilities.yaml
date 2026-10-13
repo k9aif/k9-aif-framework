@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.17.1"
+framework_version: "1.18.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -256,6 +256,26 @@ capabilities:
     covers: {LLM01: partial, LLM02: partial, ASI02: partial, ASI03: partial}
     summary: An agent cannot ask the context server for out-of-scope entities, smuggle instructions in tool arguments, or solicit PII; PII values in answers are withheld.
     limits: Opt-in per server (pass allowed_entities / request_governance / governance). Scope is per server, not per agent identity; per-agent scopes need Zero Trust.
+
+  - id: origin_governed_answers
+    kind: component
+    component: k9_aif_abb.k9_origin.origin.K9Origin
+    stage: ingress
+    mechanism: per-agent entity scope (origin.yaml agents.allowed_entities), request screening and answer screening on every get_current / recent_changes / query; refusals return refused_by_governance before any data is read
+    enabled_by_default: true
+    covers: {LLM01: partial, LLM02: partial, ASI02: partial, ASI03: partial}
+    summary: Agents read current enterprise state through one governed call, scoped to the entities each agent may see; PII solicitation and instructions hidden in arguments are refused, PII values in answers withheld.
+    limits: Scope is per agent name from origin.yaml, not yet from Zero Trust identity.
+
+  - id: origin_conflict_flags
+    kind: component
+    component: k9_aif_abb.k9_origin.conflicts.BaseConflictRule
+    stage: orchestrator
+    mechanism: events applied by source order (a late event never overwrites newer state); status reversals, late contradicting events and live-vs-system-of-record disagreements are flagged on every answer and emitted as origin.conflict; quarantine markers are never evicted
+    enabled_by_default: true
+    covers: {LLM04: partial, ASI06: partial, ASI08: partial, ASI09: partial}
+    summary: Agents cannot act on data that flipped, arrived out of order or disagrees with its system of record without the conflict being visible; business rules route it to a person.
+    limits: Which transitions count as a conflict is configured per entity; the decision to escalate is a business rule (K9RulesAgent).
 
   - id: context_freshness
     kind: component

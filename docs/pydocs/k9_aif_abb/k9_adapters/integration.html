@@ -168,6 +168,45 @@
                 </ul>
 
             </li>
+            <li>
+                    <a class="class" href="#HttpApiAdapter">HttpApiAdapter</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#HttpApiAdapter.call_endpoint">call_endpoint</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#SqlDataAdapter">SqlDataAdapter</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#SqlDataAdapter.__init__">SqlDataAdapter</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#SqlDataAdapter.read">read</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#K9RulesAdapter">K9RulesAdapter</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#K9RulesAdapter.evaluate">evaluate</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#RestRulesAdapter">RestRulesAdapter</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#RestRulesAdapter.evaluate">evaluate</a>
+                        </li>
+                </ul>
+
+            </li>
     </ul>
 
 
@@ -211,18 +250,31 @@ enterprise systems. These are ABB contracts; SBBs are registered via
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.base_bpm_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseBpmAdapter</span>
 </span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.base_data_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDataAdapter</span>
 </span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.integration_adapter_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntegrationAdapterFactory</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="s2">&quot;BaseIntegrationAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="s2">&quot;BaseApiAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="s2">&quot;BaseMessagingAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="s2">&quot;BaseRulesAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="s2">&quot;BaseWorkflowAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="s2">&quot;BaseProcessFlowAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="s2">&quot;BaseBpmAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="s2">&quot;BaseDataAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="s2">&quot;IntegrationAdapterFactory&quot;</span><span class="p">,</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="p">]</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.http_api_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpApiAdapter</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.sql_data_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqlDataAdapter</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.k9_rules_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9RulesAdapter</span><span class="p">,</span> <span class="n">RestRulesAdapter</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="c1"># Built-in implementations (1.18); solutions register their own the same way.</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="n">HttpApiAdapter</span><span class="p">)</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sql&quot;</span><span class="p">,</span> <span class="n">SqlDataAdapter</span><span class="p">)</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;k9_rules&quot;</span><span class="p">,</span> <span class="n">K9RulesAdapter</span><span class="p">)</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;rest_rules&quot;</span><span class="p">,</span> <span class="n">RestRulesAdapter</span><span class="p">)</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="s2">&quot;BaseIntegrationAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="s2">&quot;BaseApiAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="s2">&quot;BaseMessagingAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="s2">&quot;BaseRulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="s2">&quot;BaseWorkflowAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="s2">&quot;BaseProcessFlowAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="s2">&quot;BaseBpmAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>    <span class="s2">&quot;BaseDataAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="s2">&quot;IntegrationAdapterFactory&quot;</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="s2">&quot;HttpApiAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="s2">&quot;SqlDataAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="s2">&quot;K9RulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="s2">&quot;RestRulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="p">]</span>
 </span></pre></div>
 
 
@@ -1303,6 +1355,349 @@ method, so concrete SBBs only implement that one method.</p>
 
 
             <div class="docstring"><p>Return list of registered adapter type names.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="HttpApiAdapter">
+                            <input id="HttpApiAdapter-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">HttpApiAdapter</span><wbr>(<span class="base"><a href="#BaseApiAdapter">k9_aif_abb.k9_adapters.integration.BaseApiAdapter</a></span>):
+
+                <label class="view-source-button" for="HttpApiAdapter-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#HttpApiAdapter"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpApiAdapter-14"><a href="#HttpApiAdapter-14"><span class="linenos">14</span></a><span class="k">class</span><span class="w"> </span><span class="nc">HttpApiAdapter</span><span class="p">(</span><span class="n">BaseApiAdapter</span><span class="p">):</span>
+</span><span id="HttpApiAdapter-15"><a href="#HttpApiAdapter-15"><span class="linenos">15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="HttpApiAdapter-16"><a href="#HttpApiAdapter-16"><span class="linenos">16</span></a><span class="sd">    REST/JSON over HTTP(S) with ``requests``. Config keys: ``url`` (may contain ``{name}``</span>
+</span><span id="HttpApiAdapter-17"><a href="#HttpApiAdapter-17"><span class="linenos">17</span></a><span class="sd">    placeholders filled from the payload, e.g. ``https://erp/api/invoices/{id}``), ``method``</span>
+</span><span id="HttpApiAdapter-18"><a href="#HttpApiAdapter-18"><span class="linenos">18</span></a><span class="sd">    (default POST; GET sends the payload as query parameters), ``headers``, ``timeout``</span>
+</span><span id="HttpApiAdapter-19"><a href="#HttpApiAdapter-19"><span class="linenos">19</span></a><span class="sd">    (default 30). Credentials belong in headers built from environment variables, never in</span>
+</span><span id="HttpApiAdapter-20"><a href="#HttpApiAdapter-20"><span class="linenos">20</span></a><span class="sd">    config.yaml.</span>
+</span><span id="HttpApiAdapter-21"><a href="#HttpApiAdapter-21"><span class="linenos">21</span></a>
+</span><span id="HttpApiAdapter-22"><a href="#HttpApiAdapter-22"><span class="linenos">22</span></a><span class="sd">    Registered as ``http`` in IntegrationAdapterFactory.</span>
+</span><span id="HttpApiAdapter-23"><a href="#HttpApiAdapter-23"><span class="linenos">23</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="HttpApiAdapter-24"><a href="#HttpApiAdapter-24"><span class="linenos">24</span></a>
+</span><span id="HttpApiAdapter-25"><a href="#HttpApiAdapter-25"><span class="linenos">25</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">headers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">body</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-26"><a href="#HttpApiAdapter-26"><span class="linenos">26</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="HttpApiAdapter-27"><a href="#HttpApiAdapter-27"><span class="linenos">27</span></a>
+</span><span id="HttpApiAdapter-28"><a href="#HttpApiAdapter-28"><span class="linenos">28</span></a>        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">body</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))}</span>
+</span><span id="HttpApiAdapter-29"><a href="#HttpApiAdapter-29"><span class="linenos">29</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-30"><a href="#HttpApiAdapter-30"><span class="linenos">30</span></a>            <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fields</span><span class="p">)</span>
+</span><span id="HttpApiAdapter-31"><a href="#HttpApiAdapter-31"><span class="linenos">31</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+</span><span id="HttpApiAdapter-32"><a href="#HttpApiAdapter-32"><span class="linenos">32</span></a>            <span class="k">pass</span>
+</span><span id="HttpApiAdapter-33"><a href="#HttpApiAdapter-33"><span class="linenos">33</span></a>        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+</span><span id="HttpApiAdapter-34"><a href="#HttpApiAdapter-34"><span class="linenos">34</span></a>        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;GET&quot;</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-35"><a href="#HttpApiAdapter-35"><span class="linenos">35</span></a>            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;params&quot;</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span id="HttpApiAdapter-36"><a href="#HttpApiAdapter-36"><span class="linenos">36</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-37"><a href="#HttpApiAdapter-37"><span class="linenos">37</span></a>            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="n">body</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span id="HttpApiAdapter-38"><a href="#HttpApiAdapter-38"><span class="linenos">38</span></a>        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-39"><a href="#HttpApiAdapter-39"><span class="linenos">39</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="HttpApiAdapter-40"><a href="#HttpApiAdapter-40"><span class="linenos">40</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="HttpApiAdapter-41"><a href="#HttpApiAdapter-41"><span class="linenos">41</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-42"><a href="#HttpApiAdapter-42"><span class="linenos">42</span></a>            <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="HttpApiAdapter-43"><a href="#HttpApiAdapter-43"><span class="linenos">43</span></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span id="HttpApiAdapter-44"><a href="#HttpApiAdapter-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">text</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>REST/JSON over HTTP(S) with <code>requests</code>. Config keys: <code>url</code> (may contain <code>{name}</code>
+placeholders filled from the payload, e.g. <code>https://erp/api/invoices/{id}</code>), <code>method</code>
+(default POST; GET sends the payload as query parameters), <code>headers</code>, <code>timeout</code>
+(default 30). Credentials belong in headers built from environment variables, never in
+config.yaml.</p>
+
+<p>Registered as <code>http</code> in IntegrationAdapterFactory.</p>
+</div>
+
+
+                            <div id="HttpApiAdapter.call_endpoint" class="classattr">
+                                        <input id="HttpApiAdapter.call_endpoint-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">call_endpoint</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">url</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">method</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">headers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>,</span><span class="param">	<span class="n">body</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Any</span>:</span></span>
+
+                <label class="view-source-button" for="HttpApiAdapter.call_endpoint-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#HttpApiAdapter.call_endpoint"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpApiAdapter.call_endpoint-25"><a href="#HttpApiAdapter.call_endpoint-25"><span class="linenos">25</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">headers</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">body</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-26"><a href="#HttpApiAdapter.call_endpoint-26"><span class="linenos">26</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="HttpApiAdapter.call_endpoint-27"><a href="#HttpApiAdapter.call_endpoint-27"><span class="linenos">27</span></a>
+</span><span id="HttpApiAdapter.call_endpoint-28"><a href="#HttpApiAdapter.call_endpoint-28"><span class="linenos">28</span></a>        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">body</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))}</span>
+</span><span id="HttpApiAdapter.call_endpoint-29"><a href="#HttpApiAdapter.call_endpoint-29"><span class="linenos">29</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-30"><a href="#HttpApiAdapter.call_endpoint-30"><span class="linenos">30</span></a>            <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fields</span><span class="p">)</span>
+</span><span id="HttpApiAdapter.call_endpoint-31"><a href="#HttpApiAdapter.call_endpoint-31"><span class="linenos">31</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+</span><span id="HttpApiAdapter.call_endpoint-32"><a href="#HttpApiAdapter.call_endpoint-32"><span class="linenos">32</span></a>            <span class="k">pass</span>
+</span><span id="HttpApiAdapter.call_endpoint-33"><a href="#HttpApiAdapter.call_endpoint-33"><span class="linenos">33</span></a>        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+</span><span id="HttpApiAdapter.call_endpoint-34"><a href="#HttpApiAdapter.call_endpoint-34"><span class="linenos">34</span></a>        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;GET&quot;</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-35"><a href="#HttpApiAdapter.call_endpoint-35"><span class="linenos">35</span></a>            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;params&quot;</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span id="HttpApiAdapter.call_endpoint-36"><a href="#HttpApiAdapter.call_endpoint-36"><span class="linenos">36</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-37"><a href="#HttpApiAdapter.call_endpoint-37"><span class="linenos">37</span></a>            <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="n">body</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span id="HttpApiAdapter.call_endpoint-38"><a href="#HttpApiAdapter.call_endpoint-38"><span class="linenos">38</span></a>        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-39"><a href="#HttpApiAdapter.call_endpoint-39"><span class="linenos">39</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="HttpApiAdapter.call_endpoint-40"><a href="#HttpApiAdapter.call_endpoint-40"><span class="linenos">40</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="HttpApiAdapter.call_endpoint-41"><a href="#HttpApiAdapter.call_endpoint-41"><span class="linenos">41</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-42"><a href="#HttpApiAdapter.call_endpoint-42"><span class="linenos">42</span></a>            <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="HttpApiAdapter.call_endpoint-43"><a href="#HttpApiAdapter.call_endpoint-43"><span class="linenos">43</span></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span id="HttpApiAdapter.call_endpoint-44"><a href="#HttpApiAdapter.call_endpoint-44"><span class="linenos">44</span></a>            <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">text</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Execute the HTTP call. Return raw response (SA decides the shape).</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="SqlDataAdapter">
+                            <input id="SqlDataAdapter-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">SqlDataAdapter</span><wbr>(<span class="base"><a href="#BaseDataAdapter">k9_aif_abb.k9_adapters.integration.BaseDataAdapter</a></span>):
+
+                <label class="view-source-button" for="SqlDataAdapter-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#SqlDataAdapter"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SqlDataAdapter-14"><a href="#SqlDataAdapter-14"><span class="linenos">14</span></a><span class="k">class</span><span class="w"> </span><span class="nc">SqlDataAdapter</span><span class="p">(</span><span class="n">BaseDataAdapter</span><span class="p">):</span>
+</span><span id="SqlDataAdapter-15"><a href="#SqlDataAdapter-15"><span class="linenos">15</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="SqlDataAdapter-16"><a href="#SqlDataAdapter-16"><span class="linenos">16</span></a><span class="sd">    Read-only SQL through SQLAlchemy: PostgreSQL, Oracle, SQL Server, MySQL, Db2, SQLite, or any</span>
+</span><span id="SqlDataAdapter-17"><a href="#SqlDataAdapter-17"><span class="linenos">17</span></a><span class="sd">    database with a SQLAlchemy dialect (and its driver installed). Config keys: ``connection``</span>
+</span><span id="SqlDataAdapter-18"><a href="#SqlDataAdapter-18"><span class="linenos">18</span></a><span class="sd">    (SQLAlchemy URL, from the environment), ``query`` (with ``:named`` parameters).</span>
+</span><span id="SqlDataAdapter-19"><a href="#SqlDataAdapter-19"><span class="linenos">19</span></a>
+</span><span id="SqlDataAdapter-20"><a href="#SqlDataAdapter-20"><span class="linenos">20</span></a><span class="sd">    Queries always run with bound parameters, never string formatting. Registered as ``sql``</span>
+</span><span id="SqlDataAdapter-21"><a href="#SqlDataAdapter-21"><span class="linenos">21</span></a><span class="sd">    in IntegrationAdapterFactory.</span>
+</span><span id="SqlDataAdapter-22"><a href="#SqlDataAdapter-22"><span class="linenos">22</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="SqlDataAdapter-23"><a href="#SqlDataAdapter-23"><span class="linenos">23</span></a>
+</span><span id="SqlDataAdapter-24"><a href="#SqlDataAdapter-24"><span class="linenos">24</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="SqlDataAdapter-25"><a href="#SqlDataAdapter-25"><span class="linenos">25</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="SqlDataAdapter-26"><a href="#SqlDataAdapter-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="SqlDataAdapter-27"><a href="#SqlDataAdapter-27"><span class="linenos">27</span></a>
+</span><span id="SqlDataAdapter-28"><a href="#SqlDataAdapter-28"><span class="linenos">28</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_engine_for</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="SqlDataAdapter-29"><a href="#SqlDataAdapter-29"><span class="linenos">29</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="SqlDataAdapter-30"><a href="#SqlDataAdapter-30"><span class="linenos">30</span></a>            <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span>
+</span><span id="SqlDataAdapter-31"><a href="#SqlDataAdapter-31"><span class="linenos">31</span></a>            <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;connection&quot;</span><span class="p">)</span>
+</span><span id="SqlDataAdapter-32"><a href="#SqlDataAdapter-32"><span class="linenos">32</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="p">:</span>
+</span><span id="SqlDataAdapter-33"><a href="#SqlDataAdapter-33"><span class="linenos">33</span></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SqlDataAdapter needs config[&#39;connection&#39;] (a SQLAlchemy URL)&quot;</span><span class="p">)</span>
+</span><span id="SqlDataAdapter-34"><a href="#SqlDataAdapter-34"><span class="linenos">34</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">pool_pre_ping</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="SqlDataAdapter-35"><a href="#SqlDataAdapter-35"><span class="linenos">35</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span>
+</span><span id="SqlDataAdapter-36"><a href="#SqlDataAdapter-36"><span class="linenos">36</span></a>
+</span><span id="SqlDataAdapter-37"><a href="#SqlDataAdapter-37"><span class="linenos">37</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="SqlDataAdapter-38"><a href="#SqlDataAdapter-38"><span class="linenos">38</span></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">text</span>
+</span><span id="SqlDataAdapter-39"><a href="#SqlDataAdapter-39"><span class="linenos">39</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine_for</span><span class="p">()</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span id="SqlDataAdapter-40"><a href="#SqlDataAdapter-40"><span class="linenos">40</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="n">query</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+</span><span id="SqlDataAdapter-41"><a href="#SqlDataAdapter-41"><span class="linenos">41</span></a>            <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">_mapping</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="p">]</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Read-only SQL through SQLAlchemy: PostgreSQL, Oracle, SQL Server, MySQL, Db2, SQLite, or any
+database with a SQLAlchemy dialect (and its driver installed). Config keys: <code>connection</code>
+(SQLAlchemy URL, from the environment), <code>query</code> (with <code>:named</code> parameters).</p>
+
+<p>Queries always run with bound parameters, never string formatting. Registered as <code>sql</code>
+in IntegrationAdapterFactory.</p>
+</div>
+
+
+                            <div id="SqlDataAdapter.__init__" class="classattr">
+                                        <input id="SqlDataAdapter.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">SqlDataAdapter</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
+
+                <label class="view-source-button" for="SqlDataAdapter.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#SqlDataAdapter.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SqlDataAdapter.__init__-24"><a href="#SqlDataAdapter.__init__-24"><span class="linenos">24</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="SqlDataAdapter.__init__-25"><a href="#SqlDataAdapter.__init__-25"><span class="linenos">25</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="SqlDataAdapter.__init__-26"><a href="#SqlDataAdapter.__init__-26"><span class="linenos">26</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="SqlDataAdapter.read" class="classattr">
+                                        <input id="SqlDataAdapter.read-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">read</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">query</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>:</span></span>
+
+                <label class="view-source-button" for="SqlDataAdapter.read-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#SqlDataAdapter.read"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SqlDataAdapter.read-37"><a href="#SqlDataAdapter.read-37"><span class="linenos">37</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="SqlDataAdapter.read-38"><a href="#SqlDataAdapter.read-38"><span class="linenos">38</span></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">text</span>
+</span><span id="SqlDataAdapter.read-39"><a href="#SqlDataAdapter.read-39"><span class="linenos">39</span></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine_for</span><span class="p">()</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span id="SqlDataAdapter.read-40"><a href="#SqlDataAdapter.read-40"><span class="linenos">40</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">text</span><span class="p">(</span><span class="n">query</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)),</span> <span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+</span><span id="SqlDataAdapter.read-41"><a href="#SqlDataAdapter.read-41"><span class="linenos">41</span></a>            <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">_mapping</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">result</span><span class="p">]</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Execute a read operation. Return list of result records.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="K9RulesAdapter">
+                            <input id="K9RulesAdapter-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">K9RulesAdapter</span><wbr>(<span class="base"><a href="#BaseRulesAdapter">k9_aif_abb.k9_adapters.integration.BaseRulesAdapter</a></span>):
+
+                <label class="view-source-button" for="K9RulesAdapter-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#K9RulesAdapter"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="K9RulesAdapter-89"><a href="#K9RulesAdapter-89"><span class="linenos"> 89</span></a><span class="k">class</span><span class="w"> </span><span class="nc">K9RulesAdapter</span><span class="p">(</span><span class="n">BaseRulesAdapter</span><span class="p">):</span>
+</span><span id="K9RulesAdapter-90"><a href="#K9RulesAdapter-90"><span class="linenos"> 90</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="K9RulesAdapter-91"><a href="#K9RulesAdapter-91"><span class="linenos"> 91</span></a><span class="sd">    Rules in configuration, for teams without a rules engine. Each rule has ``name``, ``when``</span>
+</span><span id="K9RulesAdapter-92"><a href="#K9RulesAdapter-92"><span class="linenos"> 92</span></a><span class="sd">    (a condition) and ``then`` (a decision such as ``hil``, ``hold`` or ``allow``), plus an</span>
+</span><span id="K9RulesAdapter-93"><a href="#K9RulesAdapter-93"><span class="linenos"> 93</span></a><span class="sd">    optional ``reason``. Rules are checked in order; the first match decides; none → ``allow``.</span>
+</span><span id="K9RulesAdapter-94"><a href="#K9RulesAdapter-94"><span class="linenos"> 94</span></a>
+</span><span id="K9RulesAdapter-95"><a href="#K9RulesAdapter-95"><span class="linenos"> 95</span></a><span class="sd">        rules:</span>
+</span><span id="K9RulesAdapter-96"><a href="#K9RulesAdapter-96"><span class="linenos"> 96</span></a><span class="sd">          - name: large claim</span>
+</span><span id="K9RulesAdapter-97"><a href="#K9RulesAdapter-97"><span class="linenos"> 97</span></a><span class="sd">            when: claim.amount &gt; 5000</span>
+</span><span id="K9RulesAdapter-98"><a href="#K9RulesAdapter-98"><span class="linenos"> 98</span></a><span class="sd">            then: hil</span>
+</span><span id="K9RulesAdapter-99"><a href="#K9RulesAdapter-99"><span class="linenos"> 99</span></a><span class="sd">            reason: claims over $5,000 need a person</span>
+</span><span id="K9RulesAdapter-100"><a href="#K9RulesAdapter-100"><span class="linenos">100</span></a><span class="sd">          - name: conflicting data</span>
+</span><span id="K9RulesAdapter-101"><a href="#K9RulesAdapter-101"><span class="linenos">101</span></a><span class="sd">            when: live_context.*.flags.conflict</span>
+</span><span id="K9RulesAdapter-102"><a href="#K9RulesAdapter-102"><span class="linenos">102</span></a><span class="sd">            then: hil</span>
+</span><span id="K9RulesAdapter-103"><a href="#K9RulesAdapter-103"><span class="linenos">103</span></a>
+</span><span id="K9RulesAdapter-104"><a href="#K9RulesAdapter-104"><span class="linenos">104</span></a><span class="sd">    No code is ever evaluated: conditions are parsed, values are literals. Registered as</span>
+</span><span id="K9RulesAdapter-105"><a href="#K9RulesAdapter-105"><span class="linenos">105</span></a><span class="sd">    ``k9_rules`` in IntegrationAdapterFactory.</span>
+</span><span id="K9RulesAdapter-106"><a href="#K9RulesAdapter-106"><span class="linenos">106</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="K9RulesAdapter-107"><a href="#K9RulesAdapter-107"><span class="linenos">107</span></a>
+</span><span id="K9RulesAdapter-108"><a href="#K9RulesAdapter-108"><span class="linenos">108</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="K9RulesAdapter-109"><a href="#K9RulesAdapter-109"><span class="linenos">109</span></a>        <span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rules&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+</span><span id="K9RulesAdapter-110"><a href="#K9RulesAdapter-110"><span class="linenos">110</span></a>        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">rules</span><span class="p">:</span>
+</span><span id="K9RulesAdapter-111"><a href="#K9RulesAdapter-111"><span class="linenos">111</span></a>            <span class="k">if</span> <span class="n">evaluate_condition</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;when&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">facts</span><span class="p">):</span>
+</span><span id="K9RulesAdapter-112"><a href="#K9RulesAdapter-112"><span class="linenos">112</span></a>                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;then&quot;</span><span class="p">,</span> <span class="s2">&quot;hil&quot;</span><span class="p">),</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+</span><span id="K9RulesAdapter-113"><a href="#K9RulesAdapter-113"><span class="linenos">113</span></a>                        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;rule matched: </span><span class="si">{</span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;when&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+</span><span id="K9RulesAdapter-114"><a href="#K9RulesAdapter-114"><span class="linenos">114</span></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;allow&quot;</span><span class="p">),</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no rule matched&quot;</span><span class="p">}</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Rules in configuration, for teams without a rules engine. Each rule has <code>name</code>, <code>when</code>
+(a condition) and <code>then</code> (a decision such as <code>hil</code>, <code>hold</code> or <code>allow</code>), plus an
+optional <code>reason</code>. Rules are checked in order; the first match decides; none → <code>allow</code>.</p>
+
+<pre><code>rules:
+  - name: large claim
+    when: claim.amount &gt; 5000
+    then: hil
+    reason: claims over $5,000 need a person
+  - name: conflicting data
+    when: live_context.*.flags.conflict
+    then: hil
+</code></pre>
+
+<p>No code is ever evaluated: conditions are parsed, values are literals. Registered as
+<code>k9_rules</code> in IntegrationAdapterFactory.</p>
+</div>
+
+
+                            <div id="K9RulesAdapter.evaluate" class="classattr">
+                                        <input id="K9RulesAdapter.evaluate-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">evaluate</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="K9RulesAdapter.evaluate-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#K9RulesAdapter.evaluate"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="K9RulesAdapter.evaluate-108"><a href="#K9RulesAdapter.evaluate-108"><span class="linenos">108</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="K9RulesAdapter.evaluate-109"><a href="#K9RulesAdapter.evaluate-109"><span class="linenos">109</span></a>        <span class="n">rules</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rules&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+</span><span id="K9RulesAdapter.evaluate-110"><a href="#K9RulesAdapter.evaluate-110"><span class="linenos">110</span></a>        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">rules</span><span class="p">:</span>
+</span><span id="K9RulesAdapter.evaluate-111"><a href="#K9RulesAdapter.evaluate-111"><span class="linenos">111</span></a>            <span class="k">if</span> <span class="n">evaluate_condition</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;when&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span> <span class="n">facts</span><span class="p">):</span>
+</span><span id="K9RulesAdapter.evaluate-112"><a href="#K9RulesAdapter.evaluate-112"><span class="linenos">112</span></a>                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;then&quot;</span><span class="p">,</span> <span class="s2">&quot;hil&quot;</span><span class="p">),</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+</span><span id="K9RulesAdapter.evaluate-113"><a href="#K9RulesAdapter.evaluate-113"><span class="linenos">113</span></a>                        <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reason&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;rule matched: </span><span class="si">{</span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;when&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+</span><span id="K9RulesAdapter.evaluate-114"><a href="#K9RulesAdapter.evaluate-114"><span class="linenos">114</span></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;allow&quot;</span><span class="p">),</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;no rule matched&quot;</span><span class="p">}</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Submit facts to the rules engine and return the decision output.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="RestRulesAdapter">
+                            <input id="RestRulesAdapter-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">RestRulesAdapter</span><wbr>(<span class="base"><a href="#BaseRulesAdapter">k9_aif_abb.k9_adapters.integration.BaseRulesAdapter</a></span>):
+
+                <label class="view-source-button" for="RestRulesAdapter-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#RestRulesAdapter"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RestRulesAdapter-117"><a href="#RestRulesAdapter-117"><span class="linenos">117</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RestRulesAdapter</span><span class="p">(</span><span class="n">BaseRulesAdapter</span><span class="p">):</span>
+</span><span id="RestRulesAdapter-118"><a href="#RestRulesAdapter-118"><span class="linenos">118</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="RestRulesAdapter-119"><a href="#RestRulesAdapter-119"><span class="linenos">119</span></a><span class="sd">    A decision service over REST: Drools/KIE, IBM ODM, OpenL Tablets, Corticon, or your own.</span>
+</span><span id="RestRulesAdapter-120"><a href="#RestRulesAdapter-120"><span class="linenos">120</span></a><span class="sd">    Posts ``{&quot;ruleset&quot;: ..., &quot;facts&quot;: ...}`` to ``engine_url`` (+ ``decision_service`` path) and</span>
+</span><span id="RestRulesAdapter-121"><a href="#RestRulesAdapter-121"><span class="linenos">121</span></a><span class="sd">    returns the JSON decision; the service should answer with at least ``{&quot;decision&quot;: ...}``.</span>
+</span><span id="RestRulesAdapter-122"><a href="#RestRulesAdapter-122"><span class="linenos">122</span></a><span class="sd">    Registered as ``rest_rules`` in IntegrationAdapterFactory.</span>
+</span><span id="RestRulesAdapter-123"><a href="#RestRulesAdapter-123"><span class="linenos">123</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="RestRulesAdapter-124"><a href="#RestRulesAdapter-124"><span class="linenos">124</span></a>
+</span><span id="RestRulesAdapter-125"><a href="#RestRulesAdapter-125"><span class="linenos">125</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="RestRulesAdapter-126"><a href="#RestRulesAdapter-126"><span class="linenos">126</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="RestRulesAdapter-127"><a href="#RestRulesAdapter-127"><span class="linenos">127</span></a>        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;engine_url&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="RestRulesAdapter-128"><a href="#RestRulesAdapter-128"><span class="linenos">128</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decision_service&quot;</span><span class="p">):</span>
+</span><span id="RestRulesAdapter-129"><a href="#RestRulesAdapter-129"><span class="linenos">129</span></a>            <span class="n">url</span> <span class="o">+=</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;decision_service&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="RestRulesAdapter-130"><a href="#RestRulesAdapter-130"><span class="linenos">130</span></a>        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ruleset&quot;</span><span class="p">:</span> <span class="n">ruleset</span><span class="p">,</span> <span class="s2">&quot;facts&quot;</span><span class="p">:</span> <span class="n">facts</span><span class="p">},</span>
+</span><span id="RestRulesAdapter-131"><a href="#RestRulesAdapter-131"><span class="linenos">131</span></a>                             <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;headers&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">timeout</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)))</span>
+</span><span id="RestRulesAdapter-132"><a href="#RestRulesAdapter-132"><span class="linenos">132</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="RestRulesAdapter-133"><a href="#RestRulesAdapter-133"><span class="linenos">133</span></a>        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>A decision service over REST: Drools/KIE, IBM ODM, OpenL Tablets, Corticon, or your own.
+Posts <code>{"ruleset": ..., "facts": ...}</code> to <code>engine_url</code> (+ <code>decision_service</code> path) and
+returns the JSON decision; the service should answer with at least <code>{"decision": ...}</code>.
+Registered as <code>rest_rules</code> in IntegrationAdapterFactory.</p>
+</div>
+
+
+                            <div id="RestRulesAdapter.evaluate" class="classattr">
+                                        <input id="RestRulesAdapter.evaluate-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">evaluate</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Any</span>:</span></span>
+
+                <label class="view-source-button" for="RestRulesAdapter.evaluate-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#RestRulesAdapter.evaluate"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RestRulesAdapter.evaluate-125"><a href="#RestRulesAdapter.evaluate-125"><span class="linenos">125</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="RestRulesAdapter.evaluate-126"><a href="#RestRulesAdapter.evaluate-126"><span class="linenos">126</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="RestRulesAdapter.evaluate-127"><a href="#RestRulesAdapter.evaluate-127"><span class="linenos">127</span></a>        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;engine_url&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="RestRulesAdapter.evaluate-128"><a href="#RestRulesAdapter.evaluate-128"><span class="linenos">128</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;decision_service&quot;</span><span class="p">):</span>
+</span><span id="RestRulesAdapter.evaluate-129"><a href="#RestRulesAdapter.evaluate-129"><span class="linenos">129</span></a>            <span class="n">url</span> <span class="o">+=</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;decision_service&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="RestRulesAdapter.evaluate-130"><a href="#RestRulesAdapter.evaluate-130"><span class="linenos">130</span></a>        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ruleset&quot;</span><span class="p">:</span> <span class="n">ruleset</span><span class="p">,</span> <span class="s2">&quot;facts&quot;</span><span class="p">:</span> <span class="n">facts</span><span class="p">},</span>
+</span><span id="RestRulesAdapter.evaluate-131"><a href="#RestRulesAdapter.evaluate-131"><span class="linenos">131</span></a>                             <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;headers&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">timeout</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">)))</span>
+</span><span id="RestRulesAdapter.evaluate-132"><a href="#RestRulesAdapter.evaluate-132"><span class="linenos">132</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="RestRulesAdapter.evaluate-133"><a href="#RestRulesAdapter.evaluate-133"><span class="linenos">133</span></a>        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Submit facts to the rules engine and return the decision output.</p>
 </div>
 
 

@@ -1,0 +1,81 @@
+@startuml k9x_origin_class
+title k9x Origin (K9-AIF 1.18): classes
+
+package "k9_origin" {
+  abstract class BaseOrigin {
+    +get_current(entity, id, agent)
+    +recent_changes(entity, id, window, agent)
+    +query(entity, filters, minimum, agent)
+    +resolve_for_squad(squad_id, payload)
+  }
+  class K9Origin {
+    request_governance
+    answer_governance
+    conflict_listeners
+    +mark_in_review() / clear_review()
+  }
+  class OriginConfig <<origin.yaml>> {
+    entities, sources, topics
+    squads, agents, governance
+  }
+  class OriginSources {
+    +fetch(source, entity, id)
+  }
+  abstract class BaseConflictRule {
+    +check(FieldChange) : Conflict
+  }
+  class TransitionRule
+  class LateEventRule
+  class Conflict {
+    kind, field, detail
+    +to_envelope() : origin.conflict
+  }
+  class OriginMCPServer
+}
+
+package "k9_core.streams / k9_streams" {
+  abstract class BaseContextState {
+    change_listeners
+    +apply() by source order
+  }
+  class InMemoryContextState
+  class RedisContextState
+  class FieldChange
+}
+
+package "k9_adapters.integration" {
+  class HttpApiAdapter
+  class SqlDataAdapter
+  class K9RulesAdapter
+  class RestRulesAdapter
+}
+
+package "k9_agents.rules" {
+  class K9RulesAgent
+}
+
+class OriginFactory <<factory>>
+class BaseOrchestrator {
+  origin
+}
+class "MCPStreamableHttpConnector" as MCPC
+
+BaseOrigin <|-- K9Origin
+BaseConflictRule <|-- TransitionRule
+BaseConflictRule <|-- LateEventRule
+BaseContextState <|-- InMemoryContextState
+BaseContextState <|-- RedisContextState
+K9Origin --> BaseContextState : reads; listens
+K9Origin --> OriginConfig
+K9Origin --> OriginSources : read-through / verify
+K9Origin o-- BaseConflictRule
+BaseConflictRule ..> FieldChange
+BaseConflictRule ..> Conflict
+OriginSources ..> MCPC : type mcp
+OriginSources ..> HttpApiAdapter : type api
+OriginSources ..> SqlDataAdapter : type sql
+OriginMCPServer --> K9Origin
+OriginFactory ..> K9Origin
+BaseOrchestrator --> BaseOrigin : live_context per squad
+K9RulesAgent --> K9RulesAdapter : decides (HIL, hold, allow)
+@enduml

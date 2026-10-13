@@ -4,6 +4,30 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.0] — 2026-10-13
+
+### Added
+
+- **k9x Origin** (`k9_origin`), built into the framework like k9x Shield: one call for an agent, *what is true right now, and where did it come from?* Design: `docs/roadmap/k9x-origin-design.md`.
+  - `BaseOrigin` / `K9Origin`: `get_current`, `recent_changes`, `query`, `resolve_for_squad`. Each answer carries the value, `as_of`, `version`, `source` (stream, system of record, or both) and flags (quarantined, in review, conflict). Origin states facts and makes no business decisions.
+  - Resolver order: per-agent scope → request screening → live state → read-through to the system of record when the entity is missing → verify against it when the asking agent is a `verify_before` step → flags → answer screening → trace.
+  - `config/origin.yaml` (`OriginConfig`, `${ENV}` expansion): entities (key, system of record, owned fields, conflict watches), sources, topics, squads (`live_context`, `verify_before`), agents (`allowed_entities`), governance (request and answer checks).
+  - Sources reuse the framework's adapters: `mcp` (MCP client, any MCP server), `api` (`BaseApiAdapter`), `sql` (`BaseDataAdapter`). No new connector type.
+  - Conflict flags: `TransitionRule` (listed transitions such as `approved -> disapproved` within a window), `LateEventRule` (an older event contradicting a watched field), disagreement from verify; `Conflict.to_envelope()` gives the `origin.conflict` domain event. `mark_in_review` / `clear_review` for the K9X HIL round trip.
+  - `OriginMCPServer` (per agent, optionally) and `ContextMCPServer.register_on(mcp)` to add the tools to an existing MCP server.
+  - `OriginFactory.create(config)`; production refuses an ungoverned Origin.
+  - `BaseOrchestrator(origin=...)`: each squad receives the `live_context` it declares, resolved per payload.
+- **`RedisContextState`**: shared live state for clusters. Bounded with Redis `maxmemory` + `volatile-lru`; entity values are evictable, quarantine markers never are; evicted entities return through read-through marked `history_available: false`. Concurrent writers verified to lose no updates. Extra: `k9-aif[redis]`.
+- **Built-in implementations of existing ABBs:** `HttpApiAdapter`, `SqlDataAdapter`, `K9RulesAdapter` (rules in YAML; conditions parsed, never executed), `RestRulesAdapter` (decision services: Drools/KIE, ODM, OpenL, Corticon), and `K9RulesAgent`, the business-rules step (a decision such as `hil` raises `RequiresHIL`; an engine that cannot answer escalates rather than allows).
+- Security capability catalog: `origin_governed_answers`, `origin_conflict_flags`.
+
+### Changed
+
+- **Live state applies events by source order, not arrival.** A field is set only if the event is not older than its current value, so a late `approved` can no longer overwrite a newer `disapproved`; late events stay in history, in source order; appends always apply; `as_of` is the source time; answers carry `version` (metadata version, Debezium LSN, or transport position). One merge function is shared by every state backend.
+- Debezium mapper adds the log position (`lsn`) and a version.
+
+Tests: `test_k9x_origin.py` (17), `test_redis_context_state.py` (6, with `K9_TEST_REDIS_URL`), source-order tests in `test_context_fabric.py`.
+
 ## [1.17.1] — 2026-10-12
 
 ### Added

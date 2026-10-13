@@ -1,6 +1,6 @@
 # k9x Origin — design (K9-AIF 1.18, draft for review)
 
-**Status:** design only, nothing built. **Author:** Ravi Natarajan. **Date:** 2026-10-13.
+**Status:** built in K9-AIF 1.18.0 (2026-10-13). **Author:** Ravi Natarajan. **Date:** 2026-10-13.
 **Reference implementation:** K9X Streams (streams.k9x.ai), as K9X Satan is for k9x Shield.
 
 ---
