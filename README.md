@@ -589,6 +589,7 @@ Products built on top of K9-AIF, beyond the framework itself:
 | Enterprise Repository | TOGAF Architecture Repository — governed artifact/standards catalog | [repo.k9x.ai](https://repo.k9x.ai) |
 | HIL (Human in the Loop) | Kafka-native case management for agent escalations | [hil.k9x.ai](https://hil.k9x.ai) |
 | Security Analysis Tool (SATAN) | Adversarial red-team harness proving k9x_Shield containment | [satan.k9x.ai](https://satan.k9x.ai) |
+| K9X Streams | Live, governed context for agents: event streams through a k9x Shield gate into live state, served over MCP (reference model for the context fabric) | [streams.k9x.ai](https://streams.k9x.ai) |
 
 In the pipeline: **dashboard.k9x.ai** (read-only ecosystem catalog + launch point), **inspector.k9x.ai** (architectural conformance scanner for any K9-AIF solution).
 
