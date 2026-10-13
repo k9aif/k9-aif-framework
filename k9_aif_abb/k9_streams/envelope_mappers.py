@@ -73,7 +73,7 @@ class DebeziumEnvelopeMapper(BaseEnvelopeMapper):
             row = dict(after or {})
         ts_ms = record.get("ts_ms") or source.get("ts_ms")
         cdc = {"op": op, "table": table, "schema": source.get("schema"), "db": source.get("db"),
-               "connector": source.get("connector")}
+               "connector": source.get("connector"), "lsn": source.get("lsn", source.get("pos"))}
         if self.config.get("include_before") and before is not None:
             cdc["before"] = before
         envelope = EventEnvelope(
@@ -81,7 +81,8 @@ class DebeziumEnvelopeMapper(BaseEnvelopeMapper):
             source_system=self.config.get("source_system") or source.get("db") or source.get("name") or "cdc",
             payload=row,
             timestamp=_from_ms(ts_ms),
-            metadata={"cdc": cdc},
+            metadata={"cdc": cdc, **({"version": f"{source.get('db') or 'db'}:lsn:{cdc['lsn']}"}
+                                     if cdc["lsn"] is not None else {})},
         )
         return _with_transport(envelope, transport)
 

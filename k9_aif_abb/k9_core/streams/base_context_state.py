@@ -9,7 +9,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from k9_aif_abb.k9_core.streams.event_envelope import EventEnvelope
 
@@ -47,6 +47,11 @@ class ContextValue:
     as_of:       datetime
     source:      Dict[str, Any]       = field(default_factory=dict)
     quarantined: List[Dict[str, Any]] = field(default_factory=list)
+    version:     Optional[str]        = None
+    # Source time of the last applied change per field: a later-arriving but older event
+    # never overwrites a field set by a newer one (apply by source order, not arrival).
+    field_times: Dict[str, datetime]  = field(default_factory=dict)
+    history_available: bool           = True
 
     def age_seconds(self, now: Optional[datetime] = None) -> float:
         return round(((now or _now()) - self.as_of).total_seconds(), 1)
@@ -57,10 +62,29 @@ class ContextValue:
         out = {"entity": self.entity, "id": self.entity_id, "found": True, "value": dict(self.value),
                "as_of": _iso(self.as_of), "age_seconds": age,
                "stale": bool(max_age_seconds is not None and age > max_age_seconds),
-               "source": dict(self.source)}
+               "source": dict(self.source), "version": self.version}
+        if not self.history_available:
+            out["history_available"] = False
         if self.quarantined:
             out["quarantined"] = [dict(q) for q in self.quarantined]
         return out
+
+
+@dataclass
+class FieldChange:
+    """One field of one entity changed (or was refused as late). Reported to change listeners;
+    k9x Origin's conflict rules run on these."""
+
+    entity:      str
+    entity_id:   str
+    field:       str
+    old:         Any
+    new:         Any
+    at:          datetime            # source time of the event
+    previous_at: Optional[datetime]  # source time of the field's previous change
+    late:        bool                # older than the field's current value: recorded, not applied
+    event_type:  str
+    source:      Dict[str, Any] = field(default_factory=dict)
 
 
 def _now() -> datetime:
@@ -114,6 +138,7 @@ class BaseContextState(ABC):
         self.max_age_seconds: Optional[float] = float(max_age) if max_age is not None else None
         self.changes_per_entity: int = int(state_cfg.get("changes_per_entity", 50))
         self.projections: List[Any] = list(projections or [])
+        self.change_listeners: List[Callable[[FieldChange], None]] = []
 
     def register_projection(self, projection: Any) -> None:
         self.projections.append(projection)
@@ -131,9 +156,18 @@ class BaseContextState(ABC):
         """Fold one governed event into the state; return the entities it changed."""
         changed = []
         for update in self.updates_for(envelope):
-            self._write(update, envelope, _source(envelope))
+            for change in self._write(update, envelope, _source(envelope)) or []:
+                self._notify(change)
             changed.append(update.key)
         return changed
+
+    def _notify(self, change: FieldChange) -> None:
+        for listener in self.change_listeners:
+            try:
+                listener(change)
+            except Exception:   # a listener never breaks ingestion
+                import logging
+                logging.getLogger("BaseContextState").exception("change listener failed")
 
     def quarantine(self, envelope: EventEnvelope, reason: str) -> List[EntityKey]:
         """Mark the entities a refused event concerns. Its content is never applied."""
@@ -148,8 +182,11 @@ class BaseContextState(ABC):
         return keys
 
     @abstractmethod
-    def _write(self, update: ContextUpdate, envelope: EventEnvelope, source: Dict[str, Any]) -> None:
-        """Merge one update into the entity's value; record it as a change."""
+    def _write(self, update: ContextUpdate, envelope: EventEnvelope, source: Dict[str, Any]) -> List[FieldChange]:
+        """Merge one update into the entity's value by source time (``event_time``): a field is
+        set only if the event is not older than that field's current value; appends always
+        apply (the event happened). Record the change; return the field changes, late ones
+        flagged, for the change listeners."""
         raise NotImplementedError
 
     @abstractmethod
@@ -210,6 +247,27 @@ class BaseContextState(ABC):
 
     def _entity_counts(self) -> Dict[str, int]:
         return {}
+
+
+def event_time(envelope: EventEnvelope) -> datetime:
+    """When the change happened at its source (the envelope's timestamp), timezone-aware."""
+    ts = envelope.timestamp or _now()
+    return ts if ts.tzinfo else ts.replace(tzinfo=timezone.utc)
+
+
+def event_version(envelope: EventEnvelope) -> Optional[str]:
+    """The source's own ordering key, for conditional actions: an explicit metadata version,
+    else a CDC log position, else the transport position, else the event id."""
+    meta = envelope.metadata if isinstance(envelope.metadata, dict) else {}
+    if meta.get("version"):
+        return str(meta["version"])
+    cdc = meta.get("cdc") or {}
+    if cdc.get("lsn") is not None:
+        return f"{cdc.get('db') or 'db'}:lsn:{cdc['lsn']}"
+    t = meta.get("transport") or {}
+    if t.get("offset") is not None:
+        return f"{t.get('topic')}:{t.get('partition', 0)}:{t['offset']}"
+    return envelope.event_id
 
 
 def _source(envelope: EventEnvelope) -> Dict[str, Any]:

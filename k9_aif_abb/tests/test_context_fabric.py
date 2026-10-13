@@ -156,6 +156,38 @@ def test_query_filters_and_minimum():
     assert st.snapshot()["entities"] == {"invoice": 3}
 
 
+# ── source order (1.18) ─────────────────────────────────────────────────
+def _at(env_, seconds_ago):
+    env_.timestamp = datetime.now(timezone.utc) - timedelta(seconds=seconds_ago)
+    return env_
+
+
+def test_late_event_never_overwrites_newer_state_but_is_recorded():
+    st, seen = make_state(), []
+    st.change_listeners.append(seen.append)
+    st.apply(_at(env("invoice.created", invoice_id="INV-1", status="approved"), 30))
+    st.apply(_at(env("invoice.updated", invoice_id="INV-1", status="disapproved"), 5))   # newer
+    st.apply(_at(env("invoice.updated", invoice_id="INV-1", status="approved"), 20))     # older, late
+    cur = st.get_current("invoice", "INV-1")
+    assert cur["value"]["status"] == "disapproved", "a late event must not win"
+    assert cur["age_seconds"] >= 4, "as_of is the source time, not the arrival time"
+    types = [c["type"] for c in st.recent_changes("invoice", "INV-1")["changes"]]
+    assert types == ["invoice.created", "late:invoice.updated", "invoice.updated"], "history in source order"
+    late = [c for c in seen if c.late]
+    assert len(late) == 1 and late[0].new == "approved" and late[0].old == "disapproved"
+
+
+def test_late_append_still_counts_and_versions_are_reported():
+    st = make_state()
+    newer = _at(env("invoice.approved", invoice_id="INV-2", status="approved"), 2)
+    newer.metadata = {"version": "erp:42"}
+    st.apply(newer)
+    st.apply(_at(env("payment.posted", invoice_id="INV-2", payment_id="PAY-1", amount=10), 60))
+    cur = st.get_current("invoice", "INV-2")
+    assert cur["value"]["payments"][0]["payment_id"] == "PAY-1", "a payment happened, even if reported late"
+    assert cur["value"]["status"] == "approved" and cur["version"] == "erp:42"
+
+
 # ── the gate ─────────────────────────────────────────────────────────────
 def test_governance_gate_permits_clean_events_and_blocks_planted_instructions():
     gate = GovernanceEventGate(ShieldGovernance(SHIELD))
