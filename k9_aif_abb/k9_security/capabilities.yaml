@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.17.0"
+framework_version: "1.17.1"
 
 taxonomies:
   owasp_llm_2025:
@@ -246,6 +246,16 @@ capabilities:
     covers: {LLM01: partial, LLM04: partial, ASI01: partial, ASI06: partial}
     summary: Instructions planted in enterprise event streams (vendor notes, CRM comments, ticket bodies) are stopped at the fabric boundary.
     limits: Pattern checks can miss paraphrase; chain Granite Guardian for semantic screening. Applies to events ingested through ContextIngest.
+
+  - id: context_mcp_request_screening
+    kind: component
+    component: k9_aif_abb.k9_mcp.servers.context_mcp_server.ContextMCPServer
+    stage: ingress
+    mechanism: entity scope (allowed_entities) and request screening (request_governance, e.g. PromptInjectionCheck + PIIRequestCheck) before any live state is read; answers screened by governance (e.g. PIIBoundaryCheck block_on_match)
+    enabled_by_default: false
+    covers: {LLM01: partial, LLM02: partial, ASI02: partial, ASI03: partial}
+    summary: An agent cannot ask the context server for out-of-scope entities, smuggle instructions in tool arguments, or solicit PII; PII values in answers are withheld.
+    limits: Opt-in per server (pass allowed_entities / request_governance / governance). Scope is per server, not per agent identity; per-agent scopes need Zero Trust.
 
   - id: context_freshness
     kind: component

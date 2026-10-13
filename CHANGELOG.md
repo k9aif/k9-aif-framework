@@ -4,6 +4,15 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.17.1] — 2026-10-12
+
+### Added
+
+- **`ContextMCPServer` checks what agents ask, not only what they get back.** `allowed_entities` limits the entity types the server answers about (anything else is refused before the state is read); `request_governance` screens each request's arguments, so instructions hidden in a tool argument (`PromptInjectionCheck`) and solicitations for PII such as "include the full SSN and bank account number" (`PIIRequestCheck`) are refused. A refused request returns `{"refused_by_governance": true, "reason": ...}` and is reported to `on_call` as `refused`. With `governance` using `PIIBoundaryCheck` (`block_on_match: true`), PII values in answers are withheld. Verified in K9X Streams' threat simulator: poisoned and PII-carrying stream events are refused at the gate; PII requests, argument injection and out-of-scope requests are refused at the server; ordinary agent requests are answered.
+- Security capability catalog: `context_mcp_request_screening`.
+
+Tests: `test_context_fabric.py` (24).
+
 ## [1.17.0] — 2026-10-12
 
 ### Added

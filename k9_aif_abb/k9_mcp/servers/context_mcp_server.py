@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import inspect
 import time
-from typing import Any, Callable, Dict, Optional
+import json
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from k9_aif_abb.k9_core.streams.base_context_state import BaseContextState
 from k9_aif_abb.k9_mcp.servers.base_mcp_server import BaseMCPServer
@@ -31,10 +32,21 @@ class ContextMCPServer(BaseMCPServer):
     (``MCPClientConnectionFactory.get("streamable_http", ...)``) — and screen each
     result with ``screen_tool_result`` like any other tool result.
 
-    ``governance`` (optional) screens every answer before it leaves the server;
-    a refused answer is replaced by the framework's withheld notice. Events refused
-    at ingress never reach the state at all (``GovernanceEventGate``); this is the
-    second line, for state written by other means.
+    Three optional controls, each a line of defence of its own:
+
+    ``allowed_entities``   scope: the entity types this server will answer about
+                           (``{"invoice", "vendor"}``); anything else is refused
+                           before the state is read.
+    ``request_governance`` screens what an agent *asks* before any data is read —
+                           injection hidden in arguments, solicitations for PII
+                           (``PromptInjectionCheck``, ``PIIRequestCheck``).
+    ``governance``         screens every answer before it leaves the server — PII
+                           values (``PIIBoundaryCheck`` with ``block_on_match``),
+                           planted instructions; a refused answer is replaced by the
+                           framework's withheld notice.
+
+    Events refused at ingress never reach the state at all (``GovernanceEventGate``).
+    A refused request returns ``{"refused_by_governance": True, "reason": ...}``.
 
     ``handle_request()`` serves the K9-AIF request shape without a network;
     ``build_fastmcp()`` returns a FastMCP server (``pip install "k9-aif[mcp]"``)
@@ -51,10 +63,13 @@ class ContextMCPServer(BaseMCPServer):
 
     def __init__(self, state: BaseContextState, name: str = "k9-context",
                  instructions: Optional[str] = None, governance: Any = None,
-                 on_call: Optional[CallListener] = None, monitor: Optional[Any] = None):
+                 on_call: Optional[CallListener] = None, monitor: Optional[Any] = None,
+                 request_governance: Any = None, allowed_entities: Optional[Iterable[str]] = None):
         super().__init__(name=name, monitor=monitor)
         self.state = state
         self.governance = governance
+        self.request_governance = request_governance
+        self.allowed_entities = {e.lower() for e in allowed_entities} if allowed_entities else None
         self.on_call = on_call
         self.instructions = instructions or (
             "Live enterprise state built from event streams. Every result has as_of, "
@@ -74,8 +89,30 @@ class ContextMCPServer(BaseMCPServer):
                            lambda: self.state.query(entity, filters={"status": status},
                                                     minimum={"amount": min_amount}))
 
+    def _refusal(self, tool: str, args: Dict[str, Any]) -> Optional[str]:
+        """Why this request may not be answered (scope, then request screening), or None."""
+        entity = str(args.get("entity", "")).lower()
+        if self.allowed_entities is not None and entity not in self.allowed_entities:
+            return f"entity '{entity}' is outside this server's scope ({', '.join(sorted(self.allowed_entities))})"
+        if self.request_governance is not None:
+            payload = {"query": json.dumps(args, default=str), "source": "mcp_request", "source_tool": tool}
+            try:
+                from k9_aif_abb.k9_security.tool_result_guard import _run_coro_sync
+                outcome = self.request_governance.pre_process(payload, {"component": f"mcp:{self.name}:{tool}"})
+                if inspect.isawaitable(outcome):
+                    _run_coro_sync(outcome)
+            except PermissionError as exc:
+                return str(exc)
+        return None
+
     def _serve(self, tool: str, args: Dict[str, Any], read: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
         t0 = time.time()
+        reason = self._refusal(tool, args)
+        if reason is not None:
+            self.logger.warning("[ContextMCP] refused %s %s: %s", tool, args, reason)
+            out = {"refused_by_governance": True, "reason": reason, "tool": tool}
+            self._notify(tool, args, t0, out, "refused")
+            return out
         out = read()
         screened = "passed"
         if self.governance is not None:
@@ -85,14 +122,18 @@ class ContextMCPServer(BaseMCPServer):
                 _run_coro_sync(screen_tool_result(self.governance, tool, out, {"component": self.name}))
             except PermissionError as exc:
                 out, screened = withheld_value(out, str(exc)), "withheld"
+        self._notify(tool, args, t0, out, screened)
+        return out
+
+    def _notify(self, tool: str, args: Dict[str, Any], t0: float, out: Dict[str, Any], screened: str) -> None:
         if self.on_call:
             try:
                 self.on_call({"tool": tool, "args": args, "ms": round((time.time() - t0) * 1000, 1),
                               "as_of": out.get("as_of"), "age_seconds": out.get("age_seconds"),
-                              "found": out.get("found", True), "screened": screened})
+                              "found": out.get("found", True), "screened": screened,
+                              "reason": out.get("reason")})
             except Exception:
                 self.logger.exception("on_call listener failed")
-        return out
 
     # ── BaseMCPServer contract ──────────────────────────────────────────
     async def handle_request(self, request: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:

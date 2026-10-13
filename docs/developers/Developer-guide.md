@@ -2793,6 +2793,16 @@ Write your own by extending `BaseEnvelopeMapper.map(raw, transport) -> EventEnve
 - **Injected:** the caller names the entities (`"live_context_refs": ["invoice:INV-1001"]`); the Orchestrator adds `payload["live_context"]["invoice:INV-1001"]` before the squad runs. Use this when the flow knows what it is about up front.
 - **On demand over MCP:** an agent that must re-check right before acting, or that discovers what it needs while reasoning, calls `get_current` / `recent_changes` / `query` with `MCPStreamableHttpConnector`, and screens each result with `screen_tool_result` like any tool result.
 
+4a. *Lock down the context server.* Give `ContextMCPServer` a scope and two Shield screens:
+
+```python
+ContextMCPServer(state, allowed_entities={"invoice", "vendor", "payment"},
+                 request_governance=ShieldGovernance(cfg_requests),   # PromptInjectionCheck, PIIRequestCheck
+                 governance=ShieldGovernance(cfg_answers))            # PIIBoundaryCheck block_on_match: true
+```
+
+Out-of-scope entities, instructions hidden in tool arguments and requests for PII are refused before any state is read (`refused_by_governance`); PII values in answers are withheld.
+
 5. *Decide on freshness.* Refuse a value with `stale: true`, and treat `quarantined` on an entity as "untrusted data arrived for this; send it to a human" (raise `RequiresHIL`).
 
 **Rules that still hold.** Agents never subscribe to Kafka; the Router and Orchestrator own messaging, and the context fabric is a read model they and the MCP server expose. The gate is not optional in production: `create_gate()` raises `PermissionError` when no governance is configured outside development/test.
