@@ -1,0 +1,41 @@
+@startuml k9x_origin_big_picture
+title A K9-AIF agent's three paths: knowing, current truth, doing
+
+actor "Person\n(K9X HIL)" as Person
+rectangle "K9-AIF solution" {
+  component "Orchestrator → Squad" as Squad
+  component "Agent" as Agent
+  component "Business rules\n(K9RulesAgent)" as Rules
+}
+component "k9x Shield" as Shield
+
+package "Knowledge (what do our documents say?)" {
+  component "K9Retriever" as Ret
+  database "Vector database\n(policies, contracts, manuals)" as VDB
+}
+package "Current truth (what is true right now?)" {
+  component "k9x Origin" as Origin
+  database "Live state\n(memory / Redis)" as Live
+}
+package "Actions (change something)" {
+  component "MCP tools / APIs" as Tools
+}
+database "Systems of record\n(ERP, claims, payments, vendor master)" as SOR
+queue "Event streams\n(Kafka / Confluent, Flink)" as Streams
+
+Squad --> Agent
+Agent --> Ret : search by meaning
+Ret --> VDB
+Agent --> Origin : get_current(entity, id)
+Origin --> Live
+Streams --> Live : push (continuous)
+Origin ..> SOR : pull: read-through / verify
+Agent --> Tools : act, carrying Origin's version
+Tools --> SOR
+SOR --> Streams : changes become events
+Agent --> Rules : facts
+Rules --> Person : RequiresHIL
+Shield .. Ret : screens results
+Shield .. Origin : screens requests and answers
+Shield .. Tools : screens tool calls (egress)
+@enduml

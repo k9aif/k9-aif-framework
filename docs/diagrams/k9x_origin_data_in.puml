@@ -1,0 +1,41 @@
+@startuml k9x_origin_data_in
+title How data reaches k9x Origin: pushed by streams, pulled from sources
+
+left to right direction
+
+package "Pushed in, continuously" {
+  database "Databases" as DB
+  component "Business apps" as Apps
+  component "Logs, IoT" as Logs
+  component "CDC (Debezium)\nlog shippers, bridges" as Capture
+  queue "Kafka / Confluent\n(optional Flink curation)" as Kafka
+  component "Envelope mappers\n(debezium, log_line, native)" as Map
+  component "k9x Shield gate\n(refused → quarantined)" as Gate
+  component "Projections\n(one per business event)" as Proj
+}
+
+database "Live state\n(memory / Redis LRU,\nsource order, as_of, version)" as Live
+
+package "Pulled on demand" {
+  component "MCP servers\n(type: mcp)" as MCP
+  component "REST APIs\n(type: api · HttpApiAdapter)" as API
+  component "SQL databases\n(type: sql · SqlDataAdapter)" as SQL
+}
+
+component "k9x Origin\nget_current · recent_changes · query" as Origin
+actor "Agent" as Agent
+
+DB --> Capture
+Apps --> Kafka
+Logs --> Capture
+Capture --> Kafka
+Kafka --> Map
+Map --> Gate
+Gate --> Proj
+Proj --> Live
+Origin --> Live : answer (milliseconds)
+Origin --> MCP : read-through on a miss\nverify before irreversible steps
+Origin --> API
+Origin --> SQL
+Agent --> Origin : one call
+@enduml

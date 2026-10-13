@@ -2813,6 +2813,12 @@ Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an account
 
 k9x Origin is built into the framework like k9x Shield. An agent asks one question, `get_current(entity, id)`, and gets **what is true right now and where it came from**: the value, `as_of`, `version`, `source` (stream, system of record, or both) and flags (quarantined, in review, conflict). Origin states facts; business rules decide. Full design: `docs/roadmap/k9x-origin-design.md`.
 
+![An agent's three paths: knowledge, current truth, actions](../diagrams/k9x_origin_big_picture.png)
+
+Knowledge comes from the retriever, current truth from k9x Origin, and actions go to the systems of record directly. Origin is read-only by design.
+
+![How data reaches k9x Origin](../diagrams/k9x_origin_data_in.png)
+
 ![k9x Origin flow](../diagrams/k9x_origin_flow.png)
 
 **Switch it on** in `config/config.yaml`, and describe the solution in `config/origin.yaml`:
