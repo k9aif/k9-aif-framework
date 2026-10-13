@@ -189,6 +189,9 @@ class StreamsFactory:
         if not streams_cfg.get("enabled", False):
             return None
         provider = str((streams_cfg.get("state") or {}).get("provider", "in_memory")).lower()
+        if provider == "redis" and "redis" not in StreamsFactory._state_registry:
+            from k9_aif_abb.k9_streams.redis_context_state import RedisContextState
+            StreamsFactory._state_registry["redis"] = RedisContextState
         cls = StreamsFactory._state_registry.get(provider)
         if not cls:
             raise ValueError(f"Unknown context state provider: {provider}")

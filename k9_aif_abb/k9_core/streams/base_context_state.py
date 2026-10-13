@@ -253,6 +253,61 @@ class BaseContextState(ABC):
         return {}
 
 
+@dataclass
+class MergeResult:
+    value:   ContextValue
+    changes: List["FieldChange"]
+    applied: Dict[str, Any]
+    late:    Dict[str, Any]
+    at:      datetime
+
+
+def merge_update(current: Optional[ContextValue], update: ContextUpdate, envelope: EventEnvelope,
+                 source: Dict[str, Any]) -> MergeResult:
+    """Apply one update to an entity's current value by source order. Shared by every state
+    backend so they behave identically: a field is set only if the event is not older than
+    that field's current value (late ones are reported, not applied); appends always apply;
+    source and version follow the newest change by source time."""
+    at = event_time(envelope)
+    key = update.key
+    value = dict(current.value) if current else {}
+    times = dict(current.field_times) if current else {}
+    changes: List[FieldChange] = []
+    applied: Dict[str, Any] = {}
+    late: Dict[str, Any] = {}
+    for name, default in update.defaults.items():
+        value.setdefault(name, default)
+    for name, new in update.fields.items():
+        prev_at = times.get(name)
+        if prev_at is not None and at < prev_at:
+            late[name] = new
+            changes.append(FieldChange(key[0], key[1], name, value.get(name), new, at, prev_at,
+                                       True, envelope.event_type, source))
+            continue
+        if value.get(name) != new or name not in value:
+            changes.append(FieldChange(key[0], key[1], name, value.get(name), new, at, prev_at,
+                                       False, envelope.event_type, source))
+        value[name] = new
+        times[name] = at
+        applied[name] = new
+    for name, item in update.append.items():
+        value[name] = (list(value.get(name) or []) + [item])[-update.append_limit:]
+        times[name] = max(times.get(name, at), at)
+        applied[name] = item
+    newest_before = max(current.field_times.values()) if current and current.field_times else None
+    newest = max(times.values()) if times else at
+    leads = current is None or (bool(applied) and (newest_before is None or at >= newest_before))
+    merged = ContextValue(
+        update.entity, str(update.entity_id), value,
+        newest if (applied or current is None) else current.as_of,
+        source if leads else current.source,
+        list(current.quarantined) if current else [],
+        event_version(envelope) if leads else current.version,
+        times,
+        current.history_available if current else True)
+    return MergeResult(merged, changes, applied, late, at)
+
+
 def event_time(envelope: EventEnvelope) -> datetime:
     """When the change happened at its source (the envelope's timestamp), timezone-aware."""
     ts = envelope.timestamp or _now()

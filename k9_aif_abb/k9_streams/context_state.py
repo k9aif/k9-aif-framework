@@ -17,8 +17,7 @@ from k9_aif_abb.k9_core.streams.base_context_state import (
     ContextValue,
     EntityKey,
     FieldChange,
-    event_time,
-    event_version,
+    merge_update,
 )
 from k9_aif_abb.k9_core.streams.event_envelope import EventEnvelope
 
@@ -46,51 +45,15 @@ class InMemoryContextState(BaseContextState):
             {"at": at, "type": kind, "fields": fields, "source": source})
 
     def _write(self, update: ContextUpdate, envelope: EventEnvelope, source: Dict[str, Any]) -> List[FieldChange]:
-        at = event_time(envelope)
         key = update.key
-        changes: List[FieldChange] = []
         with self._lock:
-            current = self._values.get(key)
-            value = dict(current.value) if current else {}
-            times = dict(current.field_times) if current else {}
-            applied: Dict[str, Any] = {}
-            late: Dict[str, Any] = {}
-            for name, default in update.defaults.items():
-                value.setdefault(name, default)
-            for name, new in update.fields.items():
-                prev_at = times.get(name)
-                if prev_at is not None and at < prev_at:      # older event arriving late
-                    late[name] = new
-                    changes.append(FieldChange(key[0], key[1], name, value.get(name), new, at, prev_at,
-                                               True, envelope.event_type, source))
-                    continue
-                if value.get(name) != new or name not in value:
-                    changes.append(FieldChange(key[0], key[1], name, value.get(name), new, at, prev_at,
-                                               False, envelope.event_type, source))
-                value[name] = new
-                times[name] = at
-                applied[name] = new
-            for name, item in update.append.items():         # events happened: always recorded
-                value[name] = (list(value.get(name) or []) + [item])[-update.append_limit:]
-                times[name] = max(times.get(name, at), at)
-                applied[name] = item
-            newest_before = max(current.field_times.values()) if current and current.field_times else None
-            newest = max(times.values()) if times else at
-            # source and version follow the newest change by source time, never a late arrival
-            leads = current is None or (bool(applied) and (newest_before is None or at >= newest_before))
-            self._values[key] = ContextValue(
-                update.entity, str(update.entity_id), value,
-                newest if (applied or current is None) else current.as_of,
-                source if leads else current.source,
-                list(current.quarantined) if current else [],
-                event_version(envelope) if leads else current.version,
-                times,
-                current.history_available if current else True)
-            if applied:
-                self._record(key, at, envelope.event_type, applied, source)
-            if late:
-                self._record(key, at, f"late:{envelope.event_type}", late, source)
-        return changes
+            result = merge_update(self._values.get(key), update, envelope, source)
+            self._values[key] = result.value
+            if result.applied:
+                self._record(key, result.at, envelope.event_type, result.applied, source)
+            if result.late:
+                self._record(key, result.at, f"late:{envelope.event_type}", result.late, source)
+        return result.changes
 
     def _mark_quarantined(self, key: EntityKey, marker: Dict[str, Any], source: Dict[str, Any]) -> None:
         now = datetime.now(timezone.utc)

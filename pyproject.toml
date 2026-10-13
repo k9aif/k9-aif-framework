@@ -40,6 +40,7 @@ s3        = ["boto3>=1.28"]
 ibm-cos   = ["ibm-cos-sdk>=2.13"]
 openai    = ["openai>=1.0"]
 mcp       = ["mcp>=1.28.1"]
+redis     = ["redis>=5.0"]          # RedisContextState (shared live state for k9x Origin)
 docling   = ["httpx>=0.27"]          # DoclingParser (Docling-Serve client)
 all       = [
     "aiokafka>=0.10",
@@ -56,6 +57,7 @@ all       = [
     "ibm-cos-sdk>=2.13",
     "openai>=1.0",
     "mcp>=1.28.1",
+    "redis>=5.0",
     "httpx>=0.27",
 ]
 
