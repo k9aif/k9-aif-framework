@@ -153,7 +153,7 @@ Origin supplies facts; a rules step decides. In a squad, a rules agent (`BaseRul
 - when: live_context.invoice.age_seconds > 3600 then: hold     # only if the business cares
 ```
 
-**Framework gap found while designing this:** `BaseRulesAdapter` and `BaseRulesAgent` exist as contracts, with no built-in implementation. Proposed alongside Origin (1.18): a simple YAML rules adapter for teams without a rules engine, one real engine adapter (REST decision service), and a standard way for a rule decision to raise `RequiresHIL`.
+**Built in 1.18:** `BaseRulesAdapter` and `BaseRulesAgent` had no built-in implementation before this release. 1.18 adds `K9RulesAdapter` (rules in YAML, for teams without a rules engine), `RestRulesAdapter` (a decision service: Drools/KIE, ODM, OpenL, Corticon) and `K9RulesAgent` (a `hil` decision raises `RequiresHIL`; an engine that cannot answer escalates).
 
 ### 3.7 For operations
 
