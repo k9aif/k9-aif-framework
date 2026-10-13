@@ -32,7 +32,12 @@ class KafkaEventFabric(BaseEventFabric):
 
     Confluent Cloud is SASL_SSL + PLAIN. SSL uses the system's trusted CAs.
 
-    Consumed events carry ``metadata["transport"] = {"topic", "partition", "offset"}``
+    Messages need not be K9-AIF envelopes: each topic's envelope mapper
+    (``streams.mappers``; default ``auto``: native envelopes and Debezium change
+    records) turns the raw message into an ``EventEnvelope``; ``log_line`` handles
+    application logs. Unmapped messages are skipped and counted (``unmapped``).
+
+    Consumed events carry ``metadata["transport"] = {"topic", "partition", "offset", "key"}``
     so live state can name the exact record behind each value. A published
     envelope's ``metadata["key"]`` becomes the Kafka message key (keep one entity's
     events in order on one partition).
@@ -58,6 +63,24 @@ class KafkaEventFabric(BaseEventFabric):
         self._consumers: Dict[str, Any] = {}
         self._consumer_threads: Dict[str, threading.Thread] = {}
         self._kafka_cfg = self.config.get("streams", {}).get("kafka", {})
+        self.unmapped: Dict[str, int] = {}
+
+    def _mapper_for(self, topic: str):
+        from k9_aif_abb.k9_factories.streams_factory import StreamsFactory
+        return StreamsFactory.create_mapper(self.config, topic)
+
+    def _to_envelope(self, mapper: Any, msg: Any) -> Optional[EventEnvelope]:
+        """One consumed Kafka message → an EventEnvelope via the topic's mapper (None: skip)."""
+        from k9_aif_abb.k9_streams.envelope_mappers import decode_value
+        key = msg.key.decode("utf-8", errors="replace") if isinstance(msg.key, (bytes, bytearray)) else msg.key
+        transport = {"topic": msg.topic, "partition": msg.partition, "offset": msg.offset, "key": key}
+        envelope = mapper.map(decode_value(msg.value), transport)
+        if envelope is None:
+            self.unmapped[msg.topic] = self.unmapped.get(msg.topic, 0) + 1
+            log.debug("[KafkaFabric] unmapped message on %s #%s", msg.topic, msg.offset)
+            return None
+        envelope.metadata = {**(envelope.metadata or {}), "transport": transport}
+        return envelope
 
     def _bootstrap_servers(self) -> str:
         return self._kafka_cfg.get("bootstrap_servers") or os.environ.get(
@@ -107,22 +130,21 @@ class KafkaEventFabric(BaseEventFabric):
         consumer = KafkaConsumer(
             topic,
             bootstrap_servers=self._bootstrap_servers(),
-            value_deserializer=lambda v: json.loads(v.decode("utf-8")),
             auto_offset_reset=self._kafka_cfg.get("auto_offset_reset", "latest"),
             group_id=self._kafka_cfg.get("group_id"),
             enable_auto_commit=self._kafka_cfg.get("group_id") is not None,
             **self._security_kwargs(),
         )
         self._consumers[topic] = consumer
+        mapper = self._mapper_for(topic)
 
         def _consume() -> None:
             log.info("[KafkaFabric] Consumer started on topic: %s", topic)
             for msg in consumer:
                 try:
-                    envelope = EventEnvelope.from_dict(msg.value)
-                    envelope.metadata = {**(envelope.metadata or {}), "transport": {
-                        "topic": msg.topic, "partition": msg.partition, "offset": msg.offset}}
-                    callback(envelope)
+                    envelope = self._to_envelope(mapper, msg)
+                    if envelope is not None:
+                        callback(envelope)
                 except Exception as exc:
                     log.error("[KafkaFabric] Error on %s: %s", topic, exc)
 

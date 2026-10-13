@@ -58,6 +58,13 @@ class ContextIngest:
         for topic in topics:
             self.fabric.subscribe(topic, lambda env, _t=topic: self.ingest(env, topic=_t))
 
+    def ingest_raw(self, raw: Any, mapper: Any, topic: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """A source that isn't on Kafka (a webhook receiver, a poller) hands its raw
+        message here; the mapper turns it into an envelope, then it is gated like any
+        event. None when the mapper skips it."""
+        envelope = mapper.map(raw, {"topic": topic} if topic else None)
+        return self.ingest(envelope, topic=topic) if envelope is not None else None
+
     def ingest(self, envelope: EventEnvelope, topic: Optional[str] = None) -> Dict[str, Any]:
         """Gate one event, then apply it (or quarantine it). Never raises to the fabric."""
         try:

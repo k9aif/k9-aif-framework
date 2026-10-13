@@ -15,7 +15,8 @@ All notable changes to K9-AIF are documented here.
   - `ContextIngest`: fabric → gate → state + window → listeners.
   - `ContextMCPServer` (`k9_mcp/servers`): tools `get_current`, `recent_changes`, `query` and resource `context://{entity}/{id}`; optional screening of each answer; `build_fastmcp()` for a streamable-HTTP endpoint.
   - `BaseOrchestrator(context_state=...)`: `execute_squads()` adds `payload["live_context"]` for the entities in `payload["live_context_refs"]`, with a `LiveContext` trace event. No `context_state`, no change.
-  - `StreamsFactory.create_state()` / `create_gate()` / `register_state()`. `create_gate()` uses the application's own governance and refuses ungoverned event streams outside development/test.
+  - **Envelope mappers**: sources need not speak K9-AIF. `BaseEnvelopeMapper` (ABB) turns a raw message into an `EventEnvelope`; OOB `native`, `debezium` (change data capture from PostgreSQL, MySQL, SQL Server, Oracle, MongoDB: `<table>.<created|snapshot|updated|deleted>`, the row as payload, the change time as timestamp), `log_line` (JSON or plain-text logs from Fluent Bit, Vector, Filebeat: `log.<level>`), and `auto` (default: native, then Debezium). Chosen per topic in `streams.mappers`; `KafkaEventFabric` reads raw bytes and counts unmapped messages; `ContextIngest.ingest_raw()` takes messages from sources that are not on Kafka (webhooks, pollers).
+  - `StreamsFactory.create_state()` / `create_gate()` / `register_state()` / `create_mapper()` / `register_mapper()`. `create_gate()` uses the application's own governance and refuses ungoverned event streams outside development/test.
 - **Security capability catalog:** `stream_event_gate` (LLM01, LLM04, ASI01, ASI06) and `context_freshness` (LLM09, ASI08).
 - Diagrams: `docs/diagrams/context_fabric_class` and `context_fabric_flow`. Recipe: Developer Guide 15.7.
 
@@ -24,7 +25,7 @@ All notable changes to K9-AIF are documented here.
 - **`KafkaEventFabric`** reads `KAFKA_SECURITY_PROTOCOL` (PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL) and `KAFKA_SASL_MECHANISM` from the environment when config does not set them, falls back to `KAFKA_BROKER` for the broker address, takes `auto_offset_reset` and `group_id` from config (replay topics with `earliest`), sends `metadata["key"]` as the message key, stamps consumed events with their topic, partition and offset, and adds `flush()`.
 - `BaseMCPServer` logs its lifecycle through the standard logger.
 
-Tests: `test_context_fabric.py` (22).
+Tests: `test_context_fabric.py` (22), `test_envelope_mappers.py` (10).
 
 ## [1.16.1] — 2026-10-12
 

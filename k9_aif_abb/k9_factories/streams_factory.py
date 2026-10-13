@@ -22,6 +22,9 @@ YAML config::
         provider: in_memory     # in_memory (default) | a registered name
         max_age_seconds: 120    # older values are reported stale
       gate: governance          # governance (default) | noop (development/test only)
+      mappers:                  # raw message → EventEnvelope, per topic
+        default: auto           # native envelopes + Debezium change records
+        app-logs: {type: log_line, source_system: billing-api}
 
 Usage::
 
@@ -46,6 +49,7 @@ class StreamsFactory:
     _fabric_registry: Dict[str, Type[Any]] = {}
     _window_registry: Dict[str, Type[Any]] = {}
     _state_registry: Dict[str, Type[Any]] = {}
+    _mapper_registry: Dict[str, Type[Any]] = {}
     _lock = Lock()
     _bootstrapped = False
 
@@ -67,6 +71,8 @@ class StreamsFactory:
             StreamsFactory._window_registry["in_memory"] = InMemoryContextWindow
             from k9_aif_abb.k9_streams.context_state import InMemoryContextState
             StreamsFactory._state_registry["in_memory"] = InMemoryContextState
+            from k9_aif_abb.k9_streams.envelope_mappers import BUILTIN_MAPPERS
+            StreamsFactory._mapper_registry.update(BUILTIN_MAPPERS)
             StreamsFactory._bootstrapped = True
             log.info("[Factory] Bootstrapped StreamsFactory")
 
@@ -90,6 +96,32 @@ class StreamsFactory:
         StreamsFactory._ensure_defaults()
         with StreamsFactory._lock:
             StreamsFactory._state_registry[name.lower()] = cls
+
+    @staticmethod
+    def register_mapper(name: str, cls: Type[Any]) -> None:
+        """Register a custom BaseEnvelopeMapper (a SaaS webhook format, Avro...)."""
+        StreamsFactory._ensure_defaults()
+        with StreamsFactory._lock:
+            StreamsFactory._mapper_registry[name.lower()] = cls
+
+    @staticmethod
+    def create_mapper(config: Optional[Dict[str, Any]] = None, topic: Optional[str] = None):
+        """
+        The envelope mapper for one topic: ``streams.mappers[topic]``, else
+        ``streams.mappers.default``, else ``auto``. An entry is a name or a dict
+        with ``type`` plus that mapper's settings.
+        """
+        StreamsFactory._ensure_defaults()
+        mappers = ((config or {}).get("streams") or {}).get("mappers") or {}
+        spec = mappers.get(topic) if topic and topic in mappers else mappers.get("default", "auto")
+        settings: Dict[str, Any] = {}
+        if isinstance(spec, dict):
+            settings = {k: v for k, v in spec.items() if k != "type"}
+            spec = spec.get("type", "auto")
+        cls = StreamsFactory._mapper_registry.get(str(spec).lower())
+        if not cls:
+            raise ValueError(f"Unknown envelope mapper: {spec}")
+        return cls(settings)
 
     @staticmethod
     def create_fabric(config: Optional[Dict[str, Any]] = None):

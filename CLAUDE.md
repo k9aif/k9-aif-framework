@@ -281,7 +281,7 @@ implement yourself; it defines no network transport of its own.
 applied), and projections (`BaseContextProjection.updates()` →
 `ContextUpdate`) fold them into `BaseContextState` (`InMemoryContextState`):
 latest value per entity with `as_of`/`age_seconds`/`stale`/source.
-`ContextIngest` wires it. Agents get it two ways: `BaseOrchestrator(
+Raw source messages become envelopes through a per-topic `BaseEnvelopeMapper` (`streams.mappers`: `auto` default, `debezium`, `log_line`, `native`; `ContextIngest.ingest_raw()` for non-Kafka sources). `ContextIngest` wires it. Agents get it two ways: `BaseOrchestrator(
 context_state=...)` injects `live_context` for `payload["live_context_refs"]`
 in `execute_squads()`; `ContextMCPServer` serves `get_current`/
 `recent_changes`/`query` over MCP. Agents never subscribe to Kafka.

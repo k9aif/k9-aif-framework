@@ -309,6 +309,7 @@ Agents decide on what they are given. If that is last night's extract, or a reco
 - **Governed at the boundary.** Every event passes the application's governance (k9x Shield, Granite Guardian) through `GovernanceEventGate` before anything uses it. An event carrying planted instructions is quarantined: the entity is marked, its content never applied.
 - **Your vocabulary.** One `BaseContextProjection` per business event maps source records to the entities agents reason about.
 - **Two ways in.** The Orchestrator adds `live_context` for the entities a flow names (`live_context_refs`); an agent that must re-check just before acting asks `ContextMCPServer` (`get_current`, `recent_changes`, `query`) with the framework's MCP client.
+- **Any source.** Envelope mappers turn raw messages into events: Debezium change records from databases, application log lines, or your own format (`streams.mappers`, per topic).
 - **Your broker.** `streams.provider: kafka`; `KAFKA_SECURITY_PROTOCOL` / `KAFKA_SASL_*` in `.env` for SSL and SASL (Confluent Cloud: SASL_SSL + PLAIN, API key and secret).
 
 Agents still never subscribe to Kafka. Recipe: [Developer Guide 15.7](https://github.com/k9aif/k9-aif-framework/blob/main/docs/developers/Developer-guide.md#157-live-context-from-event-streams-context-fabric-117). Reference application: [K9X Streams](https://github.com/k9aif/k9x-streams).

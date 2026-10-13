@@ -7,6 +7,12 @@ from k9_aif_abb.k9_streams.in_memory_stream import InMemoryEventFabric, InMemory
 from k9_aif_abb.k9_streams.context_state import InMemoryContextState
 from k9_aif_abb.k9_streams.governance_event_gate import GovernanceEventGate
 from k9_aif_abb.k9_streams.context_ingest import ContextIngest
+from k9_aif_abb.k9_streams.envelope_mappers import (
+    AutoEnvelopeMapper,
+    DebeziumEnvelopeMapper,
+    LogLineEnvelopeMapper,
+    NativeEnvelopeMapper,
+)
 
 __all__ = [
     "InMemoryEventFabric",
@@ -14,4 +20,8 @@ __all__ = [
     "InMemoryContextState",
     "GovernanceEventGate",
     "ContextIngest",
+    "NativeEnvelopeMapper",
+    "DebeziumEnvelopeMapper",
+    "LogLineEnvelopeMapper",
+    "AutoEnvelopeMapper",
 ]

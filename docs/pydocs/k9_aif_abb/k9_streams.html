@@ -133,7 +133,82 @@
                                 <a class="function" href="#ContextIngest.attach">attach</a>
                         </li>
                         <li>
+                                <a class="function" href="#ContextIngest.ingest_raw">ingest_raw</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#ContextIngest.ingest">ingest</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#NativeEnvelopeMapper">NativeEnvelopeMapper</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="variable" href="#NativeEnvelopeMapper.name">name</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#NativeEnvelopeMapper.map">map</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#DebeziumEnvelopeMapper">DebeziumEnvelopeMapper</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="variable" href="#DebeziumEnvelopeMapper.name">name</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#DebeziumEnvelopeMapper.map">map</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#DebeziumEnvelopeMapper.looks_like">looks_like</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#LogLineEnvelopeMapper">LogLineEnvelopeMapper</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#LogLineEnvelopeMapper.__init__">LogLineEnvelopeMapper</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#LogLineEnvelopeMapper.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#LogLineEnvelopeMapper.DEFAULT_PATTERN">DEFAULT_PATTERN</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#LogLineEnvelopeMapper.pattern">pattern</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#LogLineEnvelopeMapper.level_field">level_field</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#LogLineEnvelopeMapper.message_field">message_field</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#LogLineEnvelopeMapper.map">map</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#AutoEnvelopeMapper">AutoEnvelopeMapper</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#AutoEnvelopeMapper.__init__">AutoEnvelopeMapper</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AutoEnvelopeMapper.name">name</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#AutoEnvelopeMapper.mappers">mappers</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#AutoEnvelopeMapper.map">map</a>
                         </li>
                 </ul>
 
@@ -170,14 +245,24 @@
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_streams.context_state</span><span class="w"> </span><span class="kn">import</span> <span class="n">InMemoryContextState</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_streams.governance_event_gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">GovernanceEventGate</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_streams.context_ingest</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContextIngest</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="s2">&quot;InMemoryEventFabric&quot;</span><span class="p">,</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="s2">&quot;InMemoryContextWindow&quot;</span><span class="p">,</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="s2">&quot;InMemoryContextState&quot;</span><span class="p">,</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="s2">&quot;GovernanceEventGate&quot;</span><span class="p">,</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="s2">&quot;ContextIngest&quot;</span><span class="p">,</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="p">]</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_streams.envelope_mappers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="n">AutoEnvelopeMapper</span><span class="p">,</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="n">DebeziumEnvelopeMapper</span><span class="p">,</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="n">LogLineEnvelopeMapper</span><span class="p">,</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="n">NativeEnvelopeMapper</span><span class="p">,</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="p">)</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="s2">&quot;InMemoryEventFabric&quot;</span><span class="p">,</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="s2">&quot;InMemoryContextWindow&quot;</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="s2">&quot;InMemoryContextState&quot;</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="s2">&quot;GovernanceEventGate&quot;</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="s2">&quot;ContextIngest&quot;</span><span class="p">,</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="s2">&quot;NativeEnvelopeMapper&quot;</span><span class="p">,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="s2">&quot;DebeziumEnvelopeMapper&quot;</span><span class="p">,</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="s2">&quot;LogLineEnvelopeMapper&quot;</span><span class="p">,</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="s2">&quot;AutoEnvelopeMapper&quot;</span><span class="p">,</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="p">]</span>
 </span></pre></div>
 
 
@@ -942,33 +1027,40 @@ Must not raise — return BLOCK with a reason on errors.</p>
 </span><span id="ContextIngest-59"><a href="#ContextIngest-59"><span class="linenos">59</span></a>        <span class="k">for</span> <span class="n">topic</span> <span class="ow">in</span> <span class="n">topics</span><span class="p">:</span>
 </span><span id="ContextIngest-60"><a href="#ContextIngest-60"><span class="linenos">60</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">fabric</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">env</span><span class="p">,</span> <span class="n">_t</span><span class="o">=</span><span class="n">topic</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ingest</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="n">_t</span><span class="p">))</span>
 </span><span id="ContextIngest-61"><a href="#ContextIngest-61"><span class="linenos">61</span></a>
-</span><span id="ContextIngest-62"><a href="#ContextIngest-62"><span class="linenos">62</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">EventEnvelope</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ContextIngest-63"><a href="#ContextIngest-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Gate one event, then apply it (or quarantine it). Never raises to the fabric.&quot;&quot;&quot;</span>
-</span><span id="ContextIngest-64"><a href="#ContextIngest-64"><span class="linenos">64</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="ContextIngest-65"><a href="#ContextIngest-65"><span class="linenos">65</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="ContextIngest-66"><a href="#ContextIngest-66"><span class="linenos">66</span></a>            <span class="n">decision</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">decision</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">PERMIT</span>
-</span><span id="ContextIngest-67"><a href="#ContextIngest-67"><span class="linenos">67</span></a>            <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">BLOCK</span><span class="p">:</span>
-</span><span id="ContextIngest-68"><a href="#ContextIngest-68"><span class="linenos">68</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">quarantine</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="ContextIngest-69"><a href="#ContextIngest-69"><span class="linenos">69</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;blocked&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="ContextIngest-70"><a href="#ContextIngest-70"><span class="linenos">70</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;BLOCK&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
-</span><span id="ContextIngest-71"><a href="#ContextIngest-71"><span class="linenos">71</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="ContextIngest-72"><a href="#ContextIngest-72"><span class="linenos">72</span></a>                <span class="n">governed</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">envelope</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">envelope</span>   <span class="c1"># REDACT hands back the redacted event</span>
-</span><span id="ContextIngest-73"><a href="#ContextIngest-73"><span class="linenos">73</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
-</span><span id="ContextIngest-74"><a href="#ContextIngest-74"><span class="linenos">74</span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="ContextIngest-75"><a href="#ContextIngest-75"><span class="linenos">75</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
-</span><span id="ContextIngest-76"><a href="#ContextIngest-76"><span class="linenos">76</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;permitted&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="ContextIngest-77"><a href="#ContextIngest-77"><span class="linenos">77</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
-</span><span id="ContextIngest-78"><a href="#ContextIngest-78"><span class="linenos">78</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="ContextIngest-79"><a href="#ContextIngest-79"><span class="linenos">79</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] could not ingest </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">envelope</span><span class="o">.</span><span class="n">event_type</span><span class="p">)</span>
-</span><span id="ContextIngest-80"><a href="#ContextIngest-80"><span class="linenos">80</span></a>            <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-</span><span id="ContextIngest-81"><a href="#ContextIngest-81"><span class="linenos">81</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">:</span> <span class="n">envelope</span><span class="p">,</span> <span class="o">**</span><span class="n">outcome</span><span class="p">,</span>
-</span><span id="ContextIngest-82"><a href="#ContextIngest-82"><span class="linenos">82</span></a>                 <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;entities&quot;</span><span class="p">]]}</span>
-</span><span id="ContextIngest-83"><a href="#ContextIngest-83"><span class="linenos">83</span></a>        <span class="k">for</span> <span class="n">listener</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listeners</span><span class="p">:</span>
-</span><span id="ContextIngest-84"><a href="#ContextIngest-84"><span class="linenos">84</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="ContextIngest-85"><a href="#ContextIngest-85"><span class="linenos">85</span></a>                <span class="n">listener</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-</span><span id="ContextIngest-86"><a href="#ContextIngest-86"><span class="linenos">86</span></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-</span><span id="ContextIngest-87"><a href="#ContextIngest-87"><span class="linenos">87</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] listener failed&quot;</span><span class="p">)</span>
-</span><span id="ContextIngest-88"><a href="#ContextIngest-88"><span class="linenos">88</span></a>        <span class="k">return</span> <span class="n">event</span>
+</span><span id="ContextIngest-62"><a href="#ContextIngest-62"><span class="linenos">62</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">mapper</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="ContextIngest-63"><a href="#ContextIngest-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;A source that isn&#39;t on Kafka (a webhook receiver, a poller) hands its raw</span>
+</span><span id="ContextIngest-64"><a href="#ContextIngest-64"><span class="linenos">64</span></a><span class="sd">        message here; the mapper turns it into an envelope, then it is gated like any</span>
+</span><span id="ContextIngest-65"><a href="#ContextIngest-65"><span class="linenos">65</span></a><span class="sd">        event. None when the mapper skips it.&quot;&quot;&quot;</span>
+</span><span id="ContextIngest-66"><a href="#ContextIngest-66"><span class="linenos">66</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">}</span> <span class="k">if</span> <span class="n">topic</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+</span><span id="ContextIngest-67"><a href="#ContextIngest-67"><span class="linenos">67</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ingest</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="n">topic</span><span class="p">)</span> <span class="k">if</span> <span class="n">envelope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="ContextIngest-68"><a href="#ContextIngest-68"><span class="linenos">68</span></a>
+</span><span id="ContextIngest-69"><a href="#ContextIngest-69"><span class="linenos">69</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">EventEnvelope</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="ContextIngest-70"><a href="#ContextIngest-70"><span class="linenos">70</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Gate one event, then apply it (or quarantine it). Never raises to the fabric.&quot;&quot;&quot;</span>
+</span><span id="ContextIngest-71"><a href="#ContextIngest-71"><span class="linenos">71</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="ContextIngest-72"><a href="#ContextIngest-72"><span class="linenos">72</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="ContextIngest-73"><a href="#ContextIngest-73"><span class="linenos">73</span></a>            <span class="n">decision</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">decision</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">PERMIT</span>
+</span><span id="ContextIngest-74"><a href="#ContextIngest-74"><span class="linenos">74</span></a>            <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">BLOCK</span><span class="p">:</span>
+</span><span id="ContextIngest-75"><a href="#ContextIngest-75"><span class="linenos">75</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">quarantine</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="ContextIngest-76"><a href="#ContextIngest-76"><span class="linenos">76</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;blocked&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="ContextIngest-77"><a href="#ContextIngest-77"><span class="linenos">77</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;BLOCK&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
+</span><span id="ContextIngest-78"><a href="#ContextIngest-78"><span class="linenos">78</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="ContextIngest-79"><a href="#ContextIngest-79"><span class="linenos">79</span></a>                <span class="n">governed</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">envelope</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">envelope</span>   <span class="c1"># REDACT hands back the redacted event</span>
+</span><span id="ContextIngest-80"><a href="#ContextIngest-80"><span class="linenos">80</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
+</span><span id="ContextIngest-81"><a href="#ContextIngest-81"><span class="linenos">81</span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="ContextIngest-82"><a href="#ContextIngest-82"><span class="linenos">82</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
+</span><span id="ContextIngest-83"><a href="#ContextIngest-83"><span class="linenos">83</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;permitted&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="ContextIngest-84"><a href="#ContextIngest-84"><span class="linenos">84</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
+</span><span id="ContextIngest-85"><a href="#ContextIngest-85"><span class="linenos">85</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="ContextIngest-86"><a href="#ContextIngest-86"><span class="linenos">86</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] could not ingest </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">envelope</span><span class="o">.</span><span class="n">event_type</span><span class="p">)</span>
+</span><span id="ContextIngest-87"><a href="#ContextIngest-87"><span class="linenos">87</span></a>            <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+</span><span id="ContextIngest-88"><a href="#ContextIngest-88"><span class="linenos">88</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">:</span> <span class="n">envelope</span><span class="p">,</span> <span class="o">**</span><span class="n">outcome</span><span class="p">,</span>
+</span><span id="ContextIngest-89"><a href="#ContextIngest-89"><span class="linenos">89</span></a>                 <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;entities&quot;</span><span class="p">]]}</span>
+</span><span id="ContextIngest-90"><a href="#ContextIngest-90"><span class="linenos">90</span></a>        <span class="k">for</span> <span class="n">listener</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listeners</span><span class="p">:</span>
+</span><span id="ContextIngest-91"><a href="#ContextIngest-91"><span class="linenos">91</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="ContextIngest-92"><a href="#ContextIngest-92"><span class="linenos">92</span></a>                <span class="n">listener</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</span><span id="ContextIngest-93"><a href="#ContextIngest-93"><span class="linenos">93</span></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+</span><span id="ContextIngest-94"><a href="#ContextIngest-94"><span class="linenos">94</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] listener failed&quot;</span><span class="p">)</span>
+</span><span id="ContextIngest-95"><a href="#ContextIngest-95"><span class="linenos">95</span></a>        <span class="k">return</span> <span class="n">event</span>
 </span></pre></div>
 
 
@@ -1111,6 +1203,33 @@ ingest.attach(["ap.invoice.updated", "ap.payment.posted"])
 
 
                             </div>
+                            <div id="ContextIngest.ingest_raw" class="classattr">
+                                        <input id="ContextIngest.ingest_raw-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">ingest_raw</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">raw</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">mapper</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>:</span></span>
+
+                <label class="view-source-button" for="ContextIngest.ingest_raw-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#ContextIngest.ingest_raw"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ContextIngest.ingest_raw-62"><a href="#ContextIngest.ingest_raw-62"><span class="linenos">62</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">mapper</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="ContextIngest.ingest_raw-63"><a href="#ContextIngest.ingest_raw-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;A source that isn&#39;t on Kafka (a webhook receiver, a poller) hands its raw</span>
+</span><span id="ContextIngest.ingest_raw-64"><a href="#ContextIngest.ingest_raw-64"><span class="linenos">64</span></a><span class="sd">        message here; the mapper turns it into an envelope, then it is gated like any</span>
+</span><span id="ContextIngest.ingest_raw-65"><a href="#ContextIngest.ingest_raw-65"><span class="linenos">65</span></a><span class="sd">        event. None when the mapper skips it.&quot;&quot;&quot;</span>
+</span><span id="ContextIngest.ingest_raw-66"><a href="#ContextIngest.ingest_raw-66"><span class="linenos">66</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">}</span> <span class="k">if</span> <span class="n">topic</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest_raw-67"><a href="#ContextIngest.ingest_raw-67"><span class="linenos">67</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ingest</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">topic</span><span class="o">=</span><span class="n">topic</span><span class="p">)</span> <span class="k">if</span> <span class="n">envelope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>A source that isn't on Kafka (a webhook receiver, a poller) hands its raw
+message here; the mapper turns it into an envelope, then it is gated like any
+event. None when the mapper skips it.</p>
+</div>
+
+
+                            </div>
                             <div id="ContextIngest.ingest" class="classattr">
                                         <input id="ContextIngest.ingest-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -1122,37 +1241,590 @@ ingest.attach(["ap.invoice.updated", "ap.payment.posted"])
 
     </div>
     <a class="headerlink" href="#ContextIngest.ingest"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="ContextIngest.ingest-62"><a href="#ContextIngest.ingest-62"><span class="linenos">62</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">EventEnvelope</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="ContextIngest.ingest-63"><a href="#ContextIngest.ingest-63"><span class="linenos">63</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Gate one event, then apply it (or quarantine it). Never raises to the fabric.&quot;&quot;&quot;</span>
-</span><span id="ContextIngest.ingest-64"><a href="#ContextIngest.ingest-64"><span class="linenos">64</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-65"><a href="#ContextIngest.ingest-65"><span class="linenos">65</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="k">else</span> <span class="kc">None</span>
-</span><span id="ContextIngest.ingest-66"><a href="#ContextIngest.ingest-66"><span class="linenos">66</span></a>            <span class="n">decision</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">decision</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">PERMIT</span>
-</span><span id="ContextIngest.ingest-67"><a href="#ContextIngest.ingest-67"><span class="linenos">67</span></a>            <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">BLOCK</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-68"><a href="#ContextIngest.ingest-68"><span class="linenos">68</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">quarantine</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-69"><a href="#ContextIngest.ingest-69"><span class="linenos">69</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;blocked&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="ContextIngest.ingest-70"><a href="#ContextIngest.ingest-70"><span class="linenos">70</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;BLOCK&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
-</span><span id="ContextIngest.ingest-71"><a href="#ContextIngest.ingest-71"><span class="linenos">71</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-72"><a href="#ContextIngest.ingest-72"><span class="linenos">72</span></a>                <span class="n">governed</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">envelope</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">envelope</span>   <span class="c1"># REDACT hands back the redacted event</span>
-</span><span id="ContextIngest.ingest-73"><a href="#ContextIngest.ingest-73"><span class="linenos">73</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-74"><a href="#ContextIngest.ingest-74"><span class="linenos">74</span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-75"><a href="#ContextIngest.ingest-75"><span class="linenos">75</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-76"><a href="#ContextIngest.ingest-76"><span class="linenos">76</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;permitted&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="ContextIngest.ingest-77"><a href="#ContextIngest.ingest-77"><span class="linenos">77</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
-</span><span id="ContextIngest.ingest-78"><a href="#ContextIngest.ingest-78"><span class="linenos">78</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-79"><a href="#ContextIngest.ingest-79"><span class="linenos">79</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] could not ingest </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">envelope</span><span class="o">.</span><span class="n">event_type</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-80"><a href="#ContextIngest.ingest-80"><span class="linenos">80</span></a>            <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]}</span>
-</span><span id="ContextIngest.ingest-81"><a href="#ContextIngest.ingest-81"><span class="linenos">81</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">:</span> <span class="n">envelope</span><span class="p">,</span> <span class="o">**</span><span class="n">outcome</span><span class="p">,</span>
-</span><span id="ContextIngest.ingest-82"><a href="#ContextIngest.ingest-82"><span class="linenos">82</span></a>                 <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;entities&quot;</span><span class="p">]]}</span>
-</span><span id="ContextIngest.ingest-83"><a href="#ContextIngest.ingest-83"><span class="linenos">83</span></a>        <span class="k">for</span> <span class="n">listener</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listeners</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-84"><a href="#ContextIngest.ingest-84"><span class="linenos">84</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-85"><a href="#ContextIngest.ingest-85"><span class="linenos">85</span></a>                <span class="n">listener</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-86"><a href="#ContextIngest.ingest-86"><span class="linenos">86</span></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-</span><span id="ContextIngest.ingest-87"><a href="#ContextIngest.ingest-87"><span class="linenos">87</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] listener failed&quot;</span><span class="p">)</span>
-</span><span id="ContextIngest.ingest-88"><a href="#ContextIngest.ingest-88"><span class="linenos">88</span></a>        <span class="k">return</span> <span class="n">event</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="ContextIngest.ingest-69"><a href="#ContextIngest.ingest-69"><span class="linenos">69</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ingest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">envelope</span><span class="p">:</span> <span class="n">EventEnvelope</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="ContextIngest.ingest-70"><a href="#ContextIngest.ingest-70"><span class="linenos">70</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Gate one event, then apply it (or quarantine it). Never raises to the fabric.&quot;&quot;&quot;</span>
+</span><span id="ContextIngest.ingest-71"><a href="#ContextIngest.ingest-71"><span class="linenos">71</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-72"><a href="#ContextIngest.ingest-72"><span class="linenos">72</span></a>            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">envelope</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gate</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="ContextIngest.ingest-73"><a href="#ContextIngest.ingest-73"><span class="linenos">73</span></a>            <span class="n">decision</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">decision</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">PERMIT</span>
+</span><span id="ContextIngest.ingest-74"><a href="#ContextIngest.ingest-74"><span class="linenos">74</span></a>            <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="n">GateDecision</span><span class="o">.</span><span class="n">BLOCK</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-75"><a href="#ContextIngest.ingest-75"><span class="linenos">75</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">quarantine</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-76"><a href="#ContextIngest.ingest-76"><span class="linenos">76</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;blocked&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="ContextIngest.ingest-77"><a href="#ContextIngest.ingest-77"><span class="linenos">77</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;BLOCK&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
+</span><span id="ContextIngest.ingest-78"><a href="#ContextIngest.ingest-78"><span class="linenos">78</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-79"><a href="#ContextIngest.ingest-79"><span class="linenos">79</span></a>                <span class="n">governed</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">envelope</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">envelope</span>   <span class="c1"># REDACT hands back the redacted event</span>
+</span><span id="ContextIngest.ingest-80"><a href="#ContextIngest.ingest-80"><span class="linenos">80</span></a>                <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-81"><a href="#ContextIngest.ingest-81"><span class="linenos">81</span></a>                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-82"><a href="#ContextIngest.ingest-82"><span class="linenos">82</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">governed</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-83"><a href="#ContextIngest.ingest-83"><span class="linenos">83</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="s2">&quot;permitted&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="ContextIngest.ingest-84"><a href="#ContextIngest.ingest-84"><span class="linenos">84</span></a>                <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">}</span>
+</span><span id="ContextIngest.ingest-85"><a href="#ContextIngest.ingest-85"><span class="linenos">85</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-86"><a href="#ContextIngest.ingest-86"><span class="linenos">86</span></a>            <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] could not ingest </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">envelope</span><span class="o">.</span><span class="n">event_type</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-87"><a href="#ContextIngest.ingest-87"><span class="linenos">87</span></a>            <span class="n">outcome</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span> <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+</span><span id="ContextIngest.ingest-88"><a href="#ContextIngest.ingest-88"><span class="linenos">88</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;topic&quot;</span><span class="p">:</span> <span class="n">topic</span><span class="p">,</span> <span class="s2">&quot;envelope&quot;</span><span class="p">:</span> <span class="n">envelope</span><span class="p">,</span> <span class="o">**</span><span class="n">outcome</span><span class="p">,</span>
+</span><span id="ContextIngest.ingest-89"><a href="#ContextIngest.ingest-89"><span class="linenos">89</span></a>                 <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">outcome</span><span class="p">[</span><span class="s2">&quot;entities&quot;</span><span class="p">]]}</span>
+</span><span id="ContextIngest.ingest-90"><a href="#ContextIngest.ingest-90"><span class="linenos">90</span></a>        <span class="k">for</span> <span class="n">listener</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listeners</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-91"><a href="#ContextIngest.ingest-91"><span class="linenos">91</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-92"><a href="#ContextIngest.ingest-92"><span class="linenos">92</span></a>                <span class="n">listener</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-93"><a href="#ContextIngest.ingest-93"><span class="linenos">93</span></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+</span><span id="ContextIngest.ingest-94"><a href="#ContextIngest.ingest-94"><span class="linenos">94</span></a>                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;[ContextIngest] listener failed&quot;</span><span class="p">)</span>
+</span><span id="ContextIngest.ingest-95"><a href="#ContextIngest.ingest-95"><span class="linenos">95</span></a>        <span class="k">return</span> <span class="n">event</span>
 </span></pre></div>
 
 
             <div class="docstring"><p>Gate one event, then apply it (or quarantine it). Never raises to the fabric.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="NativeEnvelopeMapper">
+                            <input id="NativeEnvelopeMapper-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">NativeEnvelopeMapper</span><wbr>(<span class="base">k9_aif_abb.k9_core.streams.base_envelope_mapper.BaseEnvelopeMapper</span>):
+
+                <label class="view-source-button" for="NativeEnvelopeMapper-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#NativeEnvelopeMapper"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="NativeEnvelopeMapper-26"><a href="#NativeEnvelopeMapper-26"><span class="linenos">26</span></a><span class="k">class</span><span class="w"> </span><span class="nc">NativeEnvelopeMapper</span><span class="p">(</span><span class="n">BaseEnvelopeMapper</span><span class="p">):</span>
+</span><span id="NativeEnvelopeMapper-27"><a href="#NativeEnvelopeMapper-27"><span class="linenos">27</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Messages already in K9-AIF form: a dict with ``event_type`` (and ``source_system``).&quot;&quot;&quot;</span>
+</span><span id="NativeEnvelopeMapper-28"><a href="#NativeEnvelopeMapper-28"><span class="linenos">28</span></a>
+</span><span id="NativeEnvelopeMapper-29"><a href="#NativeEnvelopeMapper-29"><span class="linenos">29</span></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;native&quot;</span>
+</span><span id="NativeEnvelopeMapper-30"><a href="#NativeEnvelopeMapper-30"><span class="linenos">30</span></a>
+</span><span id="NativeEnvelopeMapper-31"><a href="#NativeEnvelopeMapper-31"><span class="linenos">31</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="NativeEnvelopeMapper-32"><a href="#NativeEnvelopeMapper-32"><span class="linenos">32</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event_type&quot;</span><span class="p">):</span>
+</span><span id="NativeEnvelopeMapper-33"><a href="#NativeEnvelopeMapper-33"><span class="linenos">33</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="NativeEnvelopeMapper-34"><a href="#NativeEnvelopeMapper-34"><span class="linenos">34</span></a>        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="NativeEnvelopeMapper-35"><a href="#NativeEnvelopeMapper-35"><span class="linenos">35</span></a>        <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
+</span><span id="NativeEnvelopeMapper-36"><a href="#NativeEnvelopeMapper-36"><span class="linenos">36</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="NativeEnvelopeMapper-37"><a href="#NativeEnvelopeMapper-37"><span class="linenos">37</span></a>            <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">EventEnvelope</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="NativeEnvelopeMapper-38"><a href="#NativeEnvelopeMapper-38"><span class="linenos">38</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+</span><span id="NativeEnvelopeMapper-39"><a href="#NativeEnvelopeMapper-39"><span class="linenos">39</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Messages already in K9-AIF form: a dict with <code>event_type</code> (and <code>source_system</code>).</p>
+</div>
+
+
+                            <div id="NativeEnvelopeMapper.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>        =
+<span class="default_value">&#39;native&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#NativeEnvelopeMapper.name"></a>
+    
+    
+
+                            </div>
+                            <div id="NativeEnvelopeMapper.map" class="classattr">
+                                        <input id="NativeEnvelopeMapper.map-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">map</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">raw</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="k9_core/streams.html#EventEnvelope">k9_aif_abb.k9_core.streams.EventEnvelope</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="NativeEnvelopeMapper.map-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#NativeEnvelopeMapper.map"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="NativeEnvelopeMapper.map-31"><a href="#NativeEnvelopeMapper.map-31"><span class="linenos">31</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="NativeEnvelopeMapper.map-32"><a href="#NativeEnvelopeMapper.map-32"><span class="linenos">32</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;event_type&quot;</span><span class="p">):</span>
+</span><span id="NativeEnvelopeMapper.map-33"><a href="#NativeEnvelopeMapper.map-33"><span class="linenos">33</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="NativeEnvelopeMapper.map-34"><a href="#NativeEnvelopeMapper.map-34"><span class="linenos">34</span></a>        <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="NativeEnvelopeMapper.map-35"><a href="#NativeEnvelopeMapper.map-35"><span class="linenos">35</span></a>        <span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
+</span><span id="NativeEnvelopeMapper.map-36"><a href="#NativeEnvelopeMapper.map-36"><span class="linenos">36</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="NativeEnvelopeMapper.map-37"><a href="#NativeEnvelopeMapper.map-37"><span class="linenos">37</span></a>            <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">EventEnvelope</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="NativeEnvelopeMapper.map-38"><a href="#NativeEnvelopeMapper.map-38"><span class="linenos">38</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+</span><span id="NativeEnvelopeMapper.map-39"><a href="#NativeEnvelopeMapper.map-39"><span class="linenos">39</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>One raw message → an EventEnvelope, or None to skip it.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="DebeziumEnvelopeMapper">
+                            <input id="DebeziumEnvelopeMapper-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">DebeziumEnvelopeMapper</span><wbr>(<span class="base">k9_aif_abb.k9_core.streams.base_envelope_mapper.BaseEnvelopeMapper</span>):
+
+                <label class="view-source-button" for="DebeziumEnvelopeMapper-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#DebeziumEnvelopeMapper"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DebeziumEnvelopeMapper-42"><a href="#DebeziumEnvelopeMapper-42"><span class="linenos"> 42</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DebeziumEnvelopeMapper</span><span class="p">(</span><span class="n">BaseEnvelopeMapper</span><span class="p">):</span>
+</span><span id="DebeziumEnvelopeMapper-43"><a href="#DebeziumEnvelopeMapper-43"><span class="linenos"> 43</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="DebeziumEnvelopeMapper-44"><a href="#DebeziumEnvelopeMapper-44"><span class="linenos"> 44</span></a><span class="sd">    Debezium change records (PostgreSQL, MySQL, SQL Server, Oracle, MongoDB connectors), with</span>
+</span><span id="DebeziumEnvelopeMapper-45"><a href="#DebeziumEnvelopeMapper-45"><span class="linenos"> 45</span></a><span class="sd">    or without the JSON-converter schema wrapper.</span>
+</span><span id="DebeziumEnvelopeMapper-46"><a href="#DebeziumEnvelopeMapper-46"><span class="linenos"> 46</span></a>
+</span><span id="DebeziumEnvelopeMapper-47"><a href="#DebeziumEnvelopeMapper-47"><span class="linenos"> 47</span></a><span class="sd">    event_type   ``&lt;table&gt;.&lt;created|snapshot|updated|deleted|truncated&gt;``, e.g. ``invoices.updated``</span>
+</span><span id="DebeziumEnvelopeMapper-48"><a href="#DebeziumEnvelopeMapper-48"><span class="linenos"> 48</span></a><span class="sd">    payload      the row after the change; for a delete, the row before with ``&quot;_deleted&quot;: true``</span>
+</span><span id="DebeziumEnvelopeMapper-49"><a href="#DebeziumEnvelopeMapper-49"><span class="linenos"> 49</span></a><span class="sd">    source_system  ``source_system`` from config, else the connector&#39;s database name</span>
+</span><span id="DebeziumEnvelopeMapper-50"><a href="#DebeziumEnvelopeMapper-50"><span class="linenos"> 50</span></a><span class="sd">    timestamp    the change time (``ts_ms``), so ``as_of`` reflects the database, not the consumer</span>
+</span><span id="DebeziumEnvelopeMapper-51"><a href="#DebeziumEnvelopeMapper-51"><span class="linenos"> 51</span></a><span class="sd">    metadata[&quot;cdc&quot;]  op, table, schema, db, connector, before (when ``include_before``)</span>
+</span><span id="DebeziumEnvelopeMapper-52"><a href="#DebeziumEnvelopeMapper-52"><span class="linenos"> 52</span></a>
+</span><span id="DebeziumEnvelopeMapper-53"><a href="#DebeziumEnvelopeMapper-53"><span class="linenos"> 53</span></a><span class="sd">    Projections then key the row like any event::</span>
+</span><span id="DebeziumEnvelopeMapper-54"><a href="#DebeziumEnvelopeMapper-54"><span class="linenos"> 54</span></a>
+</span><span id="DebeziumEnvelopeMapper-55"><a href="#DebeziumEnvelopeMapper-55"><span class="linenos"> 55</span></a><span class="sd">        class InvoiceProjection(BaseContextProjection):</span>
+</span><span id="DebeziumEnvelopeMapper-56"><a href="#DebeziumEnvelopeMapper-56"><span class="linenos"> 56</span></a><span class="sd">            entity, id_field = &quot;invoice&quot;, &quot;invoice_id&quot;</span>
+</span><span id="DebeziumEnvelopeMapper-57"><a href="#DebeziumEnvelopeMapper-57"><span class="linenos"> 57</span></a><span class="sd">            def accepts(self, env): return env.event_type.startswith(&quot;invoices.&quot;)</span>
+</span><span id="DebeziumEnvelopeMapper-58"><a href="#DebeziumEnvelopeMapper-58"><span class="linenos"> 58</span></a><span class="sd">            def project(self, env): return env.payload</span>
+</span><span id="DebeziumEnvelopeMapper-59"><a href="#DebeziumEnvelopeMapper-59"><span class="linenos"> 59</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="DebeziumEnvelopeMapper-60"><a href="#DebeziumEnvelopeMapper-60"><span class="linenos"> 60</span></a>
+</span><span id="DebeziumEnvelopeMapper-61"><a href="#DebeziumEnvelopeMapper-61"><span class="linenos"> 61</span></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;debezium&quot;</span>
+</span><span id="DebeziumEnvelopeMapper-62"><a href="#DebeziumEnvelopeMapper-62"><span class="linenos"> 62</span></a>
+</span><span id="DebeziumEnvelopeMapper-63"><a href="#DebeziumEnvelopeMapper-63"><span class="linenos"> 63</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="DebeziumEnvelopeMapper-64"><a href="#DebeziumEnvelopeMapper-64"><span class="linenos"> 64</span></a>        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper-65"><a href="#DebeziumEnvelopeMapper-65"><span class="linenos"> 65</span></a>        <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-66"><a href="#DebeziumEnvelopeMapper-66"><span class="linenos"> 66</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="DebeziumEnvelopeMapper-67"><a href="#DebeziumEnvelopeMapper-67"><span class="linenos"> 67</span></a>        <span class="n">op</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op&quot;</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper-68"><a href="#DebeziumEnvelopeMapper-68"><span class="linenos"> 68</span></a>        <span class="n">source</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="DebeziumEnvelopeMapper-69"><a href="#DebeziumEnvelopeMapper-69"><span class="linenos"> 69</span></a>        <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">_row</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;before&quot;</span><span class="p">)),</span> <span class="n">_row</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;after&quot;</span><span class="p">))</span>   <span class="c1"># MongoDB sends JSON strings</span>
+</span><span id="DebeziumEnvelopeMapper-70"><a href="#DebeziumEnvelopeMapper-70"><span class="linenos"> 70</span></a>        <span class="n">table</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collection&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;table&quot;</span>
+</span><span id="DebeziumEnvelopeMapper-71"><a href="#DebeziumEnvelopeMapper-71"><span class="linenos"> 71</span></a>        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;d&quot;</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-72"><a href="#DebeziumEnvelopeMapper-72"><span class="linenos"> 72</span></a>            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="p">(</span><span class="n">before</span> <span class="ow">or</span> <span class="p">{}),</span> <span class="s2">&quot;_deleted&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</span><span id="DebeziumEnvelopeMapper-73"><a href="#DebeziumEnvelopeMapper-73"><span class="linenos"> 73</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-74"><a href="#DebeziumEnvelopeMapper-74"><span class="linenos"> 74</span></a>            <span class="n">row</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">after</span> <span class="ow">or</span> <span class="p">{})</span>
+</span><span id="DebeziumEnvelopeMapper-75"><a href="#DebeziumEnvelopeMapper-75"><span class="linenos"> 75</span></a>        <span class="n">ts_ms</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ts_ms&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ts_ms&quot;</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper-76"><a href="#DebeziumEnvelopeMapper-76"><span class="linenos"> 76</span></a>        <span class="n">cdc</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="n">table</span><span class="p">,</span> <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;schema&quot;</span><span class="p">),</span> <span class="s2">&quot;db&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db&quot;</span><span class="p">),</span>
+</span><span id="DebeziumEnvelopeMapper-77"><a href="#DebeziumEnvelopeMapper-77"><span class="linenos"> 77</span></a>               <span class="s2">&quot;connector&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;connector&quot;</span><span class="p">)}</span>
+</span><span id="DebeziumEnvelopeMapper-78"><a href="#DebeziumEnvelopeMapper-78"><span class="linenos"> 78</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;include_before&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">before</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-79"><a href="#DebeziumEnvelopeMapper-79"><span class="linenos"> 79</span></a>            <span class="n">cdc</span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">before</span>
+</span><span id="DebeziumEnvelopeMapper-80"><a href="#DebeziumEnvelopeMapper-80"><span class="linenos"> 80</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">EventEnvelope</span><span class="p">(</span>
+</span><span id="DebeziumEnvelopeMapper-81"><a href="#DebeziumEnvelopeMapper-81"><span class="linenos"> 81</span></a>            <span class="n">event_type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">_DEBEZIUM_OPS</span><span class="p">[</span><span class="n">op</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper-82"><a href="#DebeziumEnvelopeMapper-82"><span class="linenos"> 82</span></a>            <span class="n">source_system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;cdc&quot;</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper-83"><a href="#DebeziumEnvelopeMapper-83"><span class="linenos"> 83</span></a>            <span class="n">payload</span><span class="o">=</span><span class="n">row</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper-84"><a href="#DebeziumEnvelopeMapper-84"><span class="linenos"> 84</span></a>            <span class="n">timestamp</span><span class="o">=</span><span class="n">_from_ms</span><span class="p">(</span><span class="n">ts_ms</span><span class="p">),</span>
+</span><span id="DebeziumEnvelopeMapper-85"><a href="#DebeziumEnvelopeMapper-85"><span class="linenos"> 85</span></a>            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cdc&quot;</span><span class="p">:</span> <span class="n">cdc</span><span class="p">},</span>
+</span><span id="DebeziumEnvelopeMapper-86"><a href="#DebeziumEnvelopeMapper-86"><span class="linenos"> 86</span></a>        <span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper-87"><a href="#DebeziumEnvelopeMapper-87"><span class="linenos"> 87</span></a>        <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper-88"><a href="#DebeziumEnvelopeMapper-88"><span class="linenos"> 88</span></a>
+</span><span id="DebeziumEnvelopeMapper-89"><a href="#DebeziumEnvelopeMapper-89"><span class="linenos"> 89</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="DebeziumEnvelopeMapper-90"><a href="#DebeziumEnvelopeMapper-90"><span class="linenos"> 90</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_record</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="DebeziumEnvelopeMapper-91"><a href="#DebeziumEnvelopeMapper-91"><span class="linenos"> 91</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="DebeziumEnvelopeMapper-92"><a href="#DebeziumEnvelopeMapper-92"><span class="linenos"> 92</span></a>            <span class="k">return</span> <span class="kc">None</span>   <span class="c1"># tombstone (None) or not JSON</span>
+</span><span id="DebeziumEnvelopeMapper-93"><a href="#DebeziumEnvelopeMapper-93"><span class="linenos"> 93</span></a>        <span class="k">if</span> <span class="s2">&quot;payload&quot;</span> <span class="ow">in</span> <span class="n">raw</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;payload&quot;</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;schema&quot;</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-94"><a href="#DebeziumEnvelopeMapper-94"><span class="linenos"> 94</span></a>            <span class="n">raw</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;payload&quot;</span><span class="p">]</span>   <span class="c1"># JSON converter with schemas.enable=true</span>
+</span><span id="DebeziumEnvelopeMapper-95"><a href="#DebeziumEnvelopeMapper-95"><span class="linenos"> 95</span></a>        <span class="k">if</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op&quot;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_DEBEZIUM_OPS</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="DebeziumEnvelopeMapper-96"><a href="#DebeziumEnvelopeMapper-96"><span class="linenos"> 96</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="DebeziumEnvelopeMapper-97"><a href="#DebeziumEnvelopeMapper-97"><span class="linenos"> 97</span></a>        <span class="k">return</span> <span class="n">raw</span>
+</span><span id="DebeziumEnvelopeMapper-98"><a href="#DebeziumEnvelopeMapper-98"><span class="linenos"> 98</span></a>
+</span><span id="DebeziumEnvelopeMapper-99"><a href="#DebeziumEnvelopeMapper-99"><span class="linenos"> 99</span></a>    <span class="nd">@classmethod</span>
+</span><span id="DebeziumEnvelopeMapper-100"><a href="#DebeziumEnvelopeMapper-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">looks_like</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper-101"><a href="#DebeziumEnvelopeMapper-101"><span class="linenos">101</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_record</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Debezium change records (PostgreSQL, MySQL, SQL Server, Oracle, MongoDB connectors), with
+or without the JSON-converter schema wrapper.</p>
+
+<p>event_type   <code>&lt;table&gt;.&lt;created|snapshot|updated|deleted|truncated&gt;</code>, e.g. <code>invoices.updated</code>
+payload      the row after the change; for a delete, the row before with <code>"_deleted": true</code>
+source_system  <code>source_system</code> from config, else the connector's database name
+timestamp    the change time (<code>ts_ms</code>), so <code>as_of</code> reflects the database, not the consumer
+metadata["cdc"]  op, table, schema, db, connector, before (when <code>include_before</code>)</p>
+
+<p>Projections then key the row like any event::</p>
+
+<pre><code>class InvoiceProjection(BaseContextProjection):
+    entity, id_field = "invoice", "invoice_id"
+    def accepts(self, env): return env.event_type.startswith("invoices.")
+    def project(self, env): return env.payload
+</code></pre>
+</div>
+
+
+                            <div id="DebeziumEnvelopeMapper.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>        =
+<span class="default_value">&#39;debezium&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#DebeziumEnvelopeMapper.name"></a>
+    
+    
+
+                            </div>
+                            <div id="DebeziumEnvelopeMapper.map" class="classattr">
+                                        <input id="DebeziumEnvelopeMapper.map-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">map</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">raw</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="k9_core/streams.html#EventEnvelope">k9_aif_abb.k9_core.streams.EventEnvelope</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="DebeziumEnvelopeMapper.map-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#DebeziumEnvelopeMapper.map"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DebeziumEnvelopeMapper.map-63"><a href="#DebeziumEnvelopeMapper.map-63"><span class="linenos">63</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="DebeziumEnvelopeMapper.map-64"><a href="#DebeziumEnvelopeMapper.map-64"><span class="linenos">64</span></a>        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_record</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper.map-65"><a href="#DebeziumEnvelopeMapper.map-65"><span class="linenos">65</span></a>        <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper.map-66"><a href="#DebeziumEnvelopeMapper.map-66"><span class="linenos">66</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="DebeziumEnvelopeMapper.map-67"><a href="#DebeziumEnvelopeMapper.map-67"><span class="linenos">67</span></a>        <span class="n">op</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op&quot;</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper.map-68"><a href="#DebeziumEnvelopeMapper.map-68"><span class="linenos">68</span></a>        <span class="n">source</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="DebeziumEnvelopeMapper.map-69"><a href="#DebeziumEnvelopeMapper.map-69"><span class="linenos">69</span></a>        <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">_row</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;before&quot;</span><span class="p">)),</span> <span class="n">_row</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;after&quot;</span><span class="p">))</span>   <span class="c1"># MongoDB sends JSON strings</span>
+</span><span id="DebeziumEnvelopeMapper.map-70"><a href="#DebeziumEnvelopeMapper.map-70"><span class="linenos">70</span></a>        <span class="n">table</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;table&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;collection&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;table&quot;</span>
+</span><span id="DebeziumEnvelopeMapper.map-71"><a href="#DebeziumEnvelopeMapper.map-71"><span class="linenos">71</span></a>        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;d&quot;</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper.map-72"><a href="#DebeziumEnvelopeMapper.map-72"><span class="linenos">72</span></a>            <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="p">(</span><span class="n">before</span> <span class="ow">or</span> <span class="p">{}),</span> <span class="s2">&quot;_deleted&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</span><span id="DebeziumEnvelopeMapper.map-73"><a href="#DebeziumEnvelopeMapper.map-73"><span class="linenos">73</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper.map-74"><a href="#DebeziumEnvelopeMapper.map-74"><span class="linenos">74</span></a>            <span class="n">row</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">after</span> <span class="ow">or</span> <span class="p">{})</span>
+</span><span id="DebeziumEnvelopeMapper.map-75"><a href="#DebeziumEnvelopeMapper.map-75"><span class="linenos">75</span></a>        <span class="n">ts_ms</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ts_ms&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ts_ms&quot;</span><span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper.map-76"><a href="#DebeziumEnvelopeMapper.map-76"><span class="linenos">76</span></a>        <span class="n">cdc</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;op&quot;</span><span class="p">:</span> <span class="n">op</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="n">table</span><span class="p">,</span> <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;schema&quot;</span><span class="p">),</span> <span class="s2">&quot;db&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db&quot;</span><span class="p">),</span>
+</span><span id="DebeziumEnvelopeMapper.map-77"><a href="#DebeziumEnvelopeMapper.map-77"><span class="linenos">77</span></a>               <span class="s2">&quot;connector&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;connector&quot;</span><span class="p">)}</span>
+</span><span id="DebeziumEnvelopeMapper.map-78"><a href="#DebeziumEnvelopeMapper.map-78"><span class="linenos">78</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;include_before&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">before</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper.map-79"><a href="#DebeziumEnvelopeMapper.map-79"><span class="linenos">79</span></a>            <span class="n">cdc</span><span class="p">[</span><span class="s2">&quot;before&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">before</span>
+</span><span id="DebeziumEnvelopeMapper.map-80"><a href="#DebeziumEnvelopeMapper.map-80"><span class="linenos">80</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">EventEnvelope</span><span class="p">(</span>
+</span><span id="DebeziumEnvelopeMapper.map-81"><a href="#DebeziumEnvelopeMapper.map-81"><span class="linenos">81</span></a>            <span class="n">event_type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">_DEBEZIUM_OPS</span><span class="p">[</span><span class="n">op</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper.map-82"><a href="#DebeziumEnvelopeMapper.map-82"><span class="linenos">82</span></a>            <span class="n">source_system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;db&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;cdc&quot;</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper.map-83"><a href="#DebeziumEnvelopeMapper.map-83"><span class="linenos">83</span></a>            <span class="n">payload</span><span class="o">=</span><span class="n">row</span><span class="p">,</span>
+</span><span id="DebeziumEnvelopeMapper.map-84"><a href="#DebeziumEnvelopeMapper.map-84"><span class="linenos">84</span></a>            <span class="n">timestamp</span><span class="o">=</span><span class="n">_from_ms</span><span class="p">(</span><span class="n">ts_ms</span><span class="p">),</span>
+</span><span id="DebeziumEnvelopeMapper.map-85"><a href="#DebeziumEnvelopeMapper.map-85"><span class="linenos">85</span></a>            <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cdc&quot;</span><span class="p">:</span> <span class="n">cdc</span><span class="p">},</span>
+</span><span id="DebeziumEnvelopeMapper.map-86"><a href="#DebeziumEnvelopeMapper.map-86"><span class="linenos">86</span></a>        <span class="p">)</span>
+</span><span id="DebeziumEnvelopeMapper.map-87"><a href="#DebeziumEnvelopeMapper.map-87"><span class="linenos">87</span></a>        <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>One raw message → an EventEnvelope, or None to skip it.</p>
+</div>
+
+
+                            </div>
+                            <div id="DebeziumEnvelopeMapper.looks_like" class="classattr">
+                                        <input id="DebeziumEnvelopeMapper.looks_like-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator decorator-classmethod">@classmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">looks_like</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">cls</span>, </span><span class="param"><span class="n">raw</span><span class="p">:</span> <span class="n">Any</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="DebeziumEnvelopeMapper.looks_like-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#DebeziumEnvelopeMapper.looks_like"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DebeziumEnvelopeMapper.looks_like-99"><a href="#DebeziumEnvelopeMapper.looks_like-99"><span class="linenos"> 99</span></a>    <span class="nd">@classmethod</span>
+</span><span id="DebeziumEnvelopeMapper.looks_like-100"><a href="#DebeziumEnvelopeMapper.looks_like-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">looks_like</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="DebeziumEnvelopeMapper.looks_like-101"><a href="#DebeziumEnvelopeMapper.looks_like-101"><span class="linenos">101</span></a>        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_record</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                </section>
+                <section id="LogLineEnvelopeMapper">
+                            <input id="LogLineEnvelopeMapper-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">LogLineEnvelopeMapper</span><wbr>(<span class="base">k9_aif_abb.k9_core.streams.base_envelope_mapper.BaseEnvelopeMapper</span>):
+
+                <label class="view-source-button" for="LogLineEnvelopeMapper-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="LogLineEnvelopeMapper-104"><a href="#LogLineEnvelopeMapper-104"><span class="linenos">104</span></a><span class="k">class</span><span class="w"> </span><span class="nc">LogLineEnvelopeMapper</span><span class="p">(</span><span class="n">BaseEnvelopeMapper</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper-105"><a href="#LogLineEnvelopeMapper-105"><span class="linenos">105</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="LogLineEnvelopeMapper-106"><a href="#LogLineEnvelopeMapper-106"><span class="linenos">106</span></a><span class="sd">    Application log lines, as shipped by Fluent Bit, Vector or Filebeat.</span>
+</span><span id="LogLineEnvelopeMapper-107"><a href="#LogLineEnvelopeMapper-107"><span class="linenos">107</span></a>
+</span><span id="LogLineEnvelopeMapper-108"><a href="#LogLineEnvelopeMapper-108"><span class="linenos">108</span></a><span class="sd">    JSON lines become the payload as they are; plain text is parsed with ``pattern``</span>
+</span><span id="LogLineEnvelopeMapper-109"><a href="#LogLineEnvelopeMapper-109"><span class="linenos">109</span></a><span class="sd">    (named groups; default ``&lt;timestamp&gt; &lt;LEVEL&gt; &lt;logger&gt; &lt;message&gt;``), falling back to</span>
+</span><span id="LogLineEnvelopeMapper-110"><a href="#LogLineEnvelopeMapper-110"><span class="linenos">110</span></a><span class="sd">    ``{&quot;message&quot;: line}``. event_type is ``log.&lt;level&gt;`` (``log.line`` without a level);</span>
+</span><span id="LogLineEnvelopeMapper-111"><a href="#LogLineEnvelopeMapper-111"><span class="linenos">111</span></a><span class="sd">    a parseable ISO timestamp becomes the envelope&#39;s timestamp.</span>
+</span><span id="LogLineEnvelopeMapper-112"><a href="#LogLineEnvelopeMapper-112"><span class="linenos">112</span></a>
+</span><span id="LogLineEnvelopeMapper-113"><a href="#LogLineEnvelopeMapper-113"><span class="linenos">113</span></a><span class="sd">    Config: ``source_system`` (default ``app-logs``), ``pattern``, ``level_field``</span>
+</span><span id="LogLineEnvelopeMapper-114"><a href="#LogLineEnvelopeMapper-114"><span class="linenos">114</span></a><span class="sd">    (default ``level``), ``message_field`` (default ``message``; Filebeat ships the line here).</span>
+</span><span id="LogLineEnvelopeMapper-115"><a href="#LogLineEnvelopeMapper-115"><span class="linenos">115</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="LogLineEnvelopeMapper-116"><a href="#LogLineEnvelopeMapper-116"><span class="linenos">116</span></a>
+</span><span id="LogLineEnvelopeMapper-117"><a href="#LogLineEnvelopeMapper-117"><span class="linenos">117</span></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;log_line&quot;</span>
+</span><span id="LogLineEnvelopeMapper-118"><a href="#LogLineEnvelopeMapper-118"><span class="linenos">118</span></a>    <span class="n">DEFAULT_PATTERN</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^(?P&lt;timestamp&gt;\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">[T ]\d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">:\d</span><span class="si">{2}</span><span class="s2">(?:[.,]\d+)?(?:Z|[+-]\d</span><span class="si">{2}</span><span class="s2">:?\d</span><span class="si">{2}</span><span class="s2">)?)\s+&quot;</span>
+</span><span id="LogLineEnvelopeMapper-119"><a href="#LogLineEnvelopeMapper-119"><span class="linenos">119</span></a>                       <span class="sa">r</span><span class="s2">&quot;(?P&lt;level&gt;[A-Za-z]+)\s+(?P&lt;logger&gt;\S+)\s+(?P&lt;message&gt;.*)$&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-120"><a href="#LogLineEnvelopeMapper-120"><span class="linenos">120</span></a>
+</span><span id="LogLineEnvelopeMapper-121"><a href="#LogLineEnvelopeMapper-121"><span class="linenos">121</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper-122"><a href="#LogLineEnvelopeMapper-122"><span class="linenos">122</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-123"><a href="#LogLineEnvelopeMapper-123"><span class="linenos">123</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_PATTERN</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-124"><a href="#LogLineEnvelopeMapper-124"><span class="linenos">124</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">level_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;level_field&quot;</span><span class="p">,</span> <span class="s2">&quot;level&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-125"><a href="#LogLineEnvelopeMapper-125"><span class="linenos">125</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">message_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message_field&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-126"><a href="#LogLineEnvelopeMapper-126"><span class="linenos">126</span></a>
+</span><span id="LogLineEnvelopeMapper-127"><a href="#LogLineEnvelopeMapper-127"><span class="linenos">127</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="LogLineEnvelopeMapper-128"><a href="#LogLineEnvelopeMapper-128"><span class="linenos">128</span></a>        <span class="k">if</span> <span class="n">raw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper-129"><a href="#LogLineEnvelopeMapper-129"><span class="linenos">129</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="LogLineEnvelopeMapper-130"><a href="#LogLineEnvelopeMapper-130"><span class="linenos">130</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper-131"><a href="#LogLineEnvelopeMapper-131"><span class="linenos">131</span></a>            <span class="n">fields</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-132"><a href="#LogLineEnvelopeMapper-132"><span class="linenos">132</span></a>            <span class="n">line</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-133"><a href="#LogLineEnvelopeMapper-133"><span class="linenos">133</span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">,</span> <span class="s2">&quot;@timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;host&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper-134"><a href="#LogLineEnvelopeMapper-134"><span class="linenos">134</span></a>                                                          <span class="s2">&quot;ecs&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;fields&quot;</span><span class="p">}:</span>
+</span><span id="LogLineEnvelopeMapper-135"><a href="#LogLineEnvelopeMapper-135"><span class="linenos">135</span></a>                <span class="n">parsed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>   <span class="c1"># a shipper wrapped a plain-text line</span>
+</span><span id="LogLineEnvelopeMapper-136"><a href="#LogLineEnvelopeMapper-136"><span class="linenos">136</span></a>                <span class="k">if</span> <span class="n">parsed</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper-137"><a href="#LogLineEnvelopeMapper-137"><span class="linenos">137</span></a>                    <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">parsed</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">}}</span>
+</span><span id="LogLineEnvelopeMapper-138"><a href="#LogLineEnvelopeMapper-138"><span class="linenos">138</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper-139"><a href="#LogLineEnvelopeMapper-139"><span class="linenos">139</span></a>            <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-140"><a href="#LogLineEnvelopeMapper-140"><span class="linenos">140</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+</span><span id="LogLineEnvelopeMapper-141"><a href="#LogLineEnvelopeMapper-141"><span class="linenos">141</span></a>                <span class="k">return</span> <span class="kc">None</span>
+</span><span id="LogLineEnvelopeMapper-142"><a href="#LogLineEnvelopeMapper-142"><span class="linenos">142</span></a>            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+</span><span id="LogLineEnvelopeMapper-143"><a href="#LogLineEnvelopeMapper-143"><span class="linenos">143</span></a>        <span class="n">level</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level_field</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="LogLineEnvelopeMapper-144"><a href="#LogLineEnvelopeMapper-144"><span class="linenos">144</span></a>        <span class="n">ts</span> <span class="o">=</span> <span class="n">_parse_ts</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@timestamp&quot;</span><span class="p">))</span>
+</span><span id="LogLineEnvelopeMapper-145"><a href="#LogLineEnvelopeMapper-145"><span class="linenos">145</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">EventEnvelope</span><span class="p">(</span>
+</span><span id="LogLineEnvelopeMapper-146"><a href="#LogLineEnvelopeMapper-146"><span class="linenos">146</span></a>            <span class="n">event_type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;log.</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">level</span> <span class="k">else</span> <span class="s2">&quot;log.line&quot;</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper-147"><a href="#LogLineEnvelopeMapper-147"><span class="linenos">147</span></a>            <span class="n">source_system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="s2">&quot;app-logs&quot;</span><span class="p">),</span>
+</span><span id="LogLineEnvelopeMapper-148"><a href="#LogLineEnvelopeMapper-148"><span class="linenos">148</span></a>            <span class="n">payload</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper-149"><a href="#LogLineEnvelopeMapper-149"><span class="linenos">149</span></a>            <span class="n">timestamp</span><span class="o">=</span><span class="n">ts</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span>
+</span><span id="LogLineEnvelopeMapper-150"><a href="#LogLineEnvelopeMapper-150"><span class="linenos">150</span></a>        <span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-151"><a href="#LogLineEnvelopeMapper-151"><span class="linenos">151</span></a>        <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-152"><a href="#LogLineEnvelopeMapper-152"><span class="linenos">152</span></a>
+</span><span id="LogLineEnvelopeMapper-153"><a href="#LogLineEnvelopeMapper-153"><span class="linenos">153</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+</span><span id="LogLineEnvelopeMapper-154"><a href="#LogLineEnvelopeMapper-154"><span class="linenos">154</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper-155"><a href="#LogLineEnvelopeMapper-155"><span class="linenos">155</span></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-156"><a href="#LogLineEnvelopeMapper-156"><span class="linenos">156</span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper-157"><a href="#LogLineEnvelopeMapper-157"><span class="linenos">157</span></a>                <span class="k">return</span> <span class="n">data</span>
+</span><span id="LogLineEnvelopeMapper-158"><a href="#LogLineEnvelopeMapper-158"><span class="linenos">158</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper-159"><a href="#LogLineEnvelopeMapper-159"><span class="linenos">159</span></a>            <span class="k">pass</span>
+</span><span id="LogLineEnvelopeMapper-160"><a href="#LogLineEnvelopeMapper-160"><span class="linenos">160</span></a>        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper-161"><a href="#LogLineEnvelopeMapper-161"><span class="linenos">161</span></a>        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Application log lines, as shipped by Fluent Bit, Vector or Filebeat.</p>
+
+<p>JSON lines become the payload as they are; plain text is parsed with <code><a href="#LogLineEnvelopeMapper.pattern">pattern</a></code>
+(named groups; default <code>&lt;timestamp&gt; &lt;LEVEL&gt; &lt;logger&gt; &lt;message&gt;</code>), falling back to
+<code>{"message": line}</code>. event_type is <code>log.&lt;level&gt;</code> (<code>log.line</code> without a level);
+a parseable ISO timestamp becomes the envelope's timestamp.</p>
+
+<p>Config: <code>source_system</code> (default <code>app-logs</code>), <code><a href="#LogLineEnvelopeMapper.pattern">pattern</a></code>, <code><a href="#LogLineEnvelopeMapper.level_field">level_field</a></code>
+(default <code>level</code>), <code><a href="#LogLineEnvelopeMapper.message_field">message_field</a></code> (default <code>message</code>; Filebeat ships the line here).</p>
+</div>
+
+
+                            <div id="LogLineEnvelopeMapper.__init__" class="classattr">
+                                        <input id="LogLineEnvelopeMapper.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">LogLineEnvelopeMapper</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
+
+                <label class="view-source-button" for="LogLineEnvelopeMapper.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="LogLineEnvelopeMapper.__init__-121"><a href="#LogLineEnvelopeMapper.__init__-121"><span class="linenos">121</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper.__init__-122"><a href="#LogLineEnvelopeMapper.__init__-122"><span class="linenos">122</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.__init__-123"><a href="#LogLineEnvelopeMapper.__init__-123"><span class="linenos">123</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pattern&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_PATTERN</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.__init__-124"><a href="#LogLineEnvelopeMapper.__init__-124"><span class="linenos">124</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">level_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;level_field&quot;</span><span class="p">,</span> <span class="s2">&quot;level&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.__init__-125"><a href="#LogLineEnvelopeMapper.__init__-125"><span class="linenos">125</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">message_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;message_field&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">)</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>        =
+<span class="default_value">&#39;log_line&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.name"></a>
+    
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.DEFAULT_PATTERN" class="classattr">
+                                <div class="attr variable">
+            <span class="name">DEFAULT_PATTERN</span>        =
+<input id="LogLineEnvelopeMapper.DEFAULT_PATTERN-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="LogLineEnvelopeMapper.DEFAULT_PATTERN-view-value"></label><span class="default_value">&#39;^(?P&lt;timestamp&gt;\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:[.,]\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?)\\s+(?P&lt;level&gt;[A-Za-z]+)\\s+(?P&lt;logger&gt;\\S+)\\s+(?P&lt;message&gt;.*)$&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.DEFAULT_PATTERN"></a>
+    
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.pattern" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pattern</span>
+
+        
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.pattern"></a>
+    
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.level_field" class="classattr">
+                                <div class="attr variable">
+            <span class="name">level_field</span>
+
+        
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.level_field"></a>
+    
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.message_field" class="classattr">
+                                <div class="attr variable">
+            <span class="name">message_field</span>
+
+        
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.message_field"></a>
+    
+    
+
+                            </div>
+                            <div id="LogLineEnvelopeMapper.map" class="classattr">
+                                        <input id="LogLineEnvelopeMapper.map-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">map</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">raw</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="k9_core/streams.html#EventEnvelope">k9_aif_abb.k9_core.streams.EventEnvelope</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="LogLineEnvelopeMapper.map-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#LogLineEnvelopeMapper.map"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="LogLineEnvelopeMapper.map-127"><a href="#LogLineEnvelopeMapper.map-127"><span class="linenos">127</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="LogLineEnvelopeMapper.map-128"><a href="#LogLineEnvelopeMapper.map-128"><span class="linenos">128</span></a>        <span class="k">if</span> <span class="n">raw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper.map-129"><a href="#LogLineEnvelopeMapper.map-129"><span class="linenos">129</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="LogLineEnvelopeMapper.map-130"><a href="#LogLineEnvelopeMapper.map-130"><span class="linenos">130</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="LogLineEnvelopeMapper.map-131"><a href="#LogLineEnvelopeMapper.map-131"><span class="linenos">131</span></a>            <span class="n">fields</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.map-132"><a href="#LogLineEnvelopeMapper.map-132"><span class="linenos">132</span></a>            <span class="n">line</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.map-133"><a href="#LogLineEnvelopeMapper.map-133"><span class="linenos">133</span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">,</span> <span class="s2">&quot;@timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;host&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;agent&quot;</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper.map-134"><a href="#LogLineEnvelopeMapper.map-134"><span class="linenos">134</span></a>                                                          <span class="s2">&quot;ecs&quot;</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;fields&quot;</span><span class="p">}:</span>
+</span><span id="LogLineEnvelopeMapper.map-135"><a href="#LogLineEnvelopeMapper.map-135"><span class="linenos">135</span></a>                <span class="n">parsed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>   <span class="c1"># a shipper wrapped a plain-text line</span>
+</span><span id="LogLineEnvelopeMapper.map-136"><a href="#LogLineEnvelopeMapper.map-136"><span class="linenos">136</span></a>                <span class="k">if</span> <span class="n">parsed</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper.map-137"><a href="#LogLineEnvelopeMapper.map-137"><span class="linenos">137</span></a>                    <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">parsed</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message_field</span><span class="p">}}</span>
+</span><span id="LogLineEnvelopeMapper.map-138"><a href="#LogLineEnvelopeMapper.map-138"><span class="linenos">138</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="LogLineEnvelopeMapper.map-139"><a href="#LogLineEnvelopeMapper.map-139"><span class="linenos">139</span></a>            <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.map-140"><a href="#LogLineEnvelopeMapper.map-140"><span class="linenos">140</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+</span><span id="LogLineEnvelopeMapper.map-141"><a href="#LogLineEnvelopeMapper.map-141"><span class="linenos">141</span></a>                <span class="k">return</span> <span class="kc">None</span>
+</span><span id="LogLineEnvelopeMapper.map-142"><a href="#LogLineEnvelopeMapper.map-142"><span class="linenos">142</span></a>            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">}</span>
+</span><span id="LogLineEnvelopeMapper.map-143"><a href="#LogLineEnvelopeMapper.map-143"><span class="linenos">143</span></a>        <span class="n">level</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level_field</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="LogLineEnvelopeMapper.map-144"><a href="#LogLineEnvelopeMapper.map-144"><span class="linenos">144</span></a>        <span class="n">ts</span> <span class="o">=</span> <span class="n">_parse_ts</span><span class="p">(</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timestamp&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;@timestamp&quot;</span><span class="p">))</span>
+</span><span id="LogLineEnvelopeMapper.map-145"><a href="#LogLineEnvelopeMapper.map-145"><span class="linenos">145</span></a>        <span class="n">envelope</span> <span class="o">=</span> <span class="n">EventEnvelope</span><span class="p">(</span>
+</span><span id="LogLineEnvelopeMapper.map-146"><a href="#LogLineEnvelopeMapper.map-146"><span class="linenos">146</span></a>            <span class="n">event_type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;log.</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">level</span> <span class="k">else</span> <span class="s2">&quot;log.line&quot;</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper.map-147"><a href="#LogLineEnvelopeMapper.map-147"><span class="linenos">147</span></a>            <span class="n">source_system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source_system&quot;</span><span class="p">,</span> <span class="s2">&quot;app-logs&quot;</span><span class="p">),</span>
+</span><span id="LogLineEnvelopeMapper.map-148"><a href="#LogLineEnvelopeMapper.map-148"><span class="linenos">148</span></a>            <span class="n">payload</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
+</span><span id="LogLineEnvelopeMapper.map-149"><a href="#LogLineEnvelopeMapper.map-149"><span class="linenos">149</span></a>            <span class="n">timestamp</span><span class="o">=</span><span class="n">ts</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span>
+</span><span id="LogLineEnvelopeMapper.map-150"><a href="#LogLineEnvelopeMapper.map-150"><span class="linenos">150</span></a>        <span class="p">)</span>
+</span><span id="LogLineEnvelopeMapper.map-151"><a href="#LogLineEnvelopeMapper.map-151"><span class="linenos">151</span></a>        <span class="k">return</span> <span class="n">_with_transport</span><span class="p">(</span><span class="n">envelope</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>One raw message → an EventEnvelope, or None to skip it.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="AutoEnvelopeMapper">
+                            <input id="AutoEnvelopeMapper-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">AutoEnvelopeMapper</span><wbr>(<span class="base">k9_aif_abb.k9_core.streams.base_envelope_mapper.BaseEnvelopeMapper</span>):
+
+                <label class="view-source-button" for="AutoEnvelopeMapper-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AutoEnvelopeMapper"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AutoEnvelopeMapper-164"><a href="#AutoEnvelopeMapper-164"><span class="linenos">164</span></a><span class="k">class</span><span class="w"> </span><span class="nc">AutoEnvelopeMapper</span><span class="p">(</span><span class="n">BaseEnvelopeMapper</span><span class="p">):</span>
+</span><span id="AutoEnvelopeMapper-165"><a href="#AutoEnvelopeMapper-165"><span class="linenos">165</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Default: a native envelope, else a Debezium change record, else skipped (unmapped).&quot;&quot;&quot;</span>
+</span><span id="AutoEnvelopeMapper-166"><a href="#AutoEnvelopeMapper-166"><span class="linenos">166</span></a>
+</span><span id="AutoEnvelopeMapper-167"><a href="#AutoEnvelopeMapper-167"><span class="linenos">167</span></a>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+</span><span id="AutoEnvelopeMapper-168"><a href="#AutoEnvelopeMapper-168"><span class="linenos">168</span></a>
+</span><span id="AutoEnvelopeMapper-169"><a href="#AutoEnvelopeMapper-169"><span class="linenos">169</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="AutoEnvelopeMapper-170"><a href="#AutoEnvelopeMapper-170"><span class="linenos">170</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="AutoEnvelopeMapper-171"><a href="#AutoEnvelopeMapper-171"><span class="linenos">171</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mappers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseEnvelopeMapper</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">NativeEnvelopeMapper</span><span class="p">(</span><span class="n">config</span><span class="p">),</span> <span class="n">DebeziumEnvelopeMapper</span><span class="p">(</span><span class="n">config</span><span class="p">)]</span>
+</span><span id="AutoEnvelopeMapper-172"><a href="#AutoEnvelopeMapper-172"><span class="linenos">172</span></a>
+</span><span id="AutoEnvelopeMapper-173"><a href="#AutoEnvelopeMapper-173"><span class="linenos">173</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="AutoEnvelopeMapper-174"><a href="#AutoEnvelopeMapper-174"><span class="linenos">174</span></a>        <span class="k">for</span> <span class="n">mapper</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mappers</span><span class="p">:</span>
+</span><span id="AutoEnvelopeMapper-175"><a href="#AutoEnvelopeMapper-175"><span class="linenos">175</span></a>            <span class="n">envelope</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="AutoEnvelopeMapper-176"><a href="#AutoEnvelopeMapper-176"><span class="linenos">176</span></a>            <span class="k">if</span> <span class="n">envelope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="AutoEnvelopeMapper-177"><a href="#AutoEnvelopeMapper-177"><span class="linenos">177</span></a>                <span class="k">return</span> <span class="n">envelope</span>
+</span><span id="AutoEnvelopeMapper-178"><a href="#AutoEnvelopeMapper-178"><span class="linenos">178</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Default: a native envelope, else a Debezium change record, else skipped (unmapped).</p>
+</div>
+
+
+                            <div id="AutoEnvelopeMapper.__init__" class="classattr">
+                                        <input id="AutoEnvelopeMapper.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="name">AutoEnvelopeMapper</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
+
+                <label class="view-source-button" for="AutoEnvelopeMapper.__init__-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AutoEnvelopeMapper.__init__"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AutoEnvelopeMapper.__init__-169"><a href="#AutoEnvelopeMapper.__init__-169"><span class="linenos">169</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="AutoEnvelopeMapper.__init__-170"><a href="#AutoEnvelopeMapper.__init__-170"><span class="linenos">170</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</span><span id="AutoEnvelopeMapper.__init__-171"><a href="#AutoEnvelopeMapper.__init__-171"><span class="linenos">171</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mappers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseEnvelopeMapper</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">NativeEnvelopeMapper</span><span class="p">(</span><span class="n">config</span><span class="p">),</span> <span class="n">DebeziumEnvelopeMapper</span><span class="p">(</span><span class="n">config</span><span class="p">)]</span>
+</span></pre></div>
+
+
+    
+
+                            </div>
+                            <div id="AutoEnvelopeMapper.name" class="classattr">
+                                <div class="attr variable">
+            <span class="name">name</span>        =
+<span class="default_value">&#39;auto&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AutoEnvelopeMapper.name"></a>
+    
+    
+
+                            </div>
+                            <div id="AutoEnvelopeMapper.mappers" class="classattr">
+                                <div class="attr variable">
+            <span class="name">mappers</span><span class="annotation">: List[<a href="k9_core/streams.html#BaseEnvelopeMapper">k9_aif_abb.k9_core.streams.BaseEnvelopeMapper</a>]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#AutoEnvelopeMapper.mappers"></a>
+    
+    
+
+                            </div>
+                            <div id="AutoEnvelopeMapper.map" class="classattr">
+                                        <input id="AutoEnvelopeMapper.map-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">map</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">raw</span><span class="p">:</span> <span class="n">Any</span>,</span><span class="param">	<span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="k9_core/streams.html#EventEnvelope">k9_aif_abb.k9_core.streams.EventEnvelope</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="AutoEnvelopeMapper.map-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#AutoEnvelopeMapper.map"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="AutoEnvelopeMapper.map-173"><a href="#AutoEnvelopeMapper.map-173"><span class="linenos">173</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">transport</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventEnvelope</span><span class="p">]:</span>
+</span><span id="AutoEnvelopeMapper.map-174"><a href="#AutoEnvelopeMapper.map-174"><span class="linenos">174</span></a>        <span class="k">for</span> <span class="n">mapper</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mappers</span><span class="p">:</span>
+</span><span id="AutoEnvelopeMapper.map-175"><a href="#AutoEnvelopeMapper.map-175"><span class="linenos">175</span></a>            <span class="n">envelope</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</span><span id="AutoEnvelopeMapper.map-176"><a href="#AutoEnvelopeMapper.map-176"><span class="linenos">176</span></a>            <span class="k">if</span> <span class="n">envelope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="AutoEnvelopeMapper.map-177"><a href="#AutoEnvelopeMapper.map-177"><span class="linenos">177</span></a>                <span class="k">return</span> <span class="n">envelope</span>
+</span><span id="AutoEnvelopeMapper.map-178"><a href="#AutoEnvelopeMapper.map-178"><span class="linenos">178</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>One raw message → an EventEnvelope, or None to skip it.</p>
 </div>
 
 

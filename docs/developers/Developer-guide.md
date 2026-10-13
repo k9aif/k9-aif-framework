@@ -2695,7 +2695,8 @@ Agents decide on what they are given. When that is a nightly extract or a record
 | `BaseContextProjection` | Your mapping from a source event to agent vocabulary. `updates()` returns `ContextUpdate`s (`fields` merged, `append` to lists, `defaults`) |
 | `BaseContextState` → `InMemoryContextState` | Latest value per entity plus recent changes. `get_current`, `recent_changes`, `query` |
 | `BaseContextWindow` → `InMemoryContextWindow` | Event history for temporal questions |
-| `ContextIngest` | The pipeline: fabric → gate → state + window → listeners |
+| `BaseEnvelopeMapper` → `native`, `debezium`, `log_line`, `auto` | A source's raw message → `EventEnvelope`, chosen per topic |
+| `ContextIngest` | The pipeline: fabric → gate → state + window → listeners; `ingest_raw()` for sources not on Kafka |
 | `ContextMCPServer` (`k9_mcp/servers`) | Serves the state over MCP: tools `get_current`, `recent_changes`, `query`, resource `context://{entity}/{id}` |
 | `BaseOrchestrator(context_state=...)` | Adds `live_context` for the entities named in `payload["live_context_refs"]` before squads run |
 
@@ -2765,6 +2766,28 @@ orchestrator = PaymentOrchestrator(config, governance=shield, context_state=stat
 mcp = ContextMCPServer(state, name="ap-context").build_fastmcp()   # mount mcp.streamable_http_app()
 ```
 
+3a. *Sources in their own format.* A database, a log shipper or a SaaS webhook doesn't emit K9-AIF envelopes. Name a mapper per topic; it turns each raw message into an `EventEnvelope` before the gate:
+
+```yaml
+streams:
+  mappers:
+    default: auto                                   # K9-AIF envelopes and Debezium change records
+    dbserver.public.invoices: debezium              # → invoices.updated, payload = the row after the change
+    app-logs: {type: log_line, source_system: billing-api}   # → log.error, log.info ...
+```
+
+| Source | How it reaches the fabric | Mapper |
+|---|---|---|
+| Relational databases | Debezium on Kafka Connect (change data capture) | `debezium` |
+| MongoDB | Debezium MongoDB connector | `debezium` |
+| Application log files | Fluent Bit, Vector or Filebeat to a topic | `log_line` |
+| Applications publishing K9-AIF events | Directly (`KafkaEventFabric.publish`) | `native` / `auto` |
+| IoT devices | MQTT broker with a Kafka bridge | your own (`register_mapper`) |
+| SaaS webhooks, pollers | A receiver calling `ContextIngest.ingest_raw(raw, mapper)` — no Kafka needed | your own, or `native` |
+| Files, S3 drops | Kafka Connect file / S3 source connector | `log_line` or your own |
+
+Write your own by extending `BaseEnvelopeMapper.map(raw, transport) -> EventEnvelope | None` and registering it with `StreamsFactory.register_mapper("salesforce", SalesforceMapper)`. A message no mapper understands is skipped and counted (`KafkaEventFabric.unmapped`), never passed on half-formed.
+
 4. *Give agents the context.* Two ways, often both:
 
 - **Injected:** the caller names the entities (`"live_context_refs": ["invoice:INV-1001"]`); the Orchestrator adds `payload["live_context"]["invoice:INV-1001"]` before the squad runs. Use this when the flow knows what it is about up front.
@@ -2774,7 +2797,7 @@ mcp = ContextMCPServer(state, name="ap-context").build_fastmcp()   # mount mcp.s
 
 **Rules that still hold.** Agents never subscribe to Kafka; the Router and Orchestrator own messaging, and the context fabric is a read model they and the MCP server expose. The gate is not optional in production: `create_gate()` raises `PermissionError` when no governance is configured outside development/test.
 
-Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an accounts-payable agent that stops a duplicate payment posted while it was reviewing the invoice. Tests: `k9_aif_abb/tests/test_context_fabric.py`.
+Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an accounts-payable agent that stops a duplicate payment posted while it was reviewing the invoice. Tests: `k9_aif_abb/tests/test_context_fabric.py`, `test_envelope_mappers.py`.
 
 
 ---

@@ -8,6 +8,7 @@ from k9_aif_abb.k9_core.streams.base_event_fabric import BaseEventFabric
 from k9_aif_abb.k9_core.streams.base_context_stream import BaseContextStream
 from k9_aif_abb.k9_core.streams.base_context_window import BaseContextWindow
 from k9_aif_abb.k9_core.streams.base_context_projection import BaseContextProjection
+from k9_aif_abb.k9_core.streams.base_envelope_mapper import BaseEnvelopeMapper
 from k9_aif_abb.k9_core.streams.base_context_state import (
     BaseContextState,
     ContextUpdate,
@@ -27,6 +28,7 @@ __all__ = [
     "BaseContextWindow",
     "BaseContextProjection",
     "BaseContextState",
+    "BaseEnvelopeMapper",
     "ContextUpdate",
     "ContextValue",
     "EventGovernanceGate",

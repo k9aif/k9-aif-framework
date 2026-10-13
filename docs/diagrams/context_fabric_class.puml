@@ -55,6 +55,9 @@ package "k9_core.streams (ABB)" {
     quarantined : list
     +view() : as_of, age_seconds, stale
   }
+  abstract class BaseEnvelopeMapper {
+    +map(raw, transport) : EventEnvelope
+  }
   abstract class BaseContextWindow {
     +add(envelope)
     +query(...)
@@ -69,10 +72,12 @@ package "k9_streams (OOB)" {
     governance
   }
   class InMemoryContextState
+  class "native / debezium /\nlog_line / auto" as MAPPERS
   class InMemoryContextWindow
   class ContextIngest {
     +attach(topics)
     +ingest(envelope, topic)
+    +ingest_raw(raw, mapper, topic)
   }
 }
 
@@ -106,8 +111,12 @@ class StreamsFactory <<factory>> {
   +create_window(config)
   +create_state(config, projections)
   +create_gate(config, governance)
+  +create_mapper(config, topic)
 }
 
+BaseEnvelopeMapper <|-- MAPPERS
+KafkaEventFabric --> BaseEnvelopeMapper : per topic
+BaseEnvelopeMapper ..> EventEnvelope
 BaseEventFabric <|-- KafkaEventFabric
 BaseEventFabric <|-- InMemoryEventFabric
 EventGovernanceGate <|-- GovernanceEventGate
