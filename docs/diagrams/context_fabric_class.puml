@@ -1,0 +1,134 @@
+@startuml context_fabric_class
+title K9-AIF Context Fabric (1.17): live enterprise context for agents
+
+package "k9_core.streams (ABB)" {
+  class EventEnvelope <<dataclass>> {
+    event_type : str
+    source_system : str
+    payload : dict
+    event_id, correlation_id, causation_id
+    timestamp : datetime
+    metadata : dict
+  }
+  abstract class BaseEventFabric {
+    +publish(envelope, topic)
+    +subscribe(topic, callback)
+    +unsubscribe(topic)
+    +close()
+  }
+  abstract class EventGovernanceGate {
+    +evaluate(envelope) : GateResult
+    +is_permitted(envelope) : bool
+  }
+  enum GateDecision {
+    PERMIT
+    REDACT
+    BLOCK
+    AUDIT
+  }
+  abstract class BaseContextProjection {
+    entity : str
+    id_field : str
+    +accepts(envelope) : bool
+    +project(envelope) : dict
+    +updates(envelope) : List<ContextUpdate>
+  }
+  class ContextUpdate <<dataclass>> {
+    entity, entity_id
+    fields : dict
+    append : dict
+    defaults : dict
+  }
+  abstract class BaseContextState {
+    max_age_seconds
+    +apply(envelope) : keys
+    +quarantine(envelope, reason) : keys
+    +get_current(entity, id) : dict
+    +recent_changes(entity, id, window_seconds) : dict
+    +query(entity, filters, minimum) : dict
+    #_write() / _read() / _scan() / _changes()
+  }
+  class ContextValue <<dataclass>> {
+    value : dict
+    as_of : datetime
+    source : dict
+    quarantined : list
+    +view() : as_of, age_seconds, stale
+  }
+  abstract class BaseContextWindow {
+    +add(envelope)
+    +query(...)
+    +snapshot()
+  }
+}
+
+package "k9_streams (OOB)" {
+  class KafkaEventFabric
+  class InMemoryEventFabric
+  class GovernanceEventGate {
+    governance
+  }
+  class InMemoryContextState
+  class InMemoryContextWindow
+  class ContextIngest {
+    +attach(topics)
+    +ingest(envelope, topic)
+  }
+}
+
+package "k9_mcp.servers" {
+  abstract class BaseMCPServer {
+    +handle_request(request, ctx)
+  }
+  class ContextMCPServer {
+    +get_current()
+    +recent_changes()
+    +query()
+    +build_fastmcp()
+  }
+}
+
+package "k9_core.orchestration" {
+  abstract class BaseOrchestrator {
+    context_state
+    +enrich_with_live_context(payload)
+    +execute_squads(squads, payload)
+  }
+}
+
+package "k9_security" {
+  class ShieldGovernance
+  class "screen_tool_result()" as STR
+}
+
+class StreamsFactory <<factory>> {
+  +create_fabric(config)
+  +create_window(config)
+  +create_state(config, projections)
+  +create_gate(config, governance)
+}
+
+BaseEventFabric <|-- KafkaEventFabric
+BaseEventFabric <|-- InMemoryEventFabric
+EventGovernanceGate <|-- GovernanceEventGate
+BaseContextState <|-- InMemoryContextState
+BaseContextWindow <|-- InMemoryContextWindow
+BaseMCPServer <|-- ContextMCPServer
+
+EventGovernanceGate ..> GateDecision
+GovernanceEventGate --> ShieldGovernance : governance
+BaseContextState o-- "*" BaseContextProjection : projections
+BaseContextProjection ..> ContextUpdate : creates
+BaseContextState *-- "*" ContextValue
+ContextIngest --> BaseEventFabric
+ContextIngest --> EventGovernanceGate
+ContextIngest --> BaseContextState
+ContextIngest --> BaseContextWindow
+ContextMCPServer --> BaseContextState : reads
+ContextMCPServer ..> STR : optional screening
+BaseOrchestrator --> BaseContextState : live_context
+StreamsFactory ..> BaseEventFabric
+StreamsFactory ..> BaseContextState
+StreamsFactory ..> EventGovernanceGate
+BaseEventFabric ..> EventEnvelope
+@enduml

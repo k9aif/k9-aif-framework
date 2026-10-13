@@ -5,6 +5,7 @@
 StreamsFactory — static factory for K9 enterprise context fabric providers.
 
 Pre-registered providers: in_memory (default, zero deps), kafka.
+Live state (1.17): in_memory; register Redis/PostgreSQL states with register_state().
 
 YAML config::
 
@@ -17,6 +18,10 @@ YAML config::
       kafka:
         bootstrap_servers: "${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
         security_protocol: PLAINTEXT
+      state:
+        provider: in_memory     # in_memory (default) | a registered name
+        max_age_seconds: 120    # older values are reported stale
+      gate: governance          # governance (default) | noop (development/test only)
 
 Usage::
 
@@ -24,6 +29,8 @@ Usage::
 
     fabric = StreamsFactory.create_fabric(config)   # None when disabled
     window = StreamsFactory.create_window(config)   # None when disabled
+    state  = StreamsFactory.create_state(config, projections=[...])   # None when disabled
+    gate   = StreamsFactory.create_gate(config)     # governance from config, or passed in
 """
 
 import logging
@@ -38,6 +45,7 @@ class StreamsFactory:
 
     _fabric_registry: Dict[str, Type[Any]] = {}
     _window_registry: Dict[str, Type[Any]] = {}
+    _state_registry: Dict[str, Type[Any]] = {}
     _lock = Lock()
     _bootstrapped = False
 
@@ -57,6 +65,8 @@ class StreamsFactory:
             )
             StreamsFactory._fabric_registry["in_memory"] = InMemoryEventFabric
             StreamsFactory._window_registry["in_memory"] = InMemoryContextWindow
+            from k9_aif_abb.k9_streams.context_state import InMemoryContextState
+            StreamsFactory._state_registry["in_memory"] = InMemoryContextState
             StreamsFactory._bootstrapped = True
             log.info("[Factory] Bootstrapped StreamsFactory")
 
@@ -73,6 +83,13 @@ class StreamsFactory:
         StreamsFactory._ensure_defaults()
         with StreamsFactory._lock:
             StreamsFactory._window_registry[name.lower()] = cls
+
+    @staticmethod
+    def register_state(name: str, cls: Type[Any]) -> None:
+        """Register a custom BaseContextState implementation (Redis, PostgreSQL...)."""
+        StreamsFactory._ensure_defaults()
+        with StreamsFactory._lock:
+            StreamsFactory._state_registry[name.lower()] = cls
 
     @staticmethod
     def create_fabric(config: Optional[Dict[str, Any]] = None):
@@ -127,3 +144,47 @@ class StreamsFactory:
 
         log.info("[Factory] Creating context window: provider=%s", window_provider)
         return cls(config=cfg)
+
+    @staticmethod
+    def create_state(config: Optional[Dict[str, Any]] = None, projections=None):
+        """
+        Create a BaseContextState (live per-entity state) from config, with the
+        application's projections registered, or None if streams are disabled.
+        """
+        StreamsFactory._ensure_defaults()
+        cfg = config or {}
+        streams_cfg = cfg.get("streams", {})
+        if not streams_cfg.get("enabled", False):
+            return None
+        provider = str((streams_cfg.get("state") or {}).get("provider", "in_memory")).lower()
+        cls = StreamsFactory._state_registry.get(provider)
+        if not cls:
+            raise ValueError(f"Unknown context state provider: {provider}")
+        log.info("[Factory] Creating context state: provider=%s", provider)
+        return cls(config=cfg, projections=projections)
+
+    @staticmethod
+    def create_gate(config: Optional[Dict[str, Any]] = None, governance: Any = None):
+        """
+        The fabric's ingress gate. ``streams.gate: governance`` (default) screens every
+        event with ``governance`` — or, when none is passed, the application's own
+        (``governance_from_config``: security.shield / governance.guardian).
+        With no governance, or ``streams.gate: noop``, events pass unscreened, which
+        is allowed only in development/test (K9_ENV); production refuses.
+        """
+        from k9_aif_abb.k9_core.governance.pipeline import governance_from_config, is_permissive_env
+        from k9_aif_abb.k9_core.streams.event_governance_gate import NoopGovernanceGate
+        from k9_aif_abb.k9_streams.governance_event_gate import GovernanceEventGate
+
+        cfg = config or {}
+        mode = str((cfg.get("streams") or {}).get("gate", "governance")).lower()
+        gov = governance if governance is not None else (
+            governance_from_config(cfg) if mode == "governance" else None)
+        if gov is not None and mode == "governance":
+            return GovernanceEventGate(gov)
+        if is_permissive_env(cfg.get("k9_env")):
+            log.warning("[Factory] Stream events are NOT screened (no governance; K9_ENV allows it)")
+            return NoopGovernanceGate()
+        raise PermissionError(
+            "Stream events must be governed outside development/test: configure "
+            "security.shield (or governance.guardian), or pass governance= to create_gate()")

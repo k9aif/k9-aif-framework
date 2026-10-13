@@ -41,10 +41,12 @@ class EventGovernanceGate(ABC):
     BLOCKED events never reach agents, context windows, or projections.
     REDACTED events have sensitive fields removed before forwarding.
 
-    This is the IBM value proposition made concrete in the framework:
-    enterprise data streams are governed before AI systems consume them.
+    Enterprise data streams are governed before AI systems consume them.
 
-    SBBs: NoopGovernanceGate (dev/test), IBMOpenPagesGate (production)
+    SBBs: NoopGovernanceGate (dev/test); GovernanceEventGate (k9_streams), which
+    runs any governance object — k9x Shield, Granite Guardian, or both chained —
+    over each event's content; a GRC-platform gate for organizations that keep
+    data policies there.
     """
 
     @abstractmethod

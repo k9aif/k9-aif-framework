@@ -1,0 +1,33 @@
+@startuml context_fabric_flow
+title K9-AIF Context Fabric (1.17): from an enterprise event to an agent's decision
+
+participant "Source system\n(ERP, CRM, CDC)" as SRC
+participant "Kafka / Confluent\n(KafkaEventFabric)" as FAB
+participant "ContextIngest" as ING
+participant "GovernanceEventGate\n(k9x Shield)" as GATE
+participant "BaseContextState\n(projections)" as ST
+participant "Orchestrator" as ORCH
+participant "Squad / Agent" as AG
+participant "ContextMCPServer" as MCP
+
+== Events arrive continuously ==
+SRC -> FAB : EventEnvelope on a topic
+FAB -> ING : subscribe callback
+ING -> GATE : evaluate(envelope)
+alt PERMIT
+  GATE --> ING : PERMIT
+  ING -> ST : apply(envelope)\nvalue + as_of + source event
+else BLOCK (planted instructions)
+  GATE --> ING : BLOCK, reason
+  ING -> ST : quarantine(envelope)\nentity marked, content not applied
+end
+
+== A flow runs ==
+ORCH -> ST : get_current() for live_context_refs
+ORCH -> AG : execute(payload + live_context)
+AG -> MCP : get_current / recent_changes\n(MCPStreamableHttpConnector)
+MCP -> ST : read
+MCP --> AG : value, as_of, age_seconds, stale, source
+AG -> AG : screen_tool_result (Shield)
+AG --> ORCH : decision, citing as_of and source event
+@enduml

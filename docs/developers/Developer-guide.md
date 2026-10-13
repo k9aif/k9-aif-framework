@@ -2679,6 +2679,104 @@ messaging:
   auto_create: true
 ```
 
+### 15.7 Live Context from Event Streams (Context Fabric, 1.17)
+
+Agents decide on what they are given. When that is a nightly extract or a record read at the start of a flow, an agent can release a payment that another system paid a minute ago, or approve a vendor that was flagged during the review. The context fabric keeps **live state** current from your event streams and gives it to agents in two ways, each value stamped with `as_of`, `age_seconds`, `stale` and the event that set it.
+
+![Context fabric classes](../diagrams/context_fabric_class.png)
+
+**The pieces** (`k9_core/streams` ABBs, `k9_streams` OOB implementations):
+
+| Piece | Role |
+|---|---|
+| `EventEnvelope` | Standard event wrapper: `event_type`, `source_system`, `payload`, ids, timestamp, `metadata` |
+| `BaseEventFabric` → `KafkaEventFabric`, `InMemoryEventFabric` | Transport. Kafka, Confluent Platform / Cloud, Redpanda and other Kafka-protocol brokers. Consumed events carry `metadata["transport"]` (topic, partition, offset) |
+| `EventGovernanceGate` → `GovernanceEventGate` | Every event runs through the application's governance (k9x Shield, Granite Guardian, or both) before anything uses it. BLOCK means the event is quarantined: its entities are marked, its content is never applied |
+| `BaseContextProjection` | Your mapping from a source event to agent vocabulary. `updates()` returns `ContextUpdate`s (`fields` merged, `append` to lists, `defaults`) |
+| `BaseContextState` → `InMemoryContextState` | Latest value per entity plus recent changes. `get_current`, `recent_changes`, `query` |
+| `BaseContextWindow` → `InMemoryContextWindow` | Event history for temporal questions |
+| `ContextIngest` | The pipeline: fabric → gate → state + window → listeners |
+| `ContextMCPServer` (`k9_mcp/servers`) | Serves the state over MCP: tools `get_current`, `recent_changes`, `query`, resource `context://{entity}/{id}` |
+| `BaseOrchestrator(context_state=...)` | Adds `live_context` for the entities named in `payload["live_context_refs"]` before squads run |
+
+![Context fabric flow](../diagrams/context_fabric_flow.png)
+
+**Using it in a solution**
+
+1. *Configure.* Point the fabric at your broker; credentials stay in `.env`.
+
+```yaml
+streams:
+  enabled: true
+  provider: kafka            # in_memory for tests
+  kafka:
+    auto_offset_reset: earliest   # replay the topics on start: the topics are the source of truth
+  state:
+    max_age_seconds: 120     # older values are reported stale
+  gate: governance           # screen every event with security.shield / governance.guardian
+security:
+  shield:
+    enabled: true
+    ingress: {checks: [PromptInjectionCheck, PaymentDiversionCheck]}
+```
+
+```bash
+# .env — Confluent Cloud shown; PLAINTEXT needs only the broker
+KAFKA_BROKER=pkc-xxxxx.region.provider.confluent.cloud:9092
+KAFKA_SECURITY_PROTOCOL=SASL_SSL
+KAFKA_SASL_MECHANISM=PLAIN
+KAFKA_SASL_USERNAME=<api key>
+KAFKA_SASL_PASSWORD=<api secret>
+```
+
+2. *Write one projection per business event.* This is the only domain code the fabric needs.
+
+```python
+from k9_aif_abb.k9_core.streams import BaseContextProjection, ContextUpdate
+
+class InvoiceProjection(BaseContextProjection):
+    entity, id_field = "invoice", "invoice_id"      # default updates() keys project() by these
+    def accepts(self, env): return env.event_type.startswith("invoice.")
+    def project(self, env): return {k: env.payload[k] for k in ("vendor_id", "amount", "status") if k in env.payload}
+
+class PaymentProjection(BaseContextProjection):     # one event, two entities
+    def accepts(self, env): return env.event_type == "payment.posted"
+    def project(self, env): return {}
+    def updates(self, env):
+        p = env.payload
+        return [ContextUpdate("invoice", p["invoice_id"], fields={"status": "paid"},
+                              append={"payments": {"payment_id": p["payment_id"], "amount": p["amount"]}}),
+                ContextUpdate("payment", p["payment_id"], fields={"invoice_id": p["invoice_id"]})]
+```
+
+3. *Wire it at the entry point* (where agents are registered), through the factory.
+
+```python
+from k9_aif_abb.k9_factories.streams_factory import StreamsFactory
+from k9_aif_abb.k9_streams import ContextIngest
+from k9_aif_abb.k9_mcp.servers.context_mcp_server import ContextMCPServer
+
+fabric = StreamsFactory.create_fabric(config)
+state  = StreamsFactory.create_state(config, projections=[InvoiceProjection(), PaymentProjection()])
+gate   = StreamsFactory.create_gate(config)            # refuses to run ungoverned in production
+ContextIngest(fabric, state, gate=gate).attach(["ap.invoice.updated", "ap.payment.posted"])
+
+orchestrator = PaymentOrchestrator(config, governance=shield, context_state=state)
+mcp = ContextMCPServer(state, name="ap-context").build_fastmcp()   # mount mcp.streamable_http_app()
+```
+
+4. *Give agents the context.* Two ways, often both:
+
+- **Injected:** the caller names the entities (`"live_context_refs": ["invoice:INV-1001"]`); the Orchestrator adds `payload["live_context"]["invoice:INV-1001"]` before the squad runs. Use this when the flow knows what it is about up front.
+- **On demand over MCP:** an agent that must re-check right before acting, or that discovers what it needs while reasoning, calls `get_current` / `recent_changes` / `query` with `MCPStreamableHttpConnector`, and screens each result with `screen_tool_result` like any tool result.
+
+5. *Decide on freshness.* Refuse a value with `stale: true`, and treat `quarantined` on an entity as "untrusted data arrived for this; send it to a human" (raise `RequiresHIL`).
+
+**Rules that still hold.** Agents never subscribe to Kafka; the Router and Orchestrator own messaging, and the context fabric is a read model they and the MCP server expose. The gate is not optional in production: `create_gate()` raises `PermissionError` when no governance is configured outside development/test.
+
+Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an accounts-payable agent that stops a duplicate payment posted while it was reviewing the invoice. Tests: `k9_aif_abb/tests/test_context_fabric.py`.
+
+
 ---
 
 ## 16. Persistence and Graph Integration

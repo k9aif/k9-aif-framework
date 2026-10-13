@@ -97,6 +97,7 @@ class BaseOrchestrator(ABC):
         identity_resolver=None,
         session_manager=None,
         hil_state_store=None,
+        context_state=None,
     ):
         self.config = config or {}
         self.monitor = monitor
@@ -110,6 +111,12 @@ class BaseOrchestrator(ABC):
         # own); pass this explicitly whenever a Router elsewhere shares
         # persistence with this Orchestrator's HIL requests.
         self.hil_state_store = hil_state_store
+
+        # Live enterprise context (1.17): a BaseContextState kept current by the
+        # context fabric (ContextIngest). When set, execute_squads() adds the
+        # current value of every entity named in payload["live_context_refs"]
+        # as payload["live_context"]. None (default) changes nothing.
+        self.context_state = context_state
 
         # Where Zero Trust gets caller identity from (None -> security.identity.mode,
         # default 'payload' in 1.x). See k9_security/zero_trust/identity.py.
@@ -158,6 +165,8 @@ class BaseOrchestrator(ABC):
         if not squads:
             return {}
 
+        payload = self.enrich_with_live_context(payload)
+
         if not parallel or len(squads) <= 1:
             results = {}
             for squad in squads:
@@ -202,6 +211,40 @@ class BaseOrchestrator(ABC):
                         "error": str(exc),
                     }
         return results
+
+    # ------------------------------------------------------------------
+    def enrich_with_live_context(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add live enterprise state to the payload before squads run.
+
+        ``payload["live_context_refs"]`` names the entities the flow is about, as
+        ``"invoice:INV-1001"`` strings or ``{"entity": ..., "id": ...}`` dicts.
+        Each becomes an entry in ``payload["live_context"]`` with the value,
+        ``as_of``, ``age_seconds``, ``stale`` and source event — what is true now,
+        not what was true when the request was made. Agents read it like any
+        other payload key; one that must re-check just before acting asks the
+        context MCP server (``ContextMCPServer``) instead.
+
+        Unchanged payload when no context_state is configured or no refs are given.
+        """
+        refs = payload.get("live_context_refs") if isinstance(payload, dict) else None
+        if self.context_state is None or not refs:
+            return payload
+        live: Dict[str, Any] = {}
+        for ref in refs:
+            if isinstance(ref, dict):
+                entity, entity_id = ref.get("entity"), ref.get("id")
+            else:
+                entity, _, entity_id = str(ref).partition(":")
+            if not entity or not entity_id:
+                continue
+            live[f"{entity}:{entity_id}"] = self.context_state.get_current(entity, entity_id)
+        emit_trace_event({
+            "type": "LiveContext", "agent": self.layer, "refs": list(live),
+            "ages": {k: v.get("age_seconds") for k, v in live.items()},
+            "stale": [k for k, v in live.items() if v.get("stale")],
+        })
+        return {**payload, "live_context": {**(payload.get("live_context") or {}), **live}}
 
     # ------------------------------------------------------------------
     def publish_status(self, status: str, context: Dict[str, Any]):

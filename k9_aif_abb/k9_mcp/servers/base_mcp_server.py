@@ -31,7 +31,8 @@ class BaseMCPServer(BaseComponent, ABC):
         super().__init__(monitor=monitor)
         self.name = name
         self.logger = logging.getLogger(self.name)
-        self.log(f"{self.name} initialized (layer={self.layer})", "INFO")
+        # BaseComponent.log() is async; lifecycle lines use the plain logger so they always run.
+        self.logger.info("%s initialized (layer=%s)", self.name, self.layer)
 
     # ------------------------------------------------------
     # Abstract contract
@@ -46,8 +47,8 @@ class BaseMCPServer(BaseComponent, ABC):
     # ------------------------------------------------------
     def start(self) -> None:
         """Start the MCP server (override in SBB)."""
-        self.log(f"{self.name} started", "INFO")
+        self.logger.info("%s started", self.name)
 
     def stop(self) -> None:
         """Stop the MCP server (override in SBB)."""
-        self.log(f"{self.name} stopped", "INFO")
+        self.logger.info("%s stopped", self.name)

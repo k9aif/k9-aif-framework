@@ -273,6 +273,22 @@ result as a dict (FastMCP's `{"result": ...}` wrapper removed) and raises
 `k9_mcp/servers/BaseMCPServer` (`handle_request`) is the ABB for a tool you
 implement yourself; it defines no network transport of its own.
 
+## Live context from streams (1.17)
+
+`k9_core/streams` + `k9_streams`: events (`EventEnvelope`) arrive on a
+`BaseEventFabric` (`KafkaEventFabric`), pass a `GovernanceEventGate`
+(application governance; BLOCK → `state.quarantine()`, content never
+applied), and projections (`BaseContextProjection.updates()` →
+`ContextUpdate`) fold them into `BaseContextState` (`InMemoryContextState`):
+latest value per entity with `as_of`/`age_seconds`/`stale`/source.
+`ContextIngest` wires it. Agents get it two ways: `BaseOrchestrator(
+context_state=...)` injects `live_context` for `payload["live_context_refs"]`
+in `execute_squads()`; `ContextMCPServer` serves `get_current`/
+`recent_changes`/`query` over MCP. Agents never subscribe to Kafka.
+`StreamsFactory.create_gate()` refuses ungoverned streams in production.
+Recipe: Developer Guide 15.7. Tests: `tests/test_context_fabric.py`.
+Reference app: `k9x-ecosystem/k9x_streams`.
+
 ## Model routers
 
 Every call goes through `llm_invoke` → `ModelRouterFactory.get_router(config)`

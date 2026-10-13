@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.16.1"
+framework_version: "1.17.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -236,6 +236,26 @@ capabilities:
     covers: {LLM01: partial, ASI02: partial, ASI06: partial}
     summary: Indirect prompt injection in fetched pages, documents and other agents' replies.
     limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result.
+
+  - id: stream_event_gate
+    kind: component
+    component: k9_aif_abb.k9_streams.governance_event_gate.GovernanceEventGate
+    stage: ingress
+    mechanism: every stream event screened by the governance ingress stage before it reaches live state, a context window or an agent; refused events are quarantined (entity marked, content never applied)
+    enabled_by_default: true
+    covers: {LLM01: partial, LLM04: partial, ASI01: partial, ASI06: partial}
+    summary: Instructions planted in enterprise event streams (vendor notes, CRM comments, ticket bodies) are stopped at the fabric boundary.
+    limits: Pattern checks can miss paraphrase; chain Granite Guardian for semantic screening. Applies to events ingested through ContextIngest.
+
+  - id: context_freshness
+    kind: component
+    component: k9_aif_abb.k9_core.streams.base_context_state.BaseContextState
+    stage: orchestrator
+    mechanism: every live-context value carries as_of, age_seconds, stale and its source event
+    enabled_by_default: true
+    covers: {LLM09: partial, ASI08: partial}
+    summary: Agents can refuse to act on stale state, and each decision traces to the exact record behind it.
+    limits: The agent (or its rules) decides what to do with a stale value.
 
   # ── Zero Trust and identity (k9_security/zero_trust) ──
   - id: zero_trust.guard

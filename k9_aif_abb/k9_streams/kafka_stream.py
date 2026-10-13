@@ -23,9 +23,19 @@ class KafkaEventFabric(BaseEventFabric):
     Redpanda, and IBM Event Streams — all Kafka-protocol compatible.
 
     Credentials are never in config.yaml — use environment variables:
-      KAFKA_BOOTSTRAP_SERVERS   broker addresses (default: localhost:9092)
-      KAFKA_SASL_USERNAME       for SASL_SSL security protocol
-      KAFKA_SASL_PASSWORD       for SASL_SSL security protocol
+      KAFKA_BOOTSTRAP_SERVERS   broker addresses (else KAFKA_BROKER, else localhost:9092)
+      KAFKA_SECURITY_PROTOCOL   PLAINTEXT (default) | SSL | SASL_PLAINTEXT | SASL_SSL,
+                                when config does not set security_protocol
+      KAFKA_SASL_MECHANISM      PLAIN (default) | SCRAM-SHA-256 | SCRAM-SHA-512
+      KAFKA_SASL_USERNAME       for SASL_* (Confluent Cloud: the API key)
+      KAFKA_SASL_PASSWORD       for SASL_* (Confluent Cloud: the API secret)
+
+    Confluent Cloud is SASL_SSL + PLAIN. SSL uses the system's trusted CAs.
+
+    Consumed events carry ``metadata["transport"] = {"topic", "partition", "offset"}``
+    so live state can name the exact record behind each value. A published
+    envelope's ``metadata["key"]`` becomes the Kafka message key (keep one entity's
+    events in order on one partition).
 
     Requires: pip install k9-aif[kafka]
 
@@ -36,8 +46,10 @@ class KafkaEventFabric(BaseEventFabric):
           provider: kafka
           kafka:
             bootstrap_servers: "${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}"
-            security_protocol: PLAINTEXT    # PLAINTEXT | SASL_SSL
+            security_protocol: PLAINTEXT    # PLAINTEXT | SSL | SASL_PLAINTEXT | SASL_SSL
             sasl_mechanism:    PLAIN        # PLAIN | SCRAM-SHA-256 | SCRAM-SHA-512
+            auto_offset_reset: latest       # earliest replays the topics (rebuilds live state)
+            group_id:          null         # null: every instance reads every event
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -48,21 +60,21 @@ class KafkaEventFabric(BaseEventFabric):
         self._kafka_cfg = self.config.get("streams", {}).get("kafka", {})
 
     def _bootstrap_servers(self) -> str:
-        return self._kafka_cfg.get(
-            "bootstrap_servers",
-            os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
-        )
+        return self._kafka_cfg.get("bootstrap_servers") or os.environ.get(
+            "KAFKA_BOOTSTRAP_SERVERS", os.environ.get("KAFKA_BROKER", "localhost:9092"))
 
     def _security_kwargs(self) -> Dict[str, Any]:
-        protocol = self._kafka_cfg.get("security_protocol", "PLAINTEXT")
-        if protocol == "PLAINTEXT":
-            return {"security_protocol": "PLAINTEXT"}
-        return {
-            "security_protocol": protocol,
-            "sasl_mechanism":    self._kafka_cfg.get("sasl_mechanism", "PLAIN"),
-            "sasl_plain_username": os.environ.get("KAFKA_SASL_USERNAME", ""),
-            "sasl_plain_password": os.environ.get("KAFKA_SASL_PASSWORD", ""),
-        }
+        protocol = (self._kafka_cfg.get("security_protocol")
+                    or os.environ.get("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT")).upper()
+        kwargs: Dict[str, Any] = {"security_protocol": protocol}
+        if protocol.startswith("SASL"):
+            kwargs.update(
+                sasl_mechanism=self._kafka_cfg.get("sasl_mechanism")
+                or os.environ.get("KAFKA_SASL_MECHANISM", "PLAIN"),
+                sasl_plain_username=os.environ.get("KAFKA_SASL_USERNAME", ""),
+                sasl_plain_password=os.environ.get("KAFKA_SASL_PASSWORD", ""),
+            )
+        return kwargs
 
     def _ensure_producer(self) -> None:
         if self._producer is not None:
@@ -75,13 +87,15 @@ class KafkaEventFabric(BaseEventFabric):
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers(),
             value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            key_serializer=lambda k: k.encode("utf-8") if isinstance(k, str) else k,
             **self._security_kwargs(),
         )
         log.info("[KafkaFabric] Producer connected to %s", self._bootstrap_servers())
 
     def publish(self, envelope: EventEnvelope, topic: str) -> None:
         self._ensure_producer()
-        self._producer.send(topic, value=envelope.to_dict())
+        key = envelope.metadata.get("key") if isinstance(envelope.metadata, dict) else None
+        self._producer.send(topic, value=envelope.to_dict(), key=key)
         log.debug("[KafkaFabric] Published %s → %s", envelope.event_type, topic)
 
     def subscribe(self, topic: str, callback: Callable[[EventEnvelope], None]) -> None:
@@ -94,8 +108,9 @@ class KafkaEventFabric(BaseEventFabric):
             topic,
             bootstrap_servers=self._bootstrap_servers(),
             value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-            auto_offset_reset="latest",
-            enable_auto_commit=True,
+            auto_offset_reset=self._kafka_cfg.get("auto_offset_reset", "latest"),
+            group_id=self._kafka_cfg.get("group_id"),
+            enable_auto_commit=self._kafka_cfg.get("group_id") is not None,
             **self._security_kwargs(),
         )
         self._consumers[topic] = consumer
@@ -105,6 +120,8 @@ class KafkaEventFabric(BaseEventFabric):
             for msg in consumer:
                 try:
                     envelope = EventEnvelope.from_dict(msg.value)
+                    envelope.metadata = {**(envelope.metadata or {}), "transport": {
+                        "topic": msg.topic, "partition": msg.partition, "offset": msg.offset}}
                     callback(envelope)
                 except Exception as exc:
                     log.error("[KafkaFabric] Error on %s: %s", topic, exc)
@@ -112,6 +129,11 @@ class KafkaEventFabric(BaseEventFabric):
         thread = threading.Thread(target=_consume, daemon=True, name=f"k9-stream-{topic}")
         self._consumer_threads[topic] = thread
         thread.start()
+
+    def flush(self, timeout: Optional[float] = None) -> None:
+        """Wait until published events have reached the broker."""
+        if self._producer:
+            self._producer.flush(timeout=timeout)
 
     def unsubscribe(self, topic: str) -> None:
         consumer = self._consumers.pop(topic, None)
