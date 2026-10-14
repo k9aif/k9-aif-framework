@@ -729,6 +729,18 @@ squads:
     orchestrator: MyOrchestrator  # this field must not exist
 ```
 
+**Anti-pattern: Orchestrator naming or building agents**
+```python
+# Wrong — the orchestrator lists its squads' agents and builds them
+class MyOrchestrator(BaseOrchestrator):
+    AGENTS = ("IntakeAgent", "ReviewAgent")          # agent knowledge
+    def _load_squad(self, path, squad_id):
+        registry = AgentRegistry()                  # agent construction
+        AgentLoader(AGENTS_DIR).register_into(registry, self.config, self.AGENTS)
+        return SquadLoader(registry).load_one(path, squad_id)
+```
+No agent is imported, yet adding an agent to a squad forces an orchestrator change. Use the Squad Layer pattern (§27.11): `self.squads.load_one(path, squad_id)`. k9_inspect K9-DEC-002 reports it.
+
 ### 4.6 Why Not Everything Belongs in the Framework Core
 
 The framework core is stable because it is small and focused. Every addition to the ABB layer increases the surface area that all solutions must track. Domain logic, prompt engineering, and business rules evolve at a much higher rate than architectural contracts. Keeping them in SBBs means the framework stays stable while solutions evolve freely.
@@ -3857,6 +3869,14 @@ router = K9ModelRouter(catalog=..., state_store=...)
 
 **Correction:** Generate one component at a time. YAML before Python. Review each generated file before moving to the next. See Chapter 24 for the incremental generation pattern.
 
+### 25.9 Orchestrators That Know Agents
+
+**Mistake:** An orchestrator lists the agents of the squads it runs (an `AGENTS` tuple, an `AgentRegistry` filled in `_load_squad()`), even though it imports none of them.
+
+**Consequence:** The layers are coupled without an import to show it: adding or removing an agent in a squad means editing the orchestrator, and the import-based checks pass anyway. Copied from one orchestrator to the next, the pattern spreads.
+
+**Correction:** The Squad Layer pattern (§27.11). The orchestrator loads squads by YAML file and id through `self.squads`; the squad layer, built once at the entry point, builds the agents each squad's YAML names. Checked by k9_inspect K9-DEC-002.
+
 ---
 
 ## 26. Author's Recommendations
@@ -3969,7 +3989,7 @@ The Builder pattern constructs complex objects step by step. `SquadLoader` build
 
 **Where used:** `BaseOrchestrator`
 
-The Orchestrator pattern coordinates multiple services to complete a workflow. `BaseOrchestrator` is a direct realization of this pattern — it knows the workflow structure and delegates execution to squads and agents.
+The Orchestrator pattern coordinates multiple services to complete a workflow. `BaseOrchestrator` is a direct realization of this pattern — it knows the workflow structure and delegates execution to squads. It never reaches agents; squads do (§27.11).
 
 ### 27.10 Layered Architecture
 
@@ -3988,6 +4008,42 @@ The overall K9-AIF architecture follows a strict layered approach:
 ```
 
 Each layer depends only on the layer below it. No upward dependencies.
+
+### 27.11 Squad Layer (an orchestrator knows only squads)
+
+**Where used:** `SquadLoader.from_agents`, `BaseSquad`, `<App>Squad`, `BaseOrchestrator(squads=)` — 1.18.1
+
+**Problem.** Three-layer decoupling says each layer knows only the layer below it. An orchestrator needs squads; squads need agents. If the orchestrator builds its squads' agents — even by *name*, without importing them — it knows agents, and a change to a squad's agents forces an orchestrator change.
+
+**Solution.** Give agent construction to the squad layer.
+
+| Element | Role | Owner |
+|---|---|---|
+| Squad YAML | *What* a squad is: `agents:`, `flow:`, `synthesis:` | Application (configuration) |
+| `SquadLoader.from_agents` | *Builds* a squad and the agents its YAML names (via `AgentLoader`: `class:` + `module:`) | Framework |
+| `BaseSquad` | *Runs* the flow | Framework |
+| `<App>Squad(BaseSquad)` | Optional, **one** per application: squad-level behaviour (`before_step`) | Application |
+| Entry point | Builds the squad layer **once**, passes it as `squads=` | Application |
+| Orchestrator | `self.squads.load_one(squad_yaml, squad_id, config=run_config)` — squads only | Application |
+
+```python
+# entry point — wires the layers once
+squads = SquadLoader.from_agents(AGENTS_DIR, config=config, squad_cls=MyAppSquad)
+orchestrator = ClaimsOrchestrator(config=config, squads=squads)
+
+# orchestrator — squad file + id, nothing else
+squad = self.squads.load_one(SQUADS_DIR / "claims_squad.yaml", "ClaimsSquad")
+result = squad.execute(payload)
+```
+
+**Consequences.**
+- *If a squad's agents change, no orchestrator changes* — only the squad YAML and the agent's own YAML and class.
+- A per-run config (e.g. a governance override on a resumed run) reaches the agents through `load_one(config=...)` without the orchestrator knowing which agents it touches.
+- Squads need no Python of their own; squad-level behaviour lives in one class, not one per squad.
+
+**Enforcement.** k9_inspect **K9-DEC-002** (an orchestrator that names agents or builds an `AgentRegistry` / `AgentLoader` is a violation); `tests/test_orchestrator_knows_only_squads.py` adds an agent to a squad YAML and runs the unchanged orchestrator; the scaffolds (`k9aif new`, K9X Studio) generate this structure.
+
+**Related:** Builder (§27.8), Layered Architecture (§27.10), Anti-pattern "Orchestrator naming or building agents" (§4.5), §25.9.
 
 ---
 

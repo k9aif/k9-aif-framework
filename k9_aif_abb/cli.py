@@ -509,6 +509,14 @@ squads:
         result_key: my_agent_output
 """,
 
+    "agents/yaml/my_agent.yaml": """\
+# The squad layer builds this agent for any squad that names it (class + module).
+class: MyAgent
+module: agents.src.my_agent
+role: "General assistant"
+goal: "Process the input and return a short answer."
+""",
+
     "agents/src/my_agent.py": '''\
 # agents/src/my_agent.py — K9-AIF Agent SBB
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
@@ -540,23 +548,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from k9_aif_abb.k9_squad.squad_loader import SquadLoader
-from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
 from typing import Any, Dict
 
-from agents.src.my_agent import MyAgent
+_SQUADS = Path(__file__).resolve().parents[1] / "squads"
 
 
 class MyOrchestrator(BaseOrchestrator):
+    """Knows only squads: loads one by YAML file and id. The squad layer (self.squads,
+    built in main.py) builds the agents the squad YAML names."""
+
     layer = "MyOrchestrator SBB"
 
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        registry = AgentRegistry()
-        registry.register("MyAgent", lambda: MyAgent(config=self.config))
-
-        loader = SquadLoader(registry)
-        squad_path = str(Path(__file__).resolve().parents[1] / "squads" / "my_squad.yaml")
-        squad = loader.load_one(squad_path, "MySquad")
+        squad = self.squads.load_one(_SQUADS / "my_squad.yaml", "MySquad")
 
         self.publish_status("started", {"job_id": payload.get("job_id", "")})
         result = squad.run(payload)
@@ -573,16 +577,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from k9_aif_abb.k9_core.router.base_router import BaseRouter
 from typing import Any, Dict
 
-from orchestrators.my_orchestrator import MyOrchestrator
-
 
 class MyRouter(BaseRouter):
+    """Knows only orchestrators (given by main.py)."""
+
     layer = "MyRouter SBB"
+
+    def __init__(self, config=None, orchestrator=None, **kwargs):
+        super().__init__(config=config, **kwargs)
+        self.orchestrator = orchestrator
 
     def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         self.logger.info("[MyRouter] Routing event: %s", payload.get("job_id", ""))
-        orchestrator = MyOrchestrator(config=self.config)
-        return orchestrator.execute_flow(payload)
+        return self.orchestrator.execute_flow(payload)
 ''',
 
     "main.py": '''\
@@ -608,6 +615,8 @@ if not env_file.exists():
 
 load_dotenv(env_file)
 
+from k9_aif_abb.k9_squad.squad_loader import SquadLoader
+from orchestrators.my_orchestrator import MyOrchestrator
 from router.my_router import MyRouter
 
 if __name__ == "__main__":
@@ -624,7 +633,11 @@ if __name__ == "__main__":
     print("  " + "─" * 48)
     print()
 
-    router = MyRouter(config=config)
+    # Wire the layers once: squad layer → orchestrator → router. Each layer knows only
+    # the one below; the squad layer builds the agents each squad YAML names.
+    squads = SquadLoader.from_agents(Path(__file__).parent / "agents" / "yaml", config=config)
+    orchestrator = MyOrchestrator(config=config, squads=squads)
+    router = MyRouter(config=config, orchestrator=orchestrator)
     result = router.route({"input": "Hello from K9-AIF", "job_id": "demo-001"})
 
     print(f"  Result : {result}")
@@ -1089,7 +1102,7 @@ def generate_complete():
 
     steps = [
         ("config",        ["config"]),
-        ("agents",        ["agents/src"]),
+        ("agents",        ["agents/src", "agents/yaml"]),
         ("orchestrators", ["orchestrators"]),
         ("router",        ["router"]),
         ("squads",        ["squads"]),
@@ -1107,6 +1120,7 @@ def generate_complete():
 
     file_labels = {
         "config/config.yaml":               "Generating config               ",
+        "agents/yaml/my_agent.yaml":        "Generating agent YAML           ",
         "agents/src/my_agent.py":           "Generating agent                ",
         "orchestrators/my_orchestrator.py": "Generating orchestrator         ",
         "router/my_router.py":              "Generating router               ",

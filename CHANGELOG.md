@@ -23,6 +23,9 @@ All notable changes to K9-AIF are documented here.
 
 - The EOC example follows the squad layer: its seven orchestrators load squads by id; `EOCOrchestrator` loads each squad directly from `config/squads.yaml`; class diagrams show orchestrators → `SquadLoader` → `AgentLoader`.
 - Docs: `CLAUDE.md`, `SKILLS.md` (Skills 1, 4, 9), Developer Guide §3.5, §6.3 and the agent walkthrough, `AgentLoader` docstring.
+- **Squad Layer pattern** in the Developer Guide pattern catalogue (§27.11), with the anti-pattern (§4.5) and common mistake (§25.9); also on [patterns.k9x.ai](https://patterns.k9x.ai/squad-layer-pattern.html).
+- `k9aif new` scaffold generates the squad layer: agent YAML with `module:`, an orchestrator that loads squads only, a router given its orchestrator, and `main.py` wiring squad layer → orchestrator → router.
+- `MockLLM.generate()` accepts `system_prompt`, so a freshly generated project runs on the mock provider.
 
 Tests: `test_orchestrator_knows_only_squads.py` (adds an agent to a squad YAML and runs the unchanged orchestrator; per-run config; `before_step`; K9-DEC-002).
 

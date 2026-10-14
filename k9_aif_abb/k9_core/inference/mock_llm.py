@@ -45,8 +45,8 @@ class MockLLM(BaseLLM):
     # ------------------------------------------------------------------
     # Core inference methods
     # ------------------------------------------------------------------
-    async def generate(self, prompt: str) -> str:
-        """Generate a deterministic mock response."""
+    async def generate(self, prompt: str, system_prompt=None, **kwargs) -> str:
+        """Generate a deterministic mock response (system_prompt accepted, as the router always passes it)."""
         self._safe_log(f"MockLLM generating mock response for prompt: {prompt}", level="DEBUG")
         return f"[MOCK RESPONSE for: {prompt}]"
 
