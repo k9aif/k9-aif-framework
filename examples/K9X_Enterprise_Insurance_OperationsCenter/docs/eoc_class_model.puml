@@ -52,7 +52,6 @@ package "k9_aif_abb Framework" #EEF {
   class ModelCatalog
   class RoutingStateStore
   class SquadLoader
-  class AgentRegistry
   class OrchestratorRegistry
   class Squad {
     +execute(payload) : Dict
@@ -228,7 +227,7 @@ package "orchestrators" #E3F2FD {
   }
   class ClaimsProcessingOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -236,7 +235,7 @@ package "orchestrators" #E3F2FD {
   }
   class DocumentIntelligenceOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -244,7 +243,7 @@ package "orchestrators" #E3F2FD {
   }
   class RiskAssessmentOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -252,7 +251,7 @@ package "orchestrators" #E3F2FD {
   }
   class PolicyManagementOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -260,7 +259,7 @@ package "orchestrators" #E3F2FD {
   }
   class CatastropheResponseOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -268,7 +267,7 @@ package "orchestrators" #E3F2FD {
   }
   class CustomerServiceOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -276,7 +275,7 @@ package "orchestrators" #E3F2FD {
   }
   class AuditComplianceOrchestrator {
     -_squad : Squad
-    -_agent_map : Dict[str, BaseAgent]
+    -squads : SquadLoader
     -_event_bus : K9EventBus
     +start(squads_yaml_path)
     +execute_flow(payload) : Dict
@@ -475,18 +474,17 @@ EOCApp ..> EOCEventResponse       : "returns"
 EOCApp ..> ScenarioRunResponse    : "returns"
 EOCApp ..> HealthResponse         : "returns"
 
-' Orchestrators use AgentLoader to configure agents
-ClaimsProcessingOrchestrator      --> AgentLoader : "uses"
-DocumentIntelligenceOrchestrator  --> AgentLoader : "uses"
-RiskAssessmentOrchestrator        --> AgentLoader : "uses"
-PolicyManagementOrchestrator      --> AgentLoader : "uses"
-CatastropheResponseOrchestrator   --> AgentLoader : "uses"
-CustomerServiceOrchestrator       --> AgentLoader : "uses"
-AuditComplianceOrchestrator       --> AgentLoader : "uses"
-
-' Orchestrators use SquadLoader / registries
-ClaimsProcessingOrchestrator      --> SquadLoader          : "loads squad"
-ClaimsProcessingOrchestrator      --> AgentRegistry        : "registers agents"
+' Orchestrators know only squads: each loads its squad by id through the squad layer
+ClaimsProcessingOrchestrator      --> SquadLoader : "loads squad by id"
+DocumentIntelligenceOrchestrator  --> SquadLoader : "loads squad by id"
+RiskAssessmentOrchestrator        --> SquadLoader : "loads squad by id"
+PolicyManagementOrchestrator      --> SquadLoader : "loads squad by id"
+CatastropheResponseOrchestrator   --> SquadLoader : "loads squad by id"
+CustomerServiceOrchestrator       --> SquadLoader : "loads squad by id"
+AuditComplianceOrchestrator       --> SquadLoader : "loads squad by id"
+' The squad layer builds the agents each squad YAML names (never an orchestrator)
+SquadLoader --> AgentLoader : "builds the squad's agents"
+SquadLoader ..> Squad : "builds"
 ClaimsProcessingOrchestrator      --> OrchestratorRegistry : "registers orchestrators"
 
 ' Agents use llm_invoke

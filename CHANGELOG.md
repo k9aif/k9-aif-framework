@@ -4,6 +4,30 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.1] — 2026-10-14
+
+### Changed
+
+- **Three-layer decoupling, stated by what each layer knows, and enforced.** An orchestrator loads a squad by YAML file and squad id and never names, imports, registers or builds an agent; the squad layer builds the agents each squad YAML names. Test: *if a squad's agents change, the orchestrator is unaffected.* (Registering agents by name, 1.15, already kept agent imports out of orchestrators; this release moves the agent names out as well.)
+
+### Added
+
+- **The squad layer builds a squad's agents.** `SquadLoader.from_agents(agents_dir, config, squad_cls=..., agent_kwargs=...)`, built once at the application entry point and passed to orchestrators as `squads=`, resolves every agent a squad YAML names through `AgentLoader` (`class:` + `module:`). `load_one(path, squad_id, config=..., agent_kwargs=...)` builds only that squad, with an optional per-run config (for example a governance override). A squad keeps the config it was built with (`squad.config`).
+- **`BaseSquad.before_step(agent_name, context)`**: a hook before each step's agent runs, for squad-level behaviour in an application's one common `<App>Squad(BaseSquad)` (squads stay YAML).
+- **`BaseOrchestrator(squads=...)`**.
+- **`AgentLoader.refresh()`**; `resolve_class` re-reads the agent YAML directory once when it meets an unknown agent (a squad gained an agent since start-up).
+- **k9_inspect K9-DEC-002 "Orchestrator knows only squads"** (violation): an orchestrator module that names agents or builds an `AgentRegistry` / `AgentLoader`. K9-DEC-001 checks imports only.
+- Claude Code hook `check-orchestrator-squads.sh` (every orchestrator edit).
+
+### Updated
+
+- The EOC example follows the squad layer: its seven orchestrators load squads by id; `EOCOrchestrator` loads each squad directly from `config/squads.yaml`; class diagrams show orchestrators → `SquadLoader` → `AgentLoader`.
+- Docs: `CLAUDE.md`, `SKILLS.md` (Skills 1, 4, 9), Developer Guide §3.5, §6.3 and the agent walkthrough, `AgentLoader` docstring.
+
+Tests: `test_orchestrator_knows_only_squads.py` (adds an agent to a squad YAML and runs the unchanged orchestrator; per-run config; `before_step`; K9-DEC-002).
+
+---
+
 ## [1.18.0] — 2026-10-13
 
 ### Added

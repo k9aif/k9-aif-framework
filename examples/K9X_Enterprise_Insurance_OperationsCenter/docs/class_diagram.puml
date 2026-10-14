@@ -212,7 +212,7 @@ package "orchestrators" #EDF7ED {
 
     class ClaimsProcessingOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -220,7 +220,7 @@ package "orchestrators" #EDF7ED {
 
     class DocumentIntelligenceOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -228,7 +228,7 @@ package "orchestrators" #EDF7ED {
 
     class RiskAssessmentOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -236,7 +236,7 @@ package "orchestrators" #EDF7ED {
 
     class PolicyManagementOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -244,7 +244,7 @@ package "orchestrators" #EDF7ED {
 
     class CatastropheResponseOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -252,7 +252,7 @@ package "orchestrators" #EDF7ED {
 
     class CustomerServiceOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -260,7 +260,7 @@ package "orchestrators" #EDF7ED {
 
     class AuditComplianceOrchestrator {
         -_squad
-        -_agent_map: dict
+        -squads: SquadLoader
         -_event_bus: K9EventBus
         +start(squads_yaml_path)
         -_load_squad(squads_yaml_path)
@@ -491,12 +491,7 @@ package "utils" #F0F0F0 {
 }
 
 Exception <|-- ConfigLoaderError
-ClaimsProcessingOrchestrator --> AgentLoader : uses
-DocumentIntelligenceOrchestrator --> AgentLoader : uses
-RiskAssessmentOrchestrator --> AgentLoader : uses
-PolicyManagementOrchestrator --> AgentLoader : uses
-CatastropheResponseOrchestrator --> AgentLoader : uses
-CustomerServiceOrchestrator --> AgentLoader : uses
-AuditComplianceOrchestrator --> AgentLoader : uses
+' Orchestrators know only squads: the squad layer (SquadLoader.from_agents) builds the agents
+' each squad YAML names through AgentLoader; no orchestrator references an agent.
 
 @enduml

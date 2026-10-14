@@ -7,14 +7,8 @@
 import logging
 from typing import Any, Dict, Optional
 
-from pathlib import Path
-
-from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from k9_aif_abb.k9_squad.squad_loader import SquadLoader
 from k9_aif_abb.k9_core.messaging.k9_event_bus import K9EventBus
-
-from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.agent_loader import AgentLoader
 
 log = logging.getLogger(__name__)
 
@@ -30,12 +24,15 @@ class ClaimsProcessingOrchestrator(BaseOrchestrator):
     fully declared in the YAML ``flow:`` section — no hardcoded chain in this class.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, **kwargs) -> None:
+    def __init__(self, config: Optional[Dict[str, Any]] = None, squads=None, **kwargs) -> None:
         cfg = config or {}
         zt_enabled = cfg.get("governance", {}).get("enabled", False)
         super().__init__(config=cfg, enable_zero_trust=zt_enabled)
+        if squads is None:
+            from examples.K9X_Enterprise_Insurance_OperationsCenter.squads.squad_layer import squad_layer
+            squads = squad_layer(cfg)
+        self.squads = squads   # the squad layer: squads by YAML file and id, never agents
         self._squad = None
-        self._agent_map: Dict[str, Any] = {}
         self._event_bus: Optional[K9EventBus] = None
 
     # ------------------------------------------------------------------
@@ -47,7 +44,6 @@ class ClaimsProcessingOrchestrator(BaseOrchestrator):
             squads_yaml_path: Absolute path to ``config/squads.yaml``.
         """
         self._squad = self._load_squad(squads_yaml_path)
-        self._agent_map = {a.__class__.__name__: a for a in self._squad.agents}
 
         messaging = self.config.get("messaging", {})
         brokers = messaging.get("brokers", ["localhost:9092"])
@@ -59,21 +55,7 @@ class ClaimsProcessingOrchestrator(BaseOrchestrator):
 
     # ------------------------------------------------------------------
     def _load_squad(self, squads_yaml_path: str):
-        agents_yaml_dir = Path(squads_yaml_path).parent.parent / "agents" / "yaml"
-        agent_loader = AgentLoader(agents_yaml_dir)
-
-        agent_registry = AgentRegistry()
-        agent_loader.register_into(agent_registry, self.config, [
-            "ClaimsTriageAgent",
-            "AdjudicationAgent",
-            "GuardAgent",
-            "AuditAgent",
-            "EscalationAgent",
-            "GraphSyncAgent",
-        ])
-
-        loader = SquadLoader(agent_registry)
-        squad = loader.load_one(squads_yaml_path, _SQUAD_ID)
+        squad = self.squads.load_one(squads_yaml_path, _SQUAD_ID)
         log.info("[ClaimsProcessingOrchestrator] Squad loaded: squad_id=%s agents=%d flow_steps=%d",
                  _SQUAD_ID, len(squad.agents), len(squad.flow))
         return squad

@@ -207,6 +207,50 @@ class LayerDecouplingRule(BaseInspectionRule):
 
 
 @InspectionRuleRegistry.register
+class OrchestratorKnowsOnlySquadsRule(BaseInspectionRule):
+    rule_id = "K9-DEC-002"
+    title = "Orchestrator knows only squads"
+    category = "Decoupling"
+    severity = Severity.VIOLATION
+    description = ("An orchestrator loads squads by file and id; the agents a squad needs are named in its own "
+                   "YAML and built by the squad layer. An orchestrator that lists agent names or builds an "
+                   "AgentRegistry / AgentLoader couples the layers without importing an agent: change a squad's "
+                   "agents and the orchestrator must change too.")
+    fix = ("Build SquadLoader.from_agents(agents_dir, config) at the application entry point, pass it as "
+           "squads=, and load squads with self.squads.load_one(squad_yaml, squad_id). Squad-level behaviour "
+           "goes in a BaseSquad subclass (squad_cls=, before_step).")
+
+    _AGENT_MACHINERY = {"AgentRegistry", "AgentLoader", "register_into"}
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        agents = {c.name for c in project.classes(role="agent")}
+        out = []
+        for m in project.code_modules():
+            if m.roles != {"orchestrator"} or m.tree is None:
+                continue
+            machinery, named = {}, {}
+            for node in ast.walk(m.tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    for a in node.names:
+                        if a.name.split(".")[-1] in self._AGENT_MACHINERY:
+                            machinery.setdefault(a.name.split(".")[-1], node)
+                elif isinstance(node, ast.Name) and node.id in self._AGENT_MACHINERY:
+                    machinery.setdefault(node.id, node)
+                elif isinstance(node, ast.Attribute) and node.attr in self._AGENT_MACHINERY:
+                    machinery.setdefault(node.attr, node)
+                elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value in agents:
+                    named.setdefault(node.value, node)
+            if machinery:
+                first = min(machinery.values(), key=lambda n: getattr(n, "lineno", 0))
+                out.append(self.at(m, first, "orchestrator module builds agents: "
+                                   + ", ".join(sorted(machinery))))
+            if named:
+                first = min(named.values(), key=lambda n: getattr(n, "lineno", 0))
+                out.append(self.at(m, first, "orchestrator module names agent(s): " + ", ".join(sorted(named))))
+        return out
+
+
+@InspectionRuleRegistry.register
 class KafkaOwnershipRule(BaseInspectionRule):
     rule_id = "K9-KAF-001"
     title = "Only Router and Orchestrator touch Kafka"

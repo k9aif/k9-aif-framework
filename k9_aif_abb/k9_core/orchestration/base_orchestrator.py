@@ -99,8 +99,13 @@ class BaseOrchestrator(ABC):
         hil_state_store=None,
         context_state=None,
         origin=None,
+        squads=None,
     ):
         self.config = config or {}
+        # The squad layer (1.18.1): a SquadLoader built at the application entry
+        # point (SquadLoader.from_agents). The orchestrator loads squads by file
+        # and id through it and never names, imports or registers an agent.
+        self.squads = squads
         self.monitor = monitor
         self.message_bus = message_bus
         self.governance = require_governance(governance, self.config.get("k9_env"))

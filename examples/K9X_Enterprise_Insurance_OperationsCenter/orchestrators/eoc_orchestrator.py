@@ -15,12 +15,8 @@
 import asyncio
 import json
 import logging
-import os
-import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
-
-import yaml as _yaml
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
@@ -86,49 +82,25 @@ class EOCOrchestrator(BaseOrchestrator):
 
     # ------------------------------------------------------------------
     def _initialize(self) -> None:
-        # Load the combined squads.yaml and split it into per-orchestrator
-        # temp files so SquadLoader only sees one squad at a time.
-        # (SquadLoader.load() instantiates every squad in the file — if an
-        # orchestrator's registry only covers its own agents the other squads
-        # would fail to build.)
-        with open(_SQUADS_YAML) as f:
-            all_squads_data = _yaml.safe_load(f) or {}
-        all_squads = all_squads_data.get("squads", {})
+        # The squad layer, built once: each squad orchestrator loads its own squad by
+        # YAML file and squad id through it and never names an agent (K9-DEC-002).
+        from examples.K9X_Enterprise_Insurance_OperationsCenter.squads.squad_layer import squad_layer
+        squads = squad_layer(self.config)
 
         log.info("[EOCOrchestrator] Startup: %d event types to load", len(_ROUTING))
         for event_type, cls in _ROUTING.items():
-            tmp_path: Optional[str] = None
             try:
-                orch = cls(config=self.config)
+                orch = cls(config=self.config, squads=squads)
                 log.info("[EOCOrchestrator] Orchestrator ready: %s → event_type=%s", cls.__name__, event_type)
-
-                squad_id = _SQUAD_MAP.get(cls.__name__)
-                squad_cfg = all_squads.get(squad_id) if squad_id else None
-                if not squad_id or squad_cfg is None:
-                    raise ValueError(f"No squad found in squads.yaml for {cls.__name__}")
-
-                # Write a single-squad YAML so SquadLoader only builds this squad
-                per_squad = {"squads": {squad_id: squad_cfg}}
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".yaml", delete=False,
-                    dir=_SQUADS_YAML.parent,
-                ) as tf:
-                    _yaml.dump(per_squad, tf)
-                    tmp_path = tf.name
-
-                orch._squad = orch._load_squad(tmp_path)
-                orch._agent_map = {a.__class__.__name__: a for a in orch._squad.agents}
+                orch._squad = orch._load_squad(str(_SQUADS_YAML))
                 self._handlers[event_type] = orch
                 log.info(
                     "[EOCOrchestrator] Squad loaded: event_type=%s squad=%s agents=%d flow_steps=%d",
-                    event_type, squad_id, len(orch._squad.agents), len(orch._squad.flow),
+                    event_type, _SQUAD_MAP.get(cls.__name__), len(orch._squad.agents), len(orch._squad.flow),
                 )
             except Exception:
                 log.exception("[EOCOrchestrator] Failed loading squad for event_type=%s", event_type)
                 raise
-            finally:
-                if tmp_path and os.path.exists(tmp_path):
-                    os.unlink(tmp_path)
 
         log.info("[EOCOrchestrator] Startup complete: %d handlers registered", len(self._handlers))
 

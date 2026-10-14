@@ -75,32 +75,29 @@ class AgentLoader:
     Each YAML file must contain a ``class:`` field that matches the Python
     class name exactly (e.g. ``class: ClaimsTriageAgent``).
 
-    Usage inside an orchestrator's ``_load_squad()``::
-
-        from k9_aif_abb.k9_agents.agent_loader import AgentLoader
-
-        agents_yaml_dir = Path(__file__).parent.parent / "agents" / "yaml"
-        agent_loader = AgentLoader(agents_yaml_dir)
-
-        agent_registry.register(
-            "ClaimsTriageAgent",
-            lambda: ClaimsTriageAgent(
-                config=agent_loader.merge_with_global("ClaimsTriageAgent", self.config)
-            ),
-        )
-
-    Parallel to ``SquadLoader`` in ``k9_aif_abb/k9_squad/squad_loader.py``.
-
-    Registering by name (1.15) keeps the orchestrator free of agent imports
-    (three-layer decoupling): give each agent YAML a ``module:`` next to
-    ``class:`` and let the loader resolve it::
+    The squad layer uses it, never an orchestrator (1.18.1). An orchestrator
+    knows only squads: ``SquadLoader.from_agents(agents_yaml_dir, config)``,
+    built once at the application entry point, resolves every agent a squad's
+    YAML names through this loader. Give each agent YAML a ``module:`` next to
+    ``class:``::
 
         # agents/yaml/claims_triage_agent.yaml
         class: ClaimsTriageAgent
         module: myapp.agents.src.claims_triage_agent
 
-        agent_loader.register_into(agent_registry, self.config,
-                                   ["ClaimsTriageAgent", "AuditAgent"])
+        # entry point
+        squads = SquadLoader.from_agents(agents_yaml_dir, config=config)
+        orch = ClaimsOrchestrator(config=config, squads=squads)
+
+    If a squad's agents change, only the squad YAML changes — never the
+    orchestrator. Listing agent names in an orchestrator (or building an
+    ``AgentRegistry`` there) couples the layers even without an import;
+    k9_inspect K9-DEC-002 reports it.
+
+    Parallel to ``SquadLoader`` in ``k9_aif_abb/k9_squad/squad_loader.py``.
+
+    ``register_into(registry, config, names)`` fills an ``AgentRegistry`` at
+    the entry point for code that still takes a registry.
     """
 
     def __init__(self, yaml_dir: str | Path) -> None:
@@ -125,6 +122,11 @@ class AgentLoader:
                     log.warning("AgentLoader: no 'class' field in %s — skipped", path.name)
             except Exception as exc:
                 log.warning("AgentLoader: could not load %s: %s", path, exc)
+
+    def refresh(self) -> None:
+        """Re-read the agent YAML directory (picks up agents added since start-up)."""
+        self._by_class = {}
+        self._load_all()
 
     # ------------------------------------------------------------------
     def get_agent_yaml(self, class_name: str) -> Optional[Dict[str, Any]]:
@@ -169,6 +171,9 @@ class AgentLoader:
     def resolve_class(self, class_name: str) -> type:
         """The agent class named in YAML, imported from its ``module:`` field."""
         spec = self._by_class.get(class_name)
+        if not spec:
+            self.refresh()     # an agent YAML added since start-up (a squad gained an agent)
+            spec = self._by_class.get(class_name)
         if not spec:
             raise KeyError(f"AgentLoader: no agent YAML with class: {class_name} in {self.yaml_dir}")
         module = (spec.get("module") or "").strip()

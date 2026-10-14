@@ -92,6 +92,7 @@ class BaseSquad:
         self.description = ""
         self.flow = []
         self.metadata = {}
+        self.config = {}          # the config the squad layer built it with (set by SquadLoader)
         self.synthesizer = None   # set by SquadLoader, or created on first use
 
     def execute(self, payload: dict) -> dict:
@@ -176,6 +177,7 @@ class BaseSquad:
                     step_idx, agent_name, step_context, results, synthesis,
                     digest_cache, synthesis_log)
             step_context.update(step.get("context", {}))
+            self.before_step(agent_name, step_context)
             log.info("[%s] step %d executing agent=%s", self.squad_id, step_idx + 1, agent_name)
             t0 = time.monotonic()
             try:
@@ -233,6 +235,15 @@ class BaseSquad:
             config = getattr(self.agents[0], "config", {}) if self.agents else {}
             self.synthesizer = K9ContextSynthesizerAgent(config=config)
         return self.synthesizer
+
+    def before_step(self, agent_name: str, context: dict) -> None:
+        """Called before each flow step's agent runs (1.18.1). Default: nothing.
+
+        A solution's ``BaseSquad`` subclass overrides it for squad-level
+        behaviour (e.g. stop when the job was withdrawn: raise). Built by
+        ``SquadLoader(squad_cls=...)``, so the orchestrator never sees it.
+        """
+        return None
 
     def run(self, payload):
         """Delegates to execute() — kept for backwards compatibility."""

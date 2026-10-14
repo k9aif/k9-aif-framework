@@ -14,7 +14,7 @@ from k9_aif_abb.k9_core.logging.log_setup import setup_logging
 from examples.K9X_Enterprise_Insurance_OperationsCenter.utils.systems_check import run_system_checks
 from examples.K9X_Enterprise_Insurance_OperationsCenter.router.eoc_router import EOCRouter
 
-# Squad orchestrators — each self-bootstraps via SquadLoader
+# Squad orchestrators — each loads its squad through the squad layer
 from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.claims_processing_orchestrator import ClaimsProcessingOrchestrator
 from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.document_intelligence_orchestrator import DocumentIntelligenceOrchestrator
 from examples.K9X_Enterprise_Insurance_OperationsCenter.orchestrators.risk_assessment_orchestrator import RiskAssessmentOrchestrator
@@ -41,7 +41,7 @@ class EOCBootstrap:
             ↓  publishes to Kafka topic by event_type
         Kafka topics (eoc-claims, eoc-documents, eoc-fraud, ...)
             ↓  each topic consumed by its squad orchestrator
-        Squad Orchestrators  ← each reads config, uses SquadLoader to load squad + agents
+        Squad Orchestrators  ← each loads its squad by id; the squad layer builds the agents
             ↓  agents run sequentially with full context
         Agents (ClaimsTriageAgent, AdjudicationAgent, GuardAgent, ...)
 
@@ -52,7 +52,7 @@ class EOCBootstrap:
     3. Instantiate the ``EOCRouter`` (event router, publishes to Kafka)
     4. Instantiate all 7 squad orchestrators
     5. Start each orchestrator in its own thread (each calls ``start()``
-       which loads its squad via SquadLoader then blocks on Kafka subscribe)
+       which loads its squad through the squad layer then blocks on Kafka subscribe)
 
     Usage::
 
@@ -98,20 +98,23 @@ class EOCBootstrap:
         # 3. EOCRouter (event router — publishes to Kafka topics by event_type)
         self.router = EOCRouter(config=self.config)
 
-        # 4. Squad orchestrators — each self-bootstraps with SquadLoader
+        # 4. Squad orchestrators — the squad layer is built once here; each orchestrator
+        #    loads its squad by YAML file and id through it and never names an agent.
+        from examples.K9X_Enterprise_Insurance_OperationsCenter.squads.squad_layer import squad_layer
+        squads = squad_layer(self.config)
         self.orchestrators = {
-            "ClaimsProcessingOrchestrator":    ClaimsProcessingOrchestrator(config=self.config),
-            "DocumentIntelligenceOrchestrator": DocumentIntelligenceOrchestrator(config=self.config),
-            "RiskAssessmentOrchestrator":      RiskAssessmentOrchestrator(config=self.config),
-            "PolicyManagementOrchestrator":    PolicyManagementOrchestrator(config=self.config),
-            "CatastropheResponseOrchestrator": CatastropheResponseOrchestrator(config=self.config),
-            "CustomerServiceOrchestrator":     CustomerServiceOrchestrator(config=self.config),
-            "AuditComplianceOrchestrator":     AuditComplianceOrchestrator(config=self.config),
+            "ClaimsProcessingOrchestrator":    ClaimsProcessingOrchestrator(config=self.config, squads=squads),
+            "DocumentIntelligenceOrchestrator": DocumentIntelligenceOrchestrator(config=self.config, squads=squads),
+            "RiskAssessmentOrchestrator":      RiskAssessmentOrchestrator(config=self.config, squads=squads),
+            "PolicyManagementOrchestrator":    PolicyManagementOrchestrator(config=self.config, squads=squads),
+            "CatastropheResponseOrchestrator": CatastropheResponseOrchestrator(config=self.config, squads=squads),
+            "CustomerServiceOrchestrator":     CustomerServiceOrchestrator(config=self.config, squads=squads),
+            "AuditComplianceOrchestrator":     AuditComplianceOrchestrator(config=self.config, squads=squads),
         }
 
         # 5. Start each orchestrator in its own daemon thread
         #    Each orchestrator calls start(squads_yaml_path) which:
-        #      a) uses SquadLoader to load its squad + agents
+        #      a) loads its squad through the squad layer (agents built from the squad YAML)
         #      b) subscribes to its Kafka topic (blocking)
         for name, orch in self.orchestrators.items():
             t = threading.Thread(

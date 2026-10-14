@@ -30,12 +30,39 @@ Event → K9EventRouter → known event_type → domain topic
 domain topic → Orchestrator → 1+ Squads → 1+ Agents → LLM
 ```
 
-**Three-layer decoupling — never violate:** each layer knows only the layer
-directly below it. Router imports/references Orchestrators only, never
-Squads or Agents. Orchestrator imports Squads only, never Agents. Squad YAML
-has no `orchestrator:` field; Agent YAML has no `squad:`/`routing:` fields.
-Agent registration happens in the app entry point, not inside the
-orchestrator.
+**Three-layer decoupling — never violate:** each layer *knows* only the layer
+directly below it — not just "doesn't import" it. Router references
+Orchestrators only, never Squads or Agents. **An Orchestrator knows only
+Squads:** it loads a squad by YAML file and squad id, and never names,
+imports, registers or builds an Agent — no agent-name lists (`AGENTS = (...)`),
+no `AgentRegistry`/`AgentLoader` in an orchestrator module. Test: *if a
+squad's agents change, the orchestrator is unaffected* (only the squad YAML
+and the agent's own YAML/class change). Squad YAML has no `orchestrator:`
+field; Agent YAML has no `squad:`/`routing:` fields.
+
+**The squad-layer pattern (1.18.1):**
+
+- Squads are **YAML** (`agents:`, `flow:`, `synthesis:`); `BaseSquad` runs
+  any of them — a squad needs no `.py` of its own.
+- At most **one common `<App>Squad(BaseSquad)`** per application, for
+  squad-level behaviour (`before_step(agent_name, context)`, e.g. stop a
+  withdrawn job). The loader instantiates it once **per squad**, with that
+  squad's agents from its YAML.
+- `SquadLoader.from_agents(agents_dir, config, squad_cls=<App>Squad,
+  agent_kwargs=...)` is built **once at the app entry point** and passed to
+  every orchestrator as `squads=`. It resolves each agent the squad YAML names
+  through `AgentLoader` (`class:` + `module:` in the agent YAML).
+- In the orchestrator: `self.squads.load_one(squad_yaml, squad_id,
+  config=run_config)` — nothing else. `config=` carries a per-run override
+  (e.g. a relaxed governance check) without the orchestrator knowing which
+  agents it reaches.
+
+Enforced: k9_inspect **K9-DEC-002** (orchestrator names or builds agents →
+violation; K9-DEC-001 only catches imports), and
+`tests/test_orchestrator_knows_only_squads.py`. Before 1.18.1 the framework's
+own `AgentLoader` docstring and the EOC taught registering agents inside the
+orchestrator; registering by name (1.15) removed the imports but kept the
+coupling — don't copy that pattern from older code.
 
 Cardinality: Router 1→N Orchestrators, Orchestrator 1→N Squads
 (`execute_squads(..., parallel=True/False)`), Squad 1→N Agents (sequential

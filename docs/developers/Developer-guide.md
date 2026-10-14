@@ -462,7 +462,21 @@ class BaseSquad:
         """Alias for execute()."""
 ```
 
-`BaseSquad` is not abstract — it is a concrete implementation. Domain solutions rarely need to subclass it. The flow behavior is fully driven by the YAML definition loaded by `SquadLoader`.
+`BaseSquad` is not abstract — it is a concrete implementation. A squad is YAML: the flow behaviour is fully driven by the definition loaded by `SquadLoader`, and a squad needs no `.py` of its own.
+
+**The squad-layer pattern (1.18.1).** An application has at most **one** common `<App>Squad(BaseSquad)`, for squad-level behaviour; `SquadLoader` instantiates it once **per squad**, with that squad's agents from its YAML. Its hook is `before_step(agent_name, context)`, called before each step's agent runs (raise to stop the squad, e.g. when the job was withdrawn):
+
+```python
+class MyAppSquad(BaseSquad):
+    def before_step(self, agent_name, context):
+        if job_withdrawn(context.get("job_id")):
+            raise JobWithdrawn(f"stopped before {agent_name}")
+
+# app entry point: the squad layer is built once
+squads = SquadLoader.from_agents(agents_yaml_dir, config=config, squad_cls=MyAppSquad)
+```
+
+`SquadLoader.from_agents()` resolves every agent named in a squad's `agents:` through `AgentLoader` (the agent YAML's `class:` + `module:`) and builds it with its merged config. The orchestrator never takes part: see §6.3.
 
 ### 3.5.1 Squad Coordinator: Bounding Squad Context (1.16)
 
@@ -496,7 +510,7 @@ squads:
 | Configuration | Who creates the synthesizer | When |
 |---|---|---|
 | `synthesis: auto` or `always`, no `agent` | `BaseSquad` creates the OOB `K9ContextSynthesizerAgent` with the first agent's config | Lazily, the first time a digest is needed; never if no step needs one |
-| `synthesis.agent: MySynthesizerAgent` | `SquadLoader` creates it from the agent registry | When the squad loads |
+| `synthesis.agent: MySynthesizerAgent` | `SquadLoader` creates it like any agent the squad names (agent YAML) | When the squad loads |
 | `synthesis: off` or absent | Nobody | Never (pre-1.16 behaviour) |
 
 **When a step gets a digest.** Before each step `BaseSquad` checks, in order:
@@ -524,7 +538,7 @@ The original payload keys and any step-level `context:` entries are untouched. A
 
 **Governance.** `K9ContextSynthesizerAgent` is an ordinary `BaseAgent`, so governance by construction screens its digest like any agent output (Shield, Guardian). Its model call goes through `llm_invoke()`.
 
-**Writing your own synthesizer.** Extend `BaseAgent`, register it with the `AgentRegistry`, and name it in `synthesis.agent`. The contract:
+**Writing your own synthesizer.** Extend `BaseAgent`, give it an agent YAML (`class:` + `module:`), and name it in `synthesis.agent`. The contract:
 
 ```python
 # input
@@ -557,8 +571,9 @@ The primary loaders are:
 
 | Loader | Input | Output |
 |---|---|---|
-| `AgentRegistry` | Name → class mapping | Agent instances |
-| `SquadLoader` | YAML file + squad ID | `BaseSquad` with wired agents |
+| `AgentLoader` | Agent YAML directory | Agent class + merged config per name |
+| `SquadLoader.from_agents` | Agents directory (once, at the entry point); then YAML file + squad ID | `BaseSquad` (or `<App>Squad`) with its agents built |
+| `AgentRegistry` | Name → class mapping | Agent instances (legacy; fill it at the entry point, never in an orchestrator) |
 | `OrchestratorLoader` | Config dict | `BaseOrchestrator` instance |
 | `LLMFactory` | Config block | Cached LLM instances |
 | `ModelRouterFactory` | Config block | Cached router instance |
@@ -895,16 +910,15 @@ class MyAssessmentAgent(BaseAgent):
         }
 ```
 
-**Step 3 — Register in the orchestrator's `_load_squad()`**
+**Step 3 — Give the agent YAML a `module:` (no registration)**
 
-```python
-from examples.my_app.agents.src.my_assessment_agent import MyAssessmentAgent
-
-agent_registry.register(
-    "MyAssessmentAgent",
-    lambda: MyAssessmentAgent(config=agent_loader.merge_with_global("MyAssessmentAgent", self.config)),
-)
+```yaml
+# agents/yaml/my_assessment_agent.yaml
+class: MyAssessmentAgent
+module: examples.my_app.agents.src.my_assessment_agent
 ```
+
+The orchestrator is not touched: the squad layer builds every agent its YAML names. If adding an agent to a squad required an orchestrator change, the layers would be coupled (k9_inspect K9-DEC-002).
 
 **Step 4 — Add to the squad YAML flow**
 
@@ -1069,22 +1083,26 @@ An orchestrator is **not** responsible for:
 
 ### 6.3 Squad Coordination
 
+**An orchestrator knows only squads.** It loads a squad by YAML file and squad id and runs it. It never names, imports, registers or builds an agent: no agent-name lists, no `AgentRegistry` / `AgentLoader` in an orchestrator module. The test: *if a squad's agents change, the orchestrator is unaffected.* The squad layer — `SquadLoader.from_agents()`, built once at the application entry point — builds the agents each squad's YAML names (§3.5).
+
 ```python
+# app entry point (wires the layers once)
+squads = SquadLoader.from_agents(AGENTS_YAML_DIR, config=config)
+orchestrator = MyDomainOrchestrator(config=config, squads=squads)
+
+
 class MyDomainOrchestrator(BaseOrchestrator):
 
     layer = "MyDomain Orchestrator SBB"
+    _SQUAD_FILE = "config/squads.yaml"
     _SQUAD_ID = "MyDomainSquad"
-
-    def __init__(self, config=None, monitor=None, message_bus=None, governance=None):
-        super().__init__(config or {}, monitor=monitor,
-                         message_bus=message_bus, governance=governance)
-        self.squad = self._load_squad()
 
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         self.publish_status("started", {"squad_id": self._SQUAD_ID,
                                          "correlation_id": payload.get("correlation_id")})
         try:
-            result = self.squad.execute(payload)
+            squad = self.squads.load_one(self._SQUAD_FILE, self._SQUAD_ID)
+            result = squad.execute(payload)
             self.publish_status("completed", {"squad_id": self._SQUAD_ID,
                                               "status": result.get("status")})
             return result
@@ -1092,16 +1110,9 @@ class MyDomainOrchestrator(BaseOrchestrator):
             self.logger.error("[%s] Flow failed: %s", self.layer, exc)
             self.publish_status("failed", {"error": str(exc)})
             return {"status": "error", "error": str(exc)}
-
-    def _load_squad(self) -> BaseSquad:
-        from k9_aif_abb.k9_squad.squad_loader import SquadLoader
-        from k9_aif_abb.k9_agents.registry.agent_registry import AgentRegistry
-        # register agents and load squad
-        agent_registry = AgentRegistry()
-        # ... register agents ...
-        loader = SquadLoader(agent_registry)
-        return loader.load_one("config/squads.yaml", self._SQUAD_ID)
 ```
+
+`load_one(..., config=run_config)` builds the squad's agents with a per-run config (for example a governance override on a resumed run) without the orchestrator knowing which agents it reaches. Enforced by k9_inspect **K9-DEC-002** and `tests/test_orchestrator_knows_only_squads.py`.
 
 ### 6.4 Routing Boundaries
 
@@ -3952,7 +3963,7 @@ The Adapter pattern converts one interface to another. `K9CrewAIAdapter` bridges
 
 **Where used:** `SquadLoader`, `OrchestratorLoader`
 
-The Builder pattern constructs complex objects step by step. `SquadLoader` builds a `BaseSquad` by loading YAML, resolving agent classes from the registry, wiring them together, and setting the flow configuration.
+The Builder pattern constructs complex objects step by step. `SquadLoader` builds a `BaseSquad` (or the application's `<App>Squad`) by loading YAML, resolving the agent classes the squad names through `AgentLoader`, building them with their merged config, and setting the flow configuration.
 
 ### 27.9 Orchestrator
 
