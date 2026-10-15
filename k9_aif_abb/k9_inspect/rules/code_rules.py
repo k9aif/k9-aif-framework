@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import List, Set
+from typing import Dict, List, Set
 
 from ..base_inspection_rule import BaseInspectionRule
 from ..models import Finding, Severity
@@ -35,12 +35,15 @@ def _imported_modules(mod: PyModule) -> List[tuple]:
     return out
 
 
+def _call_name(node: ast.Call) -> str:
+    f = node.func
+    return f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
+
+
 def _calls(tree: ast.AST):
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
-            f = node.func
-            name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else ""
-            yield name, node
+            yield _call_name(node), node
 
 
 def _inside_llm_invoke_module(mod: PyModule) -> bool:
@@ -212,41 +215,62 @@ class OrchestratorKnowsOnlySquadsRule(BaseInspectionRule):
     title = "Orchestrator knows only squads"
     category = "Decoupling"
     severity = Severity.VIOLATION
-    description = ("An orchestrator loads squads by file and id; the agents a squad needs are named in its own "
-                   "YAML and built by the squad layer. An orchestrator that lists agent names or builds an "
-                   "AgentRegistry / AgentLoader couples the layers without importing an agent: change a squad's "
-                   "agents and the orchestrator must change too.")
+    description = ("An orchestrator loads squads by file and id and knows nothing about agents: the agents a "
+                   "squad needs are named in its own YAML and built by the squad layer at the entry point. "
+                   "An orchestrator that names an agent, uses an agent class, builds an AgentRegistry / "
+                   "AgentLoader / SquadLoader.from_agents, reads agent YAML, reads a squad's agents: list or "
+                   "imports agent modules dynamically couples the layers: change a squad's agents and the "
+                   "orchestrator must change too.")
     fix = ("Build SquadLoader.from_agents(agents_dir, config) at the application entry point, pass it as "
            "squads=, and load squads with self.squads.load_one(squad_yaml, squad_id). Squad-level behaviour "
            "goes in a BaseSquad subclass (squad_cls=, before_step).")
 
-    _AGENT_MACHINERY = {"AgentRegistry", "AgentLoader", "register_into"}
+    _AGENT_MACHINERY = {"AgentRegistry", "AgentLoader", "register_into", "from_agents"}
+    _AGENT_YAML = re.compile(r"(^|[/\\])agents?[/\\]yaml\b|(^|[/\\_])agents?\.ya?ml$|_agent\.ya?ml$")
 
     def inspect(self, project: SolutionProject) -> List[Finding]:
         agents = {c.name for c in project.classes(role="agent")}
         out = []
         for m in project.code_modules():
-            if m.roles != {"orchestrator"} or m.tree is None:
+            if "orchestrator" not in m.roles or m.tree is None:
                 continue
-            machinery, named = {}, {}
+            found: Dict[str, Dict[str, ast.AST]] = {}
+
+            def hit(kind: str, what: str, node: ast.AST) -> None:
+                found.setdefault(kind, {}).setdefault(what, node)
+
             for node in ast.walk(m.tree):
                 if isinstance(node, (ast.Import, ast.ImportFrom)):
                     for a in node.names:
                         if a.name.split(".")[-1] in self._AGENT_MACHINERY:
-                            machinery.setdefault(a.name.split(".")[-1], node)
+                            hit("builds agents", a.name.split(".")[-1], node)
                 elif isinstance(node, ast.Name) and node.id in self._AGENT_MACHINERY:
-                    machinery.setdefault(node.id, node)
+                    hit("builds agents", node.id, node)
                 elif isinstance(node, ast.Attribute) and node.attr in self._AGENT_MACHINERY:
-                    machinery.setdefault(node.attr, node)
-                elif isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value in agents:
-                    named.setdefault(node.value, node)
-            if machinery:
-                first = min(machinery.values(), key=lambda n: getattr(n, "lineno", 0))
-                out.append(self.at(m, first, "orchestrator module builds agents: "
-                                   + ", ".join(sorted(machinery))))
-            if named:
-                first = min(named.values(), key=lambda n: getattr(n, "lineno", 0))
-                out.append(self.at(m, first, "orchestrator module names agent(s): " + ", ".join(sorted(named))))
+                    hit("builds agents", node.attr, node)
+                elif isinstance(node, ast.Name) and node.id in agents:
+                    hit("uses agent class(es)", node.id, node)
+                elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    if node.value in agents:
+                        hit("names agent(s)", node.value, node)
+                    elif self._AGENT_YAML.search(node.value):
+                        hit("reads agent YAML", node.value, node)
+                if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div) \
+                        and isinstance(node.right, ast.Constant) and node.right.value in ("agents", "agent"):
+                    hit("reads agent YAML", '/ "agents"', node)
+                elif isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Constant) \
+                        and node.slice.value == "agents":
+                    hit("reads a squad's agent list", '["agents"]', node)
+                elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                        and node.func.attr == "get" and node.args and isinstance(node.args[0], ast.Constant) \
+                        and node.args[0].value == "agents":
+                    hit("reads a squad's agent list", '.get("agents")', node)
+                elif isinstance(node, ast.Call) and _call_name(node) in ("import_module", "__import__") \
+                        and node.args and "agent" in ast.unparse(node.args[0]).lower():
+                    hit("imports agent modules dynamically", ast.unparse(node.args[0])[:60], node)
+            for kind, items in found.items():
+                first = min(items.values(), key=lambda n: getattr(n, "lineno", 0))
+                out.append(self.at(m, first, f"orchestrator module {kind}: " + ", ".join(sorted(items))))
         return out
 
 

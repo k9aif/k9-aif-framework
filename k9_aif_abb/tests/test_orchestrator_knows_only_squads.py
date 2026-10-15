@@ -166,3 +166,56 @@ def test_inspector_flags_orchestrator_that_names_or_builds_agents(tmp_path):
     assert {f.file for f in findings} == {"orchestrators/bad_orchestrator.py"}
     messages = " | ".join(f.message for f in findings)
     assert "AgentRegistry" in messages and "DraftAgent" in messages
+
+
+@pytest.mark.parametrize("body,expect", [
+    ('from pathlib import Path\n'
+     'class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload):\n'
+     '        return (Path(__file__).parent / "agents" / "yaml")', "reads agent YAML"),
+    ('class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload):\n'
+     '        return open("config/agents.yaml").read()', "reads agent YAML"),
+    ('class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload):\n'
+     '        cfg = {}\n'
+     '        return [a for a in cfg["agents"]]', "reads a squad's agent list"),
+    ('class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload):\n'
+     '        return payload.get("agents")', "reads a squad's agent list"),
+    ('import importlib\n'
+     'class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload):\n'
+     '        return importlib.import_module("app.agents.draft_agent")', "imports agent modules dynamically"),
+    ('from k9_aif_abb.k9_squad.squad_loader import SquadLoader\n'
+     'class O(BaseOrchestrator):\n'
+     '    def __init__(self):\n'
+     '        self.squads = SquadLoader.from_agents("agents", {})', "builds agents"),
+    ('class O(BaseOrchestrator):\n'
+     '    def execute_flow(self, payload, cls=None):\n'
+     '        return DraftAgent(config={}).execute(payload)', "uses agent class"),
+])
+def test_inspector_flags_every_way_an_orchestrator_knows_agents(tmp_path, body, expect):
+    write(tmp_path, "agents/draft_agent.py", """
+        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+        class DraftAgent(BaseAgent):
+            def execute(self, payload):
+                return {}
+    """)
+    (tmp_path / "orchestrators").mkdir()
+    (tmp_path / "orchestrators" / "o.py").write_text(
+        "from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator\n" + body + "\n")
+    messages = " | ".join(f.message for f in _dec002(tmp_path))
+    assert expect in messages, messages
+
+
+def test_squad_file_and_id_alone_pass(tmp_path):
+    (tmp_path / "orchestrators").mkdir()
+    (tmp_path / "orchestrators" / "o.py").write_text(
+        "from pathlib import Path\n"
+        "from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator\n"
+        "class O(BaseOrchestrator):\n"
+        "    def execute_flow(self, payload):\n"
+        "        squad = self.squads.load_one(Path(__file__).parent / 'squads' / 'yaml' / 'r_squad.yaml', 'R')\n"
+        "        return squad.execute(payload)\n")
+    assert _dec002(tmp_path) == []
