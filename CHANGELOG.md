@@ -4,6 +4,18 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.2] — 2026-10-15
+
+### Changed
+
+- **Validation and planning loops let a tool failure propagate.** A `run_validation()` exception in `BaseValidationLoopAgent` (and so `K9ValidationLoopAgent`, `K9PlanningLoopAgent`) is recorded as a step and re-raised by default, so it reaches the squad and orchestrator like any agent's failure (CLAUDE.md "Failures propagate"). Before, the loop returned a FAIL result with output `{"reason": "validation_failed"}`, and a squad carried on with it. New config key `on_tool_error`: `raise` (default) | `escalate` | `fail`; the older `escalate_on_tool_error: true` still means `escalate`. An unknown value raises `ValueError`.
+
+  **Upgrade note:** a loop that relied on FAIL results for tool errors sets `on_tool_error: fail`. Apps that overrode `fail()` to re-raise (DAS `utils/loop_errors.py`) can drop the override.
+
+Tests: `test_validation_loop_agent.py` (raise by default, fail/escalate when configured, older flag, bad value, and a `BaseSquad` flow that stops when the loop's tool fails).
+
+---
+
 ## [1.18.1] — 2026-10-14
 
 ### Changed

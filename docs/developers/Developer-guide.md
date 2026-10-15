@@ -1325,7 +1325,7 @@ class BaseValidationLoopAgent(BaseAgent):
 max_iterations: 5                    # hard cap on iterations (default: 5)
 confidence_threshold: 0.8            # available to should_continue() (default: 0.8)
 finalize_on_max_iterations: true     # true → finalize; false → escalate on timeout
-escalate_on_tool_error: false        # true → ESCALATE; false → FAIL on run_validation() error
+on_tool_error: raise                 # raise (default) | escalate | fail on a run_validation() error
 ```
 
 ### 8.3 K9ValidationLoopAgent

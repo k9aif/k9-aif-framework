@@ -296,22 +296,61 @@ class ErroringAgent(BaseValidationLoopAgent):
         )
 
 
-def test_run_validation_error_defaults_to_fail():
-    agent  = _make(ErroringAgent)
+def test_run_validation_error_raises_by_default():
+    """Failures propagate: the tool error reaches the caller (squad), not a FAIL result."""
+    agent = _make(ErroringAgent)
+    with pytest.raises(RuntimeError, match="tool unavailable"):
+        agent.execute({})
+
+
+def test_run_validation_error_fails_when_configured():
+    agent  = _make(ErroringAgent, config={"on_tool_error": "fail"})
     result = agent.execute({})
     assert result["disposition"] == ValidationDisposition.FAIL
     assert result["iterations"]  == 1
 
 
 def test_run_validation_error_escalates_when_configured():
-    agent  = _make(ErroringAgent, config={"escalate_on_tool_error": True})
+    agent  = _make(ErroringAgent, config={"on_tool_error": "escalate"})
     result = agent.execute({})
     assert result["disposition"] == ValidationDisposition.ESCALATE
     assert result["iterations"]  == 1
 
 
+def test_run_validation_error_escalates_with_older_flag():
+    agent  = _make(ErroringAgent, config={"escalate_on_tool_error": True})
+    result = agent.execute({})
+    assert result["disposition"] == ValidationDisposition.ESCALATE
+
+
+def test_run_validation_error_bad_mode_rejected():
+    agent = _make(ErroringAgent, config={"on_tool_error": "ignore"})
+    with pytest.raises(ValueError):
+        agent.execute({})
+
+
 def test_run_validation_error_step_recorded():
-    agent  = _make(ErroringAgent)
+    agent  = _make(ErroringAgent, config={"on_tool_error": "fail"})
     result = agent.execute({})
     assert len(result["steps"]) == 1
     assert result["steps"][0]["confidence"] == 0.0
+
+
+def test_squad_stops_when_loop_tool_fails():
+    """The property in CLAUDE.md ("Failures propagate"): one agent's tool
+    raises -> the squad flow ends as a failure and no later step runs."""
+    from k9_aif_abb.k9_squad.base_squad import BaseSquad
+
+    ran = []
+
+    class After:
+        def execute(self, context):
+            ran.append("after")
+            return {"output": "x"}
+
+    squad = BaseSquad(squad_id="s", agents=[_make(ErroringAgent), After()])
+    squad.flow = [{"agent": "ErroringAgent", "result_key": "loop"},
+                  {"agent": "After", "result_key": "after"}]
+    with pytest.raises(RuntimeError, match="tool unavailable"):
+        squad.run({})
+    assert ran == []

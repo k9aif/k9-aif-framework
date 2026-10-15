@@ -35,7 +35,7 @@ model                 : str   — model alias for llm_invoke() task_type (defaul
 max_iterations        : int   — inherited from BaseValidationLoopAgent (default 5)
 confidence_threshold  : float — inherited; used in should_continue() (default 0.8)
 finalize_on_max_iterations: bool — inherited (default True)
-escalate_on_tool_error: bool  — inherited (default False)
+on_tool_error         : str   — inherited (default "raise"; "escalate" | "fail")
 
 Example agent YAML (Skill 1 pattern)
 -------------------------------------

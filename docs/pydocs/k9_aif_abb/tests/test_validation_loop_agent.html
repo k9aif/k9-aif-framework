@@ -202,13 +202,25 @@
 
             </li>
             <li>
-                    <a class="function" href="#test_run_validation_error_defaults_to_fail">test_run_validation_error_defaults_to_fail</a>
+                    <a class="function" href="#test_run_validation_error_raises_by_default">test_run_validation_error_raises_by_default</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_run_validation_error_fails_when_configured">test_run_validation_error_fails_when_configured</a>
             </li>
             <li>
                     <a class="function" href="#test_run_validation_error_escalates_when_configured">test_run_validation_error_escalates_when_configured</a>
             </li>
             <li>
+                    <a class="function" href="#test_run_validation_error_escalates_with_older_flag">test_run_validation_error_escalates_with_older_flag</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_run_validation_error_bad_mode_rejected">test_run_validation_error_bad_mode_rejected</a>
+            </li>
+            <li>
                     <a class="function" href="#test_run_validation_error_step_recorded">test_run_validation_error_step_recorded</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_squad_stops_when_loop_tool_fails">test_squad_stops_when_loop_tool_fails</a>
             </li>
     </ul>
 
@@ -534,25 +546,64 @@ file, not in k9_aif_abb, because the ABB is abstract.</p>
 </span><span id="L-296"><a href="#L-296"><span class="linenos">296</span></a>        <span class="p">)</span>
 </span><span id="L-297"><a href="#L-297"><span class="linenos">297</span></a>
 </span><span id="L-298"><a href="#L-298"><span class="linenos">298</span></a>
-</span><span id="L-299"><a href="#L-299"><span class="linenos">299</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_defaults_to_fail</span><span class="p">():</span>
-</span><span id="L-300"><a href="#L-300"><span class="linenos">300</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
-</span><span id="L-301"><a href="#L-301"><span class="linenos">301</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="L-302"><a href="#L-302"><span class="linenos">302</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">FAIL</span>
-</span><span id="L-303"><a href="#L-303"><span class="linenos">303</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
+</span><span id="L-299"><a href="#L-299"><span class="linenos">299</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_raises_by_default</span><span class="p">():</span>
+</span><span id="L-300"><a href="#L-300"><span class="linenos">300</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Failures propagate: the tool error reaches the caller (squad), not a FAIL result.&quot;&quot;&quot;</span>
+</span><span id="L-301"><a href="#L-301"><span class="linenos">301</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
+</span><span id="L-302"><a href="#L-302"><span class="linenos">302</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;tool unavailable&quot;</span><span class="p">):</span>
+</span><span id="L-303"><a href="#L-303"><span class="linenos">303</span></a>        <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
 </span><span id="L-304"><a href="#L-304"><span class="linenos">304</span></a>
 </span><span id="L-305"><a href="#L-305"><span class="linenos">305</span></a>
-</span><span id="L-306"><a href="#L-306"><span class="linenos">306</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_when_configured</span><span class="p">():</span>
-</span><span id="L-307"><a href="#L-307"><span class="linenos">307</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;escalate_on_tool_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+</span><span id="L-306"><a href="#L-306"><span class="linenos">306</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_fails_when_configured</span><span class="p">():</span>
+</span><span id="L-307"><a href="#L-307"><span class="linenos">307</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;fail&quot;</span><span class="p">})</span>
 </span><span id="L-308"><a href="#L-308"><span class="linenos">308</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="L-309"><a href="#L-309"><span class="linenos">309</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
+</span><span id="L-309"><a href="#L-309"><span class="linenos">309</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">FAIL</span>
 </span><span id="L-310"><a href="#L-310"><span class="linenos">310</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
 </span><span id="L-311"><a href="#L-311"><span class="linenos">311</span></a>
 </span><span id="L-312"><a href="#L-312"><span class="linenos">312</span></a>
-</span><span id="L-313"><a href="#L-313"><span class="linenos">313</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_step_recorded</span><span class="p">():</span>
-</span><span id="L-314"><a href="#L-314"><span class="linenos">314</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
+</span><span id="L-313"><a href="#L-313"><span class="linenos">313</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_when_configured</span><span class="p">():</span>
+</span><span id="L-314"><a href="#L-314"><span class="linenos">314</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;escalate&quot;</span><span class="p">})</span>
 </span><span id="L-315"><a href="#L-315"><span class="linenos">315</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="L-316"><a href="#L-316"><span class="linenos">316</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
-</span><span id="L-317"><a href="#L-317"><span class="linenos">317</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+</span><span id="L-316"><a href="#L-316"><span class="linenos">316</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
+</span><span id="L-317"><a href="#L-317"><span class="linenos">317</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
+</span><span id="L-318"><a href="#L-318"><span class="linenos">318</span></a>
+</span><span id="L-319"><a href="#L-319"><span class="linenos">319</span></a>
+</span><span id="L-320"><a href="#L-320"><span class="linenos">320</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_with_older_flag</span><span class="p">():</span>
+</span><span id="L-321"><a href="#L-321"><span class="linenos">321</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;escalate_on_tool_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+</span><span id="L-322"><a href="#L-322"><span class="linenos">322</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="L-323"><a href="#L-323"><span class="linenos">323</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
+</span><span id="L-324"><a href="#L-324"><span class="linenos">324</span></a>
+</span><span id="L-325"><a href="#L-325"><span class="linenos">325</span></a>
+</span><span id="L-326"><a href="#L-326"><span class="linenos">326</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_bad_mode_rejected</span><span class="p">():</span>
+</span><span id="L-327"><a href="#L-327"><span class="linenos">327</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;ignore&quot;</span><span class="p">})</span>
+</span><span id="L-328"><a href="#L-328"><span class="linenos">328</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+</span><span id="L-329"><a href="#L-329"><span class="linenos">329</span></a>        <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="L-330"><a href="#L-330"><span class="linenos">330</span></a>
+</span><span id="L-331"><a href="#L-331"><span class="linenos">331</span></a>
+</span><span id="L-332"><a href="#L-332"><span class="linenos">332</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_step_recorded</span><span class="p">():</span>
+</span><span id="L-333"><a href="#L-333"><span class="linenos">333</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;fail&quot;</span><span class="p">})</span>
+</span><span id="L-334"><a href="#L-334"><span class="linenos">334</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="L-335"><a href="#L-335"><span class="linenos">335</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span id="L-336"><a href="#L-336"><span class="linenos">336</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+</span><span id="L-337"><a href="#L-337"><span class="linenos">337</span></a>
+</span><span id="L-338"><a href="#L-338"><span class="linenos">338</span></a>
+</span><span id="L-339"><a href="#L-339"><span class="linenos">339</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_squad_stops_when_loop_tool_fails</span><span class="p">():</span>
+</span><span id="L-340"><a href="#L-340"><span class="linenos">340</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The property in CLAUDE.md (&quot;Failures propagate&quot;): one agent&#39;s tool</span>
+</span><span id="L-341"><a href="#L-341"><span class="linenos">341</span></a><span class="sd">    raises -&gt; the squad flow ends as a failure and no later step runs.&quot;&quot;&quot;</span>
+</span><span id="L-342"><a href="#L-342"><span class="linenos">342</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_squad.base_squad</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSquad</span>
+</span><span id="L-343"><a href="#L-343"><span class="linenos">343</span></a>
+</span><span id="L-344"><a href="#L-344"><span class="linenos">344</span></a>    <span class="n">ran</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-345"><a href="#L-345"><span class="linenos">345</span></a>
+</span><span id="L-346"><a href="#L-346"><span class="linenos">346</span></a>    <span class="k">class</span><span class="w"> </span><span class="nc">After</span><span class="p">:</span>
+</span><span id="L-347"><a href="#L-347"><span class="linenos">347</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="L-348"><a href="#L-348"><span class="linenos">348</span></a>            <span class="n">ran</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+</span><span id="L-349"><a href="#L-349"><span class="linenos">349</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">}</span>
+</span><span id="L-350"><a href="#L-350"><span class="linenos">350</span></a>
+</span><span id="L-351"><a href="#L-351"><span class="linenos">351</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span><span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">),</span> <span class="n">After</span><span class="p">()])</span>
+</span><span id="L-352"><a href="#L-352"><span class="linenos">352</span></a>    <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;ErroringAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;loop&quot;</span><span class="p">},</span>
+</span><span id="L-353"><a href="#L-353"><span class="linenos">353</span></a>                  <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;After&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;after&quot;</span><span class="p">}]</span>
+</span><span id="L-354"><a href="#L-354"><span class="linenos">354</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;tool unavailable&quot;</span><span class="p">):</span>
+</span><span id="L-355"><a href="#L-355"><span class="linenos">355</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({})</span>
+</span><span id="L-356"><a href="#L-356"><span class="linenos">356</span></a>    <span class="k">assert</span> <span class="n">ran</span> <span class="o">==</span> <span class="p">[]</span>
 </span></pre></div>
 
 
@@ -1960,22 +2011,46 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
                                 </dl>
                             </div>
                 </section>
-                <section id="test_run_validation_error_defaults_to_fail">
-                            <input id="test_run_validation_error_defaults_to_fail-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="test_run_validation_error_raises_by_default">
+                            <input id="test_run_validation_error_raises_by_default-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">test_run_validation_error_defaults_to_fail</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+        <span class="name">test_run_validation_error_raises_by_default</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
 
-                <label class="view-source-button" for="test_run_validation_error_defaults_to_fail-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="test_run_validation_error_raises_by_default-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#test_run_validation_error_defaults_to_fail"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_defaults_to_fail-300"><a href="#test_run_validation_error_defaults_to_fail-300"><span class="linenos">300</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_defaults_to_fail</span><span class="p">():</span>
-</span><span id="test_run_validation_error_defaults_to_fail-301"><a href="#test_run_validation_error_defaults_to_fail-301"><span class="linenos">301</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
-</span><span id="test_run_validation_error_defaults_to_fail-302"><a href="#test_run_validation_error_defaults_to_fail-302"><span class="linenos">302</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="test_run_validation_error_defaults_to_fail-303"><a href="#test_run_validation_error_defaults_to_fail-303"><span class="linenos">303</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">FAIL</span>
-</span><span id="test_run_validation_error_defaults_to_fail-304"><a href="#test_run_validation_error_defaults_to_fail-304"><span class="linenos">304</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
+    <a class="headerlink" href="#test_run_validation_error_raises_by_default"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_raises_by_default-300"><a href="#test_run_validation_error_raises_by_default-300"><span class="linenos">300</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_raises_by_default</span><span class="p">():</span>
+</span><span id="test_run_validation_error_raises_by_default-301"><a href="#test_run_validation_error_raises_by_default-301"><span class="linenos">301</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Failures propagate: the tool error reaches the caller (squad), not a FAIL result.&quot;&quot;&quot;</span>
+</span><span id="test_run_validation_error_raises_by_default-302"><a href="#test_run_validation_error_raises_by_default-302"><span class="linenos">302</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
+</span><span id="test_run_validation_error_raises_by_default-303"><a href="#test_run_validation_error_raises_by_default-303"><span class="linenos">303</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;tool unavailable&quot;</span><span class="p">):</span>
+</span><span id="test_run_validation_error_raises_by_default-304"><a href="#test_run_validation_error_raises_by_default-304"><span class="linenos">304</span></a>        <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Failures propagate: the tool error reaches the caller (squad), not a FAIL result.</p>
+</div>
+
+
+                </section>
+                <section id="test_run_validation_error_fails_when_configured">
+                            <input id="test_run_validation_error_fails_when_configured-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_run_validation_error_fails_when_configured</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_run_validation_error_fails_when_configured-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_run_validation_error_fails_when_configured"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_fails_when_configured-307"><a href="#test_run_validation_error_fails_when_configured-307"><span class="linenos">307</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_fails_when_configured</span><span class="p">():</span>
+</span><span id="test_run_validation_error_fails_when_configured-308"><a href="#test_run_validation_error_fails_when_configured-308"><span class="linenos">308</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;fail&quot;</span><span class="p">})</span>
+</span><span id="test_run_validation_error_fails_when_configured-309"><a href="#test_run_validation_error_fails_when_configured-309"><span class="linenos">309</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="test_run_validation_error_fails_when_configured-310"><a href="#test_run_validation_error_fails_when_configured-310"><span class="linenos">310</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">FAIL</span>
+</span><span id="test_run_validation_error_fails_when_configured-311"><a href="#test_run_validation_error_fails_when_configured-311"><span class="linenos">311</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
 </span></pre></div>
 
 
@@ -1993,11 +2068,53 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
 
     </div>
     <a class="headerlink" href="#test_run_validation_error_escalates_when_configured"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_escalates_when_configured-307"><a href="#test_run_validation_error_escalates_when_configured-307"><span class="linenos">307</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_when_configured</span><span class="p">():</span>
-</span><span id="test_run_validation_error_escalates_when_configured-308"><a href="#test_run_validation_error_escalates_when_configured-308"><span class="linenos">308</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;escalate_on_tool_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
-</span><span id="test_run_validation_error_escalates_when_configured-309"><a href="#test_run_validation_error_escalates_when_configured-309"><span class="linenos">309</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="test_run_validation_error_escalates_when_configured-310"><a href="#test_run_validation_error_escalates_when_configured-310"><span class="linenos">310</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
-</span><span id="test_run_validation_error_escalates_when_configured-311"><a href="#test_run_validation_error_escalates_when_configured-311"><span class="linenos">311</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_escalates_when_configured-314"><a href="#test_run_validation_error_escalates_when_configured-314"><span class="linenos">314</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_when_configured</span><span class="p">():</span>
+</span><span id="test_run_validation_error_escalates_when_configured-315"><a href="#test_run_validation_error_escalates_when_configured-315"><span class="linenos">315</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;escalate&quot;</span><span class="p">})</span>
+</span><span id="test_run_validation_error_escalates_when_configured-316"><a href="#test_run_validation_error_escalates_when_configured-316"><span class="linenos">316</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="test_run_validation_error_escalates_when_configured-317"><a href="#test_run_validation_error_escalates_when_configured-317"><span class="linenos">317</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
+</span><span id="test_run_validation_error_escalates_when_configured-318"><a href="#test_run_validation_error_escalates_when_configured-318"><span class="linenos">318</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;iterations&quot;</span><span class="p">]</span>  <span class="o">==</span> <span class="mi">1</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_run_validation_error_escalates_with_older_flag">
+                            <input id="test_run_validation_error_escalates_with_older_flag-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_run_validation_error_escalates_with_older_flag</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_run_validation_error_escalates_with_older_flag-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_run_validation_error_escalates_with_older_flag"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_escalates_with_older_flag-321"><a href="#test_run_validation_error_escalates_with_older_flag-321"><span class="linenos">321</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_escalates_with_older_flag</span><span class="p">():</span>
+</span><span id="test_run_validation_error_escalates_with_older_flag-322"><a href="#test_run_validation_error_escalates_with_older_flag-322"><span class="linenos">322</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;escalate_on_tool_error&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span>
+</span><span id="test_run_validation_error_escalates_with_older_flag-323"><a href="#test_run_validation_error_escalates_with_older_flag-323"><span class="linenos">323</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="test_run_validation_error_escalates_with_older_flag-324"><a href="#test_run_validation_error_escalates_with_older_flag-324"><span class="linenos">324</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;disposition&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">ValidationDisposition</span><span class="o">.</span><span class="n">ESCALATE</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_run_validation_error_bad_mode_rejected">
+                            <input id="test_run_validation_error_bad_mode_rejected-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_run_validation_error_bad_mode_rejected</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_run_validation_error_bad_mode_rejected-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_run_validation_error_bad_mode_rejected"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_bad_mode_rejected-327"><a href="#test_run_validation_error_bad_mode_rejected-327"><span class="linenos">327</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_bad_mode_rejected</span><span class="p">():</span>
+</span><span id="test_run_validation_error_bad_mode_rejected-328"><a href="#test_run_validation_error_bad_mode_rejected-328"><span class="linenos">328</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;ignore&quot;</span><span class="p">})</span>
+</span><span id="test_run_validation_error_bad_mode_rejected-329"><a href="#test_run_validation_error_bad_mode_rejected-329"><span class="linenos">329</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+</span><span id="test_run_validation_error_bad_mode_rejected-330"><a href="#test_run_validation_error_bad_mode_rejected-330"><span class="linenos">330</span></a>        <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
 </span></pre></div>
 
 
@@ -2015,15 +2132,53 @@ or when max_iterations is reached with finalize_on_max_iterations=True.</p>
 
     </div>
     <a class="headerlink" href="#test_run_validation_error_step_recorded"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_step_recorded-314"><a href="#test_run_validation_error_step_recorded-314"><span class="linenos">314</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_step_recorded</span><span class="p">():</span>
-</span><span id="test_run_validation_error_step_recorded-315"><a href="#test_run_validation_error_step_recorded-315"><span class="linenos">315</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">)</span>
-</span><span id="test_run_validation_error_step_recorded-316"><a href="#test_run_validation_error_step_recorded-316"><span class="linenos">316</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
-</span><span id="test_run_validation_error_step_recorded-317"><a href="#test_run_validation_error_step_recorded-317"><span class="linenos">317</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
-</span><span id="test_run_validation_error_step_recorded-318"><a href="#test_run_validation_error_step_recorded-318"><span class="linenos">318</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_run_validation_error_step_recorded-333"><a href="#test_run_validation_error_step_recorded-333"><span class="linenos">333</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_run_validation_error_step_recorded</span><span class="p">():</span>
+</span><span id="test_run_validation_error_step_recorded-334"><a href="#test_run_validation_error_step_recorded-334"><span class="linenos">334</span></a>    <span class="n">agent</span>  <span class="o">=</span> <span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;on_tool_error&quot;</span><span class="p">:</span> <span class="s2">&quot;fail&quot;</span><span class="p">})</span>
+</span><span id="test_run_validation_error_step_recorded-335"><a href="#test_run_validation_error_step_recorded-335"><span class="linenos">335</span></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({})</span>
+</span><span id="test_run_validation_error_step_recorded-336"><a href="#test_run_validation_error_step_recorded-336"><span class="linenos">336</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span id="test_run_validation_error_step_recorded-337"><a href="#test_run_validation_error_step_recorded-337"><span class="linenos">337</span></a>    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;steps&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mf">0.0</span>
 </span></pre></div>
 
 
     
+
+                </section>
+                <section id="test_squad_stops_when_loop_tool_fails">
+                            <input id="test_squad_stops_when_loop_tool_fails-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_squad_stops_when_loop_tool_fails</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_squad_stops_when_loop_tool_fails-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_squad_stops_when_loop_tool_fails"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_squad_stops_when_loop_tool_fails-340"><a href="#test_squad_stops_when_loop_tool_fails-340"><span class="linenos">340</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_squad_stops_when_loop_tool_fails</span><span class="p">():</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-341"><a href="#test_squad_stops_when_loop_tool_fails-341"><span class="linenos">341</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The property in CLAUDE.md (&quot;Failures propagate&quot;): one agent&#39;s tool</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-342"><a href="#test_squad_stops_when_loop_tool_fails-342"><span class="linenos">342</span></a><span class="sd">    raises -&gt; the squad flow ends as a failure and no later step runs.&quot;&quot;&quot;</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-343"><a href="#test_squad_stops_when_loop_tool_fails-343"><span class="linenos">343</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_squad.base_squad</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSquad</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-344"><a href="#test_squad_stops_when_loop_tool_fails-344"><span class="linenos">344</span></a>
+</span><span id="test_squad_stops_when_loop_tool_fails-345"><a href="#test_squad_stops_when_loop_tool_fails-345"><span class="linenos">345</span></a>    <span class="n">ran</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-346"><a href="#test_squad_stops_when_loop_tool_fails-346"><span class="linenos">346</span></a>
+</span><span id="test_squad_stops_when_loop_tool_fails-347"><a href="#test_squad_stops_when_loop_tool_fails-347"><span class="linenos">347</span></a>    <span class="k">class</span><span class="w"> </span><span class="nc">After</span><span class="p">:</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-348"><a href="#test_squad_stops_when_loop_tool_fails-348"><span class="linenos">348</span></a>        <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-349"><a href="#test_squad_stops_when_loop_tool_fails-349"><span class="linenos">349</span></a>            <span class="n">ran</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-350"><a href="#test_squad_stops_when_loop_tool_fails-350"><span class="linenos">350</span></a>            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">}</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-351"><a href="#test_squad_stops_when_loop_tool_fails-351"><span class="linenos">351</span></a>
+</span><span id="test_squad_stops_when_loop_tool_fails-352"><a href="#test_squad_stops_when_loop_tool_fails-352"><span class="linenos">352</span></a>    <span class="n">squad</span> <span class="o">=</span> <span class="n">BaseSquad</span><span class="p">(</span><span class="n">squad_id</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">agents</span><span class="o">=</span><span class="p">[</span><span class="n">_make</span><span class="p">(</span><span class="n">ErroringAgent</span><span class="p">),</span> <span class="n">After</span><span class="p">()])</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-353"><a href="#test_squad_stops_when_loop_tool_fails-353"><span class="linenos">353</span></a>    <span class="n">squad</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;ErroringAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;loop&quot;</span><span class="p">},</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-354"><a href="#test_squad_stops_when_loop_tool_fails-354"><span class="linenos">354</span></a>                  <span class="p">{</span><span class="s2">&quot;agent&quot;</span><span class="p">:</span> <span class="s2">&quot;After&quot;</span><span class="p">,</span> <span class="s2">&quot;result_key&quot;</span><span class="p">:</span> <span class="s2">&quot;after&quot;</span><span class="p">}]</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-355"><a href="#test_squad_stops_when_loop_tool_fails-355"><span class="linenos">355</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;tool unavailable&quot;</span><span class="p">):</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-356"><a href="#test_squad_stops_when_loop_tool_fails-356"><span class="linenos">356</span></a>        <span class="n">squad</span><span class="o">.</span><span class="n">run</span><span class="p">({})</span>
+</span><span id="test_squad_stops_when_loop_tool_fails-357"><a href="#test_squad_stops_when_loop_tool_fails-357"><span class="linenos">357</span></a>    <span class="k">assert</span> <span class="n">ran</span> <span class="o">==</span> <span class="p">[]</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>The property in CLAUDE.md ("Failures propagate"): one agent's tool
+raises -> the squad flow ends as a failure and no later step runs.</p>
+</div>
+
 
                 </section>
     </main>

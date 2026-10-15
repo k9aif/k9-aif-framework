@@ -122,11 +122,14 @@ or package may run on the missing result.**
   what succeeded and mark the rest "not scored" (example: a quality grader
   keeps its deterministic checks when the judge model is down). Never for an
   agent inside a squad flow.
-- **Loop agents:** `BaseValidationLoopAgent` catches a `run_validation()`
-  exception and returns a FAIL result whose output is
-  `{"reason": "validation_failed"}`. A squad treats that as the agent's
-  output. Until the ABB offers a raise option, override `fail()` to re-raise
-  the failed step's error (reference: DAS `utils/loop_errors.py`).
+- **Loop agents (1.18.2):** `BaseValidationLoopAgent` records a
+  `run_validation()` exception as a step and **re-raises** it
+  (`on_tool_error: raise`, the default). `on_tool_error: escalate` routes it
+  to a person; `on_tool_error: fail` returns a FAIL result
+  (`{"reason": "validation_failed"}`), only for a loop whose FAIL is itself a
+  product, never inside a squad flow. Before 1.18.2 FAIL was the default and
+  apps overrode `fail()` to re-raise (DAS `utils/loop_errors.py`); that
+  override is no longer needed. Test: `test_squad_stops_when_loop_tool_fails`.
 
 **BaseAgent vs K9ValidationLoopAgent vs K9PlanningLoopAgent** — the
 generator/scaffold defaults every agent to one-shot `BaseAgent`. Ask per

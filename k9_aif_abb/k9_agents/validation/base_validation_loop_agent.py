@@ -24,8 +24,14 @@ Config keys (all optional)
 max_iterations            : int   — default 5
 confidence_threshold      : float — default 0.8; available to should_continue()
 finalize_on_max_iterations: bool  — default True; if False, escalates on timeout
-escalate_on_tool_error    : bool  — default False; if True, ESCALATE on run_validation()
-                                    exception instead of FAIL
+on_tool_error             : str   — what a run_validation() exception does (1.18.2):
+                                    "raise" (default): record the step, then re-raise, so the
+                                    failure reaches the squad and orchestrator like any agent's;
+                                    "escalate": ESCALATE (route to a person);
+                                    "fail": FAIL result with output {"reason": "validation_failed"}
+                                    (only for a loop whose FAIL is itself a product, never
+                                    inside a squad flow that would carry on with it)
+escalate_on_tool_error    : bool  — older form: True means on_tool_error "escalate"
 """
 
 import asyncio
@@ -161,9 +167,7 @@ class BaseValidationLoopAgent(BaseAgent):
         finalize_on_max     = self._parse_bool(
             self.config.get("finalize_on_max_iterations"), _DEFAULT_FINALIZE_ON_MAX
         )
-        escalate_on_error   = self._parse_bool(
-            self.config.get("escalate_on_tool_error"), False
-        )
+        on_tool_error       = self._on_tool_error()
 
         loop_ctx = ValidationLoopContext(payload=payload)
         self._emit("loop_started", {"max_iterations": max_iterations})
@@ -177,8 +181,9 @@ class BaseValidationLoopAgent(BaseAgent):
                 "hypothesis": str(hypothesis),
             })
 
-            # Item 5: catch run_validation() errors — never let a tool failure
-            # crash the loop; convert to FAIL or ESCALATE per config.
+            # A run_validation() error is recorded as a step, then re-raised
+            # (default) so it propagates Agent -> Squad -> Orchestrator, or
+            # converted to ESCALATE / FAIL when configured (on_tool_error).
             try:
                 tool_result = self.run_validation(hypothesis, loop_ctx)
                 self._emit("validation_tool_invoked", {"iteration": loop_ctx.iteration})
@@ -188,7 +193,7 @@ class BaseValidationLoopAgent(BaseAgent):
                     self.layer, loop_ctx.iteration, exc,
                 )
                 error_disposition = (
-                    ValidationDisposition.ESCALATE if escalate_on_error
+                    ValidationDisposition.ESCALATE if on_tool_error == "escalate"
                     else ValidationDisposition.FAIL
                 )
                 loop_ctx.steps.append(ValidationLoopStep(
@@ -199,9 +204,11 @@ class BaseValidationLoopAgent(BaseAgent):
                     disposition = error_disposition,
                     confidence  = 0.0,
                 ))
-                event = "loop_escalated" if escalate_on_error else "loop_failed"
+                event = "loop_escalated" if on_tool_error == "escalate" else "loop_failed"
                 self._emit(event, {"iterations": loop_ctx.iteration, "error": str(exc)})
-                handler = self.escalate if escalate_on_error else self.fail
+                if on_tool_error == "raise":
+                    raise
+                handler = self.escalate if on_tool_error == "escalate" else self.fail
                 return self._to_dict(handler(loop_ctx))
 
             observation = self.evaluate_observation(tool_result, loop_ctx)
@@ -353,6 +360,19 @@ class BaseValidationLoopAgent(BaseAgent):
 
     def _last_confidence(self, loop_ctx: ValidationLoopContext) -> float:
         return loop_ctx.steps[-1].confidence if loop_ctx.steps else 0.0
+
+    _TOOL_ERROR_MODES = ("raise", "escalate", "fail")
+
+    def _on_tool_error(self) -> str:
+        """on_tool_error from config; the older escalate_on_tool_error: true
+        still means "escalate". Default "raise"."""
+        mode = self.config.get("on_tool_error")
+        if mode is None:
+            return "escalate" if self._parse_bool(self.config.get("escalate_on_tool_error"), False) else "raise"
+        mode = str(mode).strip().lower()
+        if mode not in self._TOOL_ERROR_MODES:
+            raise ValueError(f"on_tool_error must be one of {self._TOOL_ERROR_MODES}, got {mode!r}")
+        return mode
 
     @staticmethod
     def _parse_bool(value: Any, default: bool) -> bool:

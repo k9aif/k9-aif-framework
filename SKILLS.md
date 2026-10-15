@@ -792,7 +792,7 @@ class StrictPlanningAgent(K9PlanningLoopAgent):
         return super().should_continue(observation, loop_ctx)
 ```
 
-Config keys are the same as `K9ValidationLoopAgent` (`role`, `goal`, `model`, `max_iterations`, `confidence_threshold`, `finalize_on_max_iterations`, `escalate_on_tool_error`) — no new YAML keys are required. `remaining_steps`/`notes` are runtime state, not config.
+Config keys are the same as `K9ValidationLoopAgent` (`role`, `goal`, `model`, `max_iterations`, `confidence_threshold`, `finalize_on_max_iterations`, `on_tool_error`) — no new YAML keys are required. `remaining_steps`/`notes` are runtime state, not config.
 
 `_to_dict()` output includes two additional top-level keys for **every** `BaseValidationLoopAgent` subclass (additive — existing agents simply report empty defaults):
 
