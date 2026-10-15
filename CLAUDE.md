@@ -88,7 +88,7 @@ resp = llm_invoke(self.config, InferenceRequest(prompt=..., task_type=...))
 ```
 
 `llm_invoke` raises `RuntimeError` on failure — it never silently returns
-empty output; catch and handle explicitly. It also retries on an empty
+empty output (see "Failures propagate" below for who handles it). It also retries on an empty
 response (a hybrid-reasoning model burning its whole token budget on
 invisible "thinking" and returning 0 chars is a real, observed failure
 mode) and emits the `LLMCall` trace event — both silently lost if an agent
@@ -97,6 +97,36 @@ calls `router.invoke()` directly instead. Found live in k9chat's
 (2026-09-21) — `check-llm-invoke.sh` (see Hooks below) now catches this
 automatically on every write/edit. Full chain + adding a new provider:
 `SKILLS.md` Skills 2 and 13.
+
+## Failures propagate: Agent → Squad → Orchestrator
+
+**Property:** every failure of an agent (a model call, a tool, a parse) reaches
+a layer that records it and decides what happens next. No layer turns a failure
+into ordinary output that the flow carries on with. **Test: make one agent's
+model call raise; the flow must end as a recorded failure, and no later agent
+or package may run on the missing result.**
+
+| Layer | try/except? | What it does with a failure |
+|---|---|---|
+| Agent | Only to add context or release a resource, then **re-raise** | Never returns `"[WARN] ..."`, `{"reason": "validation_failed"}` or empty output in place of a result |
+| Squad | `BaseSquad.execute()` logs the failed step and **re-raises** | Stops the flow; later steps don't run |
+| Orchestrator | **Required** around its squad runs (`execute_flow()`) | Records the failure (status `error`, which step, why) so it can be retried; re-raises or returns the error status |
+| Process entry point (consumer loop, API) | **Required** | Publishes/returns the error; the process keeps serving |
+
+- `PermissionError` (Shield/Guardian BLOCK) and `RequiresHIL` propagate the
+  same way and are caught by the orchestrator for their own handling.
+- **No silent handlers:** `except ...: pass` or a handler that neither
+  re-raises nor logs and records is a defect. Degrading on purpose (an
+  optional retriever is down) must log a warning saying what was skipped.
+- **Partial results only where they are a product:** a side report may keep
+  what succeeded and mark the rest "not scored" (example: a quality grader
+  keeps its deterministic checks when the judge model is down). Never for an
+  agent inside a squad flow.
+- **Loop agents:** `BaseValidationLoopAgent` catches a `run_validation()`
+  exception and returns a FAIL result whose output is
+  `{"reason": "validation_failed"}`. A squad treats that as the agent's
+  output. Until the ABB offers a raise option, override `fail()` to re-raise
+  the failed step's error (reference: DAS `utils/loop_errors.py`).
 
 **BaseAgent vs K9ValidationLoopAgent vs K9PlanningLoopAgent** — the
 generator/scaffold defaults every agent to one-shot `BaseAgent`. Ask per
