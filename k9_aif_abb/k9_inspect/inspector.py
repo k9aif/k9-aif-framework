@@ -32,6 +32,14 @@ def _git_commit(root) -> Optional[str]:
         return None
 
 
+FRAMEWORK_NOTE = (
+    "This folder is the K9-AIF framework itself: the Architecture Building Blocks (ABBs) that solutions extend. "
+    "The inspection rules check solutions built on K9-AIF (SBBs) against these contracts, so they are not applied "
+    "here; inside the framework, its own base classes are local, not imported, and the rules would misread them. "
+    "The framework is checked by its own test suite. Inspect a solution, or one of the framework's examples "
+    "(examples/<App>), instead.")
+
+
 class K9Inspector:
     """Static conformance inspection of a K9-AIF solution.
 
@@ -51,6 +59,10 @@ class K9Inspector:
         from .rules.config_rules import framework_status
         latest = self.config.get("latest_version") or report.framework_version
         report.framework = framework_status(project, "" if latest == "unknown" else latest)
+        if project.is_framework:
+            report.scope = "framework"
+            report.note = FRAMEWORK_NOTE
+            return report
         for rule_cls in InspectionRuleRegistry.all():
             if self.only and rule_cls.rule_id not in self.only:
                 continue

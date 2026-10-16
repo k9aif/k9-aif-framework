@@ -183,6 +183,20 @@ class SolutionProject:
                         break
 
     # ── queries ───────────────────────────────────────────────────────────────
+    @property
+    def is_framework(self) -> bool:
+        """True when the folder is the K9-AIF framework itself (the ABBs), not a solution built on it:
+        it defines BaseAgent in k9_core/agent/base_agent.py and carries k9_inspect, at the root or in k9_aif_abb/."""
+        for base in (self.root, self.root / "k9_aif_abb"):
+            agent = base / "k9_core" / "agent" / "base_agent.py"
+            try:
+                if agent.is_file() and "class BaseAgent" in agent.read_text(errors="ignore") \
+                        and (base / "k9_inspect").is_dir():
+                    return True
+            except OSError:
+                continue
+        return False
+
     def classes(self, role: Optional[str] = None, include_tests: bool = False) -> List[ClassInfo]:
         return [c for m in self.modules if include_tests or not m.is_test
                 for c in m.classes if role is None or c.role == role]

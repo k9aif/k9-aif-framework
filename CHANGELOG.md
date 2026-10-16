@@ -4,6 +4,16 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.3] — 2026-10-16
+
+### Changed
+
+- **k9_inspect recognises the framework itself.** A folder that is K9-AIF (it defines `BaseAgent` in `k9_core/agent/base_agent.py` and carries `k9_inspect`, at the root or under `k9_aif_abb/`) is reported as `scope: framework`, verdict **K9-AIF FRAMEWORK**, with a note and no score; the solution rules are not applied. Inside the framework its base classes are local, not imported, so the rules misread them (13 false "does not extend an agent ABB" findings on `k9_aif_abb`). Solutions and the framework's examples are inspected as before.
+
+Tests: `test_k9_inspect_framework_scope.py` (the package and the repository root are not graded; an example still is).
+
+---
+
 ## [1.18.2] — 2026-10-15
 
 ### Changed

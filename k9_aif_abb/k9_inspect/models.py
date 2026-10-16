@@ -73,6 +73,8 @@ class InspectionReport:
     inspected_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     commit: Optional[str] = None
     framework: Dict[str, Any] = field(default_factory=dict)   # what the solution declares vs the latest k9-aif
+    scope: str = "solution"         # "framework" when the folder is K9-AIF itself: the rules are not applied
+    note: str = ""
 
     # ── summary ───────────────────────────────────────────────────────────────
     def counts(self) -> Dict[str, int]:
@@ -82,12 +84,16 @@ class InspectionReport:
         return out
 
     @property
-    def score(self) -> int:
-        """Share of rules with no finding, in percent."""
+    def score(self) -> Optional[int]:
+        """Share of rules with no finding, in percent; None for the framework itself (no rules applied)."""
+        if self.scope == "framework":
+            return None
         return round(100 * sum(r.passed for r in self.rules) / len(self.rules)) if self.rules else 100
 
     @property
     def verdict(self) -> str:
+        if self.scope == "framework":
+            return "K9-AIF FRAMEWORK"
         c = self.counts()
         if c["critical"] or c["violation"]:
             return "NON-COMPLIANT"
@@ -100,7 +106,7 @@ class InspectionReport:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "source": self.source, "commit": self.commit, "framework_version": self.framework_version,
-            "framework": self.framework,
+            "framework": self.framework, "scope": self.scope, "note": self.note,
             "inspected_at": self.inspected_at, "verdict": self.verdict, "score": self.score,
             "counts": self.counts(), "files": {"python": self.files_python, "yaml": self.files_yaml},
             "rules": [{**asdict(r), "severity": r.severity.value} for r in self.rules],
@@ -111,6 +117,13 @@ class InspectionReport:
         return json.dumps(self.to_dict(), indent=2)
 
     def to_markdown(self) -> str:
+        if self.scope == "framework":
+            return "\n".join([
+                "# K9-AIF Compliance Report", "",
+                f"- **Source:** {self.source}" + (f" @ `{self.commit}`" if self.commit else ""),
+                f"- **Inspected:** {self.inspected_at} with k9-aif {self.framework_version}",
+                f"- **Files:** {self.files_python} Python, {self.files_yaml} YAML",
+                "- **Verdict:** K9-AIF FRAMEWORK (rules not applied)", "", self.note, ""])
         c = self.counts()
         lines = [
             "# K9-AIF Compliance Report", "",
