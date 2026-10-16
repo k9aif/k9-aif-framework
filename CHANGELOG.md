@@ -4,6 +4,16 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.4] — 2026-10-16
+
+### Security
+
+- **MCP SDK floor raised to 1.30.0** (`k9-aif[mcp]` and the base requirement; `requirements.txt` pin 1.26.0 → 1.30.0). `mcp` 1.28.1, the previous floor, is affected by CVE-2026-59951 / GHSA-84m7-p3x7-pcfv (unbounded session accumulation in the StreamableHTTP transport, resource exhaustion), fixed in 1.30.0. Found by K9X Sentinel's dependency audit (OSV), finding #1985.
+
+Tests: the MCP connector tests and the full suite pass on mcp 1.30.0.
+
+---
+
 ## [1.18.3] — 2026-10-16
 
 ### Changed
