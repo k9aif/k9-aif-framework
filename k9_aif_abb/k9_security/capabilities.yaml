@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.18.4"
+framework_version: "1.18.5"
 
 taxonomies:
   owasp_llm_2025:
@@ -135,6 +135,7 @@ capabilities:
     enabled_by_default: false
     covers: {LLM05: partial, LLM06: partial, ASI02: partial, ASI05: partial}
     summary: Malicious arguments an LLM generates for a tool call.
+    limits: Pattern matching, not a privilege boundary. A tool that runs agent-written SQL must enforce read-only at the database (a read-only role or read-only connection), never by prompt instructions or regex; regex read-only checks have been bypassed (CVE-2026-65669, SQL Copilot; Sentinel #74).
 
   - id: shield.tool_authorization
     kind: shield_check
@@ -236,6 +237,26 @@ capabilities:
     covers: {LLM01: partial, ASI02: partial, ASI06: partial}
     summary: Indirect prompt injection in fetched pages, documents and other agents' replies.
     limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result.
+
+  - id: integration.outbound_guard
+    kind: component
+    component: k9_aif_abb.k9_adapters.integration.outbound_guard.check_destination
+    stage: egress
+    mechanism: API adapters (BaseApiAdapter template, HttpApiAdapter) URL-encode payload values into URL placeholders, refuse link-local and cloud-metadata addresses always, refuse internal addresses for agent-chosen URLs unless allowed (allowed_hosts / allow_private_networks), and re-check every redirect hop (1.18.5)
+    enabled_by_default: true
+    covers: {LLM06: partial, ASI02: partial, ASI03: partial, ASI05: partial}
+    summary: An agent (or text injected into it) cannot steer an API call to a metadata endpoint for credentials, to an internal service, or to another host through a placeholder (server-side request forgery).
+    limits: Checks the address when resolved, so DNS rebinding between check and connect is not caught; network egress policy (firewall, security groups) stays the outer control. Applies to API adapters, not to arbitrary code an SBB writes itself.
+
+  - id: squad_digest_screening
+    kind: component
+    component: k9_aif_abb.k9_agents.synthesis.K9ContextSynthesizerAgent
+    stage: ingress
+    mechanism: a squad digest (context compaction, 1.16) reaches the next agent as input and is screened by that agent's governance by construction, like any input; a refused digest stops the squad before the next agent runs (tested 1.18.5)
+    enabled_by_default: true
+    covers: {LLM01: partial, ASI06: partial}
+    summary: An agent cannot plant instructions in its own context summary to steer the agents after it (self-generated injection in compaction; Sentinel #49).
+    limits: As strong as the configured ingress checks; pattern checks can miss paraphrase, so chain Granite Guardian for semantic screening.
 
   - id: stream_event_gate
     kind: component

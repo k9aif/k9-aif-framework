@@ -4,6 +4,42 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.5] — 2026-10-21
+
+### Security
+
+From K9X Sentinel's open findings, each checked against the code before changing it.
+
+- **aiohttp floor raised to 3.14.4** (`requirements.txt` pin 3.13.3 → 3.14.4). OSV lists eight advisories
+  affecting 3.14.3, the previous floor (among them GHSA-2g87-pp6c-29x5, unbounded memory/CPU use, and
+  GHSA-5wr8-gcqf-gqf3, no initial request/header timeout, both high), and none for 3.14.4. Sentinel #2409.
+- **Outbound guard for API adapters** (`k9_adapters/integration/outbound_guard.py`, new; wired into the
+  `BaseApiAdapter.execute()` template and `HttpApiAdapter`). Before, `HttpApiAdapter` filled URL placeholders
+  from the agent's payload unescaped and requested any host, and `BaseApiAdapter` took the whole URL from the
+  payload when none was configured: an agent, or text injected into it, could reach the cloud metadata
+  endpoint (credentials), internal services, or another host via `../`, `@` or `?` in a placeholder. Now:
+  placeholder values are URL-encoded; link-local and metadata addresses (169.254.0.0/16, fd00:ec2::254,
+  100.100.100.200, fe80::/10) are always refused; an agent-chosen URL may reach internal addresses only when
+  listed in `allowed_hosts` or `allow_private_networks: true`; a host written in the configured URL keeps
+  working as before; `allowed_hosts`, when set, is the complete destination list; redirects are followed by
+  the guard and every hop is checked. A refusal raises `OutboundRefused` (a `PermissionError`), never an
+  error result. Catalog: `integration.outbound_guard`. Sentinel #1170. Tests: `test_outbound_guard.py`.
+- **Squad digests proven screened** (Sentinel #49, self-generated injection in compaction summaries): a
+  real squad test shows a digest carrying an injected instruction is refused by the next agent's governance
+  and that agent never runs. No code change was needed (governance by construction screens every agent's
+  input); the catalog now records it as `squad_digest_screening`.
+- **Catalog guidance for agent-written SQL** (Sentinel #74, CVE-2026-65669): `shield.tool_argument` limits now
+  state that read-only must be enforced at the database (read-only role or connection), never by prompt or
+  regex.
+
+### Upgrade notes
+
+- An adapter used with **no configured `url`** whose agents legitimately call internal hosts must now list
+  them in `allowed_hosts` (or set `allow_private_networks: true`). Adapters with a configured URL are
+  unaffected, except that link-local and metadata addresses are refused.
+
+---
+
 ## [1.18.4] — 2026-10-16
 
 ### Security
