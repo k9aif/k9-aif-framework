@@ -34,6 +34,15 @@
                     <a class="variable" href="#log">log</a>
             </li>
             <li>
+                    <a class="function" href="#current_trace_id">current_trace_id</a>
+            </li>
+            <li>
+                    <a class="function" href="#trace_id_from">trace_id_from</a>
+            </li>
+            <li>
+                    <a class="function" href="#trace_scope">trace_scope</a>
+            </li>
+            <li>
                     <a class="function" href="#register_trace_callback">register_trace_callback</a>
             </li>
             <li>
@@ -76,65 +85,121 @@ compatibility with existing callers.</p>
                             "checks": [{"check", "status", "message", "severity"}, ...],
                             "blocked_by": str|None}
     {"type": "ZeroTrust",  "agent", "decision", "allowed", "risk", "reason"}</p>
+
+<p>Every event emitted inside a <code><a href="#trace_scope">trace_scope()</a></code> also carries <code>trace_id</code> (1.18.6), so a sink can
+stitch one request's model calls, Shield/Guardian checks, tool-result screens, Zero Trust
+decisions and Origin answers into one execution path. Orchestrators open the scope in
+<code>execute_squads()</code> (and the orchestration adapters in <code>execute_flow()</code>), taking the id from
+the payload's <code>trace_id</code>, <code>correlation_id</code> or <code>job_id</code> so the path continues across
+processes; an application entry point (an API handler) may open its own. Parallel squads run in a
+copy of the caller's context, so they share the id.</p>
 </div>
 
                         <input id="mod-trace_events-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-trace_events-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">trace_events — shared observability event bus.</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">One registered callback, called for every LLM call, Shield chain run,</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">Guardian check, and Zero Trust decision across the framework. An</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">application registers a sink at startup (e.g. to build a per-request UI</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">trace, push to Kafka, or export metrics) — nothing is captured or</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">retained anywhere if no callback is registered.</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">llm_invoke.py originally had a private, LLM-call-only version of this</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">(``register_trace_callback`` there). This module generalizes it so</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">ShieldGovernance/GuardianGovernance/apply_zero_trust can emit through the</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">same sink — llm_invoke.py now re-exports these two functions for backward</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">compatibility with existing callers.</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">Event shapes (``type`` discriminates):</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">    {&quot;type&quot;: &quot;LLMCall&quot;,    &quot;agent&quot;, &quot;task_type&quot;, &quot;model&quot;, &quot;provider&quot;,</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">                            &quot;latency_ms&quot;, &quot;tokens_in&quot;?, &quot;tokens_out&quot;?}</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">    {&quot;type&quot;: &quot;ShieldChain&quot;, &quot;gate&quot;: &quot;ingress&quot;|&quot;egress&quot;, &quot;agent&quot;,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">                            &quot;checks&quot;: [{&quot;check&quot;, &quot;status&quot;, &quot;message&quot;, &quot;severity&quot;}, ...],</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">                            &quot;blocked_by&quot;: str|None}</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">    {&quot;type&quot;: &quot;ZeroTrust&quot;,  &quot;agent&quot;, &quot;decision&quot;, &quot;allowed&quot;, &quot;risk&quot;, &quot;reason&quot;}</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="n">_trace_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_trace_callback</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a callback that receives every trace event. Call once at</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">    application startup. Fire-and-forget: exceptions are caught and logged</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">    so a failing callback never breaks the caller.&quot;&quot;&quot;</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="k">global</span> <span class="n">_trace_callback</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="n">_trace_callback</span> <span class="o">=</span> <span class="n">fn</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback registered: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="k">def</span><span class="w"> </span><span class="nf">emit_trace_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Push one event to the registered callback, if any. Never raises.&quot;&quot;&quot;</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="k">return</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="k">try</span><span class="p">:</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="n">_trace_callback</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">trace_events — shared observability event bus.</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="sd">One registered callback, called for every LLM call, Shield chain run,</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">Guardian check, and Zero Trust decision across the framework. An</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="sd">application registers a sink at startup (e.g. to build a per-request UI</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">trace, push to Kafka, or export metrics) — nothing is captured or</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="sd">retained anywhere if no callback is registered.</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">llm_invoke.py originally had a private, LLM-call-only version of this</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="sd">(``register_trace_callback`` there). This module generalizes it so</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="sd">ShieldGovernance/GuardianGovernance/apply_zero_trust can emit through the</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">same sink — llm_invoke.py now re-exports these two functions for backward</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">compatibility with existing callers.</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">Event shapes (``type`` discriminates):</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="sd">    {&quot;type&quot;: &quot;LLMCall&quot;,    &quot;agent&quot;, &quot;task_type&quot;, &quot;model&quot;, &quot;provider&quot;,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">                            &quot;latency_ms&quot;, &quot;tokens_in&quot;?, &quot;tokens_out&quot;?}</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">    {&quot;type&quot;: &quot;ShieldChain&quot;, &quot;gate&quot;: &quot;ingress&quot;|&quot;egress&quot;, &quot;agent&quot;,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">                            &quot;checks&quot;: [{&quot;check&quot;, &quot;status&quot;, &quot;message&quot;, &quot;severity&quot;}, ...],</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">                            &quot;blocked_by&quot;: str|None}</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">    {&quot;type&quot;: &quot;ZeroTrust&quot;,  &quot;agent&quot;, &quot;decision&quot;, &quot;allowed&quot;, &quot;risk&quot;, &quot;reason&quot;}</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="sd">Every event emitted inside a ``trace_scope()`` also carries ``trace_id`` (1.18.6), so a sink can</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">stitch one request&#39;s model calls, Shield/Guardian checks, tool-result screens, Zero Trust</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">decisions and Origin answers into one execution path. Orchestrators open the scope in</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">``execute_squads()`` (and the orchestration adapters in ``execute_flow()``), taking the id from</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">the payload&#39;s ``trace_id``, ``correlation_id`` or ``job_id`` so the path continues across</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">processes; an application entry point (an API handler) may open its own. Parallel squads run in a</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">copy of the caller&#39;s context, so they share the id.</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">contextvars</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a><span class="n">_trace_callback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="n">_TRACE_ID</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span><span class="s2">&quot;k9_trace_id&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="n">_PAYLOAD_ID_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;trace_id&quot;</span><span class="p">,</span> <span class="s2">&quot;correlation_id&quot;</span><span class="p">,</span> <span class="s2">&quot;job_id&quot;</span><span class="p">)</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="k">def</span><span class="w"> </span><span class="nf">current_trace_id</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The trace id of the request this code is running for, or None outside any trace_scope().&quot;&quot;&quot;</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>    <span class="k">return</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="k">def</span><span class="w"> </span><span class="nf">trace_id_from</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The id a payload already carries (``trace_id``, ``correlation_id`` or ``job_id``), if any.&quot;&quot;&quot;</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_PAYLOAD_ID_KEYS</span><span class="p">:</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>            <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>    <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="nd">@contextmanager</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="k">def</span><span class="w"> </span><span class="nf">trace_scope</span><span class="p">(</span><span class="n">trace_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the block under one trace id. Inside an existing scope the outer id is kept (one request,</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a><span class="sd">    one id), unless the caller passes a different id explicitly. Outside any scope: ``trace_id`` or a</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a><span class="sd">    new random id.&quot;&quot;&quot;</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>    <span class="n">outer</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>    <span class="n">tid</span> <span class="o">=</span> <span class="n">trace_id</span> <span class="ow">or</span> <span class="n">outer</span> <span class="ow">or</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>    <span class="k">if</span> <span class="n">tid</span> <span class="o">==</span> <span class="n">outer</span><span class="p">:</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="k">yield</span> <span class="n">tid</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="k">return</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>    <span class="n">token</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>        <span class="k">yield</span> <span class="n">tid</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>    <span class="k">finally</span><span class="p">:</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>        <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_trace_callback</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a callback that receives every trace event. Call once at</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a><span class="sd">    application startup. Fire-and-forget: exceptions are caught and logged</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a><span class="sd">    so a failing callback never breaks the caller.&quot;&quot;&quot;</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="k">global</span> <span class="n">_trace_callback</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="n">_trace_callback</span> <span class="o">=</span> <span class="n">fn</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback registered: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a><span class="k">def</span><span class="w"> </span><span class="nf">emit_trace_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Push one event to the registered callback, if any. Never raises.&quot;&quot;&quot;</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>        <span class="k">return</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>    <span class="n">tid</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>    <span class="k">if</span> <span class="n">tid</span> <span class="ow">and</span> <span class="s2">&quot;trace_id&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">event</span><span class="p">:</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;trace_id&quot;</span><span class="p">:</span> <span class="n">tid</span><span class="p">}</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="n">_trace_callback</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -151,6 +216,91 @@ compatibility with existing callers.</p>
     
 
                 </section>
+                <section id="current_trace_id">
+                            <input id="current_trace_id-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">current_trace_id</span><span class="signature pdoc-code condensed">(<span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="current_trace_id-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#current_trace_id"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="current_trace_id-52"><a href="#current_trace_id-52"><span class="linenos">52</span></a><span class="k">def</span><span class="w"> </span><span class="nf">current_trace_id</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="current_trace_id-53"><a href="#current_trace_id-53"><span class="linenos">53</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The trace id of the request this code is running for, or None outside any trace_scope().&quot;&quot;&quot;</span>
+</span><span id="current_trace_id-54"><a href="#current_trace_id-54"><span class="linenos">54</span></a>    <span class="k">return</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>The trace id of the request this code is running for, or None outside any trace_scope().</p>
+</div>
+
+
+                </section>
+                <section id="trace_id_from">
+                            <input id="trace_id_from-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">trace_id_from</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">payload</span><span class="p">:</span> <span class="n">Any</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="trace_id_from-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#trace_id_from"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="trace_id_from-57"><a href="#trace_id_from-57"><span class="linenos">57</span></a><span class="k">def</span><span class="w"> </span><span class="nf">trace_id_from</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="trace_id_from-58"><a href="#trace_id_from-58"><span class="linenos">58</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The id a payload already carries (``trace_id``, ``correlation_id`` or ``job_id``), if any.&quot;&quot;&quot;</span>
+</span><span id="trace_id_from-59"><a href="#trace_id_from-59"><span class="linenos">59</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="trace_id_from-60"><a href="#trace_id_from-60"><span class="linenos">60</span></a>        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_PAYLOAD_ID_KEYS</span><span class="p">:</span>
+</span><span id="trace_id_from-61"><a href="#trace_id_from-61"><span class="linenos">61</span></a>            <span class="k">if</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+</span><span id="trace_id_from-62"><a href="#trace_id_from-62"><span class="linenos">62</span></a>                <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+</span><span id="trace_id_from-63"><a href="#trace_id_from-63"><span class="linenos">63</span></a>    <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>The id a payload already carries (<code>trace_id</code>, <code>correlation_id</code> or <code>job_id</code>), if any.</p>
+</div>
+
+
+                </section>
+                <section id="trace_scope">
+                            <input id="trace_scope-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator decorator-contextmanager">@contextmanager</div>
+
+        <span class="def">def</span>
+        <span class="name">trace_scope</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">trace_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="trace_scope-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#trace_scope"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="trace_scope-66"><a href="#trace_scope-66"><span class="linenos">66</span></a><span class="nd">@contextmanager</span>
+</span><span id="trace_scope-67"><a href="#trace_scope-67"><span class="linenos">67</span></a><span class="k">def</span><span class="w"> </span><span class="nf">trace_scope</span><span class="p">(</span><span class="n">trace_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="trace_scope-68"><a href="#trace_scope-68"><span class="linenos">68</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the block under one trace id. Inside an existing scope the outer id is kept (one request,</span>
+</span><span id="trace_scope-69"><a href="#trace_scope-69"><span class="linenos">69</span></a><span class="sd">    one id), unless the caller passes a different id explicitly. Outside any scope: ``trace_id`` or a</span>
+</span><span id="trace_scope-70"><a href="#trace_scope-70"><span class="linenos">70</span></a><span class="sd">    new random id.&quot;&quot;&quot;</span>
+</span><span id="trace_scope-71"><a href="#trace_scope-71"><span class="linenos">71</span></a>    <span class="n">outer</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span><span id="trace_scope-72"><a href="#trace_scope-72"><span class="linenos">72</span></a>    <span class="n">tid</span> <span class="o">=</span> <span class="n">trace_id</span> <span class="ow">or</span> <span class="n">outer</span> <span class="ow">or</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+</span><span id="trace_scope-73"><a href="#trace_scope-73"><span class="linenos">73</span></a>    <span class="k">if</span> <span class="n">tid</span> <span class="o">==</span> <span class="n">outer</span><span class="p">:</span>
+</span><span id="trace_scope-74"><a href="#trace_scope-74"><span class="linenos">74</span></a>        <span class="k">yield</span> <span class="n">tid</span>
+</span><span id="trace_scope-75"><a href="#trace_scope-75"><span class="linenos">75</span></a>        <span class="k">return</span>
+</span><span id="trace_scope-76"><a href="#trace_scope-76"><span class="linenos">76</span></a>    <span class="n">token</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+</span><span id="trace_scope-77"><a href="#trace_scope-77"><span class="linenos">77</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="trace_scope-78"><a href="#trace_scope-78"><span class="linenos">78</span></a>        <span class="k">yield</span> <span class="n">tid</span>
+</span><span id="trace_scope-79"><a href="#trace_scope-79"><span class="linenos">79</span></a>    <span class="k">finally</span><span class="p">:</span>
+</span><span id="trace_scope-80"><a href="#trace_scope-80"><span class="linenos">80</span></a>        <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Run the block under one trace id. Inside an existing scope the outer id is kept (one request,
+one id), unless the caller passes a different id explicitly. Outside any scope: <code>trace_id</code> or a
+new random id.</p>
+</div>
+
+
+                </section>
                 <section id="register_trace_callback">
                             <input id="register_trace_callback-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -162,13 +312,13 @@ compatibility with existing callers.</p>
 
     </div>
     <a class="headerlink" href="#register_trace_callback"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="register_trace_callback-38"><a href="#register_trace_callback-38"><span class="linenos">38</span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_trace_callback</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="register_trace_callback-39"><a href="#register_trace_callback-39"><span class="linenos">39</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a callback that receives every trace event. Call once at</span>
-</span><span id="register_trace_callback-40"><a href="#register_trace_callback-40"><span class="linenos">40</span></a><span class="sd">    application startup. Fire-and-forget: exceptions are caught and logged</span>
-</span><span id="register_trace_callback-41"><a href="#register_trace_callback-41"><span class="linenos">41</span></a><span class="sd">    so a failing callback never breaks the caller.&quot;&quot;&quot;</span>
-</span><span id="register_trace_callback-42"><a href="#register_trace_callback-42"><span class="linenos">42</span></a>    <span class="k">global</span> <span class="n">_trace_callback</span>
-</span><span id="register_trace_callback-43"><a href="#register_trace_callback-43"><span class="linenos">43</span></a>    <span class="n">_trace_callback</span> <span class="o">=</span> <span class="n">fn</span>
-</span><span id="register_trace_callback-44"><a href="#register_trace_callback-44"><span class="linenos">44</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback registered: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="register_trace_callback-83"><a href="#register_trace_callback-83"><span class="linenos">83</span></a><span class="k">def</span><span class="w"> </span><span class="nf">register_trace_callback</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="register_trace_callback-84"><a href="#register_trace_callback-84"><span class="linenos">84</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a callback that receives every trace event. Call once at</span>
+</span><span id="register_trace_callback-85"><a href="#register_trace_callback-85"><span class="linenos">85</span></a><span class="sd">    application startup. Fire-and-forget: exceptions are caught and logged</span>
+</span><span id="register_trace_callback-86"><a href="#register_trace_callback-86"><span class="linenos">86</span></a><span class="sd">    so a failing callback never breaks the caller.&quot;&quot;&quot;</span>
+</span><span id="register_trace_callback-87"><a href="#register_trace_callback-87"><span class="linenos">87</span></a>    <span class="k">global</span> <span class="n">_trace_callback</span>
+</span><span id="register_trace_callback-88"><a href="#register_trace_callback-88"><span class="linenos">88</span></a>    <span class="n">_trace_callback</span> <span class="o">=</span> <span class="n">fn</span>
+</span><span id="register_trace_callback-89"><a href="#register_trace_callback-89"><span class="linenos">89</span></a>    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback registered: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -190,14 +340,17 @@ so a failing callback never breaks the caller.</p>
 
     </div>
     <a class="headerlink" href="#emit_trace_event"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="emit_trace_event-47"><a href="#emit_trace_event-47"><span class="linenos">47</span></a><span class="k">def</span><span class="w"> </span><span class="nf">emit_trace_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="emit_trace_event-48"><a href="#emit_trace_event-48"><span class="linenos">48</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Push one event to the registered callback, if any. Never raises.&quot;&quot;&quot;</span>
-</span><span id="emit_trace_event-49"><a href="#emit_trace_event-49"><span class="linenos">49</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="emit_trace_event-50"><a href="#emit_trace_event-50"><span class="linenos">50</span></a>        <span class="k">return</span>
-</span><span id="emit_trace_event-51"><a href="#emit_trace_event-51"><span class="linenos">51</span></a>    <span class="k">try</span><span class="p">:</span>
-</span><span id="emit_trace_event-52"><a href="#emit_trace_event-52"><span class="linenos">52</span></a>        <span class="n">_trace_callback</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-</span><span id="emit_trace_event-53"><a href="#emit_trace_event-53"><span class="linenos">53</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-</span><span id="emit_trace_event-54"><a href="#emit_trace_event-54"><span class="linenos">54</span></a>        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="emit_trace_event-92"><a href="#emit_trace_event-92"><span class="linenos"> 92</span></a><span class="k">def</span><span class="w"> </span><span class="nf">emit_trace_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="emit_trace_event-93"><a href="#emit_trace_event-93"><span class="linenos"> 93</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Push one event to the registered callback, if any. Never raises.&quot;&quot;&quot;</span>
+</span><span id="emit_trace_event-94"><a href="#emit_trace_event-94"><span class="linenos"> 94</span></a>    <span class="k">if</span> <span class="n">_trace_callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="emit_trace_event-95"><a href="#emit_trace_event-95"><span class="linenos"> 95</span></a>        <span class="k">return</span>
+</span><span id="emit_trace_event-96"><a href="#emit_trace_event-96"><span class="linenos"> 96</span></a>    <span class="n">tid</span> <span class="o">=</span> <span class="n">_TRACE_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</span><span id="emit_trace_event-97"><a href="#emit_trace_event-97"><span class="linenos"> 97</span></a>    <span class="k">if</span> <span class="n">tid</span> <span class="ow">and</span> <span class="s2">&quot;trace_id&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">event</span><span class="p">:</span>
+</span><span id="emit_trace_event-98"><a href="#emit_trace_event-98"><span class="linenos"> 98</span></a>        <span class="n">event</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;trace_id&quot;</span><span class="p">:</span> <span class="n">tid</span><span class="p">}</span>
+</span><span id="emit_trace_event-99"><a href="#emit_trace_event-99"><span class="linenos"> 99</span></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="emit_trace_event-100"><a href="#emit_trace_event-100"><span class="linenos">100</span></a>        <span class="n">_trace_callback</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</span><span id="emit_trace_event-101"><a href="#emit_trace_event-101"><span class="linenos">101</span></a>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span id="emit_trace_event-102"><a href="#emit_trace_event-102"><span class="linenos">102</span></a>        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[trace_events] callback failed: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
 </span></pre></div>
 
 

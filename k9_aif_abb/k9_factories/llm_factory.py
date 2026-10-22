@@ -149,6 +149,11 @@ class LLMFactory:
                 "timeout": model_cfg.get("timeout"),
             }
             extra_kwargs = {k: v for k, v in extra_kwargs.items() if v is not None}
+            # Model integrity (1.18.6): a pinned digest, checked by the provider before each prompt.
+            if model_cfg.get("digest"):
+                extra_kwargs["digest"] = model_cfg["digest"]
+                if model_cfg.get("digest_recheck_seconds") is not None:
+                    extra_kwargs["digest_recheck_seconds"] = model_cfg["digest_recheck_seconds"]
 
         else:
             raise TypeError(
@@ -159,6 +164,9 @@ class LLMFactory:
         backend = (fcfg.get("backend") or fcfg.get("provider") or "ollama").lower()
 
         from k9_aif_abb.k9_core.inference.provider_registry import ProviderAdapterRegistry
+        if "digest" in extra_kwargs and backend != "ollama":
+            raise ValueError(f"LLM model alias '{alias}': 'digest' pins a locally served model and is "
+                             f"supported for the ollama backend only (backend is '{backend}')")
         adapter = ProviderAdapterRegistry.resolve(backend)
         inst = adapter.create_llm(model_name, fcfg, extra_kwargs)
         cls._instances[alias] = inst

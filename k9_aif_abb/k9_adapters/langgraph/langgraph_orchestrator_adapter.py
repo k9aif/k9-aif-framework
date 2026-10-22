@@ -9,6 +9,7 @@ from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
 from k9_aif_abb.k9_core.governance.call_context import governed_call
+from k9_aif_abb.k9_utils.trace_events import trace_id_from, trace_scope
 from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
@@ -82,7 +83,7 @@ class LangGraphOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         # Refuse ungoverned execution outside development/test (same rule as BaseAgent).
         assert_governed(self.governance, self.layer, self.logger)
-        with governed_call(self):   # model calls inside the flow are governed by it
+        with governed_call(self), trace_scope(trace_id_from(payload)):   # model calls inside the flow are governed by it
             self.validate_payload(payload)
             graph_input = self.adapt_input(payload)
 

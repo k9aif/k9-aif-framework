@@ -4,6 +4,41 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.6] — 2026-10-22
+
+### Security
+
+Two holes found by mapping the framework against a six-layer AI security model (supply chain, prompt,
+retrieval, inference, output, monitoring).
+
+- **Model digest pinning** (`k9_core/inference/model_integrity.py`, new; wired into `OllamaLLM` and
+  `LLMFactory`). A local model server loads weights by tag, and a tag can point at different weights after
+  a re-pull, a mirror or host access, with every agent still calling it. A model alias may now pin its
+  content digest (`inference.llm_factory.models.<alias>.digest`, from `ollama list`); `OllamaLLM` checks the
+  served digest before the first prompt and every `digest_recheck_seconds` (default 300). A different or
+  missing digest raises `ModelIntegrityError` (a `PermissionError`) before any prompt is sent, and emits a
+  `ModelIntegrity` trace event. Opt-in: a model without `digest` behaves as before. `digest` on a non-Ollama
+  backend is a configuration error. `llm_invoke()` no longer retries a `PermissionError` from the router:
+  a refusal is a decision, not an outage. Catalog: `model_integrity.digest_pin` (LLM03, LLM04 partial).
+- **One trace id per run** (`k9_utils/trace_events.py`: `trace_scope()`, `current_trace_id()`,
+  `trace_id_from()`). Trace events had no shared id, so one request's model calls, Shield/Guardian checks,
+  tool-result screens, Zero Trust decisions and Origin answers could not be stitched into one execution
+  path. `BaseOrchestrator.execute_squads()` and the CrewAI, LangGraph and Claude SDK adapters' `execute_flow()`
+  now open a scope; every event inside it carries `trace_id`, taken from the payload's `trace_id`,
+  `correlation_id` or `job_id` (so the path continues across processes) or generated. Parallel squads run
+  in a copy of the caller's context and share the id. Existing sinks receive one extra key. Catalog:
+  `observability.trace_correlation`.
+
+Tests: `test_trace_and_model_integrity.py`.
+
+### Upgrade notes
+
+- Nothing to change. To pin a model: `ollama list`, copy the ID's full digest (`curl $OLLAMA_BASE_URL/api/tags`
+  shows all 64 hex characters), add `digest: sha256:<digest>` under that model alias.
+- A trace sink that rejects unknown keys must accept `trace_id`.
+
+---
+
 ## [1.18.5] — 2026-10-21
 
 ### Security

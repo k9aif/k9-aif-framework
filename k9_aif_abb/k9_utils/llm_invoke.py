@@ -136,6 +136,8 @@ def llm_invoke(
         last_error = None
         try:
             resp = router.invoke(request)
+        except PermissionError:
+            raise           # a refusal (e.g. ModelIntegrityError) is a decision, not an outage: never retried
         except Exception as exc:
             last_error = exc
             resp = None

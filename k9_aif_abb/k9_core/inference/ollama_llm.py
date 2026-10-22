@@ -9,6 +9,7 @@ import traceback
 import asyncio
 from typing import Any, Optional
 from k9_aif_abb.k9_core.inference.base_llm import BaseLLM
+from k9_aif_abb.k9_core.inference.model_integrity import DigestPin
 
 
 class OllamaLLM(BaseLLM):
@@ -34,6 +35,8 @@ class OllamaLLM(BaseLLM):
         self.host = host.rstrip("/")
         self.model = model
         self.timeout = aiohttp.ClientTimeout(total=timeout)
+        # Model integrity (1.18.6): optional pinned digest, checked before a prompt is sent.
+        self._pin = DigestPin(model, kwargs.pop("digest", None), kwargs.pop("digest_recheck_seconds", None))
         self.kwargs = kwargs
 
     def _build_options(self) -> dict:
@@ -56,8 +59,20 @@ class OllamaLLM(BaseLLM):
             options["num_ctx"] = num_ctx
         return options
 
+    async def _verify_model(self) -> None:
+        """Refuse to send a prompt to weights other than the pinned ones (ModelIntegrityError). Outside
+        the request's try block on purpose: a refusal propagates, it is not a "[WARN]" reply."""
+        if not self._pin.due():
+            return
+        async with aiohttp.ClientSession(timeout=self.timeout) as session:
+            async with session.get(f"{self.host}/api/tags") as resp:
+                resp.raise_for_status()
+                tags = await resp.json()
+        self._pin.verify(tags)
+
     # ----------------------------------------------------------
     async def generate(self, prompt: str, system_prompt: str = None) -> str:
+        await self._verify_model()
         await self.log(f"Sending inference request to Ollama ({self.model})", "DEBUG")
         url = f"{self.host}/api/generate"
         payload = {"model": self.model, "prompt": prompt, "stream": False}
@@ -105,6 +120,7 @@ class OllamaLLM(BaseLLM):
         (``stream: true``). Each line of the response body is a JSON object
         with a ``response`` fragment; the final line has ``done: true``.
         """
+        await self._verify_model()
         await self.log(f"Streaming inference request to Ollama ({self.model})", "DEBUG")
         url = f"{self.host}/api/generate"
         payload = {"model": self.model, "prompt": prompt, "stream": True}

@@ -6,6 +6,7 @@
 
 import asyncio
 import concurrent.futures
+import contextvars
 import inspect
 import logging
 from abc import ABC, abstractmethod
@@ -13,7 +14,7 @@ from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
-from k9_aif_abb.k9_utils.trace_events import emit_trace_event
+from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, trace_scope
 from k9_aif_abb.k9_utils.config_flags import config_flag
 
 
@@ -173,7 +174,10 @@ class BaseOrchestrator(ABC):
         """
         if not squads:
             return {}
+        with trace_scope(trace_id_from(payload)):   # one id across every squad, agent and check of this run
+            return self._execute_squads(squads, payload, parallel)
 
+    def _execute_squads(self, squads, payload: Dict[str, Any], parallel: bool) -> Dict[str, Dict[str, Any]]:
         if self.origin is None:
             payload = self.enrich_with_live_context(payload)
 
@@ -196,7 +200,8 @@ class BaseOrchestrator(ABC):
         results = {}
         with ThreadPoolExecutor(max_workers=len(squads)) as executor:
             futures = {
-                executor.submit(squad.execute, self._with_origin(squad, {**payload})): squad
+                executor.submit(contextvars.copy_context().run, squad.execute,   # same trace id per thread
+                                self._with_origin(squad, {**payload})): squad
                 for squad in squads
             }
             for future in as_completed(futures):

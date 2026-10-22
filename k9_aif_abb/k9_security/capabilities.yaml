@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.18.5"
+framework_version: "1.18.6"
 
 taxonomies:
   owasp_llm_2025:
@@ -383,6 +383,26 @@ capabilities:
       call models only through llm_invoke()); a streamed reply blocked at
       egress has already been sent; NoopGovernance is still allowed in
       development/test.
+
+  - id: model_integrity.digest_pin
+    kind: component
+    component: k9_aif_abb.k9_core.inference.model_integrity.check_digest
+    stage: inference
+    mechanism: a model alias may pin its content digest (inference.llm_factory.models.<alias>.digest); OllamaLLM checks the served digest (GET /api/tags) before the first prompt and again every digest_recheck_seconds, and a different or missing digest raises ModelIntegrityError (PermissionError), never retried, with a ModelIntegrity trace event (1.18.6)
+    enabled_by_default: false
+    covers: {LLM03: partial, LLM04: partial}
+    summary: The weights behind a model tag cannot be replaced (re-pull, mirror, host access) without every call to that model being refused.
+    limits: Ollama-served models only (hosted APIs expose no digest). Proves the server holds the approved weights, not where they came from; approve a digest after checking the model's source. Prompts, datasets and Python dependencies are not signed; dependencies are watched by K9X Sentinel (OSV).
+
+  - id: observability.trace_correlation
+    kind: component
+    component: k9_aif_abb.k9_utils.trace_events.trace_scope
+    stage: all
+    mechanism: every trace event (LLMCall, ShieldChain, Guardian, ToolResultScreen, ZeroTrust, Origin, LiveContext, ModelIntegrity, EventGate) emitted during an orchestrator's execute_squads() or an orchestration adapter's execute_flow() carries one trace_id, taken from the payload's trace_id / correlation_id / job_id so the path continues across processes; parallel squads share it (1.18.6)
+    enabled_by_default: true
+    covers: {ASI10: partial}
+    summary: One request's inputs, model calls, checks, tool results and decisions can be stitched into a single execution path for audit and incident response.
+    limits: Events reach a sink only if the application registers one (register_trace_callback); correlating events into multi-step attack detection is left to that sink (SIEM). Agents called outside an orchestrator get an id only if the entry point opens a trace_scope.
 
   - id: hil.requires_hil
     kind: component
