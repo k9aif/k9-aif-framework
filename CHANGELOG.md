@@ -4,6 +4,34 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.18.7] — 2026-10-22
+
+### Inspector (k9_inspect)
+
+Found by running Inspector on a fresh K9X Studio scaffold and on the K9X applications.
+
+- **K9-GOV-002 checks what the Shield lists hold, not only that they exist.** Before, any non-empty list
+  passed, so a config with only `InputSizeCheck` was reported compliant. Now ingress must run
+  `PromptInjectionCheck` and egress `PIIBoundaryCheck` (a check built in code counts) — violation.
+- **K9-NET-001 (new, warning): API adapters keep agents off internal hosts.** Reports
+  `allow_private_networks: true` in YAML or adapter config in code, which turns off 1.18.5's refusal of
+  internal addresses for agent-chosen URLs.
+- **K9-SUP-001 (new, recommendation): locally served models are pinned by digest.** Lists the Ollama model
+  aliases without a `digest` (1.18.6).
+- **K9-DEP-002 compares against the latest release on PyPI**, not the k9-aif installed where Inspector runs.
+  A host with an old install (K9X Studio's generator was on 1.16.0) reported old pins as up to date.
+  Offline, or with `K9_INSPECT_OFFLINE=1`, it falls back to the installed version.
+
+31 rules (was 29). Tests: `test_k9_inspect.py`.
+
+### Upgrade notes
+
+- A solution whose Shield ingress lacks `PromptInjectionCheck` or egress lacks `PIIBoundaryCheck` now fails
+  `k9aif inspect --fail-on violation`. `PIIBoundaryCheck` flags by default (it blocks only with
+  `block_on_match: true` or `strict: true`).
+
+---
+
 ## [1.18.6] — 2026-10-22
 
 ### Security

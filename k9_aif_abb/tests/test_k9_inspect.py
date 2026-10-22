@@ -18,7 +18,7 @@ enable_zero_trust: true
 inference:
   llm_factory:
     models:
-      fast: {provider: ollama, model: qwen3.8:27b}
+      fast: {provider: ollama, model: qwen3.8:27b, digest: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 governance:
   guardian: {enabled: true}
 security:
@@ -198,3 +198,31 @@ def test_framework_version_reported(tmp_path):
     r = K9Inspector(config={"latest_version": "1.15.0"}).inspect(tmp_path)
     assert r.framework["status"] == "outdated" and r.framework["version"] == "1.14.1"
     assert "K9-DEP-002" in ids(r) and "latest k9-aif 1.15.0" in r.to_markdown()
+
+
+def test_shield_lists_must_hold_the_essential_checks(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "config/config.yaml", CLEAN_CONFIG.replace("InputSizeCheck, PromptInjectionCheck, PIIBoundaryCheck",
+                                                               "InputSizeCheck"))
+    found = [f for f in K9Inspector().inspect(tmp_path).findings if f.rule_id == "K9-GOV-002"]
+    assert len(found) == 1 and "PromptInjectionCheck" in found[0].message
+
+
+def test_private_network_opt_out_and_unpinned_models_are_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "config/adapters.yaml", "erp:\n  type: http\n  allow_private_networks: true\n")
+    write(tmp_path, "adapters/erp.py", 'CFG = {"url": "http://x/{id}", "allow_private_networks": True}\n')
+    write(tmp_path, "config/config.yaml", CLEAN_CONFIG.replace(', digest: "sha256:' + "a" * 64 + '"', ""))
+    r = K9Inspector().inspect(tmp_path)
+    net = [f for f in r.findings if f.rule_id == "K9-NET-001"]
+    assert len(net) == 2 and {f.file for f in net} == {"config/adapters.yaml", "adapters/erp.py"}
+    sup = [f for f in r.findings if f.rule_id == "K9-SUP-001"]
+    assert len(sup) == 1 and "fast" in sup[0].message
+
+
+def test_latest_release_is_cached_and_offline_falls_back(monkeypatch):
+    from k9_aif_abb.k9_inspect.rules import config_rules
+    monkeypatch.setattr(config_rules, "_LATEST_CACHE", {})
+    monkeypatch.setenv("K9_INSPECT_OFFLINE", "1")
+    assert config_rules.latest_release() == config_rules._installed_version()
+

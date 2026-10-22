@@ -88,8 +88,10 @@ class ShieldChecksConfiguredRule(BaseInspectionRule):
     category = "Governance"
     severity = Severity.VIOLATION
     description = ("ShieldGovernance runs only the checks listed. Enabled with empty lists, it logs enabled=True "
-                   "and blocks nothing.")
+                   "and blocks nothing; a list without the injection check on the way in, or without the personal-data "
+                   "check on the way out, misses the attacks most applications see first (1.18.7).")
     fix = "List checks under security.shield.ingress.checks and security.shield.egress.checks."
+    REQUIRED = {"ingress": ("PromptInjectionCheck",), "egress": ("PIIBoundaryCheck",)}
 
     def inspect(self, project: SolutionProject) -> List[Finding]:
         out = []
@@ -98,8 +100,17 @@ class ShieldChecksConfiguredRule(BaseInspectionRule):
             if config_flag(shield.get("enabled")) is not True:
                 continue
             for side in ("ingress", "egress"):
-                if not (_get(shield, side, "checks") or []):
+                listed = _get(shield, side, "checks") or []
+                if not listed:
                     out.append(self.finding(f"security.shield.{side}.checks is empty", d.rel, _line_of(d, "shield:")))
+                    continue
+                # A non-empty list is not enough: a config with only InputSizeCheck passed before 1.18.7.
+                missing = [c for c in self.REQUIRED[side]
+                           if c not in listed and not _code_mentions(project, f"{c}(")]
+                if missing:
+                    out.append(self.finding(f"security.shield.{side} does not run {', '.join(missing)}", d.rel,
+                                            _line_of(d, f"{side}:"),
+                                            fix=f"Add {', '.join(missing)} to security.shield.{side}.checks."))
         return out
 
 
@@ -394,7 +405,7 @@ class FrameworkLatestRule(BaseInspectionRule):
     fix = "Update the requirement to the latest k9-aif (e.g. k9-aif>=<latest>), rebuild and re-run the tests."
 
     def inspect(self, project: SolutionProject) -> List[Finding]:
-        latest = self.config.get("latest_version") or _installed_version()
+        latest = self.config.get("latest_version") or latest_release()
         st = framework_status(project, latest)
         if st["status"] == "outdated":
             return [self.finding(f"pins k9-aif {st['declared']} — latest is {latest}", st["file"], st["line"],
@@ -404,6 +415,27 @@ class FrameworkLatestRule(BaseInspectionRule):
                                  st["file"], st["line"], st["declared"], severity=Severity.RECOMMENDATION,
                                  fix=self.fix.replace("<latest>", latest))]
         return []
+
+
+_LATEST_CACHE: Dict[str, str] = {}
+
+
+def latest_release() -> str:
+    """The latest k9-aif on PyPI (1.18.7), so a stale install does not call itself current. Falls back to the
+    installed version offline, or when K9_INSPECT_OFFLINE is set (tests, air-gapped hosts)."""
+    if "v" in _LATEST_CACHE:
+        return _LATEST_CACHE["v"]
+    found = ""
+    if not os.environ.get("K9_INSPECT_OFFLINE"):
+        try:
+            import json
+            import urllib.request
+            with urllib.request.urlopen("https://pypi.org/pypi/k9-aif/json", timeout=3) as resp:
+                found = str(json.load(resp)["info"]["version"])
+        except Exception:
+            found = ""
+    _LATEST_CACHE["v"] = found or _installed_version()
+    return _LATEST_CACHE["v"]
 
 
 def _installed_version() -> str:
@@ -498,3 +530,58 @@ def _gitignore_mentions(project: SolutionProject, name: str) -> bool:
             if any(l in (name, "/" + name, ".env*", ".env.*", "*.env") for l in lines):
                 return True
     return False
+
+
+@InspectionRuleRegistry.register
+class OutboundPrivateNetworkRule(BaseInspectionRule):
+    rule_id = "K9-NET-001"
+    title = "API adapters keep agents off internal hosts"
+    category = "Network"
+    severity = Severity.WARNING
+    description = ("Since 1.18.5 the API adapters refuse cloud metadata endpoints always, and internal addresses "
+                   "for a URL the agent chose. allow_private_networks: true turns the second protection off for "
+                   "that adapter: an agent, or text injected into it, can then reach internal services.")
+    fix = ("Remove allow_private_networks and list the internal hosts the adapter may call under allowed_hosts, "
+           "or write the host into the adapter's configured url.")
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for d in project.yaml_docs:
+            for path, value in _walk(d.data):
+                if path.split(".")[-1] == "allow_private_networks" and config_flag(value) is True:
+                    out.append(self.finding(f"{path} is true", d.rel, _line_of(d, "allow_private_networks")))
+        pat = re.compile(r"""["']allow_private_networks["']\s*:\s*True""")
+        for m in project.code_modules():
+            for i, line in enumerate(m.source.splitlines(), 1):
+                if pat.search(line):
+                    out.append(self.finding("adapter config sets allow_private_networks: True", m.rel, i))
+        return out
+
+
+@InspectionRuleRegistry.register
+class ModelDigestPinRule(BaseInspectionRule):
+    rule_id = "K9-SUP-001"
+    title = "Locally served models are pinned by digest"
+    category = "Supply chain"
+    severity = Severity.RECOMMENDATION
+    description = ("Ollama loads a model by tag, and a re-pull, a mirror or access to the host can put different "
+                   "weights behind the same tag. Since 1.18.6 a model alias may pin its digest; the provider then "
+                   "refuses every call if the weights change.")
+    fix = ("Run `ollama list`, take the full digest from GET $OLLAMA_BASE_URL/api/tags, and add "
+           "digest: sha256:<digest> under each model alias in inference.llm_factory.models.")
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for d in project.config_docs():
+            fcfg = _get(d.data, "inference", "llm_factory") or {}
+            if not isinstance(fcfg, dict):
+                continue
+            if str(fcfg.get("backend") or fcfg.get("provider") or "ollama").lower() != "ollama":
+                continue
+            models = fcfg.get("models") or {}
+            unpinned = [a for a, m in models.items() if not (isinstance(m, dict) and m.get("digest"))]
+            if unpinned:
+                out.append(self.finding(f"model aliases without a pinned digest: {', '.join(sorted(map(str, unpinned)))}",
+                                        d.rel, _line_of(d, "models:")))
+        return out
+
