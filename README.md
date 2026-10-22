@@ -184,6 +184,8 @@ Examples include:
 
 Squads are defined declaratively using configuration and loaded dynamically at runtime using the **SquadLoader** component.
 
+**An orchestrator knows only squads (1.18.1).** It loads a squad by YAML file and squad id (`self.squads.load_one(squad_yaml, squad_id)`) and never names, imports or builds an agent. Squads are YAML (`agents:`, `flow:`, `synthesis:`) run by `BaseSquad`, so a squad needs no Python of its own; an application may add one common `<App>Squad(BaseSquad)` for squad-level behaviour. `SquadLoader.from_agents(...)` is built once at the application's entry point and passed to every orchestrator. The test: if a squad's agents change, the orchestrator is unaffected. Enforced by K9X Inspector rule K9-DEC-002 and a Claude Code hook.
+
 Core squad framework components include:
 
 - `BaseSquad`
@@ -241,6 +243,20 @@ Since 1.15, governance is a property of the runtime, not something each agent mu
 - In production (`K9_ENV` unset or `production`), an agent or model call with no governance configured
   raises `PermissionError` before anything runs.
 - `k9aif inspect <folder>` checks statically that a solution is wired this way.
+
+### Security controls
+
+Every control is listed in the security capability catalog, [`capabilities.yaml`](https://github.com/k9aif/k9-aif-framework/blob/main/k9_aif_abb/k9_security/capabilities.yaml), mapped to the OWASP Top 10 for LLM Applications and the OWASP agentic threats, with each control's limits and the known gaps. [K9X Sentinel](https://sentinel.k9x.ai) judges new AI-security research against it every day, and [K9X SATAN](https://satan.k9x.ai) attacks a running application to prove the controls hold.
+
+| Concern | Control |
+|---|---|
+| Prompt and input | k9x Shield: 15 checks (prompt injection, semantic drift, PII, tool arguments and authorization, execution guard, memory poisoning, system prompt leakage, payment diversion, request size and frequency, among others); Granite Guardian for semantic screening |
+| Retrieved content and tool results | Tool results screened as untrusted input; squad digests screened by the next agent; stream events pass a Shield gate before they reach live state |
+| Actions | Tool authorization and execution guard; API adapters refuse metadata endpoints and agent-chosen internal hosts and check every redirect (1.18.5); business rules and HIL decide, model output never authorizes |
+| Output | Output sanitization, PII boundary, outbound link check |
+| Models | Confidential requests only to confidential-capable models; optional pinned model digest, so changed weights behind a tag are refused (1.18.6) |
+| Identity | Signed Zero Trust identity; API key and OIDC authenticators (Keycloak, Entra ID, Okta) |
+| Monitoring | One trace event stream for every model call, check and decision, with one `trace_id` per run (1.18.6) |
 
 ---
 
@@ -689,7 +705,7 @@ The combination of `CLAUDE.md`, `SKILLS.md`, and the reference example gives Cla
 
 ### Automated hooks (`.claude/settings.json`)
 
-The repository also ships `.claude/settings.json`, which wires seven `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, `__init__.py` docstring check, single-model-path (`llm_invoke`) check, and README link check (see the Hooks section of [`CLAUDE.md`](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md)) — that run automatically whenever Claude Code writes or edits a file.
+The repository also ships `.claude/settings.json`, which wires eight `PostToolUse` hooks — Python syntax check, YAML validation, ABB test run, governance check, `__init__.py` docstring check, single-model-path (`llm_invoke`) check, README link check, and orchestrator-knows-only-squads check (see the Hooks section of [`CLAUDE.md`](https://github.com/k9aif/k9-aif-framework/blob/main/CLAUDE.md)) — that run automatically whenever Claude Code writes or edits a file.
 
 **Each hook command uses an absolute path** (e.g. `/Users/<you>/k9-aif-framework/.claude/hooks/check-python.sh`). After cloning, edit `.claude/settings.json` and replace the path prefix with the absolute path of your own clone, or the hooks will fail with "command not found".
 

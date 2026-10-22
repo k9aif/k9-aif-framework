@@ -547,6 +547,8 @@ this automatically today; get it wrong and replies are silently dropped
 | `check-governance.sh` | `*.py` under `examples/` | warns if `NoopGovernance` appears |
 | `check-init-docstring.sh` | any `__init__.py` | warns if module docstring missing |
 | `check-llm-invoke.sh` | `*.py` under `examples/` or `k9_projects/` | warns if `router.invoke()`/`ModelRouterFactory.get_router()` appears outside `llm_invoke.py` |
+| `check-readme-links.sh` | `README.md` | blocks relative links and images (README is the PyPI long description; PyPI 404s them) |
+| `check-orchestrator-squads.sh` | `*.py` orchestrators | blocks an orchestrator that names, imports or builds agents (K9-DEC-002) |
 
 ## Commands
 
