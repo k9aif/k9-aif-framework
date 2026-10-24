@@ -14,6 +14,16 @@ implementation extending an ABB, in `examples/<App>/` or `k9_projects/<App>/`.
 Liskov Substitution and Open/Closed are non-negotiable — new capability
 extends a `Base<Concern>` contract, never edits one.
 
+**K9-AIF alone is enough to build a complete application.** No other agent
+framework is needed: Router → Orchestrator → Squad → Agent, governance,
+inference, persistence, messaging and HIL are all here (DAS, K9X SATAN,
+Sentinel and HIL depend on nothing else). Never add CrewAI, LangGraph or
+similar to a new project by default. If an application already has a
+CrewAI crew or LangGraph graph, keep it unchanged and wrap it with the
+orchestrator adapter (`k9_adapters/crewai/`, `k9_adapters/langgraph/`,
+`k9_adapters/claude_agent_sdk/`), which adds K9-AIF governance at its
+boundary.
+
 Diagrams default to PlantUML. BPMN swim lanes: horizontal bands top-to-bottom,
 labels left, activities left-to-right within a lane.
 
