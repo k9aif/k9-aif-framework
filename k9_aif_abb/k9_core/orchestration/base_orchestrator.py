@@ -224,7 +224,7 @@ class BaseOrchestrator(ABC):
                     failures.append((squad.squad_id, exc))
         # Failures propagate (as on the sequential path): the squads still running were let finish, then the
         # first failure is raised, so the orchestrator records it instead of reporting a completed run. Before
-        # 1.18.9 a failed squad became {"status": "failed"} in the results and execute_squads() returned normally.
+        # 1.19.0 a failed squad became {"status": "failed"} in the results and execute_squads() returned normally.
         if failures:
             squad_id, exc = failures[0]
             others = [s for s, _ in failures[1:]]
@@ -528,12 +528,10 @@ class BaseOrchestrator(ABC):
     # ------------------------------------------------------------------
     @staticmethod
     def _bootstrap_session(config: Dict[str, Any]):
-        """Auto-create session manager from config when session.enabled: true. Returns None otherwise."""
-        try:
-            from k9_aif_abb.k9_factories.session_factory import SessionFactory
-            return SessionFactory.create_manager(config)
-        except Exception:
-            return None
+        """Auto-create session manager from config when session.enabled: true. Returns None otherwise.
+        Enabled but failing to build raises (1.19.0; before, any error silently meant "no sessions")."""
+        from k9_aif_abb.k9_factories.session_factory import SessionFactory
+        return SessionFactory.create_manager(config)
 
     def _governance_context(self) -> Dict[str, Any]:
         return {

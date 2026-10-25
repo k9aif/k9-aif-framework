@@ -152,17 +152,19 @@
 </span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>            <span class="k">return</span> <span class="n">instance</span>
 </span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
 </span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a>            <span class="k">return</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>            <span class="c1"># Raise, don&#39;t return None (1.19.0): an unknown provider (a typo in config) or a failing backend</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a>            <span class="c1"># used to surface later, far from the cause, as an AttributeError on None.</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>            <span class="k">raise</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>
+</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>            <span class="k">return</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -240,17 +242,19 @@
 </span><span id="PersistenceFactory-76"><a href="#PersistenceFactory-76"><span class="linenos">76</span></a>            <span class="k">return</span> <span class="n">instance</span>
 </span><span id="PersistenceFactory-77"><a href="#PersistenceFactory-77"><span class="linenos">77</span></a>
 </span><span id="PersistenceFactory-78"><a href="#PersistenceFactory-78"><span class="linenos">78</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="PersistenceFactory-79"><a href="#PersistenceFactory-79"><span class="linenos">79</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="PersistenceFactory-80"><a href="#PersistenceFactory-80"><span class="linenos">80</span></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="PersistenceFactory-81"><a href="#PersistenceFactory-81"><span class="linenos">81</span></a>
-</span><span id="PersistenceFactory-82"><a href="#PersistenceFactory-82"><span class="linenos">82</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
-</span><span id="PersistenceFactory-83"><a href="#PersistenceFactory-83"><span class="linenos">83</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="PersistenceFactory-84"><a href="#PersistenceFactory-84"><span class="linenos">84</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="PersistenceFactory-85"><a href="#PersistenceFactory-85"><span class="linenos">85</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
-</span><span id="PersistenceFactory-86"><a href="#PersistenceFactory-86"><span class="linenos">86</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
-</span><span id="PersistenceFactory-87"><a href="#PersistenceFactory-87"><span class="linenos">87</span></a>            <span class="k">return</span>
-</span><span id="PersistenceFactory-88"><a href="#PersistenceFactory-88"><span class="linenos">88</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="PersistenceFactory-89"><a href="#PersistenceFactory-89"><span class="linenos">89</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
+</span><span id="PersistenceFactory-79"><a href="#PersistenceFactory-79"><span class="linenos">79</span></a>            <span class="c1"># Raise, don&#39;t return None (1.19.0): an unknown provider (a typo in config) or a failing backend</span>
+</span><span id="PersistenceFactory-80"><a href="#PersistenceFactory-80"><span class="linenos">80</span></a>            <span class="c1"># used to surface later, far from the cause, as an AttributeError on None.</span>
+</span><span id="PersistenceFactory-81"><a href="#PersistenceFactory-81"><span class="linenos">81</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="PersistenceFactory-82"><a href="#PersistenceFactory-82"><span class="linenos">82</span></a>            <span class="k">raise</span>
+</span><span id="PersistenceFactory-83"><a href="#PersistenceFactory-83"><span class="linenos">83</span></a>
+</span><span id="PersistenceFactory-84"><a href="#PersistenceFactory-84"><span class="linenos">84</span></a>    <span class="c1"># ------------------------------------------------------------------</span>
+</span><span id="PersistenceFactory-85"><a href="#PersistenceFactory-85"><span class="linenos">85</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="PersistenceFactory-86"><a href="#PersistenceFactory-86"><span class="linenos">86</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="PersistenceFactory-87"><a href="#PersistenceFactory-87"><span class="linenos">87</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
+</span><span id="PersistenceFactory-88"><a href="#PersistenceFactory-88"><span class="linenos">88</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
+</span><span id="PersistenceFactory-89"><a href="#PersistenceFactory-89"><span class="linenos">89</span></a>            <span class="k">return</span>
+</span><span id="PersistenceFactory-90"><a href="#PersistenceFactory-90"><span class="linenos">90</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="PersistenceFactory-91"><a href="#PersistenceFactory-91"><span class="linenos">91</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -384,8 +388,10 @@
 </span><span id="PersistenceFactory.create-76"><a href="#PersistenceFactory.create-76"><span class="linenos">76</span></a>            <span class="k">return</span> <span class="n">instance</span>
 </span><span id="PersistenceFactory.create-77"><a href="#PersistenceFactory.create-77"><span class="linenos">77</span></a>
 </span><span id="PersistenceFactory.create-78"><a href="#PersistenceFactory.create-78"><span class="linenos">78</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="PersistenceFactory.create-79"><a href="#PersistenceFactory.create-79"><span class="linenos">79</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="PersistenceFactory.create-80"><a href="#PersistenceFactory.create-80"><span class="linenos">80</span></a>            <span class="k">return</span> <span class="kc">None</span>
+</span><span id="PersistenceFactory.create-79"><a href="#PersistenceFactory.create-79"><span class="linenos">79</span></a>            <span class="c1"># Raise, don&#39;t return None (1.19.0): an unknown provider (a typo in config) or a failing backend</span>
+</span><span id="PersistenceFactory.create-80"><a href="#PersistenceFactory.create-80"><span class="linenos">80</span></a>            <span class="c1"># used to surface later, far from the cause, as an AttributeError on None.</span>
+</span><span id="PersistenceFactory.create-81"><a href="#PersistenceFactory.create-81"><span class="linenos">81</span></a>            <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Factory] Failed to create persistence backend: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="PersistenceFactory.create-82"><a href="#PersistenceFactory.create-82"><span class="linenos">82</span></a>            <span class="k">raise</span>
 </span></pre></div>
 
 
@@ -407,13 +413,13 @@ Supports vectordb.backend, vectordb.provider, or legacy persistence blocks.</p>
 
     </div>
     <a class="headerlink" href="#PersistenceFactory.bootstrap"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="PersistenceFactory.bootstrap-83"><a href="#PersistenceFactory.bootstrap-83"><span class="linenos">83</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="PersistenceFactory.bootstrap-84"><a href="#PersistenceFactory.bootstrap-84"><span class="linenos">84</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="PersistenceFactory.bootstrap-85"><a href="#PersistenceFactory.bootstrap-85"><span class="linenos">85</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
-</span><span id="PersistenceFactory.bootstrap-86"><a href="#PersistenceFactory.bootstrap-86"><span class="linenos">86</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
-</span><span id="PersistenceFactory.bootstrap-87"><a href="#PersistenceFactory.bootstrap-87"><span class="linenos">87</span></a>            <span class="k">return</span>
-</span><span id="PersistenceFactory.bootstrap-88"><a href="#PersistenceFactory.bootstrap-88"><span class="linenos">88</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="PersistenceFactory.bootstrap-89"><a href="#PersistenceFactory.bootstrap-89"><span class="linenos">89</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PersistenceFactory.bootstrap-85"><a href="#PersistenceFactory.bootstrap-85"><span class="linenos">85</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="PersistenceFactory.bootstrap-86"><a href="#PersistenceFactory.bootstrap-86"><span class="linenos">86</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">bootstrap</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="PersistenceFactory.bootstrap-87"><a href="#PersistenceFactory.bootstrap-87"><span class="linenos">87</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bootstrap factory (called once during system initialization).&quot;&quot;&quot;</span>
+</span><span id="PersistenceFactory.bootstrap-88"><a href="#PersistenceFactory.bootstrap-88"><span class="linenos">88</span></a>        <span class="k">if</span> <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span><span class="p">:</span>
+</span><span id="PersistenceFactory.bootstrap-89"><a href="#PersistenceFactory.bootstrap-89"><span class="linenos">89</span></a>            <span class="k">return</span>
+</span><span id="PersistenceFactory.bootstrap-90"><a href="#PersistenceFactory.bootstrap-90"><span class="linenos">90</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">_bootstrapped</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="PersistenceFactory.bootstrap-91"><a href="#PersistenceFactory.bootstrap-91"><span class="linenos">91</span></a>        <span class="n">PersistenceFactory</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[Factory] Bootstrapped PersistenceFactory&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 

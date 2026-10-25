@@ -152,23 +152,20 @@ class BaseRouter(ABC):
 
     @staticmethod
     def _bootstrap_session(config: Dict[str, Any]):
-        """Auto-create session manager from config when session.enabled: true. Returns None otherwise."""
-        try:
-            from k9_aif_abb.k9_factories.session_factory import SessionFactory
-            return SessionFactory.create_manager(config)
-        except Exception:
-            return None
+        """Auto-create session manager from config when session.enabled: true. Returns None otherwise.
+        Enabled but failing to build raises (1.19.0; before, any error silently meant "no sessions")."""
+        from k9_aif_abb.k9_factories.session_factory import SessionFactory
+        return SessionFactory.create_manager(config)
 
     @staticmethod
     def _bootstrap_object_store(config: Dict[str, Any]):
         """Auto-create object store from config.  Returns None when object_storage block is absent."""
         if not config.get("object_storage"):
             return None
-        try:
-            from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
-            return ObjectStorageFactory.create(config)
-        except Exception:
-            return None
+        # Configured but failing to build raises (1.19.0): before, it became None and the first store_document()
+        # said "No object_store configured", pointing at the wrong cause.
+        from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
+        return ObjectStorageFactory.create(config)
 
     def store_document(
         self,

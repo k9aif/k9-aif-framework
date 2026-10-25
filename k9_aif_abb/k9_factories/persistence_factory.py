@@ -75,8 +75,10 @@ class PersistenceFactory:
             return instance
 
         except Exception as e:
+            # Raise, don't return None (1.19.0): an unknown provider (a typo in config) or a failing backend
+            # used to surface later, far from the cause, as an AttributeError on None.
             PersistenceFactory.logger.error(f"[Factory] Failed to create persistence backend: {e}")
-            return None
+            raise
 
     # ------------------------------------------------------------------
     @staticmethod

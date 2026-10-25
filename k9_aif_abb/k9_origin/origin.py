@@ -116,9 +116,13 @@ class K9Origin(BaseOrigin):
         kind = "stream"
         policy = self.config.entities.get(entity)
         sor = policy.system_of_record if policy else None
+        unavailable = None
         if not view.get("found") and sor:
-            if self._read_through(entity, entity_id, sor):
+            got = self._read_through(entity, entity_id, sor)
+            if got is True:
                 view, kind = self.state.get_current(entity, entity_id), "system_of_record"
+            elif isinstance(got, str):              # the source failed: not the same as "no such record"
+                unavailable = {"system": sor, "error": got}
 
         verified = None
         if view.get("found") and sor and self.config.verifies(agent):
@@ -126,6 +130,8 @@ class K9Origin(BaseOrigin):
             kind = "both"
 
         answer = self._answer(entity, entity_id, view, kind, verified)
+        if unavailable:
+            answer["source_unavailable"] = unavailable
         return self._done("get_current", entity, entity_id, agent, t0, self._screen_answer("get_current", answer))
 
     def recent_changes(self, entity: str, entity_id: str, window_seconds: float = 600,
@@ -207,12 +213,14 @@ class K9Origin(BaseOrigin):
             return withheld_value(answer, str(exc))
         return answer
 
-    def _read_through(self, entity: str, entity_id: str, source_name: str) -> bool:
+    def _read_through(self, entity: str, entity_id: str, source_name: str):
+        """True: found and applied. False: the source has no such record. A string: the source failed (its
+        error), reported to the agent as ``source_unavailable`` (1.19.0; before, it read as "not found")."""
         try:
             record = self.sources.fetch(source_name, entity, entity_id)
         except Exception as exc:
             log.warning("[Origin] read-through %s %s:%s failed: %s", source_name, entity, entity_id, exc)
-            return False
+            return str(exc)[:200] or type(exc).__name__
         if not record:
             return False
         version = record.get("version") if isinstance(record, dict) else None
@@ -257,7 +265,7 @@ class K9Origin(BaseOrigin):
                "flags": {"quarantined": quarantined[-1] if quarantined else None,
                          "in_review": bool(review), "review": review,
                          "conflict": conflict.to_dict() if conflict else None,
-                         # a verify_before step whose system of record couldn't be reached (1.18.9): the
+                         # a verify_before step whose system of record couldn't be reached (1.19.0): the
                          # live value is unverified, so it must not be acted on as if checked
                          "verification_failed": ({"against": verified.get("against"), "error": verified.get("error")}
                                                  if verified and verified.get("agrees") is None else None)},

@@ -49,6 +49,10 @@ def _eval_when(when_cfg, ctx: dict) -> bool:
     return True
 
 
+# An agent's own identity in its merged config: not for the squad's synthesizer to inherit.
+_PERSONA_KEYS = {"name", "class", "module", "description", "role", "goal", "instructions", "backstory",
+                 "output_schema", "pattern", "llm_prompt_tmpl"}
+
 SYNTHESIS_MODES = ("off", "auto", "always")
 DEFAULT_SYNTHESIS_MAX_CHARS = 24000   # about 6k tokens of upstream results
 
@@ -232,7 +236,10 @@ class BaseSquad:
     def _get_synthesizer(self, synthesis):
         if self.synthesizer is None:
             from k9_aif_abb.k9_agents.synthesis import K9ContextSynthesizerAgent
-            config = getattr(self.agents[0], "config", {}) if self.agents else {}
+            # The squad's own config (set by SquadLoader). Without one, the first agent's config minus its
+            # persona: before 1.19.0 the digest writer inherited that agent's role, goal and instructions.
+            config = self.config or {k: v for k, v in (getattr(self.agents[0], "config", {}) if self.agents else {}).items()
+                                     if k not in _PERSONA_KEYS}
             self.synthesizer = K9ContextSynthesizerAgent(config=config)
         return self.synthesizer
 

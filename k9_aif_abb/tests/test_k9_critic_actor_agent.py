@@ -186,8 +186,7 @@ def test_execute_returns_full_contract():
 # ── Critic error handling ──────────────────────────────────────────────────────
 
 
-def test_critic_exception_causes_fail_by_default():
-    agent = _make({"escalate_on_critic_error": False})
+def _critic_crashes(agent):
     mock_resp = MagicMock()
     mock_resp.output = "actor draft"
 
@@ -200,8 +199,18 @@ def test_critic_exception_causes_fail_by_default():
         "k9_aif_abb.k9_agents.critic_actor.k9_critic_actor_agent.llm_invoke",
         side_effect=side_effect,
     ):
-        result = agent.execute({"input": "data"})
-    assert result["disposition"] == CriticActorDisposition.FAIL
+        return agent.execute({"input": "data"})
+
+
+def test_critic_exception_propagates_by_default():
+    """Failures propagate (1.19.0, as the validation loop since 1.18.2); before, the default was FAIL."""
+    import pytest
+    with pytest.raises(RuntimeError, match="validator crashed"):
+        _critic_crashes(_make({}))
+
+
+def test_critic_exception_fails_only_when_asked():
+    assert _critic_crashes(_make({"on_critic_error": "fail"}))["disposition"] == CriticActorDisposition.FAIL
 
 
 def test_critic_exception_escalates_when_configured():

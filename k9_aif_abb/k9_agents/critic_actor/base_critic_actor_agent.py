@@ -40,7 +40,12 @@ Config keys (all optional)
 max_rounds               : int   — default 3
 acceptance_threshold     : float — default 0.8; used in should_accept()
 finalize_on_max_rounds   : bool  — default True; if False, escalates on timeout
-escalate_on_critic_error : bool  — default False; if True, ESCALATE on critique() exception
+on_critic_error          : str   — what a critique() exception does (1.19.0, as on_tool_error in the
+                                   validation loop): "raise" (default): record the round, then re-raise,
+                                   so the failure reaches the squad and orchestrator; "escalate": ESCALATE
+                                   (route to a person); "fail": FAIL result (only where FAIL is itself a
+                                   product). Before 1.19.0 the default was FAIL.
+escalate_on_critic_error : bool  — older form: True means on_critic_error "escalate"
 """
 
 import asyncio
@@ -171,9 +176,8 @@ class BaseCriticActorAgent(BaseAgent):
         finalize_on_max   = self._parse_bool(
             self.config.get("finalize_on_max_rounds"), _DEFAULT_FINALIZE_ON_MAX
         )
-        escalate_on_error = self._parse_bool(
-            self.config.get("escalate_on_critic_error"), False
-        )
+        on_error = self._on_critic_error()
+        escalate_on_error = on_error == "escalate"
 
         ctx = CriticActorContext(payload=payload)
         self._emit("loop_started", {"max_rounds": max_rounds})
@@ -212,6 +216,8 @@ class BaseCriticActorAgent(BaseAgent):
                 ))
                 event = "loop_escalated" if escalate_on_error else "loop_failed"
                 self._emit(event, {"rounds": ctx.round, "error": str(exc)})
+                if on_error == "raise":
+                    raise                               # failures propagate: agent -> squad -> orchestrator
                 handler = self.escalate if escalate_on_error else self.fail
                 return self._to_dict(handler(ctx))
 
@@ -354,6 +360,19 @@ class BaseCriticActorAgent(BaseAgent):
 
     def _last_score(self, ctx: CriticActorContext) -> float:
         return ctx.steps[-1].score if ctx.steps else 0.0
+
+    _CRITIC_ERROR_MODES = ("raise", "escalate", "fail")
+
+    def _on_critic_error(self) -> str:
+        """on_critic_error from config; the older escalate_on_critic_error: true still means "escalate".
+        Default "raise"."""
+        mode = self.config.get("on_critic_error")
+        if mode is None:
+            return "escalate" if self._parse_bool(self.config.get("escalate_on_critic_error"), False) else "raise"
+        mode = str(mode).strip().lower()
+        if mode not in self._CRITIC_ERROR_MODES:
+            raise ValueError(f"on_critic_error must be one of {self._CRITIC_ERROR_MODES}, got {mode!r}")
+        return mode
 
     @staticmethod
     def _parse_bool(value: Any, default: bool) -> bool:

@@ -1,5 +1,6 @@
 name: RFPAnalysisAgent
 class: RFPAnalysisAgent
+module: examples.rfp_analyzer.agents.src.rfp_analysis_agent   # where AgentLoader imports the class from
 
 description: >
   Analyzes retrieved RFP sections — extracts requirements, deadlines,

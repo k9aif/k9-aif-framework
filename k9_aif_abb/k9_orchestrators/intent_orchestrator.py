@@ -110,7 +110,8 @@ class IntentOrchestrator(BaseOrchestrator):
         routing_cfg = self.config.get("routing", {})
         self._table: Dict[str, str] = routing_cfg.get("table", {})
         self._response_topic: str = routing_cfg.get("response_topic", "responses.out")
-        self._threshold: float = float(routing_cfg.get("confidence_threshold", 0.6))
+        from k9_aif_abb.k9_squad.intent_squad import DEFAULT_CONFIDENCE_THRESHOLD
+        self._threshold: float = float(routing_cfg.get("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD))
 
         self._intent_squad = squad or self._build_default_squad()
         log.info(
@@ -120,15 +121,10 @@ class IntentOrchestrator(BaseOrchestrator):
 
     # ------------------------------------------------------------------
     def _build_default_squad(self):
-        """Bootstrap IntentSquad + K9IntentAgent from config. SBBs replace via constructor."""
-        from k9_aif_abb.k9_agents.intent.k9_intent_agent import K9IntentAgent
-        from k9_aif_abb.k9_squad.intent_squad import IntentSquad
-
-        agent_cfg = {**self.config, **self.config.get("routing", {})}
-        agent = K9IntentAgent(config=agent_cfg)
-        squad = IntentSquad(squad_id="K9IntentSquad", agents=[agent])
-        squad.metadata = self.config.get("routing", {})
-        return squad
+        """The zero-config intent squad, built by the squad layer: this orchestrator knows only squads
+        (before 1.19.0 it imported and built K9IntentAgent itself). SBBs pass their own via squad=."""
+        from k9_aif_abb.k9_squad.intent_squad import default_intent_squad
+        return default_intent_squad(self.config)
 
     # ------------------------------------------------------------------
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -185,8 +181,10 @@ class IntentOrchestrator(BaseOrchestrator):
     # ------------------------------------------------------------------
     def _publish(self, topic: str, event: Dict[str, Any]) -> None:
         """Publish to topic via message_bus."""
-        if self.message_bus:
-            if hasattr(self.message_bus, "publish_to"):
-                self.message_bus.publish_to(topic, event)
-            else:
-                self.message_bus.publish(event)
+        if not self.message_bus:
+            # execute_flow() would otherwise report status routed for an event that went nowhere (1.19.0)
+            raise RuntimeError(f"[{self.layer}] no message_bus: cannot publish to {topic}")
+        if hasattr(self.message_bus, "publish_to"):
+            self.message_bus.publish_to(topic, event)
+        else:
+            self.message_bus.publish(event)

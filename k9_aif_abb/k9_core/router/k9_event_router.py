@@ -220,11 +220,15 @@ class K9EventRouter(BaseRouter):
     # ------------------------------------------------------------------
     def _dispatch(self, topic: str, payload: Dict[str, Any], strategy: str = "") -> None:
         """Publish payload to the given topic via message_bus."""
-        if self.message_bus:
-            if hasattr(self.message_bus, "publish_to"):
-                self.message_bus.publish_to(topic, payload)
-            else:
-                self.message_bus.publish(payload)
+        if not self.message_bus:
+            # route() would otherwise report routed: True for an event that went nowhere (1.19.0)
+            raise RuntimeError(f"[{self.layer}] no message_bus: cannot publish event_type="
+                               f"{payload.get('event_type')!r} to {topic}. Pass message_bus= (K9EventBus or "
+                               f"MessageFactory.create(config)), or use BaseRouter for direct calls.")
+        if hasattr(self.message_bus, "publish_to"):
+            self.message_bus.publish_to(topic, payload)
+        else:
+            self.message_bus.publish(payload)
         if self.monitor:
             self.monitor.record_event({
                 "type": "EventRouted",

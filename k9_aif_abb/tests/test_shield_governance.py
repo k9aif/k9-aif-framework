@@ -272,7 +272,7 @@ def test_no_callback_registered_does_not_raise():
     assert result == {"text": "clean text"}
 
 
-# ── a crashing check: closed in production, open in development (1.18.9) ──
+# ── a crashing check: closed in production, open in development (1.19.0) ──
 
 def _shield_with_crashing_check(monkeypatch, env, fail_open=None):
     import pytest as _pytest

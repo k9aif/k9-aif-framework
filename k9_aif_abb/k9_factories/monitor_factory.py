@@ -6,7 +6,6 @@
 from typing import Any, Dict, Type, List
 from threading import Lock
 import logging
-from k9_aif_abb.k9_utils.config_loader import load_config
 from k9_aif_abb.k9_core.monitoring.monitor_server import MonitorServer
 
 
@@ -43,34 +42,41 @@ class MonitorFactory:
         MonitorFactory.logger.info("[Factory] Bootstrapped MonitorFactory")
 
     @staticmethod
-    def load_from_config() -> MonitorServer:
-        cfg = load_config("k9_aif_abb/config/config.yaml")
-        monitor_defs = cfg.get("monitors", [])
+    def load_from_config(config: Dict[str, Any] = None) -> MonitorServer:
+        """Build the MonitorServer from ``monitors`` / ``common_tags`` in *config*.
+
+        With no ``monitors`` key, the framework's own config.yaml (found next to this package, not relative to
+        the working directory) supplies the defaults. A monitor entry that can't be built raises.
+        """
+        cfg = config or {}
+        if "monitors" not in cfg:
+            import yaml
+            from pathlib import Path
+            default = Path(__file__).resolve().parent.parent / "config" / "config.yaml"
+            cfg = (yaml.safe_load(default.read_text(encoding="utf-8")) or {}) if default.is_file() else {}
+        monitor_defs = cfg.get("monitors") or []
         common_tags = cfg.get("common_tags", {"app": "K9-AIF"})
         monitors: List[Any] = []
         for entry in monitor_defs:
-            module_name, class_name = entry["class"].rsplit(".", 1)
-            module = __import__(module_name, fromlist=[class_name])
-            cls = getattr(module, class_name)
+            try:
+                module_name, class_name = entry["class"].rsplit(".", 1)
+                module = __import__(module_name, fromlist=[class_name])
+                cls = getattr(module, class_name)
+            except Exception as exc:
+                raise ValueError(f"MonitorFactory: can't build monitor {entry!r}: {exc}") from exc
             MonitorFactory.register(entry["name"], cls)
-            params = entry.get("params", {})
-            monitors.append(cls(**params))
+            monitors.append(cls(**(entry.get("params") or entry.get("kwargs") or {})))   # both spellings are in use
         return MonitorServer(monitors=monitors, common_tags=common_tags)
 
     # ------------------------------------------------------------------
-    # [OK] New method: entry point for bootstrap_all()
+    # Entry point for bootstrap_all()
     # ------------------------------------------------------------------
     @staticmethod
     def create(config) -> MonitorServer:
+        """The MonitorServer for this configuration.
+
+        Before 1.19.0 this ignored *config*: it read "k9_aif_abb/config/config.yaml" relative to the working
+        directory, which an installed package normally doesn't have, and the error was swallowed, so an
+        application's monitors never applied and monitoring was silently empty.
         """
-        Entry point used by bootstrap_all().
-        Reuses the existing load_from_config() logic, or falls back
-        to a default MonitorServer if no config is found.
-        """
-        try:
-            return MonitorFactory.load_from_config()
-        except Exception as e:
-            MonitorFactory.logger.warning(
-                f"MonitorFactory.create() fallback: {e}. Using default MonitorServer."
-            )
-            return MonitorServer(monitors=[], common_tags={"app": "K9-AIF"})
+        return MonitorFactory.load_from_config(config)

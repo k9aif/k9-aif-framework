@@ -88,11 +88,36 @@ def _check_output(governance, request: InferenceRequest, output: str) -> str:
     return checked if isinstance(checked, str) else output
 
 
+# Signs that the model server can't be reached at all (as opposed to an empty or slow reply). OllamaLLM reports
+# these inside the output ("[WARN] connection refused"), other providers raise.
+_UNREACHABLE = ("connection refused", "failed to establish", "name or service not known", "nodename nor servname",
+                "connecterror", "connection error", "no route to host", "unreachable")
+
+
+def _unreachable(error: Optional[Exception], resp: Any) -> bool:
+    if error is not None:
+        if isinstance(error, ConnectionError):
+            return True
+        text = f"{type(error).__name__} {error}".lower()
+    else:
+        text = (getattr(resp, "output", "") or "").lower()
+    return any(k in text for k in _UNREACHABLE)
+
+
+def _retry_settings(config: Dict[str, Any], max_retries, retry_delay_s, unreachable_delay_s):
+    """Explicit arguments win, then inference.retry in config, then the defaults (3 attempts, 60 s, 5 s)."""
+    rc = ((config or {}).get("inference") or {}).get("retry") or {}
+    return (int(max_retries if max_retries is not None else rc.get("attempts", 3)),
+            float(retry_delay_s if retry_delay_s is not None else rc.get("delay_seconds", 60.0)),
+            float(unreachable_delay_s if unreachable_delay_s is not None else rc.get("unreachable_delay_seconds", 5.0)))
+
+
 def llm_invoke(
     config: Dict[str, Any],
     request: InferenceRequest,
-    max_retries: int = 3,
-    retry_delay_s: float = 60.0,
+    max_retries: Optional[int] = None,
+    retry_delay_s: Optional[float] = None,
+    unreachable_delay_s: Optional[float] = None,
 ) -> InferenceResponse:
     """
     Invoke the LLM router and return the response.
@@ -110,8 +135,12 @@ def llm_invoke(
     Args:
         config:  Application config dict (must contain ``inference`` section).
         request: :class:`InferenceRequest` describing the prompt and task type.
-        max_retries: total attempts before giving up (1 = no retry).
-        retry_delay_s: seconds to wait between attempts.
+        max_retries: total attempts before giving up (1 = no retry). Default: ``inference.retry.attempts``, else 3.
+        retry_delay_s: seconds to wait after an empty or failed reply. Default: ``inference.retry.delay_seconds``,
+            else 60 (a model that returned nothing often answers on the next try).
+        unreachable_delay_s: seconds to wait when the model server can't be reached at all. Default:
+            ``inference.retry.unreachable_delay_seconds``, else 5 (1.19.0: before, an outage waited 60 s per
+            attempt, about two minutes per call, before failing).
 
     Returns:
         :class:`InferenceResponse` with model output and metadata.
@@ -128,6 +157,8 @@ def llm_invoke(
 
     router = ModelRouterFactory.get_router(config)
     agent = (request.metadata or {}).get("agent", "?")
+    max_retries, retry_delay_s, unreachable_delay_s = _retry_settings(config, max_retries, retry_delay_s,
+                                                                      unreachable_delay_s)
 
     resp = None
     last_error: Optional[Exception] = None
@@ -146,13 +177,14 @@ def llm_invoke(
             break
 
         if attempt < max_retries:
+            delay = unreachable_delay_s if _unreachable(last_error, resp) else retry_delay_s
             log.warning(
                 "[llm_invoke] attempt %d/%d failed (agent=%s): %s -- retrying in %.0fs",
                 attempt, max_retries, agent,
                 last_error if last_error else getattr(resp, "output", "empty response"),
-                retry_delay_s,
+                delay,
             )
-            time.sleep(retry_delay_s)
+            time.sleep(delay)
 
     elapsed_ms = int((time.monotonic() - t0) * 1000)
 
@@ -173,8 +205,12 @@ def llm_invoke(
     # resp.model_alias is the router's catalog key (e.g. "reasoning"), not the
     # literal model name — resolve the real model string from config so the
     # trace event says "granite3-dense:8b", not just "reasoning".
-    model_catalog = config.get("inference", {}).get("llm_factory", {}).get("models", {})
-    catalog_entry = model_catalog.get(resp.model_alias) if resp.model_alias else None
+    # The catalog key can differ from the llm_factory alias it serves (llm_ref): resolve through it (1.19.0).
+    inference_cfg = config.get("inference", {}) or {}
+    entry = ((inference_cfg.get("model_catalog") or {}).get("models") or {}).get(resp.model_alias)
+    llm_ref = entry.get("llm_ref", resp.model_alias) if isinstance(entry, dict) else resp.model_alias
+    model_catalog = (inference_cfg.get("llm_factory") or {}).get("models", {}) or {}
+    catalog_entry = model_catalog.get(llm_ref) if llm_ref else None
     if isinstance(catalog_entry, dict):
         real_model = catalog_entry.get("model")
     elif isinstance(catalog_entry, str):

@@ -225,7 +225,7 @@ def test_latest_release_is_cached_and_offline_falls_back(monkeypatch):
 
 
 
-# ── K9-LLM-002: model-call failures travel up (1.18.9) ──────────────────
+# ── K9-LLM-002: model-call failures travel up (1.19.0) ──────────────────
 
 def _llm_agent(body):
     return ("from k9_aif_abb.k9_core.agent.base_agent import BaseAgent\n"

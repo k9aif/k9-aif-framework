@@ -75,6 +75,25 @@ log = logging.getLogger(__name__)
 
 _INTENT_AGENT_METHOD = "classify"   # duck-type check: agent has this → is an IntentAgent
 
+# One default for routing.confidence_threshold, shared by IntentSquad (on_low_confidence) and
+# IntentOrchestrator (ask for clarification). Before 1.19.0 the squad used 0.5 and the orchestrator 0.6, so
+# between the two the squad was "confident" and the orchestrator was not.
+DEFAULT_CONFIDENCE_THRESHOLD = 0.6
+
+
+def default_intent_squad(config: Dict[str, Any]) -> "IntentSquad":
+    """The zero-config intent squad: one K9IntentAgent, configured from ``routing``.
+
+    Built by the squad layer, so IntentOrchestrator never names or builds an agent (an orchestrator knows
+    only squads). Solutions pass their own squad to IntentOrchestrator(squad=...) instead.
+    """
+    from k9_aif_abb.k9_agents.intent.k9_intent_agent import K9IntentAgent
+
+    routing = (config or {}).get("routing", {})
+    squad = IntentSquad(squad_id="K9IntentSquad", agents=[K9IntentAgent(config={**(config or {}), **routing})])
+    squad.metadata = routing
+    return squad
+
 
 class IntentSquad(BaseSquad):
     """
@@ -138,7 +157,7 @@ class IntentSquad(BaseSquad):
         log.warning(
             "[%s] low-confidence intent=%s confidence=%.2f (threshold=%.2f) — continuing",
             self.squad_id, intent, confidence,
-            self.metadata.get("confidence_threshold", 0.5),
+            self.metadata.get("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD),
         )
 
     # ── Final — do not override ───────────────────────────────────────────────
@@ -178,7 +197,7 @@ class IntentSquad(BaseSquad):
 
         intent     = intent_result.get("intent", "unknown")
         confidence = float(intent_result.get("confidence", 1.0))
-        threshold  = float(self.metadata.get("confidence_threshold", 0.5))
+        threshold  = float(self.metadata.get("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD))
 
         log.info(
             "[%s] intent=%s confidence=%.2f elapsed_ms=%d",

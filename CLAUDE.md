@@ -235,8 +235,8 @@ under `strict=False` (the common config) just logs and lets the payload
 through unmodified — `ShieldGovernance` never mutates a passing payload.
 `fail_open` controls what happens if a check itself raises: `True` →
 treated as FLAG, `False` → treated as BLOCK. Unset, it follows `K9_ENV`
-(1.18.9): `False` (fail closed) in production, `True` in development/test;
-an explicit value wins. Before 1.18.9 it was always `True`, so an input that
+(1.19.0): `False` (fail closed) in production, `True` in development/test;
+an explicit value wins. Before 1.19.0 it was always `True`, so an input that
 made a check throw passed that check unscreened.
 
 **Shield is off in the shipped configuration.** `k9_aif_abb/config/config.yaml`
@@ -368,7 +368,7 @@ Reference app: `k9x-ecosystem/k9x_streams`.
 (plus `recent_changes`, `query`); `K9Origin` resolves: per-agent scope →
 request Shield → live state → read-through to the system of record on a miss
 → verify for `verify_before` steps → flags (quarantined, in_review, conflict,
-verification_failed when the system of record could not be reached: 1.18.9)
+verification_failed when the system of record could not be reached: 1.19.0)
 → answer Shield. Answers are facts (`as_of`, `version`, `source`, flags); Origin
 makes no business decisions — `K9RulesAgent` (+ `K9RulesAdapter` /
 `RestRulesAdapter`) decides and raises `RequiresHIL`. Config:
@@ -378,6 +378,15 @@ events by source order (shared `merge_update`); `RedisContextState` for
 clusters (`volatile-lru`, quarantine pinned). Design:
 `docs/roadmap/k9x-origin-design.md`. Tests: `test_k9x_origin.py`,
 `test_redis_context_state.py` (needs `K9_TEST_REDIS_URL`).
+
+**1.19.0 behaviour (review fixes):** `llm_invoke()` retries are configurable
+(`inference.retry`: `attempts`, `delay_seconds` 60 for an empty reply,
+`unreachable_delay_seconds` 5 when the server can't be reached). Origin
+answers carry `source_unavailable` when a read-through fails (distinct from
+not found). Critic-actor agents re-raise a `critique()` failure by default
+(`on_critic_error`). `K9EventRouter`/`IntentOrchestrator` raise without a
+message bus. `MonitorFactory.create(config)` uses `config["monitors"]`;
+`PersistenceFactory.create()` raises instead of returning `None`.
 
 ## Model routers
 
@@ -626,8 +635,9 @@ publishes to `intent.in`; `IntentOrchestrator` (`k9_orchestrators/`) runs
 `IntentSquad` (`k9_squad/`) with a `BaseIntentAgent` (OOB `K9IntentAgent`:
 `intent_map` lookup → LLM via `llm_invoke` → `fallback_intent()`) and
 re-publishes to the domain topic, or returns a "please clarify" response.
-Nothing is ever wired *in front of* the Router. Below `confidence_threshold`
-(default 0.5) `IntentSquad.on_low_confidence()` fires.
+Nothing is ever wired *in front of* the Router. Below `routing.confidence_threshold`
+(default 0.6, one constant for both since 1.19.0) `IntentSquad.on_low_confidence()` fires and
+`IntentOrchestrator` asks for clarification.
 
 **Config.** Two levels: the framework's `k9_aif_abb/config/config.yaml`
 (test defaults: Ollama, SQLite, Shield off) and each solution's own

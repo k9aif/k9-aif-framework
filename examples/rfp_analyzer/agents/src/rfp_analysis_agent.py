@@ -48,12 +48,9 @@ class RFPAnalysisAgent(BaseAgent):
             metadata={"agent": "RFPAnalysisAgent", "chunks_analyzed": retrieved_count},
         )
 
-        try:
-            resp = llm_invoke(self.config, req)
-            output = resp.output.strip()
-        except RuntimeError as exc:
-            self.logger.error("[%s] LLM unavailable: %s", self.layer, exc)
-            output = f"[WARN] LLM unavailable: {exc}"
+        # A failed model call raises and travels up (the app records it); never a "[WARN]" stand-in result.
+        resp = llm_invoke(self.config, req)
+        output = resp.output.strip()
 
         self.publish_event({
             "type": "RFPAnalysisCompleted",

@@ -69,7 +69,7 @@ def test_execute_posts_file_with_ocr_and_returns_markdown(tmp_path):
 
 
 def test_http_error_raises_from_execute_and_is_reported_by_convert(tmp_path):
-    """As an agent, a failed conversion propagates (1.18.9); convert() still reports it as a result."""
+    """As an agent, a failed conversion propagates (1.19.0); convert() still reports it as a result."""
     f = tmp_path / "a.pdf"
     f.write_bytes(b"%PDF")
     p = DoclingParser(transport=httpx.MockTransport(lambda r: httpx.Response(404, text="Not Found")))

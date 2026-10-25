@@ -98,7 +98,10 @@ def test_read_through_on_miss_says_where_it_came_from(origin):
 
 def test_read_through_failure_is_not_found_not_an_exception(origin):
     origin.sources.register("claims_db", lambda e, i: (_ for _ in ()).throw(ConnectionError("db down")))
-    assert origin.get_current("claim", "C-5")["found"] is False
+    a = origin.get_current("claim", "C-5")
+    assert a["found"] is False
+    assert a["source_unavailable"] == {"system": "claims_db", "error": "db down"}, "down is not 'no such record'"
+    assert "source_unavailable" not in origin.get_current("policy", "P-1"), "no system of record, nothing to report"
 
 
 def test_verify_before_irreversible_step(origin):
@@ -117,7 +120,7 @@ def test_verify_before_irreversible_step(origin):
 
 
 def test_verify_that_cannot_reach_the_system_of_record_is_flagged(origin):
-    """A verify_before step must not get an unverified value that looks verified (1.18.9)."""
+    """A verify_before step must not get an unverified value that looks verified (1.19.0)."""
     origin.state.apply(ev("claim.created", 2, claim_id="C-3", status="approved", amount=900))
     origin.sources.register("claims_db", lambda e, i: (_ for _ in ()).throw(ConnectionError("db down")))
     a = origin.get_current("claim", "C-3", agent="PayoutAgent")

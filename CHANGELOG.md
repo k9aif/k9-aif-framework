@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (planned 1.18.9)
+## [Unreleased] (planned 1.19.0)
 
 ### Failures surface, everywhere
 
@@ -32,7 +32,46 @@ now surfaces, and each has a test that proves it.
   turned into results".
 
 Tests: `test_execute_squads.py`, `test_shield_governance.py` (3), `test_k9x_origin.py`,
-`test_docling_parser.py` (4), `test_k9_inspect.py` (2). Suite: 957 passed.
+`test_docling_parser.py` (4), `test_k9_inspect.py` (2).
+
+### Every configuration used, every outcome reported
+
+The review's medium and low findings.
+
+- **No message bus, no "routed".** `K9EventRouter.route()` and `IntentOrchestrator.execute_flow()` raise
+  when there is no message bus, instead of reporting `routed` for an event that went nowhere.
+- **One intent threshold.** `IntentSquad` and `IntentOrchestrator` share `DEFAULT_CONFIDENCE_THRESHOLD`
+  (0.6) for `routing.confidence_threshold`; before, the squad defaulted to 0.5 and the orchestrator to 0.6.
+- **IntentOrchestrator knows only squads.** Its zero-config squad comes from `default_intent_squad(config)`
+  in the squad layer; the orchestrator no longer imports or builds `K9IntentAgent`.
+- **MonitorFactory uses the configuration it's given.** `create(config)` reads `monitors` and
+  `common_tags` from it (the framework default when absent, found by package path) and raises on a monitor
+  it can't build. Before, it ignored the argument, read a path relative to the working directory, and on
+  any error silently returned an empty monitor. Monitor arguments may be written `params:` or `kwargs:`.
+- **PersistenceFactory raises** for an unknown provider or a failing backend instead of returning `None`.
+- **Short waits when a model server is down.** `llm_invoke()` waits 5 s between attempts when the server
+  can't be reached (connection refused, host not found), and keeps 60 s for an empty reply. Both, and the
+  number of attempts, are configurable under `inference.retry` (`attempts`, `delay_seconds`,
+  `unreachable_delay_seconds`); explicit arguments still win. Before, an outage cost about two minutes per
+  call.
+- **k9x Origin tells "down" from "not found".** A read-through whose system of record fails returns
+  `source_unavailable` (`system`, `error`) with `found: false`.
+- **Critic-actor failures propagate.** A `critique()` exception now re-raises by default
+  (`on_critic_error: raise | escalate | fail`), as validation loops have since 1.18.2; before, the default
+  was a FAIL result. `escalate_on_critic_error: true` still means escalate.
+- **The LLMCall trace names the right model,** resolving the catalog entry's `llm_ref`.
+- **Configured but broken is an error.** A router's `object_storage` block, or `session.enabled: true`, that
+  fails to build now raises at start-up instead of silently meaning "not configured" (router and
+  orchestrator).
+- **The squad's digest writer keeps its own identity:** `K9ContextSynthesizerAgent` is built from the
+  squad's config, or the first agent's without its role, goal and instructions.
+- **Example:** `rfp_analyzer`'s agent YAML names its `module:` and its agent lets a model failure propagate.
+
+Not changed, by design: `OllamaLLM` still reports a failed call as `"[WARN] ..."` text (the model router's
+fallback reads it; `llm_invoke()` turns it into an exception).
+
+Tests: `test_review_medium_low.py` (16), `test_k9x_origin.py`, `test_k9_critic_actor_agent.py` (2). Suite:
+971 passed. DAS, Arena, Inspector, SATAN, Sentinel and Newswatch suites identical before and after.
 
 ### Upgrade notes
 
@@ -46,6 +85,18 @@ Tests: `test_execute_squads.py`, `test_shield_governance.py` (3), `test_k9x_orig
   does the former check today.
 - Agents that wrap `llm_invoke()` and return a "[WARN]" result now get a K9-LLM-002 warning; let the error
   propagate. K9X Studio's agent template is fixed to match.
+- A `K9EventRouter` or `IntentOrchestrator` built without a message bus now raises when it dispatches. For
+  direct calls without Kafka, use `BaseRouter`.
+- Code that compared `routing.confidence_threshold` behaviour against 0.5 (the squad's old default) now
+  sees 0.6 unless it sets the value.
+- `MonitorFactory.create(config)` now applies `config["monitors"]`; a monitor class that can't be imported
+  raises instead of being skipped.
+- `PersistenceFactory.create()` raises instead of returning `None`.
+- A critic-actor agent whose `critique()` raises now propagates the error. Set `on_critic_error: fail` to
+  keep the old result.
+- A configured `object_storage` block or `session.enabled: true` that can't be built stops start-up.
+- Code that compared an Origin answer's keys exactly sees `source_unavailable` when a read-through fails,
+  and `flags.verification_failed` (always present, `None` when it didn't happen).
 
 ---
 

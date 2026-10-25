@@ -158,7 +158,7 @@ class DoclingParser(BaseAgent):
         })
         out = {"filename": filename, **{k: v for k, v in result.items() if k != "data"}}
         # As an agent in a squad flow, a failed conversion is a failure, not a result: the next agents must not
-        # run on an empty document (failures propagate, 1.18.9). convert()/parse() still return the result
+        # run on an empty document (failures propagate, 1.19.0). convert()/parse() still return the result
         # for callers that inspect it themselves.
         if result["status"] != "ok":
             raise DocumentConversionError(filename, out)
