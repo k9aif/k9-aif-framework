@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (planned 1.20.1)
+## [1.20.1] — 2026-10-26
 
 - **Shield passes an agent's text output in production.** `BaseAgent`'s egress gate hands Shield the
   agent's output text, and the recommended egress checks (`ToolArgumentCheck`, `ExecutionGuardCheck`)
