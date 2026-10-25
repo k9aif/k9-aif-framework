@@ -69,9 +69,9 @@ security:
   shield:
     enabled: false
     strict: false          # strict: true promotes FLAG → BLOCK across all checks
-    fail_open: true        # fail_open: false promotes a crashing check's result
-                            # from FLAG to BLOCK (fail-closed) instead of silently
-                            # letting a broken check pass the payload through
+    # fail_open: unset (the default) blocks on a crashing check in production and flags it in
+    #   development/test (1.19.0). Set true or false only to override; copying this file
+    #   into an application should not carry an opt-out.
     ingress:               # runs before the LLM — protect the model from what arrives
       checks:
         - InputSizeCheck
