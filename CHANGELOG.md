@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (planned 1.20.0)
+## [1.20.0] — 2026-10-26
 
 ### Large events travel as a link
 
