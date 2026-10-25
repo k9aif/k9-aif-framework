@@ -4,54 +4,62 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (planned 1.18.8)
+## [1.18.8] — 2026-10-25
 
-### Factories: one configuration per process, no silent failures
+### Enhancements
 
-The factories stay static (no API change). What changed is that they refuse what they used to ignore.
-Found by reviewing `LLMFactory` (2026-10-25).
+**Local and hosted models in one application.** Each model alias can now name its own backend and
+connection settings, so an application can run a local Ollama model for everyday work and a hosted model
+(watsonx.ai, OpenAI, Azure OpenAI) for the tasks that need it, from one configuration:
 
-- **A second, different configuration is refused.** `LLMFactory` bootstrapped once and
-  `ModelRouterFactory` cached its router under `type:enabled:provider` only, so a second application (or
-  an agent YAML with its own `inference:` section) in the same process silently got the first one's
-  models, router and routing history. Now the same `inference` config is a no-op, a config without an
-  `inference` section uses the process's, and a different one raises `ConfigConflictError`
-  (`k9_factories/factory_errors.py`). The router's cache key includes the inference config.
-- **No silent message loss in production.** `K9EventBus` caught "broker unreachable" and kept a bus with
-  no producer, so every publish was dropped with a warning while the app looked healthy; `MessageFactory`'s
-  error path fell back to a bare `LocalQueue` without `publish()`. In production (`K9_ENV` not
-  development/dev/test) an unreachable broker now raises `MessagingUnavailableError`
-  (`k9_core/messaging/messaging_errors.py`), and `MessageFactory` and `BaseComponent` let it through.
-  Development and test degrade to an in-process queue with a warning; `messaging.allow_local_fallback:
-  true` (or `K9EventBus(require_connection=False)`) allows that in production.
-- **Shared Kafka defaults are warned.** `messaging.topic`/`group_id` left at `k9aif-events`/`k9aif-core`,
-  and any consumer in the default group, log a warning: two applications in one group split each other's
-  messages.
-- **Per-model backend.** Each alias resolves its backend from `models.<alias>.backend` (or `provider`),
-  then the factory-wide setting, then `ollama`; the alias's connection keys (`base_url`, `api_version`,
-  `deployment`, `api_key_env`) override the factory's, so local and hosted models can serve one
-  application. Before, the catalog's per-model `provider` was reported but never used to build the model.
-  `ModelRouterFactory` now refuses a catalog `provider` that differs from the backend serving its
-  `llm_ref`, and a derived catalog reports each alias's real backend. `LLMFactory.get()` returns `BaseLLM`
-  (was annotated `OllamaLLM`).
-- **Thread safety and housekeeping.** `LLMFactory.get()` and the router build run under a lock (one
-  instance per alias even under concurrent first use); `LLMFactory` logs instead of printing;
-  `OrchestrationFactory.reset()` added; `k9_aif_abb.k9_factories.reset_all()` resets every factory that
-  holds configured objects (autouse in the test suite).
+```yaml
+inference:
+  llm_factory:
+    backend: ollama
+    models:
+      general: "llama3.2:1b"
+      auditor:
+        backend: watsonx
+        model: ibm/granite-3-8b-instruct
+        base_url: https://us-south.ml.cloud.ibm.com
+```
 
-Developer Guide: 12.5 "Local and hosted models side by side", 17.7 "One Application per Process".
-Tests: `test_factory_process_safety.py` (22).
+The model router checks at start-up that each catalog entry's `provider` matches the backend that serves
+it, so routing decisions (confidential-only models among them) always reflect where a prompt really goes.
+`LLMFactory.get()` now returns the `BaseLLM` contract.
 
-### Upgrade notes
+**Production-grade messaging.** A production process now starts only when its Kafka/Redpanda broker is
+reachable, and says clearly why if it isn't (`MessagingUnavailableError`), so events are never published
+into a bus that cannot deliver them. Development and test keep working without a broker, using an
+in-process queue; `messaging.allow_local_fallback: true` makes that a deliberate choice in production too.
+The framework also points out shared default topic and consumer-group names, so each application keeps
+its messages to itself.
 
-- A production process whose broker is unreachable at start-up now stops with `MessagingUnavailableError`
-  instead of running without messaging. Start the broker first, or set `messaging.allow_local_fallback:
-  true` if in-process messaging is really intended.
-- A process that bootstraps two different `inference` configurations now gets `ConfigConflictError`. Run
-  each application in its own process; in tests call `reset_all()` between configurations.
-- A catalog entry whose `provider` doesn't match the backend serving its `llm_ref` now fails at start-up;
-  set the alias's `backend` or correct the catalog. (No such mismatch in the 240 configs checked across
-  the K9X repositories.)
+**One clear configuration per process.** The model factory and model router now confirm that a process
+runs on exactly the configuration it was given: the same configuration again is reused, an agent's config
+without an `inference` section uses the application's, and a conflicting one is reported at once
+(`ConfigConflictError`) rather than resolved silently. This makes multi-process deployments (Router,
+Orchestrator and API as separate processes) predictable by construction.
+
+**Thread-safe model creation.** Models and routers are created once, even when many requests arrive at
+the same moment.
+
+**Cleaner operations and testing.** Structured logging throughout `LLMFactory`;
+`k9_aif_abb.k9_factories.reset_all()` gives tests a clean slate between configurations (used
+automatically by the framework's own suite); `OrchestrationFactory.reset()`.
+
+New Developer Guide sections: 12.5 "Local and hosted models side by side" and 17.7 "One Application per
+Process". 22 new tests (`test_factory_process_safety.py`); 950 passing.
+
+### Upgrading
+
+- Start the message broker before a production process that uses Kafka/Redpanda, or set
+  `messaging.allow_local_fallback: true` if in-process messaging is what you want.
+- Give each application its own `messaging.topic` and `group_id` (a log line now reminds you).
+- Run one application per process, as K9X applications already do. Tests that switch configurations call
+  `reset_all()` between them.
+- If a model catalog names a `provider`, it should match the alias's backend; the router tells you at
+  start-up if not. (All 240 configurations checked across the K9X repositories already match.)
 
 ---
 
