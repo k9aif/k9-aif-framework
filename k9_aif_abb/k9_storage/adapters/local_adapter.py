@@ -15,6 +15,7 @@ YAML config::
 """
 
 import logging
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -73,3 +74,14 @@ class LocalObjectStorageAdapter(BaseObjectStorage):
 
     def get_uri(self, bucket: str, key: str) -> str:
         return f"file://{(self._root / bucket / key).resolve()}"
+
+    def set_expiry(self, bucket: str, prefix: str, days: int) -> bool:
+        """No lifecycle engine on a filesystem: delete files under *prefix* older than *days* now.
+        The event bus calls it when a process first stores a large event, so old files go at each start."""
+        base = self._root / bucket / prefix
+        if base.exists():
+            cutoff = time.time() - days * 86400
+            for f in base.rglob("*"):
+                if f.is_file() and f.stat().st_mtime < cutoff:
+                    f.unlink(missing_ok=True)
+        return True

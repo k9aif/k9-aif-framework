@@ -465,6 +465,17 @@ while a human is still being asked to review it. See the HIL section below
 for the full mechanism (signal shape, Orchestrator-side halt + state
 persistence, Router-side resume).
 
+**Large events (1.20).** An event over `max_event_bytes` (512 KB) is stored in
+object storage (`object_storage` config; bucket `messaging.large_events.bucket`,
+default `k9aif-large-events`, objects under `large-events/` expire after
+`ttl_days`, default 30) and sent as a link (`k9_large_event`); the bus's
+consumers fetch it back and check its sha256, so callbacks get the original
+event. Production without `object_storage` raises `LargeEventError`; a failed
+upload raises and nothing is sent. Before 1.20 the event was replaced by
+`{"truncated": true}`. Send errors raise to the caller. Documents the Router
+stores itself (`store_document()` → `document_uri`) are unchanged.
+Tests: `tests/test_large_events.py`.
+
 ## HIL (Human-in-the-Loop)
 
 `RequiresHIL` (`k9_core/orchestration/hil_signal.py`) is raised by an Agent

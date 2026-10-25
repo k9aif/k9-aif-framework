@@ -36,6 +36,12 @@
                 </ul>
 
             </li>
+            <li>
+                    <a class="class" href="#LargeEventError">LargeEventError</a>
+                            <ul class="memberlist">
+                </ul>
+
+            </li>
     </ul>
 
 
@@ -73,6 +79,11 @@
 </span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">    it would drop every published event while the application looked healthy. In</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    development and test the bus degrades with a warning instead.</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="k">class</span><span class="w"> </span><span class="nc">LargeEventError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;An event over ``max_event_bytes`` could not be stored in object storage (so it was not sent),</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">    or a consumer could not fetch a stored event back (expired, deleted, unreachable, hash mismatch).&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
@@ -105,6 +116,29 @@
 development/dev/test) when the bus cannot be connected at start-up. Running on without
 it would drop every published event while the application looked healthy. In
 development and test the bus degrades with a warning instead.</p>
+</div>
+
+
+                </section>
+                <section id="LargeEventError">
+                            <input id="LargeEventError-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">LargeEventError</span><wbr>(<span class="base">builtins.RuntimeError</span>):
+
+                <label class="view-source-button" for="LargeEventError-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#LargeEventError"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="LargeEventError-18"><a href="#LargeEventError-18"><span class="linenos">18</span></a><span class="k">class</span><span class="w"> </span><span class="nc">LargeEventError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span id="LargeEventError-19"><a href="#LargeEventError-19"><span class="linenos">19</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;An event over ``max_event_bytes`` could not be stored in object storage (so it was not sent),</span>
+</span><span id="LargeEventError-20"><a href="#LargeEventError-20"><span class="linenos">20</span></a><span class="sd">    or a consumer could not fetch a stored event back (expired, deleted, unreachable, hash mismatch).&quot;&quot;&quot;</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>An event over <code>max_event_bytes</code> could not be stored in object storage (so it was not sent),
+or a consumer could not fetch a stored event back (expired, deleted, unreachable, hash mismatch).</p>
 </div>
 
 

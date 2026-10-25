@@ -12,3 +12,8 @@ class MessagingUnavailableError(RuntimeError):
     it would drop every published event while the application looked healthy. In
     development and test the bus degrades with a warning instead.
     """
+
+
+class LargeEventError(RuntimeError):
+    """An event over ``max_event_bytes`` could not be stored in object storage (so it was not sent),
+    or a consumer could not fetch a stored event back (expired, deleted, unreachable, hash mismatch)."""

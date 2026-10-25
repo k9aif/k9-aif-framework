@@ -20,6 +20,9 @@ Overrideable surface
 ``list_objects(bucket, prefix)``         — **abstract** — list keys in bucket.
 ``get_uri(bucket, key)``                 — **abstract** — return a URI string for the stored object.
 ``exists(bucket, key)``                  — optional; default calls ``download()`` and catches.
+``ensure_bucket(bucket)``                — optional (1.20); create the bucket if the store needs it. Default: nothing.
+``set_expiry(bucket, prefix, days)``     — optional (1.20); expire objects under *prefix* after *days*.
+                                          Default returns False ("not supported"); the caller then says so.
 """
 
 from abc import ABC, abstractmethod
@@ -88,3 +91,15 @@ class BaseObjectStorage(ABC):
             return True
         except (FileNotFoundError, KeyError, Exception):
             return False
+
+    def ensure_bucket(self, bucket: str) -> None:
+        """Create *bucket* if this store needs it to exist before an upload. Default: nothing to do."""
+        return None
+
+    def set_expiry(self, bucket: str, prefix: str, days: int) -> bool:
+        """Expire objects under *prefix* in *bucket* after *days* days.
+
+        Returns True when the store applied it, False when this store can't (the default). Only objects
+        under *prefix* are affected, so a shared bucket keeps its other objects and rules.
+        """
+        return False

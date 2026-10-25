@@ -56,6 +56,12 @@
                         <li>
                                 <a class="function" href="#BaseObjectStorage.exists">exists</a>
                         </li>
+                        <li>
+                                <a class="function" href="#BaseObjectStorage.ensure_bucket">ensure_bucket</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#BaseObjectStorage.set_expiry">set_expiry</a>
+                        </li>
                 </ul>
 
             </li>
@@ -93,103 +99,121 @@
 <code>delete(bucket, key)</code>                  — <strong>abstract</strong> — remove object.
 <code>list_objects(bucket, prefix)</code>         — <strong>abstract</strong> — list keys in bucket.
 <code>get_uri(bucket, key)</code>                 — <strong>abstract</strong> — return a URI string for the stored object.
-<code>exists(bucket, key)</code>                  — optional; default calls <code>download()</code> and catches.</p>
+<code>exists(bucket, key)</code>                  — optional; default calls <code>download()</code> and catches.
+<code>ensure_bucket(bucket)</code>                — optional (1.20); create the bucket if the store needs it. Default: nothing.
+<code>set_expiry(bucket, prefix, days)</code>     — optional (1.20); expire objects under <em>prefix</em> after <em>days</em>.
+                                          Default returns False ("not supported"); the caller then says so.</p>
 </div>
 
                         <input id="mod-base_object_storage-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-base_object_storage-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">BaseObjectStorage — ABB abstract contract for object/blob storage.</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">Inheritance hierarchy::</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">    BaseObjectStorage                   (contract — ABB, this file)</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">      └── LocalObjectStorageAdapter     (default: local filesystem, zero-dep)</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">      └── S3ObjectStorageAdapter        (S3 / MinIO, lazy boto3)</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">      └── IbmCosObjectStorageAdapter    (IBM COS, lazy ibm_boto3)</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">      └── MyObjectStore                 (SBB — extend for custom provider)</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">Overrideable surface</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">--------------------</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">``upload(bucket, key, data, metadata)``  — **abstract** — store binary data.</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">``download(bucket, key)``                — **abstract** — retrieve binary data.</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">``delete(bucket, key)``                  — **abstract** — remove object.</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">``list_objects(bucket, prefix)``         — **abstract** — list keys in bucket.</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">``get_uri(bucket, key)``                 — **abstract** — return a URI string for the stored object.</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">``exists(bucket, key)``                  — optional; default calls ``download()`` and catches.</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseObjectStorage</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">    ABB contract for object/blob storage across any backend.</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">    The Router stores inbound documents here before publishing the event</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">    to a Kafka topic.  Downstream agents receive only the URI and use</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">    the same factory-provisioned adapter to retrieve the content.</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="c1"># ── Abstract — implement in every adapter ─────────────────────────────</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="sd">        Args:</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="sd">            bucket:   logical container name</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a><span class="sd">            key:      object key (path within the bucket)</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="sd">            data:     raw bytes to store</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a><span class="sd">        Returns:</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="sd">            URI string referencing the stored object.</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>
-</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>
-</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos">79</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos">80</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos">81</span></a>
-</span><span id="L-82"><a href="#L-82"><span class="linenos">82</span></a>    <span class="c1"># ── Optional override ─────────────────────────────────────────────────</span>
-</span><span id="L-83"><a href="#L-83"><span class="linenos">83</span></a>
-</span><span id="L-84"><a href="#L-84"><span class="linenos">84</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos">85</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
-</span><span id="L-86"><a href="#L-86"><span class="linenos">86</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="L-87"><a href="#L-87"><span class="linenos">87</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</span><span id="L-88"><a href="#L-88"><span class="linenos">88</span></a>            <span class="k">return</span> <span class="kc">True</span>
-</span><span id="L-89"><a href="#L-89"><span class="linenos">89</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="L-90"><a href="#L-90"><span class="linenos">90</span></a>            <span class="k">return</span> <span class="kc">False</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="sd">BaseObjectStorage — ABB abstract contract for object/blob storage.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">Inheritance hierarchy::</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">    BaseObjectStorage                   (contract — ABB, this file)</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="sd">      └── LocalObjectStorageAdapter     (default: local filesystem, zero-dep)</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="sd">      └── S3ObjectStorageAdapter        (S3 / MinIO, lazy boto3)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">      └── IbmCosObjectStorageAdapter    (IBM COS, lazy ibm_boto3)</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="sd">      └── MyObjectStore                 (SBB — extend for custom provider)</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">Overrideable surface</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">--------------------</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="sd">``upload(bucket, key, data, metadata)``  — **abstract** — store binary data.</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">``download(bucket, key)``                — **abstract** — retrieve binary data.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="sd">``delete(bucket, key)``                  — **abstract** — remove object.</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">``list_objects(bucket, prefix)``         — **abstract** — list keys in bucket.</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">``get_uri(bucket, key)``                 — **abstract** — return a URI string for the stored object.</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">``exists(bucket, key)``                  — optional; default calls ``download()`` and catches.</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">``ensure_bucket(bucket)``                — optional (1.20); create the bucket if the store needs it. Default: nothing.</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">``set_expiry(bucket, prefix, days)``     — optional (1.20); expire objects under *prefix* after *days*.</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">                                          Default returns False (&quot;not supported&quot;); the caller then says so.</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseObjectStorage</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">    ABB contract for object/blob storage across any backend.</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">    The Router stores inbound documents here before publishing the event</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">    to a Kafka topic.  Downstream agents receive only the URI and use</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">    the same factory-provisioned adapter to retrieve the content.</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a>    <span class="c1"># ── Abstract — implement in every adapter ─────────────────────────────</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a><span class="sd">        Args:</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="sd">            bucket:   logical container name</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="sd">            key:      object key (path within the bucket)</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="sd">            data:     raw bytes to store</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a><span class="sd">        Returns:</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="sd">            URI string referencing the stored object.</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="c1"># ── Optional override ─────────────────────────────────────────────────</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>            <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>            <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create *bucket* if this store needs it to exist before an upload. Default: nothing to do.&quot;&quot;&quot;</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_expiry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Expire objects under *prefix* in *bucket* after *days* days.</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a><span class="sd">        Returns True when the store applied it, False when this store can&#39;t (the default). Only objects</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="sd">        under *prefix* are affected, so a shared bucket keeps its other objects and rules.</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>        <span class="k">return</span> <span class="kc">False</span>
 </span></pre></div>
 
 
@@ -205,68 +229,80 @@
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage-30"><a href="#BaseObjectStorage-30"><span class="linenos">30</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseObjectStorage</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-</span><span id="BaseObjectStorage-31"><a href="#BaseObjectStorage-31"><span class="linenos">31</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-32"><a href="#BaseObjectStorage-32"><span class="linenos">32</span></a><span class="sd">    ABB contract for object/blob storage across any backend.</span>
-</span><span id="BaseObjectStorage-33"><a href="#BaseObjectStorage-33"><span class="linenos">33</span></a>
-</span><span id="BaseObjectStorage-34"><a href="#BaseObjectStorage-34"><span class="linenos">34</span></a><span class="sd">    The Router stores inbound documents here before publishing the event</span>
-</span><span id="BaseObjectStorage-35"><a href="#BaseObjectStorage-35"><span class="linenos">35</span></a><span class="sd">    to a Kafka topic.  Downstream agents receive only the URI and use</span>
-</span><span id="BaseObjectStorage-36"><a href="#BaseObjectStorage-36"><span class="linenos">36</span></a><span class="sd">    the same factory-provisioned adapter to retrieve the content.</span>
-</span><span id="BaseObjectStorage-37"><a href="#BaseObjectStorage-37"><span class="linenos">37</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-38"><a href="#BaseObjectStorage-38"><span class="linenos">38</span></a>
-</span><span id="BaseObjectStorage-39"><a href="#BaseObjectStorage-39"><span class="linenos">39</span></a>    <span class="c1"># ── Abstract — implement in every adapter ─────────────────────────────</span>
-</span><span id="BaseObjectStorage-40"><a href="#BaseObjectStorage-40"><span class="linenos">40</span></a>
-</span><span id="BaseObjectStorage-41"><a href="#BaseObjectStorage-41"><span class="linenos">41</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage-42"><a href="#BaseObjectStorage-42"><span class="linenos">42</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
-</span><span id="BaseObjectStorage-43"><a href="#BaseObjectStorage-43"><span class="linenos">43</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="BaseObjectStorage-44"><a href="#BaseObjectStorage-44"><span class="linenos">44</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="BaseObjectStorage-45"><a href="#BaseObjectStorage-45"><span class="linenos">45</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="BaseObjectStorage-46"><a href="#BaseObjectStorage-46"><span class="linenos">46</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-</span><span id="BaseObjectStorage-47"><a href="#BaseObjectStorage-47"><span class="linenos">47</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="BaseObjectStorage-48"><a href="#BaseObjectStorage-48"><span class="linenos">48</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-49"><a href="#BaseObjectStorage-49"><span class="linenos">49</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-50"><a href="#BaseObjectStorage-50"><span class="linenos">50</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
-</span><span id="BaseObjectStorage-51"><a href="#BaseObjectStorage-51"><span class="linenos">51</span></a>
-</span><span id="BaseObjectStorage-52"><a href="#BaseObjectStorage-52"><span class="linenos">52</span></a><span class="sd">        Args:</span>
-</span><span id="BaseObjectStorage-53"><a href="#BaseObjectStorage-53"><span class="linenos">53</span></a><span class="sd">            bucket:   logical container name</span>
-</span><span id="BaseObjectStorage-54"><a href="#BaseObjectStorage-54"><span class="linenos">54</span></a><span class="sd">            key:      object key (path within the bucket)</span>
-</span><span id="BaseObjectStorage-55"><a href="#BaseObjectStorage-55"><span class="linenos">55</span></a><span class="sd">            data:     raw bytes to store</span>
-</span><span id="BaseObjectStorage-56"><a href="#BaseObjectStorage-56"><span class="linenos">56</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
-</span><span id="BaseObjectStorage-57"><a href="#BaseObjectStorage-57"><span class="linenos">57</span></a>
-</span><span id="BaseObjectStorage-58"><a href="#BaseObjectStorage-58"><span class="linenos">58</span></a><span class="sd">        Returns:</span>
-</span><span id="BaseObjectStorage-59"><a href="#BaseObjectStorage-59"><span class="linenos">59</span></a><span class="sd">            URI string referencing the stored object.</span>
-</span><span id="BaseObjectStorage-60"><a href="#BaseObjectStorage-60"><span class="linenos">60</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-61"><a href="#BaseObjectStorage-61"><span class="linenos">61</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="BaseObjectStorage-62"><a href="#BaseObjectStorage-62"><span class="linenos">62</span></a>
-</span><span id="BaseObjectStorage-63"><a href="#BaseObjectStorage-63"><span class="linenos">63</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage-64"><a href="#BaseObjectStorage-64"><span class="linenos">64</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-65"><a href="#BaseObjectStorage-65"><span class="linenos">65</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-66"><a href="#BaseObjectStorage-66"><span class="linenos">66</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="BaseObjectStorage-67"><a href="#BaseObjectStorage-67"><span class="linenos">67</span></a>
-</span><span id="BaseObjectStorage-68"><a href="#BaseObjectStorage-68"><span class="linenos">68</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage-69"><a href="#BaseObjectStorage-69"><span class="linenos">69</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-70"><a href="#BaseObjectStorage-70"><span class="linenos">70</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-71"><a href="#BaseObjectStorage-71"><span class="linenos">71</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="BaseObjectStorage-72"><a href="#BaseObjectStorage-72"><span class="linenos">72</span></a>
-</span><span id="BaseObjectStorage-73"><a href="#BaseObjectStorage-73"><span class="linenos">73</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage-74"><a href="#BaseObjectStorage-74"><span class="linenos">74</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="BaseObjectStorage-75"><a href="#BaseObjectStorage-75"><span class="linenos">75</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-76"><a href="#BaseObjectStorage-76"><span class="linenos">76</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="BaseObjectStorage-77"><a href="#BaseObjectStorage-77"><span class="linenos">77</span></a>
-</span><span id="BaseObjectStorage-78"><a href="#BaseObjectStorage-78"><span class="linenos">78</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage-79"><a href="#BaseObjectStorage-79"><span class="linenos">79</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-80"><a href="#BaseObjectStorage-80"><span class="linenos">80</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-81"><a href="#BaseObjectStorage-81"><span class="linenos">81</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-</span><span id="BaseObjectStorage-82"><a href="#BaseObjectStorage-82"><span class="linenos">82</span></a>
-</span><span id="BaseObjectStorage-83"><a href="#BaseObjectStorage-83"><span class="linenos">83</span></a>    <span class="c1"># ── Optional override ─────────────────────────────────────────────────</span>
-</span><span id="BaseObjectStorage-84"><a href="#BaseObjectStorage-84"><span class="linenos">84</span></a>
-</span><span id="BaseObjectStorage-85"><a href="#BaseObjectStorage-85"><span class="linenos">85</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-86"><a href="#BaseObjectStorage-86"><span class="linenos">86</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage-87"><a href="#BaseObjectStorage-87"><span class="linenos">87</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="BaseObjectStorage-88"><a href="#BaseObjectStorage-88"><span class="linenos">88</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</span><span id="BaseObjectStorage-89"><a href="#BaseObjectStorage-89"><span class="linenos">89</span></a>            <span class="k">return</span> <span class="kc">True</span>
-</span><span id="BaseObjectStorage-90"><a href="#BaseObjectStorage-90"><span class="linenos">90</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="BaseObjectStorage-91"><a href="#BaseObjectStorage-91"><span class="linenos">91</span></a>            <span class="k">return</span> <span class="kc">False</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage-33"><a href="#BaseObjectStorage-33"><span class="linenos"> 33</span></a><span class="k">class</span><span class="w"> </span><span class="nc">BaseObjectStorage</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+</span><span id="BaseObjectStorage-34"><a href="#BaseObjectStorage-34"><span class="linenos"> 34</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-35"><a href="#BaseObjectStorage-35"><span class="linenos"> 35</span></a><span class="sd">    ABB contract for object/blob storage across any backend.</span>
+</span><span id="BaseObjectStorage-36"><a href="#BaseObjectStorage-36"><span class="linenos"> 36</span></a>
+</span><span id="BaseObjectStorage-37"><a href="#BaseObjectStorage-37"><span class="linenos"> 37</span></a><span class="sd">    The Router stores inbound documents here before publishing the event</span>
+</span><span id="BaseObjectStorage-38"><a href="#BaseObjectStorage-38"><span class="linenos"> 38</span></a><span class="sd">    to a Kafka topic.  Downstream agents receive only the URI and use</span>
+</span><span id="BaseObjectStorage-39"><a href="#BaseObjectStorage-39"><span class="linenos"> 39</span></a><span class="sd">    the same factory-provisioned adapter to retrieve the content.</span>
+</span><span id="BaseObjectStorage-40"><a href="#BaseObjectStorage-40"><span class="linenos"> 40</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-41"><a href="#BaseObjectStorage-41"><span class="linenos"> 41</span></a>
+</span><span id="BaseObjectStorage-42"><a href="#BaseObjectStorage-42"><span class="linenos"> 42</span></a>    <span class="c1"># ── Abstract — implement in every adapter ─────────────────────────────</span>
+</span><span id="BaseObjectStorage-43"><a href="#BaseObjectStorage-43"><span class="linenos"> 43</span></a>
+</span><span id="BaseObjectStorage-44"><a href="#BaseObjectStorage-44"><span class="linenos"> 44</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage-45"><a href="#BaseObjectStorage-45"><span class="linenos"> 45</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
+</span><span id="BaseObjectStorage-46"><a href="#BaseObjectStorage-46"><span class="linenos"> 46</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="BaseObjectStorage-47"><a href="#BaseObjectStorage-47"><span class="linenos"> 47</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="BaseObjectStorage-48"><a href="#BaseObjectStorage-48"><span class="linenos"> 48</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="BaseObjectStorage-49"><a href="#BaseObjectStorage-49"><span class="linenos"> 49</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+</span><span id="BaseObjectStorage-50"><a href="#BaseObjectStorage-50"><span class="linenos"> 50</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="BaseObjectStorage-51"><a href="#BaseObjectStorage-51"><span class="linenos"> 51</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-52"><a href="#BaseObjectStorage-52"><span class="linenos"> 52</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-53"><a href="#BaseObjectStorage-53"><span class="linenos"> 53</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
+</span><span id="BaseObjectStorage-54"><a href="#BaseObjectStorage-54"><span class="linenos"> 54</span></a>
+</span><span id="BaseObjectStorage-55"><a href="#BaseObjectStorage-55"><span class="linenos"> 55</span></a><span class="sd">        Args:</span>
+</span><span id="BaseObjectStorage-56"><a href="#BaseObjectStorage-56"><span class="linenos"> 56</span></a><span class="sd">            bucket:   logical container name</span>
+</span><span id="BaseObjectStorage-57"><a href="#BaseObjectStorage-57"><span class="linenos"> 57</span></a><span class="sd">            key:      object key (path within the bucket)</span>
+</span><span id="BaseObjectStorage-58"><a href="#BaseObjectStorage-58"><span class="linenos"> 58</span></a><span class="sd">            data:     raw bytes to store</span>
+</span><span id="BaseObjectStorage-59"><a href="#BaseObjectStorage-59"><span class="linenos"> 59</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
+</span><span id="BaseObjectStorage-60"><a href="#BaseObjectStorage-60"><span class="linenos"> 60</span></a>
+</span><span id="BaseObjectStorage-61"><a href="#BaseObjectStorage-61"><span class="linenos"> 61</span></a><span class="sd">        Returns:</span>
+</span><span id="BaseObjectStorage-62"><a href="#BaseObjectStorage-62"><span class="linenos"> 62</span></a><span class="sd">            URI string referencing the stored object.</span>
+</span><span id="BaseObjectStorage-63"><a href="#BaseObjectStorage-63"><span class="linenos"> 63</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-64"><a href="#BaseObjectStorage-64"><span class="linenos"> 64</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="BaseObjectStorage-65"><a href="#BaseObjectStorage-65"><span class="linenos"> 65</span></a>
+</span><span id="BaseObjectStorage-66"><a href="#BaseObjectStorage-66"><span class="linenos"> 66</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage-67"><a href="#BaseObjectStorage-67"><span class="linenos"> 67</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-68"><a href="#BaseObjectStorage-68"><span class="linenos"> 68</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-69"><a href="#BaseObjectStorage-69"><span class="linenos"> 69</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="BaseObjectStorage-70"><a href="#BaseObjectStorage-70"><span class="linenos"> 70</span></a>
+</span><span id="BaseObjectStorage-71"><a href="#BaseObjectStorage-71"><span class="linenos"> 71</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage-72"><a href="#BaseObjectStorage-72"><span class="linenos"> 72</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-73"><a href="#BaseObjectStorage-73"><span class="linenos"> 73</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-74"><a href="#BaseObjectStorage-74"><span class="linenos"> 74</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="BaseObjectStorage-75"><a href="#BaseObjectStorage-75"><span class="linenos"> 75</span></a>
+</span><span id="BaseObjectStorage-76"><a href="#BaseObjectStorage-76"><span class="linenos"> 76</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage-77"><a href="#BaseObjectStorage-77"><span class="linenos"> 77</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="BaseObjectStorage-78"><a href="#BaseObjectStorage-78"><span class="linenos"> 78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-79"><a href="#BaseObjectStorage-79"><span class="linenos"> 79</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="BaseObjectStorage-80"><a href="#BaseObjectStorage-80"><span class="linenos"> 80</span></a>
+</span><span id="BaseObjectStorage-81"><a href="#BaseObjectStorage-81"><span class="linenos"> 81</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage-82"><a href="#BaseObjectStorage-82"><span class="linenos"> 82</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-83"><a href="#BaseObjectStorage-83"><span class="linenos"> 83</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-84"><a href="#BaseObjectStorage-84"><span class="linenos"> 84</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</span><span id="BaseObjectStorage-85"><a href="#BaseObjectStorage-85"><span class="linenos"> 85</span></a>
+</span><span id="BaseObjectStorage-86"><a href="#BaseObjectStorage-86"><span class="linenos"> 86</span></a>    <span class="c1"># ── Optional override ─────────────────────────────────────────────────</span>
+</span><span id="BaseObjectStorage-87"><a href="#BaseObjectStorage-87"><span class="linenos"> 87</span></a>
+</span><span id="BaseObjectStorage-88"><a href="#BaseObjectStorage-88"><span class="linenos"> 88</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-89"><a href="#BaseObjectStorage-89"><span class="linenos"> 89</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-90"><a href="#BaseObjectStorage-90"><span class="linenos"> 90</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-91"><a href="#BaseObjectStorage-91"><span class="linenos"> 91</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+</span><span id="BaseObjectStorage-92"><a href="#BaseObjectStorage-92"><span class="linenos"> 92</span></a>            <span class="k">return</span> <span class="kc">True</span>
+</span><span id="BaseObjectStorage-93"><a href="#BaseObjectStorage-93"><span class="linenos"> 93</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="BaseObjectStorage-94"><a href="#BaseObjectStorage-94"><span class="linenos"> 94</span></a>            <span class="k">return</span> <span class="kc">False</span>
+</span><span id="BaseObjectStorage-95"><a href="#BaseObjectStorage-95"><span class="linenos"> 95</span></a>
+</span><span id="BaseObjectStorage-96"><a href="#BaseObjectStorage-96"><span class="linenos"> 96</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-97"><a href="#BaseObjectStorage-97"><span class="linenos"> 97</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create *bucket* if this store needs it to exist before an upload. Default: nothing to do.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-98"><a href="#BaseObjectStorage-98"><span class="linenos"> 98</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="BaseObjectStorage-99"><a href="#BaseObjectStorage-99"><span class="linenos"> 99</span></a>
+</span><span id="BaseObjectStorage-100"><a href="#BaseObjectStorage-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_expiry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="BaseObjectStorage-101"><a href="#BaseObjectStorage-101"><span class="linenos">101</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Expire objects under *prefix* in *bucket* after *days* days.</span>
+</span><span id="BaseObjectStorage-102"><a href="#BaseObjectStorage-102"><span class="linenos">102</span></a>
+</span><span id="BaseObjectStorage-103"><a href="#BaseObjectStorage-103"><span class="linenos">103</span></a><span class="sd">        Returns True when the store applied it, False when this store can&#39;t (the default). Only objects</span>
+</span><span id="BaseObjectStorage-104"><a href="#BaseObjectStorage-104"><span class="linenos">104</span></a><span class="sd">        under *prefix* are affected, so a shared bucket keeps its other objects and rules.</span>
+</span><span id="BaseObjectStorage-105"><a href="#BaseObjectStorage-105"><span class="linenos">105</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage-106"><a href="#BaseObjectStorage-106"><span class="linenos">106</span></a>        <span class="k">return</span> <span class="kc">False</span>
 </span></pre></div>
 
 
@@ -290,27 +326,27 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.upload"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.upload-41"><a href="#BaseObjectStorage.upload-41"><span class="linenos">41</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage.upload-42"><a href="#BaseObjectStorage.upload-42"><span class="linenos">42</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
-</span><span id="BaseObjectStorage.upload-43"><a href="#BaseObjectStorage.upload-43"><span class="linenos">43</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="BaseObjectStorage.upload-44"><a href="#BaseObjectStorage.upload-44"><span class="linenos">44</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="BaseObjectStorage.upload-45"><a href="#BaseObjectStorage.upload-45"><span class="linenos">45</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="BaseObjectStorage.upload-46"><a href="#BaseObjectStorage.upload-46"><span class="linenos">46</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-</span><span id="BaseObjectStorage.upload-47"><a href="#BaseObjectStorage.upload-47"><span class="linenos">47</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="BaseObjectStorage.upload-48"><a href="#BaseObjectStorage.upload-48"><span class="linenos">48</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.upload-49"><a href="#BaseObjectStorage.upload-49"><span class="linenos">49</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.upload-50"><a href="#BaseObjectStorage.upload-50"><span class="linenos">50</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
-</span><span id="BaseObjectStorage.upload-51"><a href="#BaseObjectStorage.upload-51"><span class="linenos">51</span></a>
-</span><span id="BaseObjectStorage.upload-52"><a href="#BaseObjectStorage.upload-52"><span class="linenos">52</span></a><span class="sd">        Args:</span>
-</span><span id="BaseObjectStorage.upload-53"><a href="#BaseObjectStorage.upload-53"><span class="linenos">53</span></a><span class="sd">            bucket:   logical container name</span>
-</span><span id="BaseObjectStorage.upload-54"><a href="#BaseObjectStorage.upload-54"><span class="linenos">54</span></a><span class="sd">            key:      object key (path within the bucket)</span>
-</span><span id="BaseObjectStorage.upload-55"><a href="#BaseObjectStorage.upload-55"><span class="linenos">55</span></a><span class="sd">            data:     raw bytes to store</span>
-</span><span id="BaseObjectStorage.upload-56"><a href="#BaseObjectStorage.upload-56"><span class="linenos">56</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
-</span><span id="BaseObjectStorage.upload-57"><a href="#BaseObjectStorage.upload-57"><span class="linenos">57</span></a>
-</span><span id="BaseObjectStorage.upload-58"><a href="#BaseObjectStorage.upload-58"><span class="linenos">58</span></a><span class="sd">        Returns:</span>
-</span><span id="BaseObjectStorage.upload-59"><a href="#BaseObjectStorage.upload-59"><span class="linenos">59</span></a><span class="sd">            URI string referencing the stored object.</span>
-</span><span id="BaseObjectStorage.upload-60"><a href="#BaseObjectStorage.upload-60"><span class="linenos">60</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.upload-61"><a href="#BaseObjectStorage.upload-61"><span class="linenos">61</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.upload-44"><a href="#BaseObjectStorage.upload-44"><span class="linenos">44</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage.upload-45"><a href="#BaseObjectStorage.upload-45"><span class="linenos">45</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">upload</span><span class="p">(</span>
+</span><span id="BaseObjectStorage.upload-46"><a href="#BaseObjectStorage.upload-46"><span class="linenos">46</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="BaseObjectStorage.upload-47"><a href="#BaseObjectStorage.upload-47"><span class="linenos">47</span></a>        <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="BaseObjectStorage.upload-48"><a href="#BaseObjectStorage.upload-48"><span class="linenos">48</span></a>        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="BaseObjectStorage.upload-49"><a href="#BaseObjectStorage.upload-49"><span class="linenos">49</span></a>        <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+</span><span id="BaseObjectStorage.upload-50"><a href="#BaseObjectStorage.upload-50"><span class="linenos">50</span></a>        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="BaseObjectStorage.upload-51"><a href="#BaseObjectStorage.upload-51"><span class="linenos">51</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.upload-52"><a href="#BaseObjectStorage.upload-52"><span class="linenos">52</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.upload-53"><a href="#BaseObjectStorage.upload-53"><span class="linenos">53</span></a><span class="sd">        Store binary *data* under *bucket*/*key*.</span>
+</span><span id="BaseObjectStorage.upload-54"><a href="#BaseObjectStorage.upload-54"><span class="linenos">54</span></a>
+</span><span id="BaseObjectStorage.upload-55"><a href="#BaseObjectStorage.upload-55"><span class="linenos">55</span></a><span class="sd">        Args:</span>
+</span><span id="BaseObjectStorage.upload-56"><a href="#BaseObjectStorage.upload-56"><span class="linenos">56</span></a><span class="sd">            bucket:   logical container name</span>
+</span><span id="BaseObjectStorage.upload-57"><a href="#BaseObjectStorage.upload-57"><span class="linenos">57</span></a><span class="sd">            key:      object key (path within the bucket)</span>
+</span><span id="BaseObjectStorage.upload-58"><a href="#BaseObjectStorage.upload-58"><span class="linenos">58</span></a><span class="sd">            data:     raw bytes to store</span>
+</span><span id="BaseObjectStorage.upload-59"><a href="#BaseObjectStorage.upload-59"><span class="linenos">59</span></a><span class="sd">            metadata: optional key-value pairs stored alongside the object</span>
+</span><span id="BaseObjectStorage.upload-60"><a href="#BaseObjectStorage.upload-60"><span class="linenos">60</span></a>
+</span><span id="BaseObjectStorage.upload-61"><a href="#BaseObjectStorage.upload-61"><span class="linenos">61</span></a><span class="sd">        Returns:</span>
+</span><span id="BaseObjectStorage.upload-62"><a href="#BaseObjectStorage.upload-62"><span class="linenos">62</span></a><span class="sd">            URI string referencing the stored object.</span>
+</span><span id="BaseObjectStorage.upload-63"><a href="#BaseObjectStorage.upload-63"><span class="linenos">63</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.upload-64"><a href="#BaseObjectStorage.upload-64"><span class="linenos">64</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -340,10 +376,10 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.download"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.download-63"><a href="#BaseObjectStorage.download-63"><span class="linenos">63</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage.download-64"><a href="#BaseObjectStorage.download-64"><span class="linenos">64</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.download-65"><a href="#BaseObjectStorage.download-65"><span class="linenos">65</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.download-66"><a href="#BaseObjectStorage.download-66"><span class="linenos">66</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.download-66"><a href="#BaseObjectStorage.download-66"><span class="linenos">66</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage.download-67"><a href="#BaseObjectStorage.download-67"><span class="linenos">67</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.download-68"><a href="#BaseObjectStorage.download-68"><span class="linenos">68</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve binary data for *bucket*/*key*.  Raises ``FileNotFoundError`` on miss.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.download-69"><a href="#BaseObjectStorage.download-69"><span class="linenos">69</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -364,10 +400,10 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.delete"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.delete-68"><a href="#BaseObjectStorage.delete-68"><span class="linenos">68</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage.delete-69"><a href="#BaseObjectStorage.delete-69"><span class="linenos">69</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.delete-70"><a href="#BaseObjectStorage.delete-70"><span class="linenos">70</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.delete-71"><a href="#BaseObjectStorage.delete-71"><span class="linenos">71</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.delete-71"><a href="#BaseObjectStorage.delete-71"><span class="linenos">71</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage.delete-72"><a href="#BaseObjectStorage.delete-72"><span class="linenos">72</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.delete-73"><a href="#BaseObjectStorage.delete-73"><span class="linenos">73</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the object at *bucket*/*key*; no-op if absent.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.delete-74"><a href="#BaseObjectStorage.delete-74"><span class="linenos">74</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -388,10 +424,10 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.list_objects"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.list_objects-73"><a href="#BaseObjectStorage.list_objects-73"><span class="linenos">73</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage.list_objects-74"><a href="#BaseObjectStorage.list_objects-74"><span class="linenos">74</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="BaseObjectStorage.list_objects-75"><a href="#BaseObjectStorage.list_objects-75"><span class="linenos">75</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.list_objects-76"><a href="#BaseObjectStorage.list_objects-76"><span class="linenos">76</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.list_objects-76"><a href="#BaseObjectStorage.list_objects-76"><span class="linenos">76</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage.list_objects-77"><a href="#BaseObjectStorage.list_objects-77"><span class="linenos">77</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="BaseObjectStorage.list_objects-78"><a href="#BaseObjectStorage.list_objects-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;List object keys in *bucket*, optionally filtered by *prefix*.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.list_objects-79"><a href="#BaseObjectStorage.list_objects-79"><span class="linenos">79</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -412,10 +448,10 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.get_uri"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.get_uri-78"><a href="#BaseObjectStorage.get_uri-78"><span class="linenos">78</span></a>    <span class="nd">@abstractmethod</span>
-</span><span id="BaseObjectStorage.get_uri-79"><a href="#BaseObjectStorage.get_uri-79"><span class="linenos">79</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.get_uri-80"><a href="#BaseObjectStorage.get_uri-80"><span class="linenos">80</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.get_uri-81"><a href="#BaseObjectStorage.get_uri-81"><span class="linenos">81</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.get_uri-81"><a href="#BaseObjectStorage.get_uri-81"><span class="linenos">81</span></a>    <span class="nd">@abstractmethod</span>
+</span><span id="BaseObjectStorage.get_uri-82"><a href="#BaseObjectStorage.get_uri-82"><span class="linenos">82</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_uri</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.get_uri-83"><a href="#BaseObjectStorage.get_uri-83"><span class="linenos">83</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a URI string for the stored object (e.g. ``s3://bucket/key``, ``file:///path``).&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.get_uri-84"><a href="#BaseObjectStorage.get_uri-84"><span class="linenos">84</span></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </span></pre></div>
 
 
@@ -435,17 +471,68 @@ the same factory-provisioned adapter to retrieve the content.</p>
 
     </div>
     <a class="headerlink" href="#BaseObjectStorage.exists"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.exists-85"><a href="#BaseObjectStorage.exists-85"><span class="linenos">85</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.exists-86"><a href="#BaseObjectStorage.exists-86"><span class="linenos">86</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
-</span><span id="BaseObjectStorage.exists-87"><a href="#BaseObjectStorage.exists-87"><span class="linenos">87</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="BaseObjectStorage.exists-88"><a href="#BaseObjectStorage.exists-88"><span class="linenos">88</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</span><span id="BaseObjectStorage.exists-89"><a href="#BaseObjectStorage.exists-89"><span class="linenos">89</span></a>            <span class="k">return</span> <span class="kc">True</span>
-</span><span id="BaseObjectStorage.exists-90"><a href="#BaseObjectStorage.exists-90"><span class="linenos">90</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
-</span><span id="BaseObjectStorage.exists-91"><a href="#BaseObjectStorage.exists-91"><span class="linenos">91</span></a>            <span class="k">return</span> <span class="kc">False</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.exists-88"><a href="#BaseObjectStorage.exists-88"><span class="linenos">88</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.exists-89"><a href="#BaseObjectStorage.exists-89"><span class="linenos">89</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if *bucket*/*key* exists in the store.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.exists-90"><a href="#BaseObjectStorage.exists-90"><span class="linenos">90</span></a>        <span class="k">try</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.exists-91"><a href="#BaseObjectStorage.exists-91"><span class="linenos">91</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+</span><span id="BaseObjectStorage.exists-92"><a href="#BaseObjectStorage.exists-92"><span class="linenos">92</span></a>            <span class="k">return</span> <span class="kc">True</span>
+</span><span id="BaseObjectStorage.exists-93"><a href="#BaseObjectStorage.exists-93"><span class="linenos">93</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">):</span>
+</span><span id="BaseObjectStorage.exists-94"><a href="#BaseObjectStorage.exists-94"><span class="linenos">94</span></a>            <span class="k">return</span> <span class="kc">False</span>
 </span></pre></div>
 
 
             <div class="docstring"><p>Return True if <em>bucket</em>/<em>key</em> exists in the store.</p>
+</div>
+
+
+                            </div>
+                            <div id="BaseObjectStorage.ensure_bucket" class="classattr">
+                                        <input id="BaseObjectStorage.ensure_bucket-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">ensure_bucket</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+
+                <label class="view-source-button" for="BaseObjectStorage.ensure_bucket-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#BaseObjectStorage.ensure_bucket"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.ensure_bucket-96"><a href="#BaseObjectStorage.ensure_bucket-96"><span class="linenos">96</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.ensure_bucket-97"><a href="#BaseObjectStorage.ensure_bucket-97"><span class="linenos">97</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create *bucket* if this store needs it to exist before an upload. Default: nothing to do.&quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.ensure_bucket-98"><a href="#BaseObjectStorage.ensure_bucket-98"><span class="linenos">98</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Create <em>bucket</em> if this store needs it to exist before an upload. Default: nothing to do.</p>
+</div>
+
+
+                            </div>
+                            <div id="BaseObjectStorage.set_expiry" class="classattr">
+                                        <input id="BaseObjectStorage.set_expiry-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">set_expiry</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">days</span><span class="p">:</span> <span class="nb">int</span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="BaseObjectStorage.set_expiry-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#BaseObjectStorage.set_expiry"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="BaseObjectStorage.set_expiry-100"><a href="#BaseObjectStorage.set_expiry-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_expiry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bucket</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">days</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="BaseObjectStorage.set_expiry-101"><a href="#BaseObjectStorage.set_expiry-101"><span class="linenos">101</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Expire objects under *prefix* in *bucket* after *days* days.</span>
+</span><span id="BaseObjectStorage.set_expiry-102"><a href="#BaseObjectStorage.set_expiry-102"><span class="linenos">102</span></a>
+</span><span id="BaseObjectStorage.set_expiry-103"><a href="#BaseObjectStorage.set_expiry-103"><span class="linenos">103</span></a><span class="sd">        Returns True when the store applied it, False when this store can&#39;t (the default). Only objects</span>
+</span><span id="BaseObjectStorage.set_expiry-104"><a href="#BaseObjectStorage.set_expiry-104"><span class="linenos">104</span></a><span class="sd">        under *prefix* are affected, so a shared bucket keeps its other objects and rules.</span>
+</span><span id="BaseObjectStorage.set_expiry-105"><a href="#BaseObjectStorage.set_expiry-105"><span class="linenos">105</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="BaseObjectStorage.set_expiry-106"><a href="#BaseObjectStorage.set_expiry-106"><span class="linenos">106</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Expire objects under <em>prefix</em> in <em>bucket</em> after <em>days</em> days.</p>
+
+<p>Returns True when the store applied it, False when this store can't (the default). Only objects
+under <em>prefix</em> are affected, so a shared bucket keeps its other objects and rules.</p>
 </div>
 
 

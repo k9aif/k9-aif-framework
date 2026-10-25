@@ -4,17 +4,30 @@
 # File: k9_aif_abb/k9_core/messaging/k9_event_bus.py
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
+import threading
+import time
+import uuid
 from typing import Any, Dict, List, Optional, Union
 from kafka import KafkaProducer, KafkaConsumer
 
-from k9_aif_abb.k9_core.messaging.messaging_errors import MessagingUnavailableError
+from k9_aif_abb.k9_core.messaging.messaging_errors import LargeEventError, MessagingUnavailableError
 
 # The group every consumer gets when it names none. Two applications consuming one topic in the same
 # group split its messages between them (each event reaches only one), so a consumer using it is warned.
 DEFAULT_GROUP_ID = "k9aif-core"
+
+# Large events (1.20): an event over max_event_bytes is stored in object storage and the event on Kafka
+# carries its link under this key; consumers on this bus fetch it back before the callback sees it.
+LARGE_EVENT_KEY = "k9_large_event"
+DEFAULT_LARGE_EVENTS_BUCKET = "k9aif-large-events"
+DEFAULT_LARGE_EVENTS_TTL_DAYS = 30
+LARGE_EVENTS_PREFIX = "large-events/"
+# Small routing fields copied onto the link event, so a router or filter can still read them.
+_LINK_EVENT_FIELDS = ("event_type", "correlation_id", "job_id", "task_id", "meta", "topic")
 
 
 class K9EventBus:
@@ -22,7 +35,24 @@ class K9EventBus:
     Core ABB: K9EventBus
     --------------------
     Unified event bus abstraction for Redpanda / Kafka.
-    Handles small governance/logging events and guards against oversize payloads.
+
+    **Large events (1.20).** An event bigger than ``max_event_bytes`` (512 KB) is stored in object storage
+    and the event published to Kafka carries its link instead (``k9_large_event``: uri, bucket, key, size,
+    sha256), plus the small routing fields (``event_type``, ``correlation_id``, ...). ``subscribe()`` and
+    ``subscribe_async()`` fetch it back, check its hash and hand the callback the original event, so
+    neither side changes. Before 1.20 the event was replaced by ``{"truncated": true}`` and sent anyway.
+
+    Config (``messaging.large_events``, all optional)::
+
+        messaging:
+          large_events:
+            bucket: k9aif-large-events   # the framework default
+            ttl_days: 30                  # objects under large-events/ expire; 0 = leave lifecycle to you
+
+    The store is the application's ``object_storage`` (S3, MinIO, IBM COS, local or your own). With no
+    ``object_storage`` block, development and test use local files and production raises
+    :class:`LargeEventError`: local files can't be read by another host. A failed upload raises too;
+    the event is never sent without its content. Send errors raise to the caller.
 
     Security is PLAINTEXT by default (backward compatible — existing
     deployments are unaffected). To enable SASL_SSL, opt in explicitly:
@@ -53,6 +83,8 @@ class K9EventBus:
         sasl_mechanism: str = "PLAIN",
         monitor: Optional[Any] = None,
         require_connection: Optional[bool] = None,
+        config: Optional[Dict[str, Any]] = None,
+        object_store: Optional[Any] = None,
         **kwargs,
     ):
         self.backend = backend
@@ -66,6 +98,14 @@ class K9EventBus:
         self.monitor = monitor
         self.log = logging.getLogger("K9EventBus")
         self._producer: Optional[KafkaProducer] = None
+        self._config = config or {}
+        large = ((self._config.get("messaging") or {}).get("large_events") or {})
+        self.large_events_bucket = large.get("bucket") or DEFAULT_LARGE_EVENTS_BUCKET
+        ttl = large.get("ttl_days", DEFAULT_LARGE_EVENTS_TTL_DAYS)
+        self.large_events_ttl_days = int(ttl) if ttl else 0
+        self._object_store = object_store
+        self._store_lock = threading.Lock()
+        self._bucket_ready = False
 
         try:
             # --- Safe integer conversion for all numeric params ---
@@ -143,32 +183,95 @@ class K9EventBus:
     # Publish event
     # ----------------------------------------------------------------------
     def publish(self, event: Dict[str, Any]):
-        """Publish event to Kafka/Redpanda with truncation + concise logging."""
+        """Publish an event to this bus's topic. An event over ``max_event_bytes`` travels as a link."""
+        self._send(self.topic, event)
+
+    def _send(self, topic: str, event: Dict[str, Any]) -> None:
         if not self._producer:
-            self.log.warning("[K9EventBus] no active producer; skipped publish")
+            # Only possible in development/test or with require_connection=False (documented degrade)
+            self.log.warning("[K9EventBus] no active producer; skipped publish to %s", topic)
             return
+        size = len(json.dumps(event, ensure_ascii=False).encode("utf-8"))
+        if size > self.max_event_bytes:
+            event = self._store_large_event(topic, event, size)
+            size = len(json.dumps(event, ensure_ascii=False).encode("utf-8"))
+        future = self._producer.send(topic, value=event)
+        if hasattr(future, "add_errback"):
+            # The broker can still refuse it after send() returns; that must not pass unseen
+            future.add_errback(lambda exc: self.log.error(
+                "[K9EventBus] broker did not accept event for %s (event_type=%s): %s",
+                topic, event.get("event_type"), exc))
+        self._log_event_summary(event, size)
 
+    # ----------------------------------------------------------------------
+    # Large events: stored in object storage, linked from the event
+    # ----------------------------------------------------------------------
+    def _store(self):
+        with self._store_lock:
+            if self._object_store is None:
+                from k9_aif_abb.k9_core.governance.pipeline import is_permissive_env
+                if not self._config.get("object_storage") and not is_permissive_env():
+                    raise LargeEventError(
+                        f"An event is larger than {self.max_event_bytes // 1024} KB and no object_storage is "
+                        f"configured. Large events are stored in object storage and sent as a link; add an "
+                        f"object_storage block (provider: s3 | ibm | your own) to config.yaml. Local files "
+                        f"are used only in development and test, because another host can't read them.")
+                from k9_aif_abb.k9_factories.object_storage_factory import ObjectStorageFactory
+                self._object_store = ObjectStorageFactory.create(self._config)
+            if not self._bucket_ready:
+                self._object_store.ensure_bucket(self.large_events_bucket)
+                if self.large_events_ttl_days:
+                    try:
+                        applied = self._object_store.set_expiry(
+                            self.large_events_bucket, LARGE_EVENTS_PREFIX, self.large_events_ttl_days)
+                    except Exception as e:
+                        applied = False
+                        self.log.error("[K9EventBus] could not set expiry on %s: %s", self.large_events_bucket, e)
+                    if not applied:
+                        self.log.error(
+                            "[K9EventBus] large events in bucket %s will NOT expire: set a %d-day lifecycle "
+                            "rule on prefix %s yourself, or messaging.large_events.ttl_days: 0 to silence this.",
+                            self.large_events_bucket, self.large_events_ttl_days, LARGE_EVENTS_PREFIX)
+                self._bucket_ready = True
+            return self._object_store
+
+    def _store_large_event(self, topic: str, event: Dict[str, Any], size: int) -> Dict[str, Any]:
+        data = json.dumps(event, ensure_ascii=False).encode("utf-8")
+        key = f"{LARGE_EVENTS_PREFIX}{topic}/{time.strftime('%Y-%m-%d')}/{uuid.uuid4().hex}.json"
         try:
-            payload = json.dumps(event, ensure_ascii=False)
-            size = len(payload.encode("utf-8"))
-
-            # --- Truncate oversize ---
-            if size > self.max_event_bytes:
-                event = {
-                    "meta": event.get("meta", {}),
-                    "payload": {"truncated": True, "original_size": size},
-                }
-                self.log.warning(
-                    f"[K9EventBus] truncated large message ({size//1024} KB -> {self.max_event_bytes//1024} KB)"
-                )
-                payload = json.dumps(event, ensure_ascii=False)
-                size = len(payload.encode("utf-8"))
-
-            self._producer.send(self.topic, value=event)
-            self._log_event_summary(event, size)
-
+            uri = self._store().upload(self.large_events_bucket, key, data,
+                                       {"topic": topic, "event_type": str(event.get("event_type", ""))})
+        except LargeEventError:
+            raise
         except Exception as e:
-            self.log.error(f"[K9EventBus] publish failed: {e}", exc_info=False)
+            raise LargeEventError(
+                f"Event for {topic} ({size // 1024} KB) could not be stored in bucket "
+                f"{self.large_events_bucket}: {e}. It was not sent.") from e
+        link = {k: event[k] for k in _LINK_EVENT_FIELDS if k in event}
+        link[LARGE_EVENT_KEY] = {"uri": uri, "bucket": self.large_events_bucket, "key": key,
+                                 "size": size, "sha256": hashlib.sha256(data).hexdigest()}
+        self.log.info("[K9EventBus] large event (%d KB) for %s stored at %s; sent as a link",
+                      size // 1024, topic, uri)
+        return link
+
+    def resolve_event(self, value: Any) -> Any:
+        """Return the original event for a link event (a no-op for any other value).
+
+        Raises :class:`LargeEventError` when the stored event can't be fetched (expired after
+        ``ttl_days``, deleted, store unreachable) or its content doesn't match the hash it was sent with.
+        """
+        if not isinstance(value, dict) or LARGE_EVENT_KEY not in value:
+            return value
+        ref = value[LARGE_EVENT_KEY]
+        try:
+            data = self._store().download(ref["bucket"], ref["key"])
+        except LargeEventError:
+            raise
+        except Exception as e:
+            raise LargeEventError(f"Large event {ref.get('uri')} could not be fetched: {e}") from e
+        if hashlib.sha256(data).hexdigest() != ref.get("sha256"):
+            raise LargeEventError(f"Large event {ref.get('uri')} does not match the hash it was sent with")
+        return json.loads(data.decode("utf-8"))
 
     # ----------------------------------------------------------------------
     # Consume loop (used by ConsoleBridgeAgent)
@@ -196,7 +299,9 @@ class K9EventBus:
             self.log.info(f"[K9EventBus] Listening -> topic={self.topic}")
             for msg in consumer:
                 try:
-                    callback(msg.value)
+                    callback(self.resolve_event(msg.value))
+                except LargeEventError as e:
+                    self.log.error(f"[K9EventBus] event skipped: {e}")
                 except Exception as e:
                     self.log.error(f"[K9EventBus] consumer callback failed: {e}")
         except Exception as e:
@@ -288,10 +393,13 @@ class K9EventBus:
         try:
             async for msg in consumer:
                 try:
+                    value = await asyncio.to_thread(self.resolve_event, msg.value)
                     if asyncio.iscoroutinefunction(callback):
-                        await callback(msg.value)
+                        await callback(value)
                     else:
-                        callback(msg.value)
+                        callback(value)
+                except LargeEventError as e:
+                    self.log.error("[K9EventBus] event skipped: %s", e)
                 except Exception as e:
                     self.log.error("[K9EventBus] async callback failed: %s", e, exc_info=True)
         finally:
@@ -304,24 +412,8 @@ class K9EventBus:
     # Publish to a specific topic (multi-topic routing)
     # ----------------------------------------------------------------------
     def publish_to(self, topic: str, event: Dict[str, Any]):
-        """Publish event to an explicit topic — used by Router and IntentOrchestrator."""
-        if not self._producer:
-            self.log.warning("[K9EventBus] no active producer; skipped publish_to(%s)", topic)
-            return
-        try:
-            payload = json.dumps(event, ensure_ascii=False)
-            size = len(payload.encode("utf-8"))
-            if size > self.max_event_bytes:
-                event = {
-                    "meta": event.get("meta", {}),
-                    "payload": {"truncated": True, "original_size": size},
-                }
-                payload = json.dumps(event, ensure_ascii=False)
-                size = len(payload.encode("utf-8"))
-            self._producer.send(topic, value=event)
-            self.log.debug("[K9EventBus] publish_to topic=%s size=%.1fKB", topic, size / 1024)
-        except Exception as e:
-            self.log.error("[K9EventBus] publish_to(%s) failed: %s", topic, e)
+        """Publish event to an explicit topic — used by Router, Orchestrators and IntentOrchestrator."""
+        self._send(topic, event)
 
     # ----------------------------------------------------------------------
     # Shutdown

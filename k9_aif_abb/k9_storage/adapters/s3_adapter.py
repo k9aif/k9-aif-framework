@@ -27,6 +27,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from k9_aif_abb.k9_core.storage.base_object_storage import BaseObjectStorage
+from k9_aif_abb.k9_storage.adapters import s3_lifecycle
 
 log = logging.getLogger(__name__)
 
@@ -110,3 +111,11 @@ class S3ObjectStorageAdapter(BaseObjectStorage):
 
     def get_uri(self, bucket: str, key: str) -> str:
         return f"s3://{bucket}/{key}"
+
+    def ensure_bucket(self, bucket: str) -> None:
+        self._ensure_client()
+        s3_lifecycle.ensure_bucket(self._client, bucket, self._region)
+
+    def set_expiry(self, bucket: str, prefix: str, days: int) -> bool:
+        self._ensure_client()
+        return s3_lifecycle.set_expiry(self._client, bucket, prefix, days)

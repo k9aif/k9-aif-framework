@@ -4,7 +4,36 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (planned 1.19.1)
+## [Unreleased] (planned 1.20.0)
+
+### Large events travel as a link
+
+- **An event over 512 KB is stored in object storage and sent as a link.** `K9EventBus.publish()` /
+  `publish_to()` upload it to the application's `object_storage` (S3, MinIO, IBM COS, local or your own)
+  and publish a small event with `k9_large_event` (uri, bucket, key, size, sha256) plus its routing fields
+  (`event_type`, `correlation_id`, `job_id`, `task_id`, `meta`, `topic`). `subscribe()` and
+  `subscribe_async()` fetch it back, check the hash and pass the original event to the callback, so
+  producers and consumers don't change. Before, the event was replaced by `{"truncated": true}` and sent
+  with only a warning: the consumer got an event whose data was gone.
+- **Framework default bucket `k9aif-large-events`, objects expire after 30 days.** On first use the bus
+  creates the bucket if it's missing and sets a lifecycle rule on the `large-events/` prefix only, merged
+  with the bucket's other rules. Override with `messaging.large_events.bucket` / `ttl_days` (`0` leaves
+  lifecycle to you). A store that can't set expiry is reported at error level.
+- **New optional storage hooks:** `BaseObjectStorage.ensure_bucket()` and `set_expiry()` (defaults: nothing,
+  and "not supported"). The S3 and IBM COS adapters implement both (`k9_storage/adapters/s3_lifecycle.py`);
+  the local adapter deletes files older than the TTL.
+- **Send errors reach the caller.** `publish()` / `publish_to()` no longer catch and log every exception;
+  a broker that refuses an event after `send()` is logged at error level. `MessageFactory.publish()` now
+  uses the bus (it looked for a `producer` the bus doesn't have) and raises instead of printing.
+
+**Upgrading.** Production applications that may publish events over 512 KB need an `object_storage` block;
+without one such an event raises `LargeEventError` (development and test use local files). With S3/MinIO
+the credentials need `s3:CreateBucket` and `s3:PutLifecycleConfiguration` on the bucket, or create the
+bucket and its rule yourself and set `ttl_days: 0`. Code that relied on publish never raising should catch
+the error where it can act on it (the orchestrator, per "failures propagate"). Consumers of the same topic
+must run 1.20 or later to read link events.
+
+### Configuration
 
 - **The shipped config no longer opts out of fail-closed Shield.** `k9_aif_abb/config/config.yaml` set
   `fail_open: true`; applications told to copy its check lists carried that opt-out and missed 1.19.0's

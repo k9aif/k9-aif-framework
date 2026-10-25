@@ -113,6 +113,7 @@ class MessageFactory:
                 sasl_mechanism=mcfg.get("sasl_mechanism", "PLAIN"),
                 monitor=monitor,
                 require_connection=True,
+                config=config,
             )
         except Exception as e:
             from k9_aif_abb.k9_core.governance.pipeline import is_permissive_env
@@ -136,33 +137,18 @@ class MessageFactory:
     # ------------------------------------------------------------------
     @classmethod
     def publish(cls, event: Dict[str, Any]):
-        """Publish a JSON event to Kafka/Redpanda or LocalQueue."""
-        try:
-            if not cls._singleton:
-                raise RuntimeError("MessageFactory not initialized; call create(config) first.")
+        """Publish a JSON event on the active bus (Kafka/Redpanda or LocalQueue). Errors raise (1.20).
 
-            topic = event.get("topic", getattr(cls._singleton, "topic", "k9aif-events"))
-            payload = json.dumps(event).encode("utf-8")
-
-            # [OK] Kafka / Redpanda bus
-            if hasattr(cls._singleton, "producer"):
-                producer = cls._singleton.producer
-                if producer:
-                    producer.produce(topic=topic, value=payload)
-                    producer.flush(0.5)
-                    print(f"[MessageFactory] [INFO] Event sent -> {topic}")
-                    return
-
-            # [OK] Local bus fallback
-            if hasattr(cls._singleton, "publish"):
-                cls._singleton.publish(event)
-                print(f"[MessageFactory] [INFO] Event queued locally -> {topic}")
-                return
-
-            print(f"[MessageFactory] [WARN] No active producer found for topic {topic}")
-
-        except Exception as e:
-            print(f"[MessageFactory] [ERROR] Publish error: {e}")
+        ``event["topic"]`` picks the topic on Kafka/Redpanda. Before 1.20 this looked for a confluent-style
+        ``producer`` the bus doesn't have, and printed and dropped any error.
+        """
+        if not cls._singleton:
+            raise RuntimeError("MessageFactory not initialized; call create(config) first.")
+        topic = event.get("topic")
+        if topic and hasattr(cls._singleton, "publish_to"):
+            cls._singleton.publish_to(topic, event)
+        else:
+            cls._singleton.publish(event)
 
     # ------------------------------------------------------------------
     # Compatibility helpers
