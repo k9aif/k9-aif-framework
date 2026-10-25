@@ -30,12 +30,15 @@ class BaseComponent:
 
         # [INFO] Lazy import to avoid circular dependency with factories/persistence
         if not self.message_bus and "messaging" in self.config:
+            from k9_aif_abb.k9_core.messaging.messaging_errors import MessagingUnavailableError
             try:
                 from k9_aif_abb.k9_factories.message_factory import MessageFactory
                 self.message_bus = MessageFactory.create(self.config)
                 self.logger.info(
                     f"[{self.__class__.__name__}] MessageBus initialized from config.yaml"
                 )
+            except MessagingUnavailableError:
+                raise       # production with an unreachable broker: stop, don't run on dropping events
             except Exception as e:
                 self.logger.warning(f" MessageBus initialization failed: {e}")
                 self.message_bus = None

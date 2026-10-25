@@ -48,6 +48,9 @@
                         <li>
                                 <a class="function" href="#OrchestrationFactory.list">list</a>
                         </li>
+                        <li>
+                                <a class="function" href="#OrchestrationFactory.reset">reset</a>
+                        </li>
                 </ul>
 
             </li>
@@ -146,6 +149,10 @@
 </span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="nd">@classmethod</span>
 </span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 </span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>    <span class="nd">@classmethod</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos">77</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forget the orchestrators built so far (registrations stay).&quot;&quot;&quot;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos">78</span></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 </span></pre></div>
 
 
@@ -224,6 +231,10 @@
 </span><span id="OrchestrationFactory-73"><a href="#OrchestrationFactory-73"><span class="linenos">73</span></a>    <span class="nd">@classmethod</span>
 </span><span id="OrchestrationFactory-74"><a href="#OrchestrationFactory-74"><span class="linenos">74</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 </span><span id="OrchestrationFactory-75"><a href="#OrchestrationFactory-75"><span class="linenos">75</span></a>        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</span><span id="OrchestrationFactory-76"><a href="#OrchestrationFactory-76"><span class="linenos">76</span></a>    <span class="nd">@classmethod</span>
+</span><span id="OrchestrationFactory-77"><a href="#OrchestrationFactory-77"><span class="linenos">77</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrchestrationFactory-78"><a href="#OrchestrationFactory-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forget the orchestrators built so far (registrations stay).&quot;&quot;&quot;</span>
+</span><span id="OrchestrationFactory-79"><a href="#OrchestrationFactory-79"><span class="linenos">79</span></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 </span></pre></div>
 
 
@@ -360,6 +371,30 @@
 
 
     
+
+                            </div>
+                            <div id="OrchestrationFactory.reset" class="classattr">
+                                        <input id="OrchestrationFactory.reset-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator decorator-classmethod">@classmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">reset</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">cls</span></span><span class="return-annotation">) -> <span class="kc">None</span>:</span></span>
+
+                <label class="view-source-button" for="OrchestrationFactory.reset-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#OrchestrationFactory.reset"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="OrchestrationFactory.reset-76"><a href="#OrchestrationFactory.reset-76"><span class="linenos">76</span></a>    <span class="nd">@classmethod</span>
+</span><span id="OrchestrationFactory.reset-77"><a href="#OrchestrationFactory.reset-77"><span class="linenos">77</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="OrchestrationFactory.reset-78"><a href="#OrchestrationFactory.reset-78"><span class="linenos">78</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Forget the orchestrators built so far (registrations stay).&quot;&quot;&quot;</span>
+</span><span id="OrchestrationFactory.reset-79"><a href="#OrchestrationFactory.reset-79"><span class="linenos">79</span></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Forget the orchestrators built so far (registrations stay).</p>
+</div>
+
 
                             </div>
                 </section>

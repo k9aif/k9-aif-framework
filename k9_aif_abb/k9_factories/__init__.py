@@ -85,3 +85,21 @@ Factories are primarily consumed by SBB components (agents, orchestrators,
 retrievers) rather than directly by end users. They enable runtime flexibility
 while preserving strict separation between ABB contracts and SBB implementations.
 """
+
+def reset_all() -> None:
+    """Forget every configured object the factories hold for this process.
+
+    The model factory, model router, message bus and orchestrator singletons keep one
+    configuration per process (K9-AIF runs one application per process), and refuse a
+    second, different one. Tests that use several configurations in one run call this
+    between them. Registrations (name -> class) are kept.
+    """
+    from k9_aif_abb.k9_factories.llm_factory import LLMFactory
+    from k9_aif_abb.k9_factories.message_factory import MessageFactory
+    from k9_aif_abb.k9_factories.model_router_factory import ModelRouterFactory
+    from k9_aif_abb.k9_factories.orchestration_factory import OrchestrationFactory
+
+    ModelRouterFactory.reset()
+    LLMFactory.reset()
+    MessageFactory.reset()
+    OrchestrationFactory.reset()

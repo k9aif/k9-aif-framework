@@ -10,6 +10,12 @@ import os
 from typing import Any, Dict, List, Optional, Union
 from kafka import KafkaProducer, KafkaConsumer
 
+from k9_aif_abb.k9_core.messaging.messaging_errors import MessagingUnavailableError
+
+# The group every consumer gets when it names none. Two applications consuming one topic in the same
+# group split its messages between them (each event reaches only one), so a consumer using it is warned.
+DEFAULT_GROUP_ID = "k9aif-core"
+
 
 class K9EventBus:
     """
@@ -28,6 +34,11 @@ class K9EventBus:
     variables only:
       KAFKA_SASL_USERNAME
       KAFKA_SASL_PASSWORD
+
+    In production (``K9_ENV`` not development/dev/test) a broker that cannot be reached at start-up
+    raises :class:`MessagingUnavailableError`: a bus without a producer would drop every event while
+    the application looked healthy. ``require_connection=False`` keeps the old degrade-and-warn
+    behaviour for a caller that truly wants it; development and test degrade by default.
     """
 
     def __init__(
@@ -35,12 +46,13 @@ class K9EventBus:
         backend: str = "kafka",
         broker_url: str = "localhost:9092",
         topic: str = "k9aif-events",
-        group_id: str = "k9aif-core",
+        group_id: str = DEFAULT_GROUP_ID,
         auto_create: bool = True,
         max_event_bytes: int = 512 * 1024,
         security_protocol: str = "PLAINTEXT",
         sasl_mechanism: str = "PLAIN",
         monitor: Optional[Any] = None,
+        require_connection: Optional[bool] = None,
         **kwargs,
     ):
         self.backend = backend
@@ -82,7 +94,18 @@ class K9EventBus:
             )
 
         except Exception as e:
-            self.log.error(f"[K9EventBus] failed to initialize: {e}", exc_info=False)
+            if require_connection is None:
+                from k9_aif_abb.k9_core.governance.pipeline import is_permissive_env
+                require_connection = not is_permissive_env()
+            if require_connection:
+                raise MessagingUnavailableError(
+                    f"Kafka/Redpanda at {self.broker_url} cannot be reached ({e}). In production K9-AIF "
+                    f"refuses to run without its message bus, because every published event would be "
+                    f"dropped. Start the broker or fix the broker address; for local work set "
+                    f"K9_ENV=development."
+                ) from e
+            self.log.error(f"[K9EventBus] failed to initialize: {e}; events will NOT be published "
+                           f"(allowed outside production)", exc_info=False)
             self._producer = None
 
     # ----------------------------------------------------------------------
@@ -150,8 +173,16 @@ class K9EventBus:
     # ----------------------------------------------------------------------
     # Consume loop (used by ConsoleBridgeAgent)
     # ----------------------------------------------------------------------
+    def _warn_if_shared_group(self) -> None:
+        if self.group_id == DEFAULT_GROUP_ID:
+            self.log.warning(
+                "[K9EventBus] consuming %s in the default group '%s': another application doing the same "
+                "would split these messages with this one. Give each application (and each process role) "
+                "its own group_id.", self.topic, DEFAULT_GROUP_ID)
+
     def subscribe(self, callback):
         """Listen to the configured topic and stream events to callback."""
+        self._warn_if_shared_group()
         try:
             consumer = KafkaConsumer(
                 self.topic,
@@ -226,6 +257,7 @@ class K9EventBus:
         # reply -- caught only by a live-integration test, since this
         # framework's own test_hil_roundtrip.py fakes the message bus
         # and never exercises this method's real aiokafka call at all.
+        self._warn_if_shared_group()
         consumer = AIOKafkaConsumer(
             bootstrap_servers=[self.broker_url],
             group_id=self.group_id,

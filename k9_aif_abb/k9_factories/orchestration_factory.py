@@ -72,3 +72,7 @@ class OrchestrationFactory:
     @classmethod
     def list(cls) -> Dict[str, str]:
         return {k: v.__name__ for k, v in cls._registry.items()}
+    @classmethod
+    def reset(cls) -> None:
+        """Forget the orchestrators built so far (registrations stay)."""
+        cls._instances.clear()

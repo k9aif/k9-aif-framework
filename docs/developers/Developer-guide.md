@@ -2221,6 +2221,36 @@ inference:
       cost_tier: premium
 ```
 
+#### Local and hosted models side by side (1.18.8)
+
+Each model alias can name its own backend; the rest use the factory-wide one. Resolution order: the alias's
+`backend` (or `provider`) key, then `llm_factory.backend` (or `provider`), then `ollama`. Connection keys on
+the alias (`base_url`, `api_version`, `deployment`, `api_key_env`) override the factory-wide ones for that
+alias only; secrets stay in the environment.
+
+```yaml
+inference:
+  llm_factory:
+    backend: ollama
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+    models:
+      general: "llama3.2:1b"                 # served by ollama
+      auditor:
+        backend: watsonx                     # this alias only
+        model: ibm/granite-3-8b-instruct
+        base_url: https://us-south.ml.cloud.ibm.com
+  model_catalog:
+    models:
+      auditor:
+        provider: watsonx                    # must match the backend above, or the router refuses to start
+        llm_ref: auditor
+        capabilities: [reasoning]
+```
+
+A catalog entry's `provider` is checked at start-up against the backend that really serves its `llm_ref`. A
+hosted model receives the prompts routed to it, so never mark one `confidential`-capable unless the data may
+leave your network.
+
 ### 12.6 Custom Model Router
 
 To replace `K9ModelRouter` with domain-specific routing logic:
@@ -3116,6 +3146,35 @@ export OLLAMA_BASE_URL=http://localhost:11434
 export POSTGRES_HOST=localhost
 export KAFKA_BROKER=localhost:9092
 ```
+
+### 17.7 One Application per Process
+
+The factories keep one configuration per process: one set of models, one model router, one message bus.
+Deploy each application as its own process (or container); an application with several roles (Router,
+Orchestrator, API backend) runs each role as its own process, all loading the same configuration.
+
+What the framework enforces (1.18.8):
+
+| Situation | Behaviour |
+|---|---|
+| The same `inference` configuration again (every agent passes the application's config) | Reuses what is set up |
+| An agent config without an `inference` section | Uses the application's |
+| A different `inference` configuration in the same process | `ConfigConflictError` (it used to be ignored silently, so the first configuration won) |
+| Kafka/Redpanda unreachable at start-up, production | `MessagingUnavailableError`: the process stops instead of running on a bus that drops every event |
+| The same, development or test | Warning, then an in-process queue (`messaging.allow_local_fallback: true` allows this in production) |
+| `messaging.topic` / `group_id` left at `k9aif-events` / `k9aif-core` | Warning |
+
+What each application must set, because processes of different applications meet only in shared services:
+
+- **Kafka:** its own topics and a consumer group per process role (for example `acme-router`,
+  `acme-orchestrator`). Two applications in one group split each other's messages.
+- **PostgreSQL:** its own database or schema.
+- **Object storage:** its own bucket or key prefix.
+- **Shared values across one application's processes:** the same broker, database and schema, and the same
+  `K9_IDENTITY_SECRET` when signed identity is on.
+
+Tests that use several configurations in one run reset the factories between them:
+`k9_aif_abb.k9_factories.reset_all()`.
 
 ---
 

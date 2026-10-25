@@ -4,6 +4,57 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] (planned 1.18.8)
+
+### Factories: one configuration per process, no silent failures
+
+The factories stay static (no API change). What changed is that they refuse what they used to ignore.
+Found by reviewing `LLMFactory` (2026-10-25).
+
+- **A second, different configuration is refused.** `LLMFactory` bootstrapped once and
+  `ModelRouterFactory` cached its router under `type:enabled:provider` only, so a second application (or
+  an agent YAML with its own `inference:` section) in the same process silently got the first one's
+  models, router and routing history. Now the same `inference` config is a no-op, a config without an
+  `inference` section uses the process's, and a different one raises `ConfigConflictError`
+  (`k9_factories/factory_errors.py`). The router's cache key includes the inference config.
+- **No silent message loss in production.** `K9EventBus` caught "broker unreachable" and kept a bus with
+  no producer, so every publish was dropped with a warning while the app looked healthy; `MessageFactory`'s
+  error path fell back to a bare `LocalQueue` without `publish()`. In production (`K9_ENV` not
+  development/dev/test) an unreachable broker now raises `MessagingUnavailableError`
+  (`k9_core/messaging/messaging_errors.py`), and `MessageFactory` and `BaseComponent` let it through.
+  Development and test degrade to an in-process queue with a warning; `messaging.allow_local_fallback:
+  true` (or `K9EventBus(require_connection=False)`) allows that in production.
+- **Shared Kafka defaults are warned.** `messaging.topic`/`group_id` left at `k9aif-events`/`k9aif-core`,
+  and any consumer in the default group, log a warning: two applications in one group split each other's
+  messages.
+- **Per-model backend.** Each alias resolves its backend from `models.<alias>.backend` (or `provider`),
+  then the factory-wide setting, then `ollama`; the alias's connection keys (`base_url`, `api_version`,
+  `deployment`, `api_key_env`) override the factory's, so local and hosted models can serve one
+  application. Before, the catalog's per-model `provider` was reported but never used to build the model.
+  `ModelRouterFactory` now refuses a catalog `provider` that differs from the backend serving its
+  `llm_ref`, and a derived catalog reports each alias's real backend. `LLMFactory.get()` returns `BaseLLM`
+  (was annotated `OllamaLLM`).
+- **Thread safety and housekeeping.** `LLMFactory.get()` and the router build run under a lock (one
+  instance per alias even under concurrent first use); `LLMFactory` logs instead of printing;
+  `OrchestrationFactory.reset()` added; `k9_aif_abb.k9_factories.reset_all()` resets every factory that
+  holds configured objects (autouse in the test suite).
+
+Developer Guide: 12.5 "Local and hosted models side by side", 17.7 "One Application per Process".
+Tests: `test_factory_process_safety.py` (22).
+
+### Upgrade notes
+
+- A production process whose broker is unreachable at start-up now stops with `MessagingUnavailableError`
+  instead of running without messaging. Start the broker first, or set `messaging.allow_local_fallback:
+  true` if in-process messaging is really intended.
+- A process that bootstraps two different `inference` configurations now gets `ConfigConflictError`. Run
+  each application in its own process; in tests call `reset_all()` between configurations.
+- A catalog entry whose `provider` doesn't match the backend serving its `llm_ref` now fails at start-up;
+  set the alias's `backend` or correct the catalog. (No such mismatch in the 240 configs checked across
+  the K9X repositories.)
+
+---
+
 ## [1.18.7] — 2026-10-22
 
 ### Inspector (k9_inspect)

@@ -14,3 +14,16 @@ import os
 os.environ.setdefault("K9_ENV", "test")
 # k9_inspect asks PyPI for the latest k9-aif; tests stay offline (it falls back to the installed version).
 os.environ.setdefault("K9_INSPECT_OFFLINE", "1")
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _fresh_factories():
+    """Each test starts with no configured factories: they keep one configuration per process
+    and refuse a different one, so one test's configuration must not leak into the next."""
+    from k9_aif_abb.k9_factories import reset_all
+    reset_all()
+    yield
+    reset_all()

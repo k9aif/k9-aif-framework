@@ -410,6 +410,24 @@ solutions `register()` their own `BaseAuthenticator`). Every factory
 local storage) — no config key required for the common case. Adding a new
 provider to any of these: `SKILLS.md` Skill 11.
 
+**Factories are static and hold one configuration per process** (one
+application per process; a multi-role app runs each role as its own process
+with the same config). The same `inference` config again is a no-op, a config
+without an `inference` section uses the process's, a *different* one raises
+`ConfigConflictError` (before 1.18.8 the first config silently won, and a
+second app or an agent's own `inference:` got the first app's models).
+`LLMFactory` resolves a backend **per alias** (`models.<alias>.backend`, then
+`llm_factory.backend`, then `ollama`; alias connection keys override the
+factory's) and `ModelRouterFactory` refuses a catalog `provider` that differs
+from the backend serving its `llm_ref`. Messaging: in production an unreachable
+broker raises `MessagingUnavailableError` from `K9EventBus` (and
+`MessageFactory`/`BaseComponent` let it through) instead of running on a bus
+that drops events; dev/test degrade with a warning. Each app sets its own
+`messaging.topic`/`group_id` (the defaults `k9aif-events`/`k9aif-core` warn).
+Tests reset with `k9_aif_abb.k9_factories.reset_all()` (autouse in
+`tests/conftest.py`). Developer Guide 17.7; tests:
+`test_factory_process_safety.py`.
+
 ## Kafka ownership
 
 Only the **Router** (domain topics) and **Orchestrator** (results /
