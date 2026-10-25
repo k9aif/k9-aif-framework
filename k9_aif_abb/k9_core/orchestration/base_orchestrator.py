@@ -198,6 +198,7 @@ class BaseOrchestrator(ABC):
             self.layer, len(squads), [s.squad_id for s in squads],
         )
         results = {}
+        failures = []
         with ThreadPoolExecutor(max_workers=len(squads)) as executor:
             futures = {
                 executor.submit(contextvars.copy_context().run, squad.execute,   # same trace id per thread
@@ -220,11 +221,17 @@ class BaseOrchestrator(ABC):
                     self.logger.error(
                         "[%s] Squad %s failed: %s", self.layer, squad.squad_id, exc,
                     )
-                    results[squad.squad_id] = {
-                        "status": "failed",
-                        "squad_id": squad.squad_id,
-                        "error": str(exc),
-                    }
+                    failures.append((squad.squad_id, exc))
+        # Failures propagate (as on the sequential path): the squads still running were let finish, then the
+        # first failure is raised, so the orchestrator records it instead of reporting a completed run. Before
+        # 1.18.9 a failed squad became {"status": "failed"} in the results and execute_squads() returned normally.
+        if failures:
+            squad_id, exc = failures[0]
+            others = [s for s, _ in failures[1:]]
+            if others:
+                exc.add_note(f"other failed squads in the same parallel run: {', '.join(others)}")
+            exc.add_note(f"raised by squad {squad_id} (parallel run; completed: {', '.join(results) or 'none'})")
+            raise exc
         return results
 
     # ------------------------------------------------------------------
@@ -239,7 +246,7 @@ class BaseOrchestrator(ABC):
             "type": "LiveContext", "agent": self.layer, "squad": getattr(squad, "squad_id", ""),
             "refs": list(live), "ages": {k: v.get("age_seconds") for k, v in live.items()},
             "flagged": [k for k, v in live.items()
-                        if any((v.get("flags") or {}).get(f) for f in ("quarantined", "in_review", "conflict"))],
+                        if any((v.get("flags") or {}).get(f) for f in ("quarantined", "in_review", "conflict", "verification_failed"))],
         })
         return {**payload, "live_context": {**(payload.get("live_context") or {}), **live}}
 

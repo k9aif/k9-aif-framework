@@ -4,6 +4,51 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] (planned 1.18.9)
+
+### Failures surface, everywhere
+
+Five places where a failure could pass as success, found in the framework review of 2026-10-25/26. Each
+now surfaces, and each has a test that proves it.
+
+- **Parallel squads raise a squad's failure.** `execute_squads(..., parallel=True)` used to turn a failing
+  squad into `{"status": "failed"}` in its results and return normally, so an orchestrator reported a
+  completed run. Now the other squads finish, then the first failure is raised (as on the sequential path),
+  with notes naming the failed and completed squads. `RequiresHIL` still cancels the rest at once.
+- **Shield blocks on a crashing check in production.** `security.shield.fail_open` unset now follows
+  `K9_ENV`: fail closed in production, fail open (FLAG) in development and test. Before, it was always open,
+  so an input that made a check throw passed that check unscreened. An explicit `fail_open` still wins;
+  `VulnerabilityChain`'s own default is unchanged.
+- **k9x Origin flags a verification it couldn't make.** A `verify_before` step whose system of record
+  can't be reached now gets `flags.verification_failed` (`against`, `error`) instead of an answer that
+  looked verified. The orchestrator's live-context trace lists it with the other flags.
+- **DoclingParser fails as an agent.** `execute()` raises `DocumentConversionError` (with `.result`) when a
+  document can't be converted, so a squad never runs its next steps on an empty document. `convert()` and
+  `parse()` still return results for callers that inspect them.
+- **Inspector K9-LLM-002 checks the right property.** It used to warn on any `llm_invoke()` call outside
+  `try/except` and suggest returning a failed result, which is the pattern "failures propagate" forbids. It
+  now reports a handler around `llm_invoke()` that catches the failure and carries on (a stand-in result,
+  a warning string, `pass`); unguarded and re-raising calls are fine. Title: "Model-call failures are not
+  turned into results".
+
+Tests: `test_execute_squads.py`, `test_shield_governance.py` (3), `test_k9x_origin.py`,
+`test_docling_parser.py` (4), `test_k9_inspect.py` (2). Suite: 957 passed.
+
+### Upgrade notes
+
+- An orchestrator that ran squads in parallel and checked each result's `status` for `failed` now gets the
+  exception instead: catch it around `execute_squads()` and record it (DAS `TraceabilityOrchestrator` used
+  to report such a run as completed).
+- A production Shield config without `fail_open` now blocks when a check crashes. Set `fail_open: true` to
+  keep the old behaviour deliberately.
+- Code that calls `DoclingParser.execute()` and checks `status` should call `convert(filename, bytes)`
+  instead, or catch `DocumentConversionError` (its `.result` is the old return value). DAS `normalize.py`
+  does the former check today.
+- Agents that wrap `llm_invoke()` and return a "[WARN]" result now get a K9-LLM-002 warning; let the error
+  propagate. K9X Studio's agent template is fixed to match.
+
+---
+
 ## [1.18.8] — 2026-10-25
 
 ### Enhancements

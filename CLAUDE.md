@@ -233,8 +233,11 @@ implementation, i.e. a drop-in `governance=` value for any `BaseAgent`/
 raise is the only block signal; there is no return-value sentinel. A `FLAG`
 under `strict=False` (the common config) just logs and lets the payload
 through unmodified — `ShieldGovernance` never mutates a passing payload.
-`fail_open` (default `True`) controls what happens if a check itself
-raises: `True` → treated as FLAG, `False` → treated as BLOCK.
+`fail_open` controls what happens if a check itself raises: `True` →
+treated as FLAG, `False` → treated as BLOCK. Unset, it follows `K9_ENV`
+(1.18.9): `False` (fail closed) in production, `True` in development/test;
+an explicit value wins. Before 1.18.9 it was always `True`, so an input that
+made a check throw passed that check unscreened.
 
 **Shield is off in the shipped configuration.** `k9_aif_abb/config/config.yaml`
 sets `security.shield.enabled: false` ("SBBs enable and configure in their
@@ -364,7 +367,8 @@ Reference app: `k9x-ecosystem/k9x_streams`.
 `k9_origin`: built in like Shield. Agents make one call, `get_current(entity, id)`
 (plus `recent_changes`, `query`); `K9Origin` resolves: per-agent scope →
 request Shield → live state → read-through to the system of record on a miss
-→ verify for `verify_before` steps → flags (quarantined, in_review, conflict)
+→ verify for `verify_before` steps → flags (quarantined, in_review, conflict,
+verification_failed when the system of record could not be reached: 1.18.9)
 → answer Shield. Answers are facts (`as_of`, `version`, `source`, flags); Origin
 makes no business decisions — `K9RulesAgent` (+ `K9RulesAdapter` /
 `RestRulesAdapter`) decides and raises `RequiresHIL`. Config:

@@ -31,8 +31,9 @@ class OriginMCPServer(ContextMCPServer):
         super().__init__(origin.state, name=name, monitor=monitor, on_call=on_call,
                          instructions=instructions or (
                              "k9x Origin: what is true right now about an entity, and where it came from. "
-                             "Every answer has as_of, source, version and flags; quarantined, in_review or "
-                             "conflict flags mean the data must not be acted on without review."))
+                             "Every answer has as_of, source, version and flags; quarantined, in_review, "
+                             "conflict or verification_failed flags mean the data must not be acted on "
+                             "without review."))
         self.origin = origin
         self.agent = agent
 

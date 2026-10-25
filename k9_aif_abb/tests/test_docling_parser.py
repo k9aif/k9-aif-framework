@@ -11,7 +11,8 @@ import os
 import httpx
 import pytest
 
-from k9_aif_abb.k9_agents.retrieval.docling_parser import DEFAULT_URL, DoclingParser
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_agents.retrieval.docling_parser import DEFAULT_URL, DocumentConversionError, DoclingParser
 
 
 def _server(seen):
@@ -67,24 +68,49 @@ def test_execute_posts_file_with_ocr_and_returns_markdown(tmp_path):
     assert b"wordprocessingml" in body  # MIME from the suffix, not always PDF
 
 
-def test_http_error_is_reported_not_raised(tmp_path):
+def test_http_error_raises_from_execute_and_is_reported_by_convert(tmp_path):
+    """As an agent, a failed conversion propagates (1.18.9); convert() still reports it as a result."""
     f = tmp_path / "a.pdf"
     f.write_bytes(b"%PDF")
     p = DoclingParser(transport=httpx.MockTransport(lambda r: httpx.Response(404, text="Not Found")))
-    out = p.execute({"path": str(f)})
-    assert out["status"] == "error" and "404" in out["error"]
+    with pytest.raises(DocumentConversionError) as exc:
+        p.execute({"path": str(f)})
+    assert exc.value.result["status"] == "error" and "404" in exc.value.result["error"]
+    assert p.convert("a.pdf", b"%PDF")["status"] == "error"
 
 
 def test_empty_conversion_is_an_error(tmp_path):
     f = tmp_path / "a.pdf"
     f.write_bytes(b"%PDF")
     empty = httpx.MockTransport(lambda r: httpx.Response(200, json={"status": "success", "document": {"md_content": ""}}))
-    out = DoclingParser(transport=empty).execute({"path": str(f)})
-    assert out["status"] == "error"
+    with pytest.raises(DocumentConversionError):
+        DoclingParser(transport=empty).execute({"path": str(f)})
 
 
 def test_missing_file_is_an_error():
-    assert DoclingParser().execute({"path": "/no/such/file.pdf"})["status"] == "error"
+    with pytest.raises(DocumentConversionError) as exc:
+        DoclingParser().execute({"path": "/no/such/file.pdf"})
+    assert "File not found" in exc.value.result["error"]
+
+
+def test_failed_conversion_stops_the_squad(tmp_path):
+    """Inside a squad flow the next agent never runs on an empty document."""
+    from k9_aif_abb.k9_squad.base_squad import BaseSquad
+    f = tmp_path / "a.pdf"
+    f.write_bytes(b"%PDF")
+    ran = []
+
+    class SummaryAgent(BaseAgent):
+        def execute(self, payload):
+            ran.append(payload)
+            return {"output": "summary"}
+
+    parser = DoclingParser(transport=httpx.MockTransport(lambda r: httpx.Response(500, text="boom")))
+    squad = BaseSquad("docs", [parser, SummaryAgent(config={})])
+    squad.flow = [{"agent": "DoclingParser", "result_key": "doc"}, {"agent": "SummaryAgent", "result_key": "summary"}]
+    with pytest.raises(DocumentConversionError):
+        squad.execute({"path": str(f)})
+    assert ran == []
 
 
 def test_governed_by_shield_on_a_large_file(tmp_path, monkeypatch):

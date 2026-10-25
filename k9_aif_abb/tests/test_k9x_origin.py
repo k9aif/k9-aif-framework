@@ -74,7 +74,8 @@ def test_answer_from_stream_carries_facts(origin):
     a = origin.get_current("claim", "C-1")
     assert a["found"] and a["value"]["status"] == "approved"
     assert a["source"]["kind"] == "stream" and a["version"] and a["as_of"] and a["age_seconds"] >= 3
-    assert a["flags"] == {"quarantined": None, "in_review": False, "review": None, "conflict": None}
+    assert a["flags"] == {"quarantined": None, "in_review": False, "review": None, "conflict": None,
+                          "verification_failed": None}
     assert "stale" not in a, "Origin states facts; staleness is a business rule"
 
 
@@ -113,6 +114,16 @@ def test_verify_before_irreversible_step(origin):
     assert seen and seen[-1].kind == "disagreement"
     assert origin.get_current("claim", "C-2")["flags"]["conflict"]["kind"] == "disagreement"
     assert origin.get_current("claim", "C-2", agent=None)["verified"] is None, "only verify_before steps verify"
+
+
+def test_verify_that_cannot_reach_the_system_of_record_is_flagged(origin):
+    """A verify_before step must not get an unverified value that looks verified (1.18.9)."""
+    origin.state.apply(ev("claim.created", 2, claim_id="C-3", status="approved", amount=900))
+    origin.sources.register("claims_db", lambda e, i: (_ for _ in ()).throw(ConnectionError("db down")))
+    a = origin.get_current("claim", "C-3", agent="PayoutAgent")
+    assert a["found"] and a["verified"]["agrees"] is None
+    assert a["flags"]["verification_failed"] == {"against": "claims_db", "error": "db down"}
+    assert origin.get_current("claim", "C-3")["flags"]["verification_failed"] is None, "only verify steps verify"
 
 
 # ── conflicts are flagged, review clears them ────────────────────────────

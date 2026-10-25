@@ -36,6 +36,15 @@ def _mime(filename: str) -> str:
     return _MIME.get(suffix) or mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
 
+class DocumentConversionError(RuntimeError):
+    """A document could not be converted. ``result`` holds the parser's result (``status``, ``error``)."""
+
+    def __init__(self, filename: str, result: Dict[str, Any]):
+        self.filename = filename
+        self.result = result
+        super().__init__(f"Docling could not convert {filename!r}: {result.get('status')}: {result.get('error')}")
+
+
 class DoclingParser(BaseAgent):
     """
     DoclingParser - Retrieval ABB
@@ -147,7 +156,13 @@ class DoclingParser(BaseAgent):
             "filename": filename,
             "chars": len(result.get("markdown") or ""),
         })
-        return {"filename": filename, **{k: v for k, v in result.items() if k != "data"}}
+        out = {"filename": filename, **{k: v for k, v in result.items() if k != "data"}}
+        # As an agent in a squad flow, a failed conversion is a failure, not a result: the next agents must not
+        # run on an empty document (failures propagate, 1.18.9). convert()/parse() still return the result
+        # for callers that inspect it themselves.
+        if result["status"] != "ok":
+            raise DocumentConversionError(filename, out)
+        return out
 
     # ------------------------------------------------------------------
     # Async: a file on disk

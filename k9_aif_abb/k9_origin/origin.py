@@ -246,7 +246,8 @@ class K9Origin(BaseOrigin):
             review = self._reviews.get(key)
         if not view.get("found"):
             return {"entity": entity, "id": str(entity_id), "found": False, "as_of": None,
-                    "flags": {"quarantined": None, "in_review": bool(review), "conflict": None}}
+                    "flags": {"quarantined": None, "in_review": bool(review), "conflict": None,
+                              "verification_failed": None}}
         source = dict(view.get("source") or {})
         source["kind"] = "both" if kind == "both" else source.get("kind") or kind
         quarantined = view.get("quarantined") or []
@@ -255,7 +256,11 @@ class K9Origin(BaseOrigin):
                "version": view.get("version"), "source": source,
                "flags": {"quarantined": quarantined[-1] if quarantined else None,
                          "in_review": bool(review), "review": review,
-                         "conflict": conflict.to_dict() if conflict else None},
+                         "conflict": conflict.to_dict() if conflict else None,
+                         # a verify_before step whose system of record couldn't be reached (1.18.9): the
+                         # live value is unverified, so it must not be acted on as if checked
+                         "verification_failed": ({"against": verified.get("against"), "error": verified.get("error")}
+                                                 if verified and verified.get("agrees") is None else None)},
                "verified": verified,
                "history_available": view.get("history_available", True)}
         return out

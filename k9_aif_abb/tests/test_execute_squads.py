@@ -102,20 +102,26 @@ class TestExecuteSquads(unittest.TestCase):
         self.assertEqual(results["SquadB"]["result"]["input"], "shared")
 
     def test_parallel_handles_squad_failure(self):
-        """A failing squad should not crash the others."""
+        """A failing squad's error propagates (as on the sequential path); the others still finish."""
         orch = _ConcreteOrchestrator(config={}, governance=_TestGovernance())
-        good_squad = _make_squad("GoodSquad", "GoodAgent")
+        ran = []
 
+        class _Recording(BaseSquad):
+            def execute(self, payload):
+                ran.append(self.squad_id)
+                return super().execute(payload)
+
+        good_squad = _make_squad("GoodSquad", "GoodAgent")
+        good_squad.__class__ = _Recording
         bad_squad = BaseSquad(squad_id="BadSquad", agents=[])
         bad_squad.flow = [{"agent": "MissingAgent", "result_key": "x"}]
 
-        results = orch.execute_squads(
-            [good_squad, bad_squad], {"input": "test"}, parallel=True,
-        )
+        with self.assertRaises(RuntimeError) as ctx:
+            orch.execute_squads([good_squad, bad_squad], {"input": "test"}, parallel=True)
 
-        self.assertEqual(results["GoodSquad"]["status"], "completed")
-        self.assertEqual(results["BadSquad"]["status"], "failed")
-        self.assertIn("error", results["BadSquad"])
+        self.assertIn("MissingAgent", str(ctx.exception))
+        self.assertIn("GoodSquad", ran)                     # the other squad was not cut short
+        self.assertTrue(any("BadSquad" in n for n in getattr(ctx.exception, "__notes__", [])))
 
 
 if __name__ == "__main__":

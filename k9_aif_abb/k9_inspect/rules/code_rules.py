@@ -99,23 +99,42 @@ class DirectModelAccessRule(BaseInspectionRule):
 @InspectionRuleRegistry.register
 class LlmInvokeErrorHandlingRule(BaseInspectionRule):
     rule_id = "K9-LLM-002"
-    title = "llm_invoke() failures are handled"
+    title = "Model-call failures are not turned into results"
     category = "LLM path"
     severity = Severity.WARNING
-    description = "llm_invoke() raises RuntimeError on failure (it never returns empty output); an unhandled call fails the whole flow."
-    fix = "Wrap the call: try: ... except RuntimeError as exc: return a failed result with the reason."
+    description = ("llm_invoke() raises RuntimeError when the model can't answer, and the failure must travel up: "
+                   "agent -> squad -> orchestrator, which records it. A handler around llm_invoke() that catches it "
+                   "and carries on (returns a stand-in result, a warning string, an empty output, or passes) lets "
+                   "later steps run on a missing result while the run reports success.")
+    fix = ("Let the RuntimeError propagate, or re-raise after adding context (raise ... from exc). Degrading on "
+           "purpose outside a squad flow: log what was skipped and record the failure.")
+    _BROAD = {"RuntimeError", "Exception", "BaseException"}
+
+    def _catches_model_failure(self, handler: ast.ExceptHandler) -> bool:
+        if handler.type is None:
+            return True
+        names = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+        return any((n.id if isinstance(n, ast.Name) else n.attr if isinstance(n, ast.Attribute) else "") in self._BROAD
+                   for n in names)
 
     def inspect(self, project: SolutionProject) -> List[Finding]:
         out = []
         for m in project.code_modules():
-            guarded: Set[int] = set()
+            if _inside_llm_invoke_module(m):
+                continue
             for node in ast.walk(m.tree):
-                if isinstance(node, ast.Try) and node.handlers:
-                    for inner in ast.walk(ast.Module(body=node.body, type_ignores=[])):
-                        guarded.add(id(inner))
-            for name, node in _calls(m.tree):
-                if name in ("llm_invoke", "llm_invoke_stream") and id(node) not in guarded:
-                    out.append(self.at(m, node, f"{name}() not inside try/except"))
+                if not isinstance(node, ast.Try):
+                    continue
+                body = ast.Module(body=node.body, type_ignores=[])
+                if not any(name in ("llm_invoke", "llm_invoke_stream") for name, _ in _calls(body)):
+                    continue
+                for h in node.handlers:
+                    if not self._catches_model_failure(h):
+                        continue
+                    if any(isinstance(n, ast.Raise) for n in ast.walk(ast.Module(body=h.body, type_ignores=[]))):
+                        continue
+                    caught = ast.unparse(h.type) if h.type else "everything"
+                    out.append(self.at(m, h, f"except {caught} around llm_invoke() carries on instead of re-raising"))
         return out
 
 

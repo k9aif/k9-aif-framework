@@ -38,11 +38,8 @@ from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 
 class SummaryAgent(BaseAgent):
     def execute(self, payload):
-        try:
-            resp = llm_invoke(self.config, InferenceRequest(prompt="x", task_type="summarization"))
-        except RuntimeError as exc:
-            return {"status": "failed", "reason": str(exc)}
-        return {"output": resp}
+        resp = llm_invoke(self.config, InferenceRequest(prompt="x", task_type="summarization"))
+        return {"output": resp.output}
 """
 
 
@@ -226,3 +223,35 @@ def test_latest_release_is_cached_and_offline_falls_back(monkeypatch):
     monkeypatch.setenv("K9_INSPECT_OFFLINE", "1")
     assert config_rules.latest_release() == config_rules._installed_version()
 
+
+
+# ── K9-LLM-002: model-call failures travel up (1.18.9) ──────────────────
+
+def _llm_agent(body):
+    return ("from k9_aif_abb.k9_core.agent.base_agent import BaseAgent\n"
+            "from k9_aif_abb.k9_utils.llm_invoke import llm_invoke\n"
+            "from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest\n"
+            "class FlowAgent(BaseAgent):\n    def execute(self, payload):\n" + body)
+
+
+def test_stand_in_result_after_model_failure_is_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/flow_agent.py", _llm_agent(
+        "        try:\n"
+        "            resp = llm_invoke(self.config, InferenceRequest(prompt='x', task_type='summarization'))\n"
+        "        except RuntimeError as exc:\n"
+        "            return {'output': f'[WARN] {exc}'}\n"
+        "        return {'output': resp.output}\n"))
+    f = [f for f in K9Inspector().inspect(tmp_path).findings if f.rule_id == "K9-LLM-002"]
+    assert len(f) == 1 and "carries on" in f[0].message
+
+
+def test_unguarded_or_reraised_model_call_is_fine(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/flow_agent.py", _llm_agent(
+        "        try:\n"
+        "            resp = llm_invoke(self.config, InferenceRequest(prompt='x', task_type='summarization'))\n"
+        "        except RuntimeError as exc:\n"
+        "            raise RuntimeError(f'summary failed for {payload.get(\"id\")}') from exc\n"
+        "        return {'output': resp.output}\n"))
+    assert "K9-LLM-002" not in ids(K9Inspector().inspect(tmp_path))

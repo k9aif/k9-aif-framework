@@ -270,3 +270,35 @@ def test_no_callback_registered_does_not_raise():
     gov = ShieldGovernance(FULL_CONFIG)
     result = gov.pre_process({"text": "clean text"})
     assert result == {"text": "clean text"}
+
+
+# ── a crashing check: closed in production, open in development (1.18.9) ──
+
+def _shield_with_crashing_check(monkeypatch, env, fail_open=None):
+    import pytest as _pytest
+    from k9_aif_abb.k9_security.vulnerability import shield_governance as sg
+    monkeypatch.setenv("K9_ENV", env)
+    cfg = {"security": {"shield": {"enabled": True, "ingress": {"checks": ["InputSizeCheck"]}}}}
+    if fail_open is not None:
+        cfg["security"]["shield"]["fail_open"] = fail_open
+    gov = sg.ShieldGovernance(cfg)
+    crashing = next(iter(gov._pre_chain._checks)).__class__
+    monkeypatch.setattr(crashing, "check", lambda self, payload, ctx=None: (_ for _ in ()).throw(RuntimeError("boom")))
+    return gov
+
+
+def test_crashing_check_blocks_in_production_by_default(monkeypatch):
+    import pytest as _pytest
+    gov = _shield_with_crashing_check(monkeypatch, "production")
+    with _pytest.raises(PermissionError):
+        gov.pre_process({"query": "hello"})
+
+
+def test_crashing_check_flags_in_development_by_default(monkeypatch):
+    gov = _shield_with_crashing_check(monkeypatch, "development")
+    gov.pre_process({"query": "hello"})                     # FLAG, not BLOCK: passes
+
+
+def test_explicit_fail_open_wins_in_production(monkeypatch):
+    gov = _shield_with_crashing_check(monkeypatch, "production", fail_open=True)
+    gov.pre_process({"query": "hello"})
