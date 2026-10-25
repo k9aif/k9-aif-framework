@@ -5,8 +5,10 @@
 
 **Author:** Ravi Natarajan  
 **Project:** K9-AIF Framework, K9X Ecosystem  
-**Last Updated:** 2026-10-12  
+**Last Updated:** 2026-10-26 (framework 1.20.0)  
 **New here?** Start with the [Quick Start Guide](Quick-Start-Guide.pdf) — zero to a running agent in 15 minutes using K9X Studio  
+**Learn and get certified:** [K9X Courses & Certification](https://certification.k9x.ai): the Foundation course, hands-on labs and the K9X Certified Developer (Foundation) exam  
+**Videos:** [K9X on YouTube](https://www.youtube.com/@k9-aif); start with [K9-AIF: the framework in 3 minutes](https://www.youtube.com/watch?v=uxd72aOCa9U)  
 **Website:** [https://k9x.ai](https://k9x.ai)  
 **Architecture Graph:** [https://graph.k9x.ai](https://graph.k9x.ai)  
 **Blog:** [https://blog.k9x.ai](https://blog.k9x.ai)  
@@ -165,7 +167,7 @@ pip install k9x
 k9x studio
 ```
 
-Studio runs at `http://localhost:5173`. Same canvas, same code generation, fully offline.
+Studio opens at `http://localhost:12999` (sign in with `demo` / `demo`). Same canvas, same code generation, fully offline.
 
 **Step 3 — Install the framework**
 
@@ -189,6 +191,10 @@ cd k9-aif-framework/examples/K9X_Enterprise_Insurance_OperationsCenter
 ```
 
 See Chapter 2 for repository orientation and Chapter 5 onward for the development guides.
+
+---
+
+**Prefer to learn step by step?** [K9X Courses & Certification](https://certification.k9x.ai) teaches the same path as a course: a refresher on the basics, one module per layer (Router, Orchestrator, Squad, Agent), governance, tools, K9X Studio and hands-on labs, with a quiz per module and a final exam for **K9X Certified Developer (Foundation)**. Progress is saved, so you can stop and continue. Short videos on each pattern are on the [K9X YouTube channel](https://www.youtube.com/@k9-aif) (list in Chapter 31).
 
 ---
 
@@ -224,7 +230,7 @@ k9_aif_abb/
 │   ├── monitoring/      # BaseMonitor, LoggerMonitor
 │   ├── storage/         # BaseStorage
 │   ├── retrieval/       # BaseRetriever, BaseDocParser, RetrieverRegistry
-│   ├── integration/     # BaseConnector, MCPStreamableHttpConnector, MCPHttpConnector, MCPStdioConnector
+│   ├── integration/     # BaseConnector, MCP connectors (streamable HTTP, HTTP, stdio)
 │   ├── streaming/       # BaseStreamProvider, RedpandaStreamProvider
 │   ├── logging/         # BaseLogger
 │   ├── formatter/       # BaseFormatter
@@ -907,11 +913,9 @@ class MyAssessmentAgent(BaseAgent):
             metadata={"agent": self.layer},
         )
 
-        try:
-            resp = llm_invoke(self.config, req)
-        except RuntimeError as exc:
-            self.logger.error("[%s] LLM unavailable: %s", self.layer, exc)
-            return {"agent": self.layer, "output": "[WARN] LLM unavailable", "confidence": 0.0}
+        # No try/except: a failed model call raises RuntimeError and propagates to the squad and
+        # orchestrator, which record it (see 6.5). Never return "[WARN] ..." in place of a result.
+        resp = llm_invoke(self.config, req)
 
         self.publish_event({"type": "AssessmentCompleted", "agent": self.layer})
 
@@ -1011,33 +1015,22 @@ In standard K9-AIF solutions, agents are wired without a `message_bus`. Their `p
 
 ### 5.6 Governance Integration Expectations
 
-Agents that handle sensitive payloads should apply governance hooks:
+Governance is applied **by construction** (1.15): `BaseAgent` wraps every subclass's `execute()` (and `execute_stream()`) when the class is defined. On every call, with nothing in the agent's code:
+
+1. `assert_governed()`: with no real governance outside development/test, `PermissionError` before the agent runs;
+2. `governance.pre_process(payload)`: the agent sees the governed payload;
+3. the agent's own `execute()`;
+4. `governance.post_process(result["output"])` for a dict result with an `output` key.
+
+Governance comes from config: `security.shield.enabled: true` gives every agent `ShieldGovernance`, `governance.guardian.enabled: true` gives `GuardianGovernance`, both chain them (Shield first). A BLOCK raises `PermissionError`, which propagates to the orchestrator like any failure. So an agent's `execute()` contains **no** governance code:
 
 ```python
-import asyncio
-
 def execute(self, payload):
-    # Enforce governance is configured
-    try:
-        self.enforce_governance()
-    except PermissionError as exc:
-        self.logger.error("[%s] %s", self.layer, exc)
-        return {"agent": self.layer, "output": "[WARN] governance not configured"}
-
-    # Apply pre-governance (sanitize input)
-    payload = asyncio.get_event_loop().run_until_complete(
-        self.apply_pre_governance(payload)
-    )
-
-    # ... LLM call ...
-
-    # Apply post-governance (validate output)
-    result = asyncio.get_event_loop().run_until_complete(
-        self.apply_post_governance(result)
-    )
-
-    return result
+    resp = llm_invoke(self.config, InferenceRequest(prompt=..., task_type="general"))
+    return {"agent": self.layer, "output": resp.output}
 ```
+
+Never catch the `PermissionError` and return a result in its place. Overriding `execute()` doesn't bypass governance; the override is wrapped too.
 
 ### 5.7 Do / Do Not
 
@@ -1045,7 +1038,7 @@ def execute(self, payload):
 |---|---|
 | Extend `BaseAgent` | Call `OllamaLLM` directly |
 | Use `llm_invoke()` for all LLM calls | Import `LLMFactory` in agent code |
-| Handle `RuntimeError` from `llm_invoke` | Let LLM errors propagate as exceptions |
+| Let a `RuntimeError` from `llm_invoke` propagate (the orchestrator records it) | Catch it and return `"[WARN] ..."` or empty output as a result |
 | Set `layer` class attribute | Omit `layer` |
 | Publish events for significant outcomes | Publish raw payload data in events |
 | Use `self.config.get("role")` for prompts | Hardcode prompts in Python |
@@ -1138,7 +1131,9 @@ The orchestrator does not need to know how the payload arrived. The payload shou
 
 ### 6.5 Failure Handling
 
-Orchestrators should catch all exceptions from squad execution and return a structured error result rather than propagating the exception. This prevents one domain failure from crashing the entire routing process.
+Failures propagate Agent → Squad → Orchestrator: an agent lets a failure raise, `BaseSquad.execute()` logs the failed step and re-raises (later steps don't run), and the **orchestrator** is the layer that records it: status `error`, which step, why, so it can be retried. It then returns the error status (below) or re-raises. The process entry point (consumer loop, API) catches what reaches it and keeps serving. `PermissionError` (a Shield or Guardian BLOCK) and `RequiresHIL` arrive the same way and get their own handling.
+
+**Parallel squads (1.19.0):** `execute_squads(..., parallel=True)` lets the other squads finish, then raises the first failure, with notes naming the failed and completed squads. Before 1.19.0 a failed squad became `{"status": "failed"}` in the results and the run looked complete.
 
 ```python
 try:
@@ -1584,7 +1579,8 @@ class BaseCriticActorAgent(BaseAgent):
 max_rounds: 3                     # hard cap on refinement rounds (default: 3)
 acceptance_threshold: 0.8         # score threshold for acceptance (default: 0.8)
 finalize_on_max_rounds: true      # true → finalize; false → escalate on timeout
-escalate_on_critic_error: false   # true → ESCALATE; false → FAIL on critique() error
+on_critic_error: raise            # raise (default, 1.19.0) | escalate | fail; a critique() exception
+                                  # older form escalate_on_critic_error: true still means escalate
 ```
 
 ### 9.3 K9CriticActorAgent
@@ -2140,14 +2136,25 @@ resp.provider    # "ollama"
 resp.latency_ms  # round-trip latency
 ```
 
-If the LLM backend is unreachable, `llm_invoke` raises `RuntimeError`. Always handle it:
+If the model call fails, `llm_invoke` raises `RuntimeError`; it never returns empty output. **Let it propagate:** the squad stops and the orchestrator records the failure (6.5). An agent may catch it only to add context or release a resource, then re-raise:
 
 ```python
 try:
     resp = llm_invoke(self.config, req)
 except RuntimeError as exc:
-    self.logger.error("[%s] LLM unavailable: %s", self.layer, exc)
-    return {"agent": self.layer, "output": "[WARN] LLM unavailable", "confidence": 0.0}
+    raise RuntimeError(f"{self.layer}: assessment model call failed") from exc
+```
+
+K9X Inspector rule K9-LLM-002 reports a handler that turns the failure into a result (a stand-in output, a `"[WARN] ..."` string, `pass`).
+
+Retries are configurable (1.19.0):
+
+```yaml
+inference:
+  retry:
+    attempts: 2                    # retries after the first try
+    delay_seconds: 60              # after an empty reply (a reasoning model spent its budget thinking)
+    unreachable_delay_seconds: 5   # when the model server can't be reached
 ```
 
 ### 12.3 InferenceRequest
@@ -2429,23 +2436,15 @@ These two mechanisms are architecturally distinct:
 ### 13.7 Governance Enforcement Patterns
 
 ```python
-# Pattern 1: Enforce governance is configured (fail-fast in production)
-def execute(self, payload):
-    try:
-        self.enforce_governance()
-    except PermissionError as exc:
-        return {"agent": self.layer, "output": "[WARN] governance not configured"}
+# Pattern 1: Agents: nothing to write. Governance by construction (5.6) runs assert_governed(),
+# pre_process and post_process around every execute(); a BLOCK raises PermissionError.
 
-# Pattern 2: Apply content governance hooks
-import asyncio
+# Pattern 2: Orchestrator or router code outside agents: apply the hooks yourself.
+# They are async; from sync code use _run_coro_sync, never asyncio.run() (fails in a running loop).
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
 
-payload = asyncio.get_event_loop().run_until_complete(
-    self.apply_pre_governance(payload)
-)
-# ... processing ...
-result = asyncio.get_event_loop().run_until_complete(
-    self.apply_post_governance(result)
-)
+payload = _run_coro_sync(self.apply_pre_governance(payload))
+# or the sync ingress wrapper: self.apply_shield(payload) -> {"allowed", "reason", "payload"}
 
 # Pattern 3: Zero-trust evaluation in orchestrator
 zt_result = self.apply_zero_trust(payload)
@@ -2527,8 +2526,8 @@ if result.blocked:
 | On `BLOCK` | always | Chain halts immediately; remaining checks never run |
 | On `FLAG` | non-blocking | Recorded for audit; chain continues to the next check |
 | `strict=True` | off | Promotes every `FLAG` to a `BLOCK` — stop on any issue, not just severe ones |
-| `fail_open=True` | on | A check that raises an exception is recorded as a `FLAG`, not a crash — one buggy check does not take down the chain |
-| `fail_open=False` | opt-in | A crashing check is recorded as a `BLOCK` instead — fail-closed; a deliberate availability-vs-security tradeoff, not a "more correct" default |
+| `fail_open` unset | follows `K9_ENV` (1.19.0) | Production: a check that raises is a `BLOCK` (fail closed). Development and test: a `FLAG`, so one buggy check doesn't stop your work |
+| `fail_open=True` / `False` | explicit | Always `FLAG` / always `BLOCK` on a crashing check, whatever the environment. Before 1.19.0 the default was always `True`, so an input that made a check throw passed it unscreened |
 
 ### 14.4 Wiring Into an Agent — ShieldGovernance
 
@@ -2547,7 +2546,7 @@ security:
   shield:
     enabled: true
     strict: false
-    fail_open: true
+    # fail_open: leave unset: closed in production, open in development/test (1.19.0)
     ingress:
       checks:
         - InputSizeCheck
@@ -2641,7 +2640,28 @@ In standard K9-AIF solutions, agents are constructed without a `message_bus`. Th
 
 ### 15.2 Message Bus Abstraction
 
-The message bus abstraction is `K9EventBus` (`k9_core/messaging/k9_event_bus.py`), which provides a local publish/subscribe mechanism. For Kafka/Redpanda integration, `RedpandaStreamProvider` (`k9_core/streaming/redpanda_provider.py`) implements the `BaseStreamProvider` contract.
+`MessageFactory.create(config)` builds the application's bus from `messaging:`. With `backend: kafka` or `redpanda` it is `K9EventBus` (`k9_core/messaging/k9_event_bus.py`): `publish()` to the bus's topic, `publish_to(topic, event)` for an explicit topic, `subscribe()` / `subscribe_async()` to consume. With `backend: local` (the default) events stay inside one process. In production a broker that can't be reached at start-up raises `MessagingUnavailableError`; development and test fall back to the in-process queue with a warning. Send errors raise to the caller (1.20.0).
+
+#### Large events travel as a link (1.20)
+
+An event over `max_event_bytes` (512 KB) is stored in object storage and Kafka carries a link: `k9_large_event` (uri, bucket, key, size, sha256) plus the event's routing fields (`event_type`, `correlation_id`, `job_id`, `task_id`, `meta`, `topic`). `subscribe()` and `subscribe_async()` fetch it back, check the hash and pass the **original** event to the callback, so neither producer nor consumer changes.
+
+```yaml
+object_storage:
+  provider: s3                       # s3 (AWS S3, MinIO) | ibm | local | your own (16.2)
+  endpoint_url: ${S3_ENDPOINT_URL:-http://localhost:9000}
+messaging:
+  large_events:
+    bucket: k9aif-large-events       # the framework default
+    ttl_days: 30                     # objects under large-events/ expire; 0 = leave lifecycle to you
+```
+
+- On first use the bus creates the bucket if it's missing and sets a lifecycle rule on the `large-events/` prefix only, merged with the bucket's other rules (a shared bucket is safe). The credentials need `s3:CreateBucket` and `s3:PutLifecycleConfiguration`, or create both yourself and set `ttl_days: 0`.
+- Production without an `object_storage` block raises `LargeEventError` (local files can't be read by another host); development and test use local files. A failed upload raises and nothing is sent.
+- A consumer that can't fetch a stored event (expired, deleted, hash mismatch) logs it at error level and skips it; it is never delivered with missing data.
+- All consumers of a topic must run 1.20 or later. Before 1.20 an oversized event was replaced by `{"truncated": true}` and sent anyway.
+
+Documents the Router stores on purpose are a separate, explicit path: `store_document()` returns a `document_uri` for the event (16.2).
 
 ### 15.3 Framework Event Taxonomy
 
@@ -2725,9 +2745,9 @@ Configuration:
 messaging:
   backend: redpanda
   broker_url: "${KAFKA_BROKER:-localhost:9092}"
-  topic: k9aif-events
-  group_id: k9aif-core
-  client_id: k9aif-console
+  topic: acme-events                 # your own: the defaults k9aif-events / k9aif-core warn
+  group_id: acme-router              # one group per process role
+  client_id: acme-console
   security_protocol: PLAINTEXT
   auto_create: true
 ```
@@ -2864,7 +2884,7 @@ Reference application: **K9X Streams** (`k9x-ecosystem/k9x_streams`), an account
 
 ### 15.8 k9x Origin: one call for current truth (1.18)
 
-k9x Origin is built into the framework like k9x Shield. An agent asks one question, `get_current(entity, id)`, and gets **what is true right now and where it came from**: the value, `as_of`, `version`, `source` (stream, system of record, or both) and flags (quarantined, in review, conflict). Origin states facts; business rules decide. Full design: `docs/roadmap/k9x-origin-design.md`.
+k9x Origin is built into the framework like k9x Shield. An agent asks one question, `get_current(entity, id)`, and gets **what is true right now and where it came from**: the value, `as_of`, `version`, `source` (stream, system of record, or both) and flags (quarantined, in review, conflict, and since 1.19.0 `verification_failed` when a `verify_before` step couldn't reach the system of record; a failed read-through is `source_unavailable`, distinct from not found). Origin states facts; business rules decide. Full design: `docs/roadmap/k9x-origin-design.md`.
 
 ![An agent's three paths: knowledge, current truth, actions](../diagrams/k9x_origin_big_picture.png)
 
@@ -2970,6 +2990,17 @@ class BaseStorage(ABC):
 ```
 
 OOB implementations: `FileStorage`, `ObjectStorage`, `SQLiteDatabaseStorage`, `PostgresDatabaseStorage`.
+
+**Object storage** (`k9_core/storage/base_object_storage.py`, `BaseObjectStorage`): `upload`, `download`, `delete`, `list_objects`, `get_uri`, plus the optional `ensure_bucket` and `set_expiry` (1.20). Built by `ObjectStorageFactory.create(config)` from `object_storage.provider`:
+
+| Provider | Store | Notes |
+|---|---|---|
+| `local` (default) | Files under `object_storage.root` | Development and single-host use |
+| `s3` | AWS S3, MinIO, any S3-compatible store | `endpoint_url` (or `S3_ENDPOINT_URL`) for MinIO; `region`; credentials `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` from the environment only |
+| `ibm` | IBM Cloud Object Storage | `ibm-cos-sdk` |
+| your own | Azure Blob, Google Cloud Storage, ... | An SBB extending `BaseObjectStorage`, registered with `ObjectStorageFactory.register("azure", AzureBlobAdapter)` |
+
+The Router's `store_document(bucket, key, data)` stores an inbound document and returns its URI; the event carries it as `document_uri` and the agent downloads it through the same factory (1.4.0). The message bus uses the same store for large events (15.2).
 
 ### 16.3 RoutingStateStore
 
@@ -3194,6 +3225,7 @@ Framework tests live in `k9_aif_abb/tests/`. Domain tests live alongside the SBB
 Always mock `llm_invoke` — never call a real LLM in unit tests:
 
 ```python
+import pytest
 from unittest.mock import patch, MagicMock
 from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 from examples.my_app.agents.src.my_agent import MyAgent
@@ -3225,13 +3257,12 @@ def test_execute_returns_expected_output():
     assert result["model_used"] == "reasoning"
 
 
-def test_execute_handles_llm_error():
+def test_llm_error_propagates():
     with patch("examples.my_app.agents.src.my_agent.llm_invoke",
                side_effect=RuntimeError("LLM backend unavailable")):
         agent = _make_agent()
-        result = agent.execute({"claim_id": "C001"})
-
-    assert "[WARN]" in result.get("output", "")
+        with pytest.raises(RuntimeError):
+            agent.execute({"claim_id": "C001"})
 ```
 
 ### 18.3 Testing Validation Loop Agents
@@ -3384,7 +3415,7 @@ Before submitting any agent or orchestrator:
 ```
 [ ] Agent extends BaseAgent (or appropriate iterative pattern)
 [ ] layer attribute is set (e.g., "EOC MyAgent SBB")
-[ ] execute() handles RuntimeError from llm_invoke
+[ ] execute() lets a RuntimeError from llm_invoke propagate (no stand-in result)
 [ ] All LLM calls go through llm_invoke(), not direct Ollama calls
 [ ] Agent YAML has no squad or routing fields
 [ ] Squad YAML has no orchestrator field
@@ -3801,7 +3832,7 @@ Review every generated file for:
 5. **Agent YAML:** No squad reference? No routing fields?
 6. **Tests:** Is `_TestGovernance` inline? Is `llm_invoke` mocked?
 7. **Layer attribute:** Set to `"<App> <Name> SBB"`?
-8. **Error handling:** Does `execute()` handle `RuntimeError` from `llm_invoke`?
+8. **Error handling:** Does a failed `llm_invoke` reach the orchestrator? No `"[WARN] ..."` or empty result in its place?
 
 ### 24.10 Examples of Successful Claude Code Usage in K9-AIF
 
@@ -4108,7 +4139,7 @@ result = squad.execute(payload)
 
 ## 28. K9X Ecosystem
 
-The K9-AIF framework is part of a five-product ecosystem. Each product is independently installable and deployable.
+The K9-AIF framework is part of the K9X ecosystem. Each product is independently installable and deployable.
 
 | Product | Purpose | Install | Dependency |
 |---|---|---|---|
@@ -4117,6 +4148,7 @@ The K9-AIF framework is part of a five-product ecosystem. Each product is indepe
 | **K9X Enterprise Continuum** | SBB/ABB catalog & governance | `pip install k9x-continuum` | PostgreSQL |
 | **K9X HIL** | Human-in-the-loop case management | `pip install k9x-hil` | PostgreSQL, Kafka |
 | **K9X SATAN** | Adversarial validation — proves k9x_Shield holds under attack | `pip install k9x-satan` | Framework |
+| **K9X Courses & Certification** | Learn K9-AIF and become a K9X Certified Developer (Foundation) | Online: [certification.k9x.ai](https://certification.k9x.ai) | A computer |
 
 ### Quick Start
 
@@ -4142,6 +4174,7 @@ pip install k9-aif k9x k9x-continuum k9x-hil k9x-satan
 - **Continuum** stores published SBBs and ABBs; validates compliance via `k9aif inspect`
 - **HIL** receives tasks from orchestrators via Kafka; responds to `reply_to` topics
 - **SATAN** fires structured attacks at a live pipeline built from framework ABBs (see Chapter 14) and proves containment rather than asserting it — see [k9x.ai/k9x-security](https://k9x.ai/k9x-security)
+- **Courses & Certification** teaches the framework layer by layer, with K9X Studio and hands-on labs
 - **Framework** is self-sufficient — runs without any other product
 
 ### Links
@@ -4150,6 +4183,8 @@ pip install k9-aif k9x k9x-continuum k9x-hil k9x-satan
 - **Studio:** [https://studio.k9x.ai](https://studio.k9x.ai)
 - **Continuum:** [https://continuum.k9x.ai](https://continuum.k9x.ai)
 - **SATAN:** [https://satan.k9x.ai](https://satan.k9x.ai)
+- **Courses & Certification:** [https://certification.k9x.ai](https://certification.k9x.ai)
+- **Videos:** [https://www.youtube.com/@k9-aif](https://www.youtube.com/@k9-aif)
 - **Security check inventory:** [https://k9x.ai/k9x-security](https://k9x.ai/k9x-security)
 - **GitHub:** [https://github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework)
 
@@ -4263,10 +4298,29 @@ Every architectural decision in K9-AIF reflects human architectural judgment. AI
 ### K9-AIF Project
 
 - **Website:** [https://k9x.ai](https://k9x.ai)
+- **Courses & Certification:** [https://certification.k9x.ai](https://certification.k9x.ai)
 - **Main Repository:** [https://github.com/k9aif/k9-aif-framework](https://github.com/k9aif/k9-aif-framework)
 - **Blog:** [https://blog.k9x.ai](https://blog.k9x.ai)
 - **Architecture Graph:** [https://graph.k9x.ai](https://graph.k9x.ai)
 - **Patterns Repository:** [https://github.com/k9aif/k9aif-patterns](https://github.com/k9aif/k9aif-patterns)
+
+### Videos
+
+The [K9X YouTube channel](https://www.youtube.com/@k9-aif) has the latest; these match chapters of this guide:
+
+| Video | Chapters |
+|---|---|
+| [K9-AIF: the framework in 3 minutes](https://www.youtube.com/watch?v=uxd72aOCa9U) | 1 |
+| [K9-AIF Patterns: how components are built and wired](https://www.youtube.com/watch?v=Iods5e7bXqM) | 3, 4, 17 |
+| [K9-AIF Patterns: the Event Router](https://www.youtube.com/watch?v=cDvvJdeqsjk) | 7 |
+| [K9-AIF Patterns: how the work gets done](https://www.youtube.com/watch?v=L0iOYU1ofYI) | 5, 6 |
+| [K9-AIF Patterns: one path to any model](https://www.youtube.com/watch?v=6gJm9PrmhfM) | 12 |
+| [K9-AIF Patterns: integration](https://www.youtube.com/watch?v=2lqbRVU5bYo) | 15, 23 |
+| [K9-AIF: Zero Trust explained](https://www.youtube.com/watch?v=4GyVQ2HucM4) | 13 |
+| [Secure AI Lifecycle: security from inception to production](https://www.youtube.com/watch?v=uXv8gF3xiXc) | 14 |
+| [K9X Sentinel and Satan: keeping up with AI-driven attacks](https://www.youtube.com/watch?v=HKllnip1mAM) | 14, 28 |
+| [k9x Origin: AI agents don't run on yesterday's data](https://www.youtube.com/watch?v=n76aQXrbB2k) | 15.8 |
+| [Enterprise Repository & Continuum](https://youtu.be/-6LHSormkGQ) | 21, 28 |
 
 ### TOGAF and Architecture References
 
