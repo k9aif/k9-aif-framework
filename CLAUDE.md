@@ -238,6 +238,9 @@ treated as FLAG, `False` → treated as BLOCK. Unset, it follows `K9_ENV`
 (1.19.0): `False` (fail closed) in production, `True` in development/test;
 an explicit value wins. Before 1.19.0 it was always `True`, so an input that
 made a check throw passed that check unscreened.
+Shield screens text as well as dicts: an agent's egress is its output text,
+wrapped as `{"output": text}` for the checks (1.20.1; before, dict-only checks
+crashed on text, which blocked every output in production).
 
 **Shield is off in the shipped configuration.** `k9_aif_abb/config/config.yaml`
 sets `security.shield.enabled: false` ("SBBs enable and configure in their

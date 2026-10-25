@@ -4,6 +4,19 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] (planned 1.20.1)
+
+- **Shield passes an agent's text output in production.** `BaseAgent`'s egress gate hands Shield the
+  agent's output text, and the recommended egress checks (`ToolArgumentCheck`, `ExecutionGuardCheck`)
+  crashed on a string. Since 1.19.0 a crashing check blocks in production, so with Shield egress on,
+  every agent's output was blocked (development only flagged it). `ShieldGovernance` now wraps text
+  for its checks (`{"output": text}` on egress, `{"query": text}` on ingress) and returns the value
+  unchanged. Found by running a K9X Studio scaffold end to end. Test: `test_shield_text_payloads.py`.
+- **Inspector K9-DEC-001's fix advice** now points to the squad layer (load the squad by YAML and id),
+  not to registering agents (pre-1.18.1 advice).
+
+---
+
 ## [1.20.0] — 2026-10-26
 
 ### Large events travel as a link

@@ -201,7 +201,9 @@ class LayerDecouplingRule(BaseInspectionRule):
     description = ("Each layer knows only the layer below: Router → Orchestrators, Orchestrator → Squads, "
                    "Squad → Agents. An agent importing a squad, or an orchestrator importing agents, couples layers "
                    "that must evolve independently.")
-    fix = "Reference the layer below only; register agents in the app entry point and resolve them through the registry."
+    fix = ("Reference the layer below only. An orchestrator loads its squad by YAML file and id "
+           "(self.squads.load_one(squad_yaml, squad_id)); the squad YAML names the agents, built once at the "
+           "entry point by SquadLoader.from_agents (Developer Guide 27.11).")
 
     _FORBIDDEN = {"agent": {"squad", "orchestrator", "router"}, "squad": {"orchestrator", "router"},
                   "orchestrator": {"agent", "router"}, "router": {"agent", "squad"}}
