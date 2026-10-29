@@ -4,7 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Examples — K9-AIF</title>
-   <link rel="stylesheet" href="../docs_styles.css" />
+  <meta name="description" content="Applications and examples built with K9-AIF: DAS and K9Chat live, plus focused examples that each teach one idea." />
+  <link rel="stylesheet" href="../docs_styles.css" />
+  <style>
+    /* Page layout: a sticky list of examples on the left, content on the right. */
+    .ex-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 36px; align-items: start; margin-top: 8px; }
+    .ex-toc { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;
+              background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 14px; box-shadow: var(--shadow); }
+    .ex-toc h3 { margin: 14px 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .ex-toc h3:first-child { margin-top: 0; }
+    .ex-toc ul { list-style: none; margin: 0; padding: 0; }
+    .ex-toc a { display: block; padding: 5px 9px; border-radius: 7px; color: var(--text); text-decoration: none; font-size: 14px; line-height: 1.35; }
+    .ex-toc a:hover { background: var(--surface-soft); }
+    .ex-toc a.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+    .ex-toc .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-soft); margin-right: 7px; vertical-align: 1px; }
+
+    .ex-section { margin: 0 0 44px; scroll-margin-top: 20px; }
+    .ex-section > h2 { font-size: 24px; margin: 0 0 6px; }
+    .ex-section > .lead { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
+
+    .live-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .live-card { background: var(--surface); border: 1px solid var(--border-accent); border-radius: 14px; overflow: hidden;
+                 box-shadow: var(--shadow); display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); scroll-margin-top: 20px; }
+    .live-card img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; object-position: center top; background: #0b1220; display: block; border-right: 1px solid var(--border); }
+    .live-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
+    .live-body h3 { margin: 4px 0 8px; font-size: 21px; }
+    .live-body p { margin: 0 0 12px; color: var(--text); line-height: 1.6; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+             padding: 3px 9px; border-radius: 999px; background: var(--accent-light); color: var(--accent); margin-right: 6px; }
+    .badge.live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; margin-right: 6px; vertical-align: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 14px; }
+    .actions a { font-size: 14px; font-weight: 600; padding: 8px 13px; border-radius: 8px; text-decoration: none; border: 1px solid var(--border); color: var(--accent); background: var(--surface); }
+    .actions a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .actions a:hover { border-color: var(--accent-soft); }
+
+    .focus-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .focus-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px;
+                  box-shadow: var(--shadow); display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; gap: 4px 22px;
+                  align-items: center; scroll-margin-top: 20px; }
+    .focus-card > div:first-child { grid-row: 1 / span 2; }
+    .focus-card h3 { margin: 6px 0 0; font-size: 17px; }
+    .focus-card p { margin: 0; color: var(--text); line-height: 1.5; font-size: 15px; grid-column: 2; }
+    .focus-card .actions { grid-column: 3; grid-row: 1 / span 2; margin: 0; padding: 0; }
+    .focus-card .shows { font-size: 14px; color: var(--muted); }
+    .focus-card .shows strong { color: var(--text); }
+
+    .path { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .path li { counter-increment: step; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px 12px 52px; position: relative; line-height: 1.5; }
+    .path li::before { content: counter(step); position: absolute; left: 14px; top: 11px; width: 26px; height: 26px; border-radius: 50%;
+                       background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+
+    table.samples { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    table.samples th, table.samples td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 15px; vertical-align: top; }
+    table.samples th { background: var(--surface-soft); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    table.samples tr:last-child td { border-bottom: 0; }
+    table.samples a { color: var(--accent); font-weight: 600; }
+
+    .ex-section pre { background: #1c1a17; color: #f4f2ed; padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 14px; }
+
+    @media (max-width: 1000px) {
+      .ex-layout { grid-template-columns: 1fr; }
+      .ex-toc { position: static; max-height: none; }
+      .ex-toc ul { display: flex; flex-wrap: wrap; gap: 4px; }
+      .live-card { grid-template-columns: 1fr; }
+      .live-card img { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid var(--border); }
+      .focus-card { grid-template-columns: 1fr; }
+      .focus-card > div:first-child, .focus-card p, .focus-card .actions { grid-column: 1; grid-row: auto; }
+    }
+  </style>
 </head>
 <body>
   <nav>
@@ -25,281 +92,230 @@
     <section class="hero">
       <div class="hero-glow"></div>
       <div class="hero-inner">
-        <div class="eyebrow">Reference Applications</div>
-        <h1>Examples built with K9-AIF</h1>
+        <div class="eyebrow">Examples</div>
+        <h1>Built with K9-AIF</h1>
         <p class="hero-subtitle">
-          Practical demos showing how K9-AIF structures routing, orchestration, squads, agents,
-          model abstraction, governance, and domain workflows in real AI applications.
+          Two applications running live that you can try today, and focused examples that each teach one idea:
+          routing, governance, Zero Trust, retrieval, or wrapping an existing CrewAI or LangGraph application.
         </p>
         <div class="hero-actions">
-          <a class="btn-primary" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples" target="_blank" rel="noopener noreferrer">View Examples on GitHub</a>
-          <a class="btn-secondary" href="https://pydocs.k9x.ai/starthere/">Start Here</a>
+          <a class="btn-primary" href="#das">Start with DAS</a>
+          <a class="btn-secondary" href="https://pydocs.k9x.ai/starthere/">Start Here (docs)</a>
         </div>
       </div>
     </section>
 
-    <section class="section-intro">
-      <p>
-        These examples show how the <strong>K9-AIF Framework</strong> can be applied to practical,
-        domain-oriented AI systems while preserving architectural structure, modularity, and governance.
-      </p>
-      <p>
-        Together, they demonstrate how K9-AIF uses stable <strong>Architecture Building Blocks (ABB)</strong>
-        to host configurable <strong>Solution Building Blocks (SBB)</strong>, including routing,
-        orchestration, squads, agent behaviors, intelligent model selection, and domain workflows.
-      </p>
-    </section>
-
-    <section class="examples-grid">
-
-      <!-- DAS — Flagship, live -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Flagship Example · Live</div>
-          <h2>DAS: Defense Acquisition System</h2>
-        </div>
-
-        <p>
-          AI agents prepare the defense acquisition package; a person decides at every gate. DAS takes a Service
-          capability requirement from the sponsor's documents through Service validation, the Materiel Development
-          Decision, Milestone A and the System Requirements Review, following the process in force today (the Joint
-          Force Requirements Process, DoDI 5000.85 and the DoD Systems Engineering Guidebook). Live at
-          <a href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">das.k9x.ai</a> with a public demo login.
-        </p>
-
-        <ul class="feature-list">
-          <li>A <strong>versioned process model</strong>: every stage and gate cites its policy source, and tests enforce it</li>
-          <li><strong>Router → Orchestrator → Squad → Agent</strong>; orchestrators know only squads (squads are YAML)</li>
-          <li>Document intake with <strong>Docling</strong>; every section screened by <strong>k9x Shield</strong> and <strong>Granite Guardian</strong>, with red-team documents to test it</li>
-          <li>A verdict per entry criterion, with the <strong>readiness score computed in code</strong>, never by the model</li>
-          <li>An <strong>independent grader</strong> from a different model family checks each claim against the source</li>
-          <li>Every gate decided by a person in <strong>K9X HIL</strong>; undecided gates fail closed</li>
-          <li><strong>Policy as data</strong>: cited mapping files, checked by tests, instead of rules in prompts</li>
-          <li>A sample <strong>AWS GovCloud</strong> deployment guideline</li>
+    <div class="ex-layout">
+      <aside class="ex-toc" aria-label="Examples on this page">
+        <h3>Live applications</h3>
+        <ul>
+          <li><a href="#das"><span class="dot"></span>DAS</a></li>
+          <li><a href="#k9chat"><span class="dot"></span>K9Chat</a></li>
         </ul>
-
-        <div class="card-actions">
-          <a class="card-link" href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">Try it at das.k9x.ai →</a>
-          <a class="card-link" href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">View Code &amp; Documentation →</a>
-          <a class="card-link" href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">Watch: DAS in depth (7 min) →</a>
-        </div>
-      </article>
-
-      <!-- K9Chat — live -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Live Assistant</div>
-          <h2>K9Chat</h2>
-        </div>
-
-        <p>
-          A governed chat assistant built on the <strong>K9-AIF Framework</strong>, live at
-          <a href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">chat.k9x.ai</a>. It answers from a
-          grounded knowledge base, gives each visitor their own document projects, and protects the GPU host it runs on.
-        </p>
-
-        <ul class="feature-list">
-          <li><strong>Knowledge grounding</strong> (ChromaDB) and per-visitor <strong>Projects</strong> with their own documents</li>
-          <li>Model calls through <strong>llm_invoke</strong> and the K9 model router; any provider, such as <strong>Ollama</strong></li>
-          <li>Guest identity with no password, scoping each visitor's projects</li>
-          <li>A concurrency and <strong>GPU-thermal admission guard</strong> for the shared GPU</li>
-          <li>Toggles that are really wired: an <strong>LLM-as-judge eval</strong>, streaming, and answer style</li>
-          <li>An <strong>Ask API</strong> so other applications (such as K9X Studio's Help) can ask it questions</li>
-          <li>Podman container deployment</li>
+        <h3>Focused examples</h3>
+        <ul>
+          <li><a href="#weather-assist">Weather Assist (CrewAI)</a></li>
+          <li><a href="#weather-assist-lang">Weather Assist (LangGraph)</a></li>
+          <li><a href="#zero-trust">Zero Trust Execution</a></li>
+          <li><a href="#acme-support">ACME Support Center</a></li>
+          <li><a href="#acme-health">ACME Health Insurance</a></li>
+          <li><a href="#rfp-analyzer">RFP Analyzer</a></li>
         </ul>
-
-        <div class="card-actions">
-          <a class="card-link" href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">Try it at chat.k9x.ai →</a>
-          <a class="card-link" href="https://github.com/k9aif/examples/tree/main/k9chat" target="_blank" rel="noopener noreferrer">View Code &amp; Documentation →</a>
-        </div>
-      </article>
-
-      <!-- EOC -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Reference Application</div>
-          <h2>K9X Enterprise Insurance Operations Center</h2>
-        </div>
-
-        <p>
-          The <strong>EOC is the K9-AIF equivalent of the J2EE PetStore</strong> — a comprehensive,
-          end-to-end reference application that demonstrates every major capability of the framework
-          working together in a realistic enterprise domain. If you want to understand what a
-          complete K9-AIF application looks like, start here.
-        </p>
-
-        <p>
-          A production-grade, runnable multi-agent application built on the <strong>K9-AIF Framework</strong>.
-          The EOC models a realistic enterprise insurance operations domain end-to-end — from event ingestion
-          to governed agent execution to immutable audit trails.
-        </p>
-
-        <p>
-          Generated using <strong>Claude Code</strong> from a project spec document, demonstrating
-          how K9-AIF's architecture-first approach enables consistent, governed application generation.
-        </p>
-
-        <ul class="feature-list">
-          <li><strong>Kafka-driven</strong> event routing — <code>eoc-events</code> fan-out to domain topics</li>
-          <li><strong>Router → Orchestrator → Squad → Agent</strong> full execution hierarchy</li>
-          <li><strong>Intelligent Model Router</strong> — weighted scoring across capability, latency, cost, and sensitivity signals</li>
-          <li><strong>Zero Trust execution</strong> — governance enforced at every agent boundary</li>
-          <li>PII inspection, fraud detection, adjudication, and policy compliance agents</li>
-          <li><strong>HITL escalation</strong> — human-in-the-loop queue with real-time Web UI</li>
-          <li><strong>Immutable audit trails</strong> and Neo4j graph synchronization</li>
-          <li>Deployed as a <strong>3-container Podman pod</strong> on RHEL with PostgreSQL persistence</li>
-          <li>Fully YAML-driven — routing rules, governance policies, squad flows, model assignments</li>
+        <h3>Reference</h3>
+        <ul>
+          <li><a href="#eoc">Enterprise Insurance Ops Center</a></li>
+          <li><a href="#samples">Small code samples</a></li>
         </ul>
-
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/K9X_Enterprise_Insurance_OperationsCenter" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
-
-      <!-- ACME Support Center -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Enterprise Workflow</div>
-          <h2>ACME Support Center</h2>
-        </div>
-
-        <p>
-          An enterprise-style support workflow example built on the <strong>K9-AIF Framework</strong>.
-          Demonstrates how K9-AIF structures a customer-facing support system using specialized agents,
-          configurable reasoning behaviors, and stable framework architecture.
-        </p>
-
-        <ul class="feature-list">
-          <li><strong>Router → Orchestrator → Squad → Agent</strong> execution flow</li>
-          <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
-          <li>Configurable reasoning patterns — <strong>ReAct</strong>, <strong>Agentic RAG</strong>, <strong>Plan &amp; Execute</strong>, <strong>Reflection</strong>, and multi-agent collaboration</li>
-          <li>Clear separation between <strong>ABB</strong> and <strong>SBB</strong></li>
-          <li>Squad-based specialization across support roles</li>
-          <li>Runtime logging and observability through K9-AIF framework hooks</li>
+        <h3>Guide</h3>
+        <ul>
+          <li><a href="#path">Where to start</a></li>
+          <li><a href="#run">How to run them</a></li>
         </ul>
+      </aside>
 
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
+      <main>
+        <!-- Live applications -->
+        <section class="ex-section" id="live">
+          <h2>Live applications</h2>
+          <p class="lead">Complete applications on K9-AIF, running in public. Try them, then read the code.</p>
 
-      <!-- ACME Health Insurance -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Domain Workflow</div>
-          <h2>ACME Health Insurance Claims</h2>
-        </div>
+          <div class="live-grid">
+            <article class="live-card" id="das">
+              <img src="images/das.jpg" style="object-position: left top" alt="The DAS landing page: agents prepare the acquisition package, humans decide at every gate" loading="lazy" />
+              <div class="live-body">
+                <div><span class="badge live">Live</span><span class="badge">Flagship</span></div>
+                <h3>DAS: Defense Acquisition System</h3>
+                <p>
+                  AI agents prepare the defense acquisition package; a person decides at every gate. A Service capability
+                  requirement goes from the sponsor's documents through Service validation, the Materiel Development
+                  Decision, Milestone A and the System Requirements Review, following the process in force today.
+                </p>
+                <ul class="feature-list">
+                  <li>A <strong>versioned process model</strong>: every stage and gate cites its policy source</li>
+                  <li>Every section screened by <strong>k9x Shield</strong> and <strong>Granite Guardian</strong>; red-team documents included</li>
+                  <li>A verdict per criterion, with the <strong>score computed in code</strong>; an <strong>independent grader</strong> from a different model family</li>
+                  <li>Every gate decided by a person in <strong>K9X HIL</strong>; undecided gates fail closed</li>
+                  <li>A sample <strong>AWS GovCloud</strong> deployment guideline</li>
+                </ul>
+                <div class="actions">
+                  <a class="primary" href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
+                  <a href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">Code</a>
+                  <a href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">▶ In depth (7 min)</a>
+                  <a href="https://youtu.be/uVWQMQDU0HY" target="_blank" rel="noopener noreferrer">▶ Tour (4 min)</a>
+                </div>
+              </div>
+            </article>
 
-        <p>
-          A domain-oriented example showing how K9-AIF supports structured, document-heavy,
-          workflow-driven enterprise scenarios — where architecture, modularity, and workflow
-          structure matter more than a single prompt-response interaction.
-        </p>
+            <article class="live-card" id="k9chat">
+              <img src="images/k9chat.jpg" style="object-position: left center" alt="The K9X Chat landing page, showing a message's path through rate limit, k9x Shield, Guardian and the router to the model" loading="lazy" />
+              <div class="live-body">
+                <div><span class="badge live">Live</span><span class="badge">Assistant</span></div>
+                <h3>K9Chat</h3>
+                <p>
+                  A governed chat assistant, open source, on your own models. It answers from a grounded knowledge base,
+                  gives each visitor their own document projects, and protects the GPU it runs on.
+                </p>
+                <ul class="feature-list">
+                  <li>Every message through a rate limit, <strong>k9x Shield</strong>, <strong>Guardian</strong> and the router</li>
+                  <li><strong>Knowledge grounding</strong> and per-visitor <strong>Projects</strong> with their own documents</li>
+                  <li>A concurrency and <strong>GPU-thermal admission guard</strong></li>
+                  <li>An <strong>LLM-as-judge</strong> toggle, streaming, and an <strong>Ask API</strong> for other applications</li>
+                </ul>
+                <div class="actions">
+                  <a class="primary" href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
+                  <a href="https://github.com/k9aif/examples/tree/main/k9chat" target="_blank" rel="noopener noreferrer">Code</a>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
 
-        <ul class="feature-list">
-          <li>Claims-related workflow structure</li>
-          <li>Intake and document-processing patterns</li>
-          <li>Domain-specific orchestration</li>
-          <li>Extensible enterprise solution design aligned to real business processes</li>
-          <li>Modular AI solution composition using K9-AIF concepts</li>
-        </ul>
+        <!-- Focused examples -->
+        <section class="ex-section" id="focused">
+          <h2>Focused examples</h2>
+          <p class="lead">Smaller applications in the framework repository. Each one teaches one idea you can reuse.</p>
 
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
+          <div class="focus-grid">
+            <article class="focus-card" id="weather-assist">
+              <div><span class="badge">Starter</span><h3>Weather Assist (CrewAI)</h3></div>
+              <p>The same small app built twice: as plain CrewAI, and wrapped by K9-AIF.</p>
+              <p class="shows"><strong>Shows:</strong> keeping an existing CrewAI crew unchanged and adding K9-AIF governance, routing and observability at its boundary with the adapter.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/weather_assist" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
 
-      <!-- Zero Trust Execution Demo -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Security Pattern</div>
-          <h2>Zero Trust Execution Demo</h2>
-        </div>
+            <article class="focus-card" id="weather-assist-lang">
+              <div><span class="badge">Starter</span><h3>Weather Assist (LangGraph)</h3></div>
+              <p>The sibling of Weather Assist: same app and governance, with a LangGraph graph inside.</p>
+              <p class="shows"><strong>Shows:</strong> the same adapter pattern for a different agent framework.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/weatherAssistLang" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
 
-        <p>
-          Demonstrates the <strong>K9 Zero Trust Execution Layer</strong> — a vendor-neutral
-          runtime security pattern integrated into K9-AIF. Traditional Zero Trust focuses on
-          access. K9-AIF extends it to execution: every agent action is verified before it runs.
-        </p>
+            <article class="focus-card" id="zero-trust">
+              <div><span class="badge">Security</span><h3>Zero Trust Execution</h3></div>
+              <p>Zero Trust applied to execution, not only access: every agent action is evaluated before it runs.</p>
+              <p class="shows"><strong>Shows:</strong> identity, data sensitivity, destination and context risk; allow, conditional or deny decisions at agent boundaries, set by policy, not code.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/zero_trust_execution_demo" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
 
-        <ul class="feature-list">
-          <li>Runtime evaluation of <strong>identity, data sensitivity, destination, and contextual risk</strong></li>
-          <li>Execution control across <strong>Router → Orchestrator → Agents → Tools</strong></li>
-          <li>Policy-driven allow / conditional / deny decisions at agent boundaries</li>
-          <li>Potential compromise signal detection and data loss risk evaluation</li>
-          <li>Governance policies enforced declaratively — no hardcoded logic in agent code</li>
-        </ul>
+            <article class="focus-card" id="acme-support">
+              <div><span class="badge">Pattern</span><h3>ACME Support Center</h3></div>
+              <p>A customer support workflow where one architecture hosts several agent behaviour strategies.</p>
+              <p class="shows"><strong>Shows:</strong> switching reasoning patterns by configuration (ReAct, agentic RAG, plan and execute, reflection) without changing the architecture.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
 
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/zero_trust_execution_demo" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
+            <article class="focus-card" id="acme-health">
+              <div><span class="badge">Domain</span><h3>ACME Health Insurance</h3></div>
+              <p>Cooperating agents for plan lookup, provider search, eligibility checks and claims support.</p>
+              <p class="shows"><strong>Shows:</strong> multiple agents, connectors and configuration-driven workflows in one business domain.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_health_insurance" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
 
-      <!-- Weather Assist -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Architecture Comparison</div>
-          <h2>Weather Assist — CrewAI + K9-AIF</h2>
-        </div>
+            <article class="focus-card" id="rfp-analyzer">
+              <div><span class="badge">Retrieval</span><h3>RFP Analyzer</h3></div>
+              <p>A large RFP document processed through the framework's built-in retrieval pipeline.</p>
+              <p class="shows"><strong>Shows:</strong> a document squad that chunks, embeds into a vector store and answers by retrieval, all governed.</p>
+              <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/rfp_analyzer" target="_blank" rel="noopener noreferrer">Code</a></div>
+            </article>
+          </div>
+        </section>
 
-        <p>
-          A side-by-side architecture demonstration showing the same application built two ways:
-          as a <strong>pure CrewAI application</strong>, and as a <strong>K9-AIF governed version</strong>
-          of the same application. Illustrates what K9-AIF's architecture layer adds on top of
-          a CrewAI runtime.
-        </p>
+        <!-- Reference -->
+        <section class="ex-section" id="reference">
+          <h2>Reference</h2>
 
-        <ul class="feature-list">
-          <li>Side-by-side <strong>CrewAI vs K9-AIF</strong> implementation of identical functionality</li>
-          <li>K9-AIF <strong>CrewAI adapter pattern</strong> — CrewAI as an orchestration SBB</li>
-          <li>Governance, routing, and observability layered over an existing agent runtime</li>
-          <li>Demonstrates K9-AIF as an <strong>architectural wrapper</strong>, not a replacement</li>
-        </ul>
+          <article class="focus-card" id="eoc" style="margin-bottom: 22px;">
+            <div><span class="badge">Full application</span><h3>K9X Enterprise Insurance Operations Center</h3></div>
+            <p>
+              An end-to-end enterprise insurance operations platform: events on Kafka, domain orchestrators, squads of
+              agents for PII inspection, fraud, adjudication and compliance, Zero Trust, a custom model router, a
+              human-in-the-loop queue and audit trails. Three processes (app and UI, router, orchestrator) in a Podman pod.
+            </p>
+            <div class="actions"><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/K9X_Enterprise_Insurance_OperationsCenter" target="_blank" rel="noopener noreferrer">Code</a></div>
+          </article>
 
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/weather_assist" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
+          <h3 id="samples" style="scroll-margin-top: 20px; margin: 0 0 10px;">Small code samples</h3>
+          <table class="samples">
+            <thead><tr><th>Sample</th><th>What it contains</th></tr></thead>
+            <tbody>
+              <tr><td><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9routing" target="_blank" rel="noopener noreferrer">k9routing</a></td><td>Intent routing: an intent orchestrator and intent agents driven by configuration (<code>run.py</code>, <code>config.yaml</code>)</td></tr>
+              <tr><td><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/myapp" target="_blank" rel="noopener noreferrer">myapp</a></td><td>The smallest shape of an agent: a class, its YAML and a test</td></tr>
+              <tr><td><a href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/prompt_evaluation" target="_blank" rel="noopener noreferrer">prompt_evaluation</a></td><td>Evaluating prompts with a configuration and a test</td></tr>
+            </tbody>
+          </table>
+        </section>
 
-    </section>
+        <!-- Guide -->
+        <section class="ex-section" id="path">
+          <h2>Where to start</h2>
+          <p class="lead">A path from small to complete:</p>
+          <ol class="path">
+            <li><strong>Weather Assist</strong>: the smallest app, and how K9-AIF wraps an agent framework you already use.</li>
+            <li><strong>Zero Trust Execution</strong>: how every agent action is governed before it runs.</li>
+            <li><strong>ACME Support Center</strong>: one architecture, several reasoning strategies, chosen by configuration.</li>
+            <li><strong>RFP Analyzer</strong>: retrieval over a large document.</li>
+            <li><strong>DAS</strong>: a complete application with a process model, screening, grading and human gates. Watch the <a href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">7-minute walkthrough</a>, then run it.</li>
+          </ol>
+        </section>
 
-    <section class="run-box">
-      <h2>How to run the examples</h2>
-      <p>
-        From the root of the <code>k9-aif-framework</code> repository, the included shell scripts can be
-        used to quickly launch selected examples.
-      </p>
-
-      <pre><code>./run_k9chat.sh
-./run_acme_support_center.sh</code></pre>
-
-      <p>
-        For the <strong>EOC</strong> (RHEL / Podman deployment):
-      </p>
-
-      <pre><code>bash run_eoc_pod.sh</code></pre>
-
-      <p>
-        For deeper implementation details, class diagrams, and example-specific documentation,
-        use the links above to open the corresponding example folders in the repository.
-      </p>
-    </section>
-
-    <p class="closing">
-      These examples are intentionally practical. They are not intended to be full production products
-      out of the box, but to demonstrate how K9-AIF can be used as an
-      <strong>architecture-first framework</strong> for building modular, governed, and extensible AI applications.
-    </p>
+        <section class="ex-section" id="run">
+          <h2>How to run them</h2>
+          <p class="lead">Each example's README has its own setup. From the root of the <code>k9-aif-framework</code> repository:</p>
+          <pre><code>./run_acme_support_center.sh       # ACME Support Center
+bash build.sh &amp;&amp; bash run_eoc_pod.sh   # Enterprise Insurance Ops Center (Podman)</code></pre>
+          <p class="lead">
+            DAS and K9Chat live in their own repositories:
+            <a href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">k9aif/dow-k9x</a> (with
+            <a href="https://github.com/k9aif/k9x-hil" target="_blank" rel="noopener noreferrer">k9aif/k9x-hil</a> for the gates) and
+            <a href="https://github.com/k9aif/examples/tree/main/k9chat" target="_blank" rel="noopener noreferrer">k9aif/examples</a>.
+            Their READMEs list the services and settings.
+          </p>
+          <p class="lead">
+            The examples are practical demonstrations, not finished products: they show how K9-AIF structures
+            governed, modular AI applications that you can extend for your own needs.
+          </p>
+        </section>
+      </main>
+    </div>
   </div>
+
+  <script>
+    // Highlight the example in the left list while it is on screen.
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.ex-toc a'));
+      var byId = {};
+      links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+      var targets = Object.keys(byId).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+      if (!('IntersectionObserver' in window) || !targets.length) return;
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          links.forEach(function (a) { a.classList.remove('active'); });
+          byId[e.target.id].classList.add('active');
+        });
+      }, { rootMargin: '-20% 0px -65% 0px' });
+      targets.forEach(function (t) { obs.observe(t); });
+    })();
+  </script>
 </body>
 </html>
