@@ -24,9 +24,8 @@
     .ex-section > .lead { color: var(--muted); margin: 0 0 20px; max-width: 760px; }
 
     .live-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    .live-card { background: var(--surface); border: 1px solid var(--border-accent); border-radius: 14px; overflow: hidden;
-                 box-shadow: var(--shadow); display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); scroll-margin-top: 20px; }
-    .live-card img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; object-position: center top; background: #0b1220; display: block; border-right: 1px solid var(--border); }
+    .live-card { background: var(--surface); border: 2px solid var(--border-accent); border-radius: 14px; overflow: hidden;
+                 box-shadow: var(--shadow); display: block; scroll-margin-top: 20px; }
     .live-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; }
     .live-body h3 { margin: 4px 0 8px; font-size: 21px; }
     .live-body p { margin: 0 0 12px; color: var(--text); line-height: 1.6; }
@@ -66,8 +65,6 @@
       .ex-layout { grid-template-columns: 1fr; }
       .ex-toc { position: static; max-height: none; }
       .ex-toc ul { display: flex; flex-wrap: wrap; gap: 4px; }
-      .live-card { grid-template-columns: 1fr; }
-      .live-card img { min-height: 0; aspect-ratio: 16 / 9; border-right: 0; border-bottom: 1px solid var(--border); }
       .focus-card { grid-template-columns: 1fr; }
       .focus-card > div:first-child, .focus-card p, .focus-card .actions { grid-column: 1; grid-row: auto; }
     }
@@ -141,7 +138,6 @@
 
           <div class="live-grid">
             <article class="live-card" id="das">
-              <img src="images/das.jpg" style="object-position: left top" alt="The DAS landing page: agents prepare the acquisition package, humans decide at every gate" loading="lazy" />
               <div class="live-body">
                 <div><span class="badge live">Live</span><span class="badge">Flagship</span></div>
                 <h3>DAS: Defense Acquisition System</h3>
@@ -167,7 +163,6 @@
             </article>
 
             <article class="live-card" id="k9chat">
-              <img src="images/k9chat.jpg" style="object-position: left center" alt="The K9X Chat landing page, showing a message's path through rate limit, k9x Shield, Guardian and the router to the model" loading="lazy" />
               <div class="live-body">
                 <div><span class="badge live">Live</span><span class="badge">Assistant</span></div>
                 <h3>K9Chat</h3>
