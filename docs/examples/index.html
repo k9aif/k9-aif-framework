@@ -52,10 +52,72 @@
 
     <section class="examples-grid">
 
-      <!-- EOC — Flagship -->
+      <!-- DAS — Flagship, live -->
       <article class="example-card">
         <div class="example-card-header">
-          <div class="example-card-tag">Flagship Example</div>
+          <div class="example-card-tag">Flagship Example · Live</div>
+          <h2>DAS: Defense Acquisition System</h2>
+        </div>
+
+        <p>
+          AI agents prepare the defense acquisition package; a person decides at every gate. DAS takes a Service
+          capability requirement from the sponsor's documents through Service validation, the Materiel Development
+          Decision, Milestone A and the System Requirements Review, following the process in force today (the Joint
+          Force Requirements Process, DoDI 5000.85 and the DoD Systems Engineering Guidebook). Live at
+          <a href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">das.k9x.ai</a> with a public demo login.
+        </p>
+
+        <ul class="feature-list">
+          <li>A <strong>versioned process model</strong>: every stage and gate cites its policy source, and tests enforce it</li>
+          <li><strong>Router → Orchestrator → Squad → Agent</strong>; orchestrators know only squads (squads are YAML)</li>
+          <li>Document intake with <strong>Docling</strong>; every section screened by <strong>k9x Shield</strong> and <strong>Granite Guardian</strong>, with red-team documents to test it</li>
+          <li>A verdict per entry criterion, with the <strong>readiness score computed in code</strong>, never by the model</li>
+          <li>An <strong>independent grader</strong> from a different model family checks each claim against the source</li>
+          <li>Every gate decided by a person in <strong>K9X HIL</strong>; undecided gates fail closed</li>
+          <li><strong>Policy as data</strong>: cited mapping files, checked by tests, instead of rules in prompts</li>
+          <li>A sample <strong>AWS GovCloud</strong> deployment guideline</li>
+        </ul>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">Try it at das.k9x.ai →</a>
+          <a class="card-link" href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">View Code &amp; Documentation →</a>
+          <a class="card-link" href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">Watch: DAS in depth (7 min) →</a>
+        </div>
+      </article>
+
+      <!-- K9Chat — live -->
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Live Assistant</div>
+          <h2>K9Chat</h2>
+        </div>
+
+        <p>
+          A governed chat assistant built on the <strong>K9-AIF Framework</strong>, live at
+          <a href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">chat.k9x.ai</a>. It answers from a
+          grounded knowledge base, gives each visitor their own document projects, and protects the GPU host it runs on.
+        </p>
+
+        <ul class="feature-list">
+          <li><strong>Knowledge grounding</strong> (ChromaDB) and per-visitor <strong>Projects</strong> with their own documents</li>
+          <li>Model calls through <strong>llm_invoke</strong> and the K9 model router; any provider, such as <strong>Ollama</strong></li>
+          <li>Guest identity with no password, scoping each visitor's projects</li>
+          <li>A concurrency and <strong>GPU-thermal admission guard</strong> for the shared GPU</li>
+          <li>Toggles that are really wired: an <strong>LLM-as-judge eval</strong>, streaming, and answer style</li>
+          <li>An <strong>Ask API</strong> so other applications (such as K9X Studio's Help) can ask it questions</li>
+          <li>Podman container deployment</li>
+        </ul>
+
+        <div class="card-actions">
+          <a class="card-link" href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">Try it at chat.k9x.ai →</a>
+          <a class="card-link" href="https://github.com/k9aif/examples/tree/main/k9chat" target="_blank" rel="noopener noreferrer">View Code &amp; Documentation →</a>
+        </div>
+      </article>
+
+      <!-- EOC -->
+      <article class="example-card">
+        <div class="example-card-header">
+          <div class="example-card-tag">Reference Application</div>
           <h2>K9X Enterprise Insurance Operations Center</h2>
         </div>
 
@@ -120,35 +182,6 @@
 
         <div class="card-actions">
           <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/acme_support_center" target="_blank" rel="noopener noreferrer">
-            View Code &amp; Documentation →
-          </a>
-        </div>
-      </article>
-
-      <!-- K9Chat -->
-      <article class="example-card">
-        <div class="example-card-header">
-          <div class="example-card-tag">Lightweight Demo</div>
-          <h2>K9Chat</h2>
-        </div>
-
-        <p>
-          A lightweight browser-based chat example built on the <strong>K9-AIF Framework</strong>.
-          A clean starting point for understanding how K9-AIF separates agent logic, routing,
-          inference configuration, persistence, and UI integration.
-        </p>
-
-        <ul class="feature-list">
-          <li><strong>Squad + Agent</strong> execution pattern</li>
-          <li><strong>ModelRouterFactory</strong> usage for inference abstraction</li>
-          <li>Default <strong>K9ModelRouter</strong> routing behavior</li>
-          <li>Integration with configurable LLM providers such as <strong>Ollama</strong></li>
-          <li>Default <strong>SQLite-backed router state persistence</strong></li>
-          <li>Browser-based interaction with runtime metadata display</li>
-        </ul>
-
-        <div class="card-actions">
-          <a class="card-link" href="https://github.com/k9aif/k9-aif-framework/tree/main/examples/k9chat" target="_blank" rel="noopener noreferrer">
             View Code &amp; Documentation →
           </a>
         </div>
