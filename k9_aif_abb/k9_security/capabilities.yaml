@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.20.1"
+framework_version: "1.21.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -237,6 +237,26 @@ capabilities:
     covers: {LLM01: partial, ASI02: partial, ASI06: partial}
     summary: Indirect prompt injection in fetched pages, documents and other agents' replies.
     limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result.
+
+  - id: tool_call_guard
+    kind: component
+    component: k9_aif_abb.k9_security.tool_result_guard.screen_tool_call
+    stage: ingress
+    mechanism: an outgoing tool call (tool name + arguments) routed through the governance ingress stage (ToolArgumentCheck, ToolAuthorizationCheck) before the tool runs; a refused call never runs (@govern_tool_call, 1.21)
+    enabled_by_default: false
+    covers: {LLM06: partial, ASI02: partial, ASI05: partial}
+    summary: A model-proposed tool action (shell command, SQL, internal URL) is refused before it executes, even when the agent's input and final output are benign.
+    limits: Opt-in per tool function (decorator); the Claude Agent SDK adapter governs calls through can_use_tool instead.
+
+  - id: governance.per_call_scope
+    kind: component
+    component: k9_aif_abb.k9_core.governance.pipeline.governance_scope
+    stage: egress
+    mechanism: governance.scope per_call makes llm_invoke() check every model call inside an agent (prompt before, response after), not only the agent's input and final output (1.21)
+    enabled_by_default: false
+    covers: {LLM01: partial, LLM02: partial, ASI01: partial, ASI02: partial}
+    summary: An intermediate model response (planted secret, injected instruction) is refused before the agent can act on it.
+    limits: Default scope is boundary (agent input and final output only); per_call costs one check pair per model call.
 
   - id: integration.outbound_guard
     kind: component

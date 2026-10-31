@@ -50,6 +50,19 @@ from ..learning import Example, KNNQualityPredictor, build_embedder, utility
 
 log = logging.getLogger("K9ModelRouter")
 
+
+class NoEligibleModelError(PermissionError):
+    """No catalog model meets a request's hard constraints (sensitivity,
+    ``required_capabilities``). A refusal, not an outage: ``llm_invoke()``
+    does not retry it, and the router never substitutes an ineligible model."""
+
+
+def _required_capabilities(request: InferenceRequest) -> set:
+    required = {c for c in (getattr(request, "required_capabilities", None) or []) if c}
+    if getattr(request, "sensitivity", None) == "confidential":
+        required.add("confidential")
+    return required
+
 # inference.router.learning -- every key optional.
 _LEARNING_DEFAULTS: Dict[str, Any] = {
     "enabled": True,
@@ -95,6 +108,10 @@ class K9ModelRouter(BaseModelRouter):
     1. Rules (cold start, always computed). Weighted scoring, higher wins:
          +3  capability match on task_type
          +2  sensitivity=="confidential" and "confidential" in capabilities
+       Hard constraints come first and are not scores: a model lacking a
+       request's required capabilities (``required_capabilities``, plus
+       "confidential" for a confidential request) is never a candidate, and
+       when none qualifies the request fails closed (NoEligibleModelError).
          +2  latency_budget matches model's latency_tier
          +2  cost_profile matches model's cost_tier
        Falls back to default_model when no candidate scores > 0. On a tie,
@@ -240,17 +257,27 @@ class K9ModelRouter(BaseModelRouter):
         return score
 
     def _allowed(self, request: InferenceRequest) -> List[str]:
-        """Aliases this request may use at all. A confidential request goes
-        only to confidential-capable models when the catalog has any --
-        before 1.13 this was just +2, so a +3 capability match elsewhere
-        could send confidential data to a model not cleared for it."""
+        """Aliases this request may use at all: the mandatory eligibility
+        filter, applied before any rule score or evidence. A model is
+        eligible only if its catalog ``capabilities`` include every
+        ``request.required_capabilities`` entry, plus "confidential" for a
+        confidential request. When no model is eligible the request fails
+        closed with NoEligibleModelError.
+
+        Before 1.13 confidentiality was only a +2 score, so a +3 capability
+        match elsewhere could win; 1.13-1.20 filtered but fell back to every
+        model when the catalog had no confidential-capable one."""
         aliases = list(self.catalog.models)
-        if getattr(request, "sensitivity", None) == "confidential":
-            secure = [a for a in aliases
-                      if "confidential" in (self.catalog.models[a].get("capabilities") or [])]
-            if secure:
-                return secure
-        return aliases
+        required = _required_capabilities(request)
+        if not required:
+            return aliases
+        eligible = [a for a in aliases
+                    if required <= set(self.catalog.models[a].get("capabilities") or [])]
+        if not eligible:
+            raise NoEligibleModelError(
+                f"ModelRouter: no model in the catalog has the required capabilities "
+                f"{sorted(required)}; refusing to route the request to any other model")
+        return eligible
 
     def _rule_order(self, request: InferenceRequest) -> tuple[List[tuple], Dict[str, float]]:
         """Allowed aliases ordered by rule score (stable: catalog order on ties)."""

@@ -58,6 +58,12 @@
                     <a class="function" href="#governance_from_config">governance_from_config</a>
             </li>
             <li>
+                    <a class="variable" href="#GOVERNANCE_SCOPES">GOVERNANCE_SCOPES</a>
+            </li>
+            <li>
+                    <a class="function" href="#governance_scope">governance_scope</a>
+            </li>
+            <li>
                     <a class="function" href="#is_permissive_env">is_permissive_env</a>
             </li>
             <li>
@@ -184,32 +190,52 @@
 </span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>    <span class="k">return</span> <span class="n">ChainedGovernance</span><span class="p">(</span><span class="o">*</span><span class="n">stages</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">cfg</span><span class="p">)</span>
 </span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>
 </span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="k">def</span><span class="w"> </span><span class="nf">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;development / dev / test tolerate NoopGovernance; everything else</span>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="sd">    (including K9_ENV unset, which means production) does not.&quot;&quot;&quot;</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="k">return</span> <span class="p">(</span><span class="n">env</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;development&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="k">def</span><span class="w"> </span><span class="nf">assert_governed</span><span class="p">(</span><span class="n">governance</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Refuse ungoverned execution outside development/test.</span>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">    Raises :class:`PermissionError` if *governance* is :class:`NoopGovernance`</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="sd">    in production/staging; logs a warning and returns in development/test.</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">    Shared by :class:`BaseAgent` (called automatically around every</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">    ``execute()``) and the framework adapters (around ``execute_flow()``).</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="n">GOVERNANCE_SCOPES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;boundary&quot;</span><span class="p">,</span> <span class="s2">&quot;per_call&quot;</span><span class="p">)</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a><span class="k">def</span><span class="w"> </span><span class="nf">governance_scope</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;``governance.scope`` (1.21): where model calls made inside an agent are</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a><span class="sd">    checked.</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="sd">    ``boundary`` (default): an agent&#39;s input is checked before its</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd">    ``execute()`` and its output after; the model calls it makes in between</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">    are covered by those two checks, not checked one by one.</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="sd">    ``per_call``: every ``llm_invoke()`` is also checked on its own (prompt</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">    before the call, response after), so an intermediate model response is</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">    screened before the agent can act on it. Costs one check pair per call.</span>
 </span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">governance</span><span class="p">,</span> <span class="n">NoopGovernance</span><span class="p">):</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>        <span class="k">return</span>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="k">if</span> <span class="n">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>        <span class="p">(</span><span class="n">logger</span> <span class="ow">or</span> <span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>            <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] NoopGovernance active in </span><span class="si">%s</span><span class="s2"> environment — proceeding without enforcement.&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>        <span class="k">return</span>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">] enforce_governance() failed: ungoverned execution refused — NoopGovernance is active &quot;</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>        <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">env</span><span class="si">!r}</span><span class="s2"> environment. &quot;</span>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>        <span class="s2">&quot;Configure governance (e.g. security.shield.enabled: true, or pass governance=...).&quot;</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>    <span class="p">)</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="n">scope</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(((</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scope&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;boundary&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="k">if</span> <span class="n">scope</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">GOVERNANCE_SCOPES</span><span class="p">:</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;governance.scope must be one of </span><span class="si">{</span><span class="n">GOVERNANCE_SCOPES</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">scope</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>    <span class="k">return</span> <span class="n">scope</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="k">def</span><span class="w"> </span><span class="nf">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;development / dev / test tolerate NoopGovernance; everything else</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="sd">    (including K9_ENV unset, which means production) does not.&quot;&quot;&quot;</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>    <span class="k">return</span> <span class="p">(</span><span class="n">env</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;development&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="k">def</span><span class="w"> </span><span class="nf">assert_governed</span><span class="p">(</span><span class="n">governance</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Refuse ungoverned execution outside development/test.</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">    Raises :class:`PermissionError` if *governance* is :class:`NoopGovernance`</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a><span class="sd">    in production/staging; logs a warning and returns in development/test.</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">    Shared by :class:`BaseAgent` (called automatically around every</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">    ``execute()``) and the framework adapters (around ``execute_flow()``).</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">governance</span><span class="p">,</span> <span class="n">NoopGovernance</span><span class="p">):</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>        <span class="k">return</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>    <span class="k">if</span> <span class="n">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>        <span class="p">(</span><span class="n">logger</span> <span class="ow">or</span> <span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>            <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] NoopGovernance active in </span><span class="si">%s</span><span class="s2"> environment — proceeding without enforcement.&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>        <span class="k">return</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">] enforce_governance() failed: ungoverned execution refused — NoopGovernance is active &quot;</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>        <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">env</span><span class="si">!r}</span><span class="s2"> environment. &quot;</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>        <span class="s2">&quot;Configure governance (e.g. security.shield.enabled: true, or pass governance=...).&quot;</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="p">)</span>
 </span></pre></div>
 
 
@@ -452,6 +478,60 @@ Neither → <code>None</code> (→ <code><a href="#require_governance">require_g
 
 
                 </section>
+                <section id="GOVERNANCE_SCOPES">
+                    <div class="attr variable">
+            <span class="name">GOVERNANCE_SCOPES</span>        =
+<span class="default_value">(&#39;boundary&#39;, &#39;per_call&#39;)</span>
+
+        
+    </div>
+    <a class="headerlink" href="#GOVERNANCE_SCOPES"></a>
+    
+    
+
+                </section>
+                <section id="governance_scope">
+                            <input id="governance_scope-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">governance_scope</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="nb">str</span>:</span></span>
+
+                <label class="view-source-button" for="governance_scope-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#governance_scope"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="governance_scope-105"><a href="#governance_scope-105"><span class="linenos">105</span></a><span class="k">def</span><span class="w"> </span><span class="nf">governance_scope</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="governance_scope-106"><a href="#governance_scope-106"><span class="linenos">106</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;``governance.scope`` (1.21): where model calls made inside an agent are</span>
+</span><span id="governance_scope-107"><a href="#governance_scope-107"><span class="linenos">107</span></a><span class="sd">    checked.</span>
+</span><span id="governance_scope-108"><a href="#governance_scope-108"><span class="linenos">108</span></a>
+</span><span id="governance_scope-109"><a href="#governance_scope-109"><span class="linenos">109</span></a><span class="sd">    ``boundary`` (default): an agent&#39;s input is checked before its</span>
+</span><span id="governance_scope-110"><a href="#governance_scope-110"><span class="linenos">110</span></a><span class="sd">    ``execute()`` and its output after; the model calls it makes in between</span>
+</span><span id="governance_scope-111"><a href="#governance_scope-111"><span class="linenos">111</span></a><span class="sd">    are covered by those two checks, not checked one by one.</span>
+</span><span id="governance_scope-112"><a href="#governance_scope-112"><span class="linenos">112</span></a><span class="sd">    ``per_call``: every ``llm_invoke()`` is also checked on its own (prompt</span>
+</span><span id="governance_scope-113"><a href="#governance_scope-113"><span class="linenos">113</span></a><span class="sd">    before the call, response after), so an intermediate model response is</span>
+</span><span id="governance_scope-114"><a href="#governance_scope-114"><span class="linenos">114</span></a><span class="sd">    screened before the agent can act on it. Costs one check pair per call.</span>
+</span><span id="governance_scope-115"><a href="#governance_scope-115"><span class="linenos">115</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="governance_scope-116"><a href="#governance_scope-116"><span class="linenos">116</span></a>    <span class="n">scope</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(((</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;governance&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scope&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;boundary&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="governance_scope-117"><a href="#governance_scope-117"><span class="linenos">117</span></a>    <span class="k">if</span> <span class="n">scope</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">GOVERNANCE_SCOPES</span><span class="p">:</span>
+</span><span id="governance_scope-118"><a href="#governance_scope-118"><span class="linenos">118</span></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;governance.scope must be one of </span><span class="si">{</span><span class="n">GOVERNANCE_SCOPES</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">scope</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="governance_scope-119"><a href="#governance_scope-119"><span class="linenos">119</span></a>    <span class="k">return</span> <span class="n">scope</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p><code>governance.scope</code> (1.21): where model calls made inside an agent are
+checked.</p>
+
+<p><code>boundary</code> (default): an agent's input is checked before its
+<code>execute()</code> and its output after; the model calls it makes in between
+are covered by those two checks, not checked one by one.
+<code>per_call</code>: every <code>llm_invoke()</code> is also checked on its own (prompt
+before the call, response after), so an intermediate model response is
+screened before the agent can act on it. Costs one check pair per call.</p>
+</div>
+
+
+                </section>
                 <section id="is_permissive_env">
                             <input id="is_permissive_env-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -463,10 +543,10 @@ Neither → <code>None</code> (→ <code><a href="#require_governance">require_g
 
     </div>
     <a class="headerlink" href="#is_permissive_env"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="is_permissive_env-102"><a href="#is_permissive_env-102"><span class="linenos">102</span></a><span class="k">def</span><span class="w"> </span><span class="nf">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span id="is_permissive_env-103"><a href="#is_permissive_env-103"><span class="linenos">103</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;development / dev / test tolerate NoopGovernance; everything else</span>
-</span><span id="is_permissive_env-104"><a href="#is_permissive_env-104"><span class="linenos">104</span></a><span class="sd">    (including K9_ENV unset, which means production) does not.&quot;&quot;&quot;</span>
-</span><span id="is_permissive_env-105"><a href="#is_permissive_env-105"><span class="linenos">105</span></a>    <span class="k">return</span> <span class="p">(</span><span class="n">env</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;development&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="is_permissive_env-122"><a href="#is_permissive_env-122"><span class="linenos">122</span></a><span class="k">def</span><span class="w"> </span><span class="nf">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="is_permissive_env-123"><a href="#is_permissive_env-123"><span class="linenos">123</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;development / dev / test tolerate NoopGovernance; everything else</span>
+</span><span id="is_permissive_env-124"><a href="#is_permissive_env-124"><span class="linenos">124</span></a><span class="sd">    (including K9_ENV unset, which means production) does not.&quot;&quot;&quot;</span>
+</span><span id="is_permissive_env-125"><a href="#is_permissive_env-125"><span class="linenos">125</span></a>    <span class="k">return</span> <span class="p">(</span><span class="n">env</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;development&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -487,26 +567,26 @@ Neither → <code>None</code> (→ <code><a href="#require_governance">require_g
 
     </div>
     <a class="headerlink" href="#assert_governed"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="assert_governed-108"><a href="#assert_governed-108"><span class="linenos">108</span></a><span class="k">def</span><span class="w"> </span><span class="nf">assert_governed</span><span class="p">(</span><span class="n">governance</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="assert_governed-109"><a href="#assert_governed-109"><span class="linenos">109</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Refuse ungoverned execution outside development/test.</span>
-</span><span id="assert_governed-110"><a href="#assert_governed-110"><span class="linenos">110</span></a>
-</span><span id="assert_governed-111"><a href="#assert_governed-111"><span class="linenos">111</span></a><span class="sd">    Raises :class:`PermissionError` if *governance* is :class:`NoopGovernance`</span>
-</span><span id="assert_governed-112"><a href="#assert_governed-112"><span class="linenos">112</span></a><span class="sd">    in production/staging; logs a warning and returns in development/test.</span>
-</span><span id="assert_governed-113"><a href="#assert_governed-113"><span class="linenos">113</span></a><span class="sd">    Shared by :class:`BaseAgent` (called automatically around every</span>
-</span><span id="assert_governed-114"><a href="#assert_governed-114"><span class="linenos">114</span></a><span class="sd">    ``execute()``) and the framework adapters (around ``execute_flow()``).</span>
-</span><span id="assert_governed-115"><a href="#assert_governed-115"><span class="linenos">115</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="assert_governed-116"><a href="#assert_governed-116"><span class="linenos">116</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">governance</span><span class="p">,</span> <span class="n">NoopGovernance</span><span class="p">):</span>
-</span><span id="assert_governed-117"><a href="#assert_governed-117"><span class="linenos">117</span></a>        <span class="k">return</span>
-</span><span id="assert_governed-118"><a href="#assert_governed-118"><span class="linenos">118</span></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-</span><span id="assert_governed-119"><a href="#assert_governed-119"><span class="linenos">119</span></a>    <span class="k">if</span> <span class="n">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
-</span><span id="assert_governed-120"><a href="#assert_governed-120"><span class="linenos">120</span></a>        <span class="p">(</span><span class="n">logger</span> <span class="ow">or</span> <span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-</span><span id="assert_governed-121"><a href="#assert_governed-121"><span class="linenos">121</span></a>            <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] NoopGovernance active in </span><span class="si">%s</span><span class="s2"> environment — proceeding without enforcement.&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
-</span><span id="assert_governed-122"><a href="#assert_governed-122"><span class="linenos">122</span></a>        <span class="k">return</span>
-</span><span id="assert_governed-123"><a href="#assert_governed-123"><span class="linenos">123</span></a>    <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
-</span><span id="assert_governed-124"><a href="#assert_governed-124"><span class="linenos">124</span></a>        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">] enforce_governance() failed: ungoverned execution refused — NoopGovernance is active &quot;</span>
-</span><span id="assert_governed-125"><a href="#assert_governed-125"><span class="linenos">125</span></a>        <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">env</span><span class="si">!r}</span><span class="s2"> environment. &quot;</span>
-</span><span id="assert_governed-126"><a href="#assert_governed-126"><span class="linenos">126</span></a>        <span class="s2">&quot;Configure governance (e.g. security.shield.enabled: true, or pass governance=...).&quot;</span>
-</span><span id="assert_governed-127"><a href="#assert_governed-127"><span class="linenos">127</span></a>    <span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="assert_governed-128"><a href="#assert_governed-128"><span class="linenos">128</span></a><span class="k">def</span><span class="w"> </span><span class="nf">assert_governed</span><span class="p">(</span><span class="n">governance</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">layer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="assert_governed-129"><a href="#assert_governed-129"><span class="linenos">129</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Refuse ungoverned execution outside development/test.</span>
+</span><span id="assert_governed-130"><a href="#assert_governed-130"><span class="linenos">130</span></a>
+</span><span id="assert_governed-131"><a href="#assert_governed-131"><span class="linenos">131</span></a><span class="sd">    Raises :class:`PermissionError` if *governance* is :class:`NoopGovernance`</span>
+</span><span id="assert_governed-132"><a href="#assert_governed-132"><span class="linenos">132</span></a><span class="sd">    in production/staging; logs a warning and returns in development/test.</span>
+</span><span id="assert_governed-133"><a href="#assert_governed-133"><span class="linenos">133</span></a><span class="sd">    Shared by :class:`BaseAgent` (called automatically around every</span>
+</span><span id="assert_governed-134"><a href="#assert_governed-134"><span class="linenos">134</span></a><span class="sd">    ``execute()``) and the framework adapters (around ``execute_flow()``).</span>
+</span><span id="assert_governed-135"><a href="#assert_governed-135"><span class="linenos">135</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="assert_governed-136"><a href="#assert_governed-136"><span class="linenos">136</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">governance</span><span class="p">,</span> <span class="n">NoopGovernance</span><span class="p">):</span>
+</span><span id="assert_governed-137"><a href="#assert_governed-137"><span class="linenos">137</span></a>        <span class="k">return</span>
+</span><span id="assert_governed-138"><a href="#assert_governed-138"><span class="linenos">138</span></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;K9_ENV&quot;</span><span class="p">,</span> <span class="s2">&quot;production&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span id="assert_governed-139"><a href="#assert_governed-139"><span class="linenos">139</span></a>    <span class="k">if</span> <span class="n">is_permissive_env</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
+</span><span id="assert_governed-140"><a href="#assert_governed-140"><span class="linenos">140</span></a>        <span class="p">(</span><span class="n">logger</span> <span class="ow">or</span> <span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span id="assert_governed-141"><a href="#assert_governed-141"><span class="linenos">141</span></a>            <span class="s2">&quot;[</span><span class="si">%s</span><span class="s2">] NoopGovernance active in </span><span class="si">%s</span><span class="s2"> environment — proceeding without enforcement.&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+</span><span id="assert_governed-142"><a href="#assert_governed-142"><span class="linenos">142</span></a>        <span class="k">return</span>
+</span><span id="assert_governed-143"><a href="#assert_governed-143"><span class="linenos">143</span></a>    <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
+</span><span id="assert_governed-144"><a href="#assert_governed-144"><span class="linenos">144</span></a>        <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">layer</span><span class="si">}</span><span class="s2">] enforce_governance() failed: ungoverned execution refused — NoopGovernance is active &quot;</span>
+</span><span id="assert_governed-145"><a href="#assert_governed-145"><span class="linenos">145</span></a>        <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">env</span><span class="si">!r}</span><span class="s2"> environment. &quot;</span>
+</span><span id="assert_governed-146"><a href="#assert_governed-146"><span class="linenos">146</span></a>        <span class="s2">&quot;Configure governance (e.g. security.shield.enabled: true, or pass governance=...).&quot;</span>
+</span><span id="assert_governed-147"><a href="#assert_governed-147"><span class="linenos">147</span></a>    <span class="p">)</span>
 </span></pre></div>
 
 

@@ -100,6 +100,22 @@ def test_agent_not_extending_abb_and_kafka_and_decoupling(tmp_path):
     assert {"K9-CON-001", "K9-KAF-001", "K9-DEC-001"} <= ids(r)
 
 
+def test_agent_given_a_message_bus_is_a_kafka_ownership_violation(tmp_path):
+    """1.21: the rule also catches an orchestrator handing an agent a bus, so
+    BaseAgent.publish_event() can only reach the monitor and log."""
+    clean(tmp_path)
+    write(tmp_path, "orchestrators/o.py", """
+        from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+        class MyOrchestrator(BaseOrchestrator):
+            def execute_flow(self, payload):
+                agent = create_agent(self.config, "RetrieverAgent", message_bus=self.message_bus)
+                return agent.execute(payload)
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    f = [f for f in r.findings if f.rule_id == "K9-KAF-001"]
+    assert f and "message_bus" in f[0].message
+
+
 def test_governance_config_rules(tmp_path):
     clean(tmp_path)
     write(tmp_path, "config/config.yaml", """

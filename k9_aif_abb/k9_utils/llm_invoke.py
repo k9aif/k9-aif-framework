@@ -27,7 +27,8 @@ from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_inference.models.inference_response import InferenceResponse
 from k9_aif_abb.k9_utils.trace_events import register_trace_callback, emit_trace_event
 from k9_aif_abb.k9_core.governance.call_context import inside_governed_call
-from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, assert_governed, governance_from_config
+from k9_aif_abb.k9_core.governance.pipeline import (NoopGovernance, assert_governed, governance_from_config,
+                                                      governance_scope)
 
 
 def _resolve_sync(value: Any) -> Any:
@@ -61,8 +62,9 @@ def _call_governance(config: Dict[str, Any], request: InferenceRequest):
     agent's execute()/execute_stream() or an adapter's execute_flow()), or
     None when the caller already governs it. Built from the same
     ``security.shield`` config the agents use; refused in production when
-    none is configured."""
-    if inside_governed_call():
+    none is configured. With ``governance.scope: per_call`` a call inside a
+    governed entry point is checked too (1.21)."""
+    if inside_governed_call() and governance_scope(config) != "per_call":
         return None
     governance = governance_from_config(config)
     agent = (request.metadata or {}).get("agent", "?")
@@ -149,8 +151,9 @@ def llm_invoke(
         RuntimeError: if every attempt is unreachable or returns an empty
             response (OllamaLLM signals this with a ``[WARN]`` prefix).
     """
-    # Governance and audit for every inference call: inside an agent or adapter
-    # flow its own checks cover this call; anywhere else they run here.
+    # Governance for every inference call: inside an agent or adapter flow its
+    # own input/output checks cover this call (governance.scope: boundary, the
+    # default) unless governance.scope is per_call; anywhere else they run here.
     governance = _call_governance(config, request)
     if governance is not None:
         request = _check_request(governance, request)

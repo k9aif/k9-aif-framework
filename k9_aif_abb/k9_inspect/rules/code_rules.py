@@ -295,6 +295,11 @@ class OrchestratorKnowsOnlySquadsRule(BaseInspectionRule):
         return out
 
 
+def _builds_agent(name: str) -> bool:
+    """A call that constructs an agent: an ``...Agent(...)`` class or an agent factory/loader."""
+    return bool(name) and (name.endswith("Agent") or name in {"create_agent", "load_agent", "build_agent"})
+
+
 @InspectionRuleRegistry.register
 class KafkaOwnershipRule(BaseInspectionRule):
     rule_id = "K9-KAF-001"
@@ -308,6 +313,10 @@ class KafkaOwnershipRule(BaseInspectionRule):
     def inspect(self, project: SolutionProject) -> List[Finding]:
         out = []
         for m in project.code_modules():
+            # 1.21: handing an agent a message bus, from any module, gives it a way to publish
+            for name, node in _calls(m.tree):
+                if _builds_agent(name) and any(k.arg == "message_bus" for k in node.keywords):
+                    out.append(self.at(m, node, f"{name}() is given a message_bus; agents are built without one"))
             if not (m.roles & {"agent", "squad"}) or m.roles & {"orchestrator", "router"}:
                 continue
             for full, _, node in _imported_modules(m):

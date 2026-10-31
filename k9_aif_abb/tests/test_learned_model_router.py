@@ -289,8 +289,47 @@ def test_confidential_request_never_goes_to_an_uncleared_model_even_on_rules():
     assert d.model_alias == "secure" and d.strategy == "rules"
 
 
-def test_confidential_without_any_cleared_model_keeps_old_behaviour():
+def test_confidential_without_any_cleared_model_fails_closed():
+    """1.21: no eligible model -> refuse. 1.13-1.20 fell back to every model."""
     models = {k: v for k, v in MODELS.items() if k != "secure"}
-    d = _router(models=models).route(InferenceRequest(prompt="Prove it", task_type="reasoning",
+    with pytest.raises(kmr.NoEligibleModelError):
+        _router(models=models).route(InferenceRequest(prompt="Prove it", task_type="reasoning",
                                                       sensitivity="confidential"))
-    assert d.model_alias == "smart"
+
+
+def test_conflicting_preferences_never_outrank_a_hard_constraint():
+    """Every soft preference favours "smart" (task +3, latency +2, cost +2 = 7
+    against "secure"'s 2), and graded evidence prefers it too; the request is
+    confidential, so "smart" is not a candidate at all."""
+    r = _router()
+    _teach(r, PROOF, "smart", 95)
+    _teach(r, PROOF, "secure", 20)
+    d = r.route(InferenceRequest(prompt=PROOF[0].format(n=9), task_type="reasoning",
+                                 latency_budget="interactive", cost_profile="standard",
+                                 sensitivity="confidential"))
+    assert d.model_alias == "secure"
+
+
+def test_required_capabilities_filter_before_scoring_and_fail_closed():
+    models = {**MODELS, "local": {**MODELS["fast"], "llm_ref": "local",
+                                  "capabilities": ["chat", "on_prem"]}}
+    d = _router(models=models).route(InferenceRequest(prompt="Prove it", task_type="reasoning",
+                                                      required_capabilities=["on_prem"]))
+    assert d.model_alias == "local"
+    with pytest.raises(kmr.NoEligibleModelError):
+        _router(models=models).route(InferenceRequest(prompt="Prove it", task_type="reasoning",
+                                                      sensitivity="confidential",
+                                                      required_capabilities=["on_prem"]))
+
+
+def test_no_eligible_model_is_a_refusal_llm_invoke_does_not_retry(monkeypatch):
+    from k9_aif_abb.k9_utils import llm_invoke as li
+
+    calls = []
+    router = _router(models={k: v for k, v in MODELS.items() if k != "secure"})
+    monkeypatch.setattr(li.ModelRouterFactory, "get_router",
+                        staticmethod(lambda cfg: calls.append(1) or router))
+    with pytest.raises(kmr.NoEligibleModelError):
+        li.llm_invoke({}, InferenceRequest(prompt="Prove it", sensitivity="confidential"),
+                      max_retries=3, retry_delay_s=0)
+    assert len(calls) == 1

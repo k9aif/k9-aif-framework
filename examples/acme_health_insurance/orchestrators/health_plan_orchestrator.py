@@ -63,7 +63,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
             # ------------------------------------------------------------------
             # Step 1  Retrieve relevant plan information
             # ------------------------------------------------------------------
-            retriever = create_agent(self.config, "RetrieverAgent", monitor=self.monitor, message_bus=self.message_bus)
+            retriever = create_agent(self.config, "RetrieverAgent", monitor=self.monitor)
             retrieval = retriever.execute({
                 "query": query,
                 "top_k": 5,

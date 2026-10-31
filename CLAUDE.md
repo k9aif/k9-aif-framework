@@ -176,6 +176,12 @@ and the adapters' `execute_flow()` set while they run. Inside, the caller's
 checks already cover the call; outside (orchestrator, service or script code),
 `llm_invoke()` runs the same `security.shield` checks itself and refuses in
 production without governance. Call models only through `llm_invoke()`.
+**Scope (1.21):** `governance.scope: boundary` (default) means a model call
+*inside* an agent is covered by the agent's input and output checks, not
+checked itself; `per_call` makes `llm_invoke()` check every call (prompt and
+response), so an intermediate reply is refused before the agent acts on it.
+Outgoing tool calls: `@govern_tool_call(governance)` (arguments checked
+before the tool runs). Test: `tests/test_governance_coverage.py`.
 A subclass calling `super().execute()` is governed once (a contextvar guard).
 `BaseValidationLoopAgent` / `BaseCriticActorAgent` set
 `_governs_own_execute = True` (they run pre/post around the loop, on
@@ -412,8 +418,11 @@ then a k-NN quality predictor over similar prompts can overrule them by
 router stored sessions/decisions/affinity but never read them back --
 don't describe older versions as adaptive. Runtime calls record only
 success/latency (circuit breaker), not quality: something must grade.
-A `confidential` request is hard-restricted to confidential-capable models
-(before 1.13 a +3 capability match could beat the +2 confidential score).
+Eligibility comes before scoring (1.21): a model is a candidate only if its
+`capabilities` include every `InferenceRequest.required_capabilities` entry,
+plus `confidential` for a confidential request; none eligible →
+`NoEligibleModelError` (fail closed, not retried). Before 1.13 confidential
+was only +2; 1.13–1.20 fell back to every model when none was cleared.
 
 ## Everything is provisioned through factories
 
@@ -450,7 +459,8 @@ Only the **Router** (domain topics) and **Orchestrator** (results /
 downstream topics) touch Kafka directly — this hasn't changed. Agents are
 constructed without a `message_bus` — they share data sequentially through
 the Squad flow, not via A2A messaging. `publish_event()` on an agent reaches
-the logger/monitor only.
+the logger/monitor only. K9-KAF-001 flags an agent built with a
+`message_bus` (1.21) as well as agent/squad code that publishes.
 
 **One narrow, deliberate exception: triggering HIL.** An Agent or Squad may
 raise `RequiresHIL` to signal that a human decision is needed mid-flow (a

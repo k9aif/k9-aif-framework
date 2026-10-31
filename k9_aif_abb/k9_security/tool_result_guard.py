@@ -17,6 +17,10 @@ Granite Guardian), exactly as an incoming user prompt would be. The text is
 placed under ``"query"`` so Guardian — which reads that key first — screens
 the real content, not a stringified wrapper.
 
+Outgoing calls (1.21): ``screen_tool_call()`` / ``@govern_tool_call(governance)``
+check a tool's name and arguments before it runs (ToolArgumentCheck,
+ToolAuthorizationCheck); a refused call never runs.
+
 Use it three ways:
   - Claude Agent SDK: ClaudeAgentSDKOrchestratorAdapter wraps every registered
     tool handler with it automatically (``govern_tool_results=True``).
@@ -130,6 +134,53 @@ def govern_tool_result(governance: Any, *, tool_name: Optional[str] = None,
             except PermissionError as exc:
                 return refused(result, exc)
             return result
+        return sync_wrapper
+
+    return decorate
+
+
+async def screen_tool_call(governance: Any, tool_name: str, arguments: Any,
+                           ctx: Optional[Dict[str, Any]] = None) -> None:
+    """Raise PermissionError when governance refuses an outgoing tool call
+    (1.21). The call goes through ingress governance as ``tool_name`` +
+    ``tool_arguments``, the fields ToolArgumentCheck / ToolAuthorizationCheck
+    read, before the tool runs."""
+    payload = {"tool_name": tool_name, "tool_arguments": arguments, "source": "tool_call"}
+    context = {"component": f"tool:{tool_name}", **(ctx or {})}
+    try:
+        outcome = governance.pre_process(payload, context)
+        if inspect.isawaitable(outcome):
+            await outcome
+    except PermissionError as exc:
+        log.warning("[ToolCallGuard] call to tool=%s REFUSED: %s", tool_name, exc)
+        emit_trace_event({"type": "ToolCallScreen", "tool": tool_name, "allowed": False,
+                          "reason": str(exc)[:300]})
+        raise
+    emit_trace_event({"type": "ToolCallScreen", "tool": tool_name, "allowed": True})
+
+
+def govern_tool_call(governance: Any, *, tool_name: Optional[str] = None) -> Callable:
+    """Decorator for a sync or async tool function: its arguments are checked
+    before it runs, and a refused call raises PermissionError without running
+    the tool. Pair with @govern_tool_result for what the tool returns."""
+
+    def decorate(fn: Callable) -> Callable:
+        name = tool_name or getattr(fn, "__name__", "tool")
+
+        def arguments(args, kwargs):
+            return {"args": list(args), **kwargs} if args else dict(kwargs)
+
+        if inspect.iscoroutinefunction(fn):
+            @functools.wraps(fn)
+            async def async_wrapper(*args, **kwargs):
+                await screen_tool_call(governance, name, arguments(args, kwargs))
+                return await fn(*args, **kwargs)
+            return async_wrapper
+
+        @functools.wraps(fn)
+        def sync_wrapper(*args, **kwargs):
+            _run_coro_sync(screen_tool_call(governance, name, arguments(args, kwargs)))
+            return fn(*args, **kwargs)
         return sync_wrapper
 
     return decorate

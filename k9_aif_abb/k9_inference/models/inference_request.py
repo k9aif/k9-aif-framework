@@ -21,7 +21,7 @@ Agents populate both from their YAML config::
 """
 
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class InferenceRequest(BaseModel):
@@ -33,6 +33,13 @@ class InferenceRequest(BaseModel):
     temperature: Optional[float] = None
 
     sensitivity: Optional[str] = None
+
+    # Hard routing constraints (1.21): every listed capability must appear in
+    # a model's catalog ``capabilities`` or that model is not eligible at all
+    # (e.g. ["on_prem"]). ``sensitivity="confidential"`` adds "confidential".
+    # Eligibility is decided before any scoring; when no model is eligible
+    # the router raises NoEligibleModelError instead of choosing another.
+    required_capabilities: Optional[List[str]] = None
 
     # Routing hints — used by K9ModelRouter scoring.
     # When omitted (None) the router falls back to capability-only matching,

@@ -98,6 +98,26 @@ def governance_from_config(config: dict | None) -> Any:
     return ChainedGovernance(*stages, config=cfg)
 
 
+GOVERNANCE_SCOPES = ("boundary", "per_call")
+
+
+def governance_scope(config: dict | None) -> str:
+    """``governance.scope`` (1.21): where model calls made inside an agent are
+    checked.
+
+    ``boundary`` (default): an agent's input is checked before its
+    ``execute()`` and its output after; the model calls it makes in between
+    are covered by those two checks, not checked one by one.
+    ``per_call``: every ``llm_invoke()`` is also checked on its own (prompt
+    before the call, response after), so an intermediate model response is
+    screened before the agent can act on it. Costs one check pair per call.
+    """
+    scope = str(((config or {}).get("governance") or {}).get("scope") or "boundary").lower()
+    if scope not in GOVERNANCE_SCOPES:
+        raise ValueError(f"governance.scope must be one of {GOVERNANCE_SCOPES}, not {scope!r}")
+    return scope
+
+
 def is_permissive_env(env: str | None = None) -> bool:
     """development / dev / test tolerate NoopGovernance; everything else
     (including K9_ENV unset, which means production) does not."""

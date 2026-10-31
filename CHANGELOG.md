@@ -4,6 +4,41 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.21.0] — 2026-10-31
+
+### Routing: hard constraints before scoring, fail closed
+
+- **A request that no model may serve is refused.** `K9ModelRouter` decides eligibility before any rule
+  score or learned evidence: a model is a candidate only if its catalog `capabilities` include every
+  `InferenceRequest.required_capabilities` entry (new field, e.g. `["on_prem"]`), plus `"confidential"`
+  for a confidential request. When none qualifies the router raises `NoEligibleModelError` (a
+  `PermissionError`, never retried by `llm_invoke()`). **Upgrade note:** 1.13–1.20 sent a confidential
+  request to every model when the catalog had no confidential-capable one; such a request now fails.
+  Add `confidential` to a cleared model's capabilities, or stop marking the request confidential.
+  Tests: `test_learned_model_router.py` (conflicting preferences, no eligible model, required capabilities).
+
+### Governance inside an agent
+
+- **`governance.scope: per_call` (new, opt-in).** By default (`boundary`) an agent's input is checked
+  before `execute()` and its output after; the model calls it makes in between are covered by those two
+  checks, not checked one by one. With `per_call`, `llm_invoke()` also checks every call made inside an
+  agent (prompt before, response after), so an intermediate model response is refused before the agent
+  can act on it. An unknown value raises `ValueError`.
+- **`@govern_tool_call(governance)` / `screen_tool_call()` (new).** A tool's name and arguments go through
+  the ingress checks (`ToolArgumentCheck`, `ToolAuthorizationCheck`) before it runs; a refused call never
+  runs. Pairs with `@govern_tool_result`.
+- Test: `test_governance_coverage.py` — a benign request whose first model reply carries a planted secret
+  or a shell command: boundary scope lets the tool run (documented limit), per_call refuses the reply
+  before the action, `@govern_tool_call` refuses the action in either scope.
+
+### Kafka ownership
+
+- **Inspector K9-KAF-001 also flags an agent built with a `message_bus`** (from any module), so
+  `BaseAgent.publish_event()` can only reach the monitor and log. The `acme_health_insurance` example
+  no longer passes one.
+
+---
+
 ## [1.20.1] — 2026-10-26
 
 - **Shield passes an agent's text output in production.** `BaseAgent`'s egress gate hands Shield the
