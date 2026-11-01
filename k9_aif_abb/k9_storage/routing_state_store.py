@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
@@ -19,6 +19,9 @@ from sqlalchemy import (
     select,
     insert,
     update,
+    or_,
+    and_,
+    text,
 )
 
 
@@ -151,8 +154,12 @@ class RoutingStateStore:
                 Column("status", String, default="pending"),
                 Column("created_at", DateTime),
                 Column("resolved_at", DateTime),
+                Column("decision", JSON),
+                Column("resuming_at", DateTime),
             )
             metadata.create_all(engine)
+        self.hil_pending = self._add_missing_columns(
+            engine, metadata, self.hil_pending, [Column("decision", JSON), Column("resuming_at", DateTime)])
 
         # routing_outcomes is also reflected/created on its own, for the same
         # reason as hil_pending: existing databases predate it.
@@ -176,6 +183,21 @@ class RoutingStateStore:
                 Column("created_at", DateTime),
             )
             metadata.create_all(engine)
+
+    @staticmethod
+    def _add_missing_columns(engine, metadata, table: Table, columns: List[Column]) -> Table:
+        """Additive migration for a table reflected from an existing database (1.23: the
+        hil_pending resume columns). Returns the table re-reflected with the new columns."""
+        missing = [c for c in columns if c.name not in table.c]
+        if not missing:
+            return table
+        qualified = f"{table.schema}.{table.name}" if table.schema else table.name
+        with engine.begin() as conn:
+            for col in missing:
+                conn.execute(text(f"ALTER TABLE {qualified} ADD COLUMN {col.name} "
+                                  f"{col.type.compile(dialect=engine.dialect)}"))
+        metadata.remove(table)
+        return Table(table.name, metadata, autoload_with=engine, schema=table.schema)
 
     # ------------------------------------------------------------------
     # Session Management
@@ -407,6 +429,68 @@ class RoutingStateStore:
             )
             session.commit()
             return result.rowcount == 1
+
+    # ------------------------------------------------------------------
+    # Resuming a paused flow (1.23, closes G-18). resolve_hil_pending() marked the row resolved
+    # *before* the flow was re-routed, so a crash between the two lost the resume. Now:
+    #   pending --begin_hil_resume (CAS, stores the decision)--> resuming
+    #   --route() succeeds--> finish_hil_resume --> resolved
+    #   route() fails --> release_hil_resume --> pending (the reply is delivered again)
+    #   crash while resuming --> stalled_hil_resumes() after the lease --> the Router's
+    #   recovery sweep re-routes with the stored decision.
+    # ------------------------------------------------------------------
+    def begin_hil_resume(self, correlation_id: str, decision: Dict[str, Any],
+                         lease_seconds: float = 300.0) -> bool:
+        """Claim a paused flow for resuming and store the decision. True only for the caller
+        that made the transition: from ``pending``, or from a ``resuming`` claim whose lease
+        expired (a Router that crashed mid-resume). A duplicate reply, or a second Router while
+        the claim is live, gets False and must not re-route."""
+        now = datetime.utcnow()
+        expired = now - timedelta(seconds=lease_seconds)
+        hp = self.hil_pending.c
+        with self.db.get_session() as session:
+            result = session.execute(
+                update(self.hil_pending)
+                .where(hp.correlation_id == correlation_id,
+                       or_(hp.status == "pending",
+                           and_(hp.status == "resuming", hp.resuming_at < expired)))
+                .values(status="resuming", decision=decision, resuming_at=now)
+            )
+            session.commit()
+            return result.rowcount == 1
+
+    def finish_hil_resume(self, correlation_id: str) -> None:
+        """The resumed flow was re-routed: resuming -> resolved."""
+        hp = self.hil_pending.c
+        with self.db.get_session() as session:
+            session.execute(
+                update(self.hil_pending)
+                .where(hp.correlation_id == correlation_id, hp.status == "resuming")
+                .values(status="resolved", resolved_at=datetime.utcnow())
+            )
+            session.commit()
+
+    def release_hil_resume(self, correlation_id: str) -> None:
+        """Re-routing failed: back to pending, so the redelivered reply can claim it again."""
+        hp = self.hil_pending.c
+        with self.db.get_session() as session:
+            session.execute(
+                update(self.hil_pending)
+                .where(hp.correlation_id == correlation_id, hp.status == "resuming")
+                .values(status="pending", resuming_at=None)
+            )
+            session.commit()
+
+    def stalled_hil_resumes(self, lease_seconds: float = 300.0) -> List[Dict[str, Any]]:
+        """Flows claimed for resuming whose lease expired: the Router that claimed them stopped
+        before finishing. Each carries the stored decision."""
+        hp = self.hil_pending.c
+        expired = datetime.utcnow() - timedelta(seconds=lease_seconds)
+        with self.db.get_session() as session:
+            rows = session.execute(
+                select(self.hil_pending).where(hp.status == "resuming", hp.resuming_at < expired)
+            ).fetchall()
+            return [dict(r._mapping) for r in rows]
 
     # ------------------------------------------------------------------
     # Routing Outcomes -- the evidence the learned router trains on.

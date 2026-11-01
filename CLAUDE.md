@@ -539,10 +539,23 @@ therefore resumes the flow exactly once. Resuming is just re-routing with
 new information now available, reusing the same method that handles any
 other event, not a second mechanism.
 
-**Open (G-18):** the row is marked resolved *before* re-routing, so a crash
-between the two loses that resume. A `resuming` state plus recovery sweep
-is planned; until then the SBB orchestrator's resume branch must be
-idempotent.
+**G-18, closed in 1.23:** the claim is `pending → resuming`
+(`begin_hil_resume()`, which stores the decision), the row becomes `resolved`
+only after `route()` succeeds, a failed `route()` releases the claim and
+raises (the bus delivers the reply again), and a recovery sweep
+(`recover_stalled_hil()`, started by `listen_for_hil_replies()`) re-routes a
+claim whose Router stopped, after `routing.hil.resume_lease_seconds` (300).
+A crash *after* `route()` and before `resolved` can re-route once more, so
+the SBB orchestrator's resume branch must still be idempotent.
+
+**Delivery (1.23).** `K9EventBus.subscribe()` / `subscribe_async()` and
+`KafkaEventFabric` commit an offset only after the event is handled or
+dead-lettered to `<topic>.dlq` (`k9_core/messaging/delivery.py`: retried
+`delivery_attempts` times with backoff; an undecodable or unfetchable event
+at once; a failed dead-letter publish raises and commits nothing). Before
+1.23 offsets were committed on a timer and a failed handler was logged, so a
+HIL reply whose handling failed was skipped for good. Tests:
+`tests/test_delivery_and_resume_1_23.py`.
 
 **Request fields not yet passed:** `BaseHILOrchestrator.execute_flow()`
 builds the request from `title`/`reason`/`priority`/`source_orchestrator`

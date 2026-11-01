@@ -15,6 +15,9 @@ from typing import Any, Dict, List, Optional, Union
 from kafka import KafkaProducer, KafkaConsumer
 
 from k9_aif_abb.k9_core.messaging.messaging_errors import LargeEventError, MessagingUnavailableError
+from k9_aif_abb.k9_core.messaging.delivery import (DEFAULT_ATTEMPTS, DEFAULT_BACKOFF_S, PermanentMessageError,
+                                                 decode_json, handle_with_retry, handle_with_retry_async,
+                                                 producer_dead_letter)
 
 # The group every consumer gets when it names none. Two applications consuming one topic in the same
 # group split its messages between them (each event reaches only one), so a consumer using it is warned.
@@ -85,9 +88,14 @@ class K9EventBus:
         require_connection: Optional[bool] = None,
         config: Optional[Dict[str, Any]] = None,
         object_store: Optional[Any] = None,
+        delivery_attempts: int = DEFAULT_ATTEMPTS,
+        retry_backoff_s: float = DEFAULT_BACKOFF_S,
         **kwargs,
     ):
         self.backend = backend
+        # 1.23: a consumed event is committed only once handled or dead-lettered (delivery.py)
+        self.delivery_attempts = max(1, int(delivery_attempts))
+        self.retry_backoff_s = float(retry_backoff_s)
         self.broker_url = broker_url
         self.topic = topic
         self.group_id = group_id
@@ -284,7 +292,11 @@ class K9EventBus:
                 "its own group_id.", self.topic, DEFAULT_GROUP_ID)
 
     def subscribe(self, callback):
-        """Listen to the configured topic and stream events to callback."""
+        """Listen to the configured topic and stream events to callback.
+
+        At-least-once (1.23): an event's offset is committed only after ``callback`` returns or
+        the event is dead-lettered to ``<topic>.dlq`` (after ``delivery_attempts`` failures, or at
+        once if it cannot be decoded or fetched back). A consumer that cannot start raises."""
         self._warn_if_shared_group()
         try:
             consumer = KafkaConsumer(
@@ -292,20 +304,24 @@ class K9EventBus:
                 bootstrap_servers=[self.broker_url],
                 group_id=self.group_id,
                 auto_offset_reset="latest",
-                enable_auto_commit=True,
-                value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                enable_auto_commit=False,
                 **self._security_kwargs(),
             )
-            self.log.info(f"[K9EventBus] Listening -> topic={self.topic}")
-            for msg in consumer:
-                try:
-                    callback(self.resolve_event(msg.value))
-                except LargeEventError as e:
-                    self.log.error(f"[K9EventBus] event skipped: {e}")
-                except Exception as e:
-                    self.log.error(f"[K9EventBus] consumer callback failed: {e}")
         except Exception as e:
-            self.log.error(f"[K9EventBus] subscribe failed: {e}", exc_info=False)
+            self.log.error("[K9EventBus] subscribe to %s failed: %s", self.topic, e)
+            raise
+        self.log.info(f"[K9EventBus] Listening -> topic={self.topic}")
+        dead_letter = producer_dead_letter(self._producer)
+        try:
+            for msg in consumer:
+                handle_with_retry(
+                    lambda m=msg: callback(self.resolve_event(decode_json(m.value))),
+                    topic=msg.topic, msg=msg, dead_letter=dead_letter,
+                    attempts=self.delivery_attempts, backoff_s=self.retry_backoff_s,
+                    permanent=(PermanentMessageError, LargeEventError))
+                consumer.commit()
+        finally:
+            consumer.close()
 
     # ----------------------------------------------------------------------
     # Async consumer (aiokafka) — awaits group join before yielding messages
@@ -367,8 +383,7 @@ class K9EventBus:
             bootstrap_servers=[self.broker_url],
             group_id=self.group_id,
             auto_offset_reset="earliest",
-            enable_auto_commit=True,
-            value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+            enable_auto_commit=False,   # 1.23: committed after each event is handled or dead-lettered
             session_timeout_ms=session_timeout_ms,
             heartbeat_interval_ms=heartbeat_interval_ms,
             max_poll_interval_ms=max_poll_interval_ms,
@@ -390,18 +405,21 @@ class K9EventBus:
             subscribe_desc, self.group_id,
         )
 
+        dead_letter = producer_dead_letter(self._producer)
+
+        async def _handle(msg):
+            value = await asyncio.to_thread(self.resolve_event, decode_json(msg.value))
+            result = callback(value)
+            if asyncio.iscoroutine(result):
+                await result
+
         try:
             async for msg in consumer:
-                try:
-                    value = await asyncio.to_thread(self.resolve_event, msg.value)
-                    if asyncio.iscoroutinefunction(callback):
-                        await callback(value)
-                    else:
-                        callback(value)
-                except LargeEventError as e:
-                    self.log.error("[K9EventBus] event skipped: %s", e)
-                except Exception as e:
-                    self.log.error("[K9EventBus] async callback failed: %s", e, exc_info=True)
+                await handle_with_retry_async(
+                    lambda m=msg: _handle(m), topic=msg.topic, msg=msg, dead_letter=dead_letter,
+                    attempts=self.delivery_attempts, backoff_s=self.retry_backoff_s,
+                    permanent=(PermanentMessageError, LargeEventError))
+                await consumer.commit()
         finally:
             await consumer.stop()
             self.log.info(
@@ -425,5 +443,5 @@ class K9EventBus:
                 self._producer.flush()
                 self._producer.close()
             self.log.info("[K9EventBus] stopped")
-        except Exception:
-            pass
+        except Exception as exc:
+            self.log.warning("[K9EventBus] close: producer flush/close failed: %s", exc)

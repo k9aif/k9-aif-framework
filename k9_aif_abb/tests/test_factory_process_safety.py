@@ -155,12 +155,14 @@ def test_consumer_in_default_group_is_warned(monkeypatch, caplog):
     monkeypatch.setattr(bus_mod, "KafkaConsumer", _consumer)
     bus = K9EventBus(broker_url="broker.invalid:9092", topic="t")
     with caplog.at_level(logging.WARNING, logger="K9EventBus"):
-        bus.subscribe(lambda m: None)
+        with pytest.raises(_NoBroker):          # 1.23: a consumer that cannot start raises
+            bus.subscribe(lambda m: None)
     assert "default group" in caplog.text
     caplog.clear()
     named = K9EventBus(broker_url="broker.invalid:9092", topic="t", group_id="acme-router")
     with caplog.at_level(logging.WARNING, logger="K9EventBus"):
-        named.subscribe(lambda m: None)
+        with pytest.raises(_NoBroker):
+            named.subscribe(lambda m: None)
     assert "default group" not in caplog.text
 
 

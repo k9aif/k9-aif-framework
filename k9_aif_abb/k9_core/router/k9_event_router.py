@@ -39,10 +39,12 @@ Extend and override ``route()`` for custom routing logic::
             return super().route(payload)
 """
 
+import asyncio
 import logging
 import re
 from typing import Any, Dict, Optional
 
+from k9_aif_abb.k9_core.messaging.delivery import PermanentMessageError
 from k9_aif_abb.k9_core.router.base_router import BaseRouter
 
 log = logging.getLogger(__name__)
@@ -79,6 +81,8 @@ class K9EventRouter(BaseRouter):
             "reply_pattern", re.escape(self._hil_prefix) + r"replies\..*"
         )
         self.state_store = state_store or self._bootstrap_state_store(self.config)
+        # 1.23: how long a resume claim is held before the recovery sweep may take it over
+        self.hil_resume_lease_seconds: float = float(hil_cfg.get("resume_lease_seconds", 300))
 
         log.info(
             "[%s] routing table: %d entries | intent_topic=%s | hil_reply_pattern=%s",
@@ -161,28 +165,66 @@ class K9EventRouter(BaseRouter):
         same as any other event -- resuming is just re-routing with new
         information now available, not a separate mechanism."""
         if not self.message_bus or not hasattr(self.message_bus, "subscribe_async"):
-            log.warning(
-                "[%s] no pattern-capable message_bus configured -- "
-                "HIL replies cannot be consumed", self.layer,
+            # 1.23: raise, as route() does without a bus; returning left every decision unconsumed
+            raise RuntimeError(f"[{self.layer}] no pattern-capable message_bus: HIL replies cannot be "
+                               "consumed. Pass message_bus= (K9EventBus).")
+        sweep = asyncio.create_task(self._recovery_sweep_forever())
+        try:
+            await self.message_bus.subscribe_async(
+                self._on_hil_reply, pattern=self._hil_reply_pattern
             )
-            return
-        await self.message_bus.subscribe_async(
-            self._on_hil_reply, pattern=self._hil_reply_pattern
-        )
+        finally:
+            sweep.cancel()
+
+    async def _recovery_sweep_forever(self) -> None:
+        """Run :meth:`recover_stalled_hil` at start and every half lease (1.23)."""
+        while True:
+            try:
+                await asyncio.to_thread(self.recover_stalled_hil)
+            except Exception as exc:
+                log.error("[%s] HIL recovery sweep failed (retried next pass): %s", self.layer, exc)
+            await asyncio.sleep(max(self.hil_resume_lease_seconds / 2, 1.0))
+
+    def recover_stalled_hil(self) -> int:
+        """Re-route flows whose resume was claimed but never finished (the Router stopped between
+        recording the decision and re-routing; G-18, closed in 1.23). Each is claimed again under
+        a new lease, so two Routers never resume the same flow at once. Returns how many resumed."""
+        if not self.state_store:
+            return 0
+        resumed = 0
+        for row in self.state_store.stalled_hil_resumes(self.hil_resume_lease_seconds):
+            cid = row["correlation_id"]
+            decision = row.get("decision") or {}
+            if not self.state_store.begin_hil_resume(cid, decision, self.hil_resume_lease_seconds):
+                continue
+            log.warning("[%s] HIL correlation_id=%s: resume did not finish; re-routing with the "
+                        "recorded decision", self.layer, cid)
+            self._resume(cid, row, decision)
+            resumed += 1
+        return resumed
+
+    def _resume(self, correlation_id: str, pending: Dict[str, Any], decision: Dict[str, Any]) -> None:
+        """Re-route a claimed flow; release the claim if routing fails, finish it if it succeeds."""
+        resumed_payload = {**(pending.get("payload") or {}), "hil_decision": decision}
+        log.info("[%s] HIL reply correlation_id=%s resolved -> re-routing event_type=%r",
+                 self.layer, correlation_id, resumed_payload.get("event_type"))
+        try:
+            self.route(resumed_payload)
+        except Exception:
+            self.state_store.release_hil_resume(correlation_id)
+            raise
+        self.state_store.finish_hil_resume(correlation_id)
 
     async def _on_hil_reply(self, message: Dict[str, Any]) -> None:
         correlation_id = message.get("correlation_id")
         if not correlation_id:
-            log.warning("[%s] HIL reply missing correlation_id, dropped: %r",
-                        self.layer, message)
-            return
+            # 1.23: dead-lettered by the bus (permanent), not silently dropped
+            raise PermanentMessageError(f"[{self.layer}] HIL reply has no correlation_id")
 
         if not self.state_store:
-            log.error(
-                "[%s] HIL reply correlation_id=%s received but no state_store "
-                "configured -- cannot resolve", self.layer, correlation_id,
-            )
-            return
+            # 1.23: raised, so the bus retries and then dead-letters it instead of skipping it
+            raise RuntimeError(f"[{self.layer}] HIL reply correlation_id={correlation_id}: "
+                               "no state_store configured, cannot resolve")
 
         pending = self.state_store.get_hil_pending(correlation_id)
         if not pending:
@@ -192,30 +234,20 @@ class K9EventRouter(BaseRouter):
             )
             return
 
-        # G-16: the atomic gate, not an optimization -- resolve_hil_pending()
-        # is a compare-and-swap (status='pending' -> 'resolved', WHERE
-        # status='pending') and only re-routes if *this* call is the one
-        # that actually made the transition. A duplicate reply (Kafka's
-        # own at-least-once redelivery, or an outbox immediate-attempt/
-        # sweep race on the publishing side -- see hil_reply.py) finds
-        # the row already resolved, resolve_hil_pending() returns False,
-        # and this drops it instead of re-routing a flow that already
-        # resumed once. Also protects two Router instances racing on the
-        # same reply -- only one of them wins the UPDATE.
-        if not self.state_store.resolve_hil_pending(correlation_id):
+        # G-16: the atomic gate, not an optimization -- begin_hil_resume() is a
+        # compare-and-swap (pending -> resuming) and only this call's winner re-routes. A
+        # duplicate reply (Kafka redelivery, the HIL outbox's retry, a second Router) finds the
+        # row resuming or resolved and is dropped.
+        # G-18 (closed in 1.23): the claim stores the decision, and the row is marked resolved
+        # only after route() succeeds. A failed route() releases the claim and raises, so the bus
+        # delivers the reply again; a crash leaves the claim to the recovery sweep.
+        if not self.state_store.begin_hil_resume(correlation_id, message, self.hil_resume_lease_seconds):
             log.info(
-                "[%s] HIL reply correlation_id=%s already resolved -- "
+                "[%s] HIL reply correlation_id=%s already resolved or being resumed -- "
                 "dropping duplicate, not re-routing", self.layer, correlation_id,
             )
             return
-
-        resumed_payload = {**(pending.get("payload") or {}), "hil_decision": message}
-        log.info(
-            "[%s] HIL reply correlation_id=%s resolved -> re-routing "
-            "event_type=%r", self.layer, correlation_id,
-            resumed_payload.get("event_type"),
-        )
-        self.route(resumed_payload)
+        self._resume(correlation_id, pending, message)
 
     # ------------------------------------------------------------------
     def _dispatch(self, topic: str, payload: Dict[str, Any], strategy: str = "") -> None:

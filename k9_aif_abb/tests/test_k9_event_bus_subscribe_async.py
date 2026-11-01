@@ -16,6 +16,7 @@ constructor-kwarg form fails immediately without needing live Kafka.
 """
 
 import asyncio
+import json
 from unittest.mock import patch
 
 import pytest
@@ -36,6 +37,7 @@ class _StubAIOKafkaConsumer:
         self.subscribe_calls = []
         self.started = False
         self.stopped = False
+        self.commits = 0
         self._messages = iter(messages or [])
         _StubAIOKafkaConsumer.last_instance = self
 
@@ -48,6 +50,9 @@ class _StubAIOKafkaConsumer:
     async def stop(self):
         self.stopped = True
 
+    async def commit(self):
+        self.commits += 1
+
     def __aiter__(self):
         return self
 
@@ -59,8 +64,14 @@ class _StubAIOKafkaConsumer:
 
 
 class _FakeMsg:
-    def __init__(self, value):
-        self.value = value
+    """As aiokafka delivers it (1.23 decodes per message): bytes, with its topic and offset."""
+    _offset = 0
+
+    def __init__(self, value, topic="hil.replies.x"):
+        self.value = json.dumps(value).encode("utf-8")
+        self.topic = topic
+        _FakeMsg._offset += 1
+        self.offset = _FakeMsg._offset
 
 
 def _make_stub_factory(messages=None):
@@ -75,7 +86,8 @@ def _make_stub_factory(messages=None):
 
 def _make_bus():
     with patch("k9_aif_abb.k9_core.messaging.k9_event_bus.KafkaProducer"):
-        return K9EventBus(broker_url="broker:9092", topic="default.topic", group_id="grp")
+        return K9EventBus(broker_url="broker:9092", topic="default.topic", group_id="grp",
+                          retry_backoff_s=0)
 
 
 class TestSubscribeAsyncPattern:
@@ -174,11 +186,12 @@ class TestSubscribeAsyncCallbackBehavior:
         assert received == [{"correlation_id": "c2"}]
 
     @pytest.mark.asyncio
-    async def test_callback_error_on_one_message_does_not_stop_the_loop(self):
+    async def test_callback_error_is_retried_then_dead_lettered_and_the_loop_continues(self):
         bus = _make_bus()
-        received = []
+        received, calls = [], []
 
         def flaky_callback(value):
+            calls.append(value)
             if value.get("bad"):
                 raise ValueError("boom")
             received.append(value)
@@ -189,3 +202,22 @@ class TestSubscribeAsyncCallbackBehavior:
             await bus.subscribe_async(callback=flaky_callback, pattern=r"hil\..*")
 
         assert received == [{"correlation_id": "c3"}]
+        assert len([c for c in calls if c.get("bad")]) == bus.delivery_attempts   # retried, not skipped
+        dlq = [c for c in bus._producer.send.call_args_list if c.args[0] == "hil.replies.x.dlq"]
+        assert len(dlq) == 1 and "boom" in dlq[0].kwargs["value"]["reason"]
+        assert _StubAIOKafkaConsumer.last_instance.commits == 2
+
+    @pytest.mark.asyncio
+    async def test_nothing_is_committed_when_dead_lettering_fails_too(self):
+        bus = _make_bus()
+        bus._producer.send.side_effect = RuntimeError("broker down")
+
+        def failing(value):
+            raise ValueError("store down")
+
+        with patch("aiokafka.AIOKafkaConsumer", side_effect=_make_stub_factory(messages=[
+            _FakeMsg({"correlation_id": "c4"}),
+        ])):
+            with pytest.raises(Exception, match="dead-letter"):
+                await bus.subscribe_async(callback=failing, pattern=r"hil\..*")
+        assert _StubAIOKafkaConsumer.last_instance.commits == 0

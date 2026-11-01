@@ -58,8 +58,23 @@ class FakeStore(BaseObjectStorage):
 
 def _bus(**kw):
     with patch(f"{BUS}.KafkaProducer") as producer_cls:
-        bus = K9EventBus(broker_url="localhost:9092", topic="t", group_id="g", **kw)
+        bus = K9EventBus(broker_url="localhost:9092", topic="t", group_id="g", retry_backoff_s=0, **kw)
     return bus, producer_cls.return_value
+
+
+class _Consumer(list):
+    """kafka-python consumer as subscribe() uses it (1.23): iterate, commit, close."""
+    commits = 0
+
+    def commit(self):
+        self.commits += 1
+
+    def close(self):
+        pass
+
+
+def _msg(value):
+    return SimpleNamespace(topic="t", offset=0, value=json.dumps(value).encode("utf-8"))
 
 
 def _sent(producer):
@@ -97,9 +112,10 @@ def test_consumer_gets_the_original_event():
     bus.publish(BIG)
     link = _sent(producer)
     got = []
-    with patch(f"{BUS}.KafkaConsumer", return_value=[SimpleNamespace(value=link)]):
+    consumer = _Consumer([_msg(link)])
+    with patch(f"{BUS}.KafkaConsumer", return_value=consumer):
         bus.subscribe(got.append)
-    assert got == [BIG]
+    assert got == [BIG] and consumer.commits == 1
 
 
 def test_small_events_are_unchanged():
@@ -170,16 +186,18 @@ def test_tampered_or_missing_event_raises():
         bus.resolve_event(link)
 
 
-def test_unfetchable_event_is_skipped_with_error_not_delivered(caplog):
+def test_unfetchable_event_is_dead_lettered_not_delivered(caplog):
     store = FakeStore()
     bus, producer = _bus(object_store=store)
     bus.publish(BIG)
     link = _sent(producer)
     store.objects.clear()
     got = []
-    with patch(f"{BUS}.KafkaConsumer", return_value=[SimpleNamespace(value=link)]):
+    consumer = _Consumer([_msg(link)])
+    with patch(f"{BUS}.KafkaConsumer", return_value=consumer):
         bus.subscribe(got.append)
-    assert got == [] and "event skipped" in caplog.text
+    dlq = [c for c in producer.send.call_args_list if c.args[0] == "t.dlq"]
+    assert got == [] and len(dlq) == 1 and consumer.commits == 1   # at once: retrying cannot fetch it
 
 
 def test_send_errors_reach_the_caller():

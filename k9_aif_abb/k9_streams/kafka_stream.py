@@ -7,9 +7,11 @@ import json
 import logging
 import os
 import threading
+
 from typing import Any, Callable, Dict, Optional
 
 from k9_aif_abb.k9_core.streams.base_event_fabric import BaseEventFabric
+from k9_aif_abb.k9_core.messaging.delivery import DEFAULT_ATTEMPTS, handle_with_retry, producer_dead_letter
 from k9_aif_abb.k9_core.streams.event_envelope import EventEnvelope
 
 log = logging.getLogger("KafkaEventFabric")
@@ -132,21 +134,37 @@ class KafkaEventFabric(BaseEventFabric):
             bootstrap_servers=self._bootstrap_servers(),
             auto_offset_reset=self._kafka_cfg.get("auto_offset_reset", "latest"),
             group_id=self._kafka_cfg.get("group_id"),
-            enable_auto_commit=self._kafka_cfg.get("group_id") is not None,
+            # 1.23: with a group, an offset is committed only after the event is projected or
+            # dead-lettered to <topic>.dlq (k9_core/messaging/delivery.py); before, on a timer,
+            # so an event whose projection failed was skipped for good.
+            enable_auto_commit=False,
             **self._security_kwargs(),
         )
         self._consumers[topic] = consumer
         mapper = self._mapper_for(topic)
+        grouped = self._kafka_cfg.get("group_id") is not None
+        attempts = int(self._kafka_cfg.get("delivery_attempts", DEFAULT_ATTEMPTS))
+
+        def _deliver(msg) -> None:
+            envelope = self._to_envelope(mapper, msg)
+            if envelope is not None:
+                callback(envelope)
 
         def _consume() -> None:
             log.info("[KafkaFabric] Consumer started on topic: %s", topic)
+            self._ensure_producer()
+            dead_letter = producer_dead_letter(self._producer)
             for msg in consumer:
                 try:
-                    envelope = self._to_envelope(mapper, msg)
-                    if envelope is not None:
-                        callback(envelope)
+                    handle_with_retry(lambda m=msg: _deliver(m), topic=topic, msg=msg,
+                                      dead_letter=dead_letter, attempts=attempts)
                 except Exception as exc:
-                    log.error("[KafkaFabric] Error on %s: %s", topic, exc)
+                    # Neither projected nor dead-lettered: stop here, uncommitted, so a restart
+                    # delivers it again rather than skipping it.
+                    log.error("[KafkaFabric] consumer on %s stopped: %s", topic, exc)
+                    return
+                if grouped:
+                    consumer.commit()
 
         thread = threading.Thread(target=_consume, daemon=True, name=f"k9-stream-{topic}")
         self._consumer_threads[topic] = thread

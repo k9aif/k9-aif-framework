@@ -4,6 +4,42 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.23.0] — 2026-11-01
+
+### Delivery: a consumed event is never skipped
+
+- **Commit after handling.** `K9EventBus.subscribe()`, `K9EventBus.subscribe_async()` and
+  `KafkaEventFabric` (with a `group_id`) commit an offset only after the event's handler returns or the
+  event is dead-lettered to `<topic>.dlq`. A failing handler is retried `delivery_attempts` times (default
+  5, backoff 1 s doubling to 30 s); an event that cannot be decoded or fetched back (`LargeEventError`)
+  is dead-lettered at once; the dead-letter event carries the original topic, partition, offset, reason
+  and attempts. If the dead-letter publish fails, `DeliveryError` is raised and nothing is committed, so
+  the event is delivered again after a restart. Before, offsets were committed on a timer and a failed
+  handler was logged, so the event was skipped for good (a HIL reply whose handling failed never resumed
+  its flow). Values are decoded per event, so one malformed message no longer ends the consumer loop.
+- `K9EventBus.subscribe()` raises when its consumer cannot start (it logged and returned);
+  `K9EventBus.close()` logs a failed flush instead of ignoring it.
+
+### HIL round trip: a decision always resumes its flow (G-18 closed)
+
+- `K9EventRouter` claimed a paused flow by marking it `resolved` *before* re-routing it, so a crash
+  between the two lost the resume. Now: `begin_hil_resume()` (compare-and-swap `pending → resuming`,
+  storing the decision) → `route()` → `finish_hil_resume()` (`resolved`). A failed `route()` releases the
+  claim and raises, so the reply is delivered again; `recover_stalled_hil()`, run by
+  `listen_for_hil_replies()` at start and every half lease, re-routes a claim whose Router stopped after
+  `routing.hil.resume_lease_seconds` (default 300). Existing `hil_pending` tables gain the `decision` and
+  `resuming_at` columns at start-up.
+- A reply without `correlation_id` is dead-lettered and a reply arriving with no state store is retried,
+  instead of both being dropped; `listen_for_hil_replies()` raises without a message bus.
+
+**Upgrade notes.** Consumers now see each event at least once: a handler that fails is called again, so it
+should be idempotent (the HIL resume already is). Watch `<topic>.dlq`. A process that relied on
+`subscribe()` returning when the broker is unreachable now gets the exception. Tests:
+`test_delivery_and_resume_1_23.py` (eleven; the eight behaviour tests fail on 1.22), and the subscribe
+tests now assert retry, dead-letter and commit.
+
+---
+
 ## [1.22.0] — 2026-11-01
 
 ### Governance: three paths that could skip a check are refused in production
