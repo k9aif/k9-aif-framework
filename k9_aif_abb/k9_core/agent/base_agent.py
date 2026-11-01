@@ -17,6 +17,7 @@ from k9_aif_abb.k9_core.governance.pipeline import (
     NoopGovernance,
     assert_governed,
     governance_from_config,
+    is_permissive_env,
     require_governance,
 )
 
@@ -62,6 +63,45 @@ def _payload_of(args, kwargs):
     return None, None
 
 
+def _no_payload(agent) -> None:
+    """The entry point was called without a payload the wrapper can find (first positional
+    argument, ``payload=`` or ``request=``), so the input cannot be checked. Refused outside
+    development/test (1.22); before, the input check was skipped silently."""
+    msg = (f"[{agent.layer}] input check skipped: call execute()/execute_stream() with the payload "
+           "as the first argument, payload= or request=")
+    if is_permissive_env():
+        agent.logger.warning(msg)
+        return
+    raise PermissionError(msg + " (refused in production)")
+
+
+# Where the framework's own agent ABBs live (BaseValidationLoopAgent, BaseCriticActorAgent).
+_FRAMEWORK_AGENT_ABBS = "k9_aif_abb.k9_agents."
+
+
+def _opts_out(agent) -> bool:
+    """True when the agent runs its own pre/post checks (``_governs_own_execute``), as the
+    framework's loop ABBs do. Only an ABB in ``k9_aif_abb.k9_agents`` may declare it: declared by an
+    application class, or set on an instance, it is refused outside development/test (1.22;
+    before, it was reported by inspection only, K9-GOV-007)."""
+    if "_governs_own_execute" in vars(agent):
+        owner, flag = None, vars(agent)["_governs_own_execute"]
+    else:
+        owner = next((k for k in type(agent).__mro__ if "_governs_own_execute" in k.__dict__), None)
+        flag = owner.__dict__["_governs_own_execute"] if owner is not None else False
+    if not flag:
+        return False
+    if owner is not None and owner.__module__.startswith(_FRAMEWORK_AGENT_ABBS):
+        return True
+    where = owner.__qualname__ if owner is not None else f"an instance of {type(agent).__qualname__}"
+    msg = (f"[{agent.layer}] _governs_own_execute is set by {where}: only the framework's loop ABBs "
+           "may run their own pre/post checks")
+    if is_permissive_env():
+        agent.logger.warning(msg + " (allowed in development/test)")
+        return True
+    raise PermissionError(msg + " (refused in production)")
+
+
 def _governed_stream(fn):
     """Wrap a streaming entry point (``execute_stream``) the way
     ``_governed_execute`` wraps ``execute()``: assert real governance,
@@ -73,10 +113,12 @@ def _governed_stream(fn):
 
     def _pre(self, args, kwargs):
         assert_governed(self.governance, self.layer, self.logger)
-        if getattr(self, "_governs_own_execute", False):
+        if _opts_out(self):
             return args, kwargs, False
         payload, rebuild = _payload_of(args, kwargs)
-        if rebuild is not None:
+        if rebuild is None:
+            _no_payload(self)
+        else:
             checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
             args, kwargs = rebuild(checked)
         return args, kwargs, True
@@ -149,9 +191,13 @@ def _governed_execute(fn, *, pre_post: bool):
             token = _GOVERNING.set(active | {id(self)})
             try:
                 assert_governed(self.governance, self.layer, self.logger)
+                if not pre_post:
+                    _opts_out(self)  # an opt-out outside the framework is refused in production
                 if pre_post:
                     payload, rebuild = _payload_of(args, kwargs)
-                    if rebuild is not None:
+                    if rebuild is None:
+                        _no_payload(self)
+                    else:
                         checked = self.governance.pre_process(payload, self._governance_context())
                         if inspect.isawaitable(checked):
                             checked = await checked
@@ -174,9 +220,13 @@ def _governed_execute(fn, *, pre_post: bool):
             token = _GOVERNING.set(active | {id(self)})
             try:
                 assert_governed(self.governance, self.layer, self.logger)
+                if not pre_post:
+                    _opts_out(self)  # an opt-out outside the framework is refused in production
                 if pre_post:
                     payload, rebuild = _payload_of(args, kwargs)
-                    if rebuild is not None:
+                    if rebuild is None:
+                        _no_payload(self)
+                    else:
                         checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
                         args, kwargs = rebuild(checked)
                 result = fn(self, *args, **kwargs)
@@ -212,7 +262,10 @@ class BaseAgent(ABC):
     the caller. Overriding ``execute()`` does not bypass this: the override is
     wrapped too. Classes that run pre/post themselves around their own work
     (``BaseValidationLoopAgent``, ``BaseCriticActorAgent``) set
-    ``_governs_own_execute = True`` and get the assertion only.
+    ``_governs_own_execute = True`` and get the assertion only; from 1.22 only
+    a framework agent ABB (``k9_aif_abb.k9_agents``) may set it (elsewhere it is refused in
+    production), and a call whose payload the wrapper cannot find is refused
+    in production instead of running unchecked.
 
     With no ``governance=`` argument, governance is built from the agent's
     config (``security.shield.enabled: true`` → ShieldGovernance), so one

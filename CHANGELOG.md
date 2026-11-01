@@ -4,6 +4,34 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.22.0] — 2026-11-01
+
+### Governance: three paths that could skip a check are refused in production
+
+Each was possible in 1.21 without any error; each is now refused outside development/test
+(`K9_ENV` unset counts as production) and only warned about in development/test.
+
+- **An entry point called without a payload the wrapper can find.** `BaseAgent` checks the payload
+  passed as the first argument, `payload=` or `request=`. Called any other way (e.g.
+  `execute(data=...)`), the input check was skipped. Now: `PermissionError` ("input check skipped").
+  The framework's own `EnrichmentAgent.run()` called `execute(text=...)`; it now passes a payload.
+- **`_governs_own_execute` outside the framework.** Only the framework's agent ABBs
+  (`k9_aif_abb.k9_agents`: `BaseValidationLoopAgent`, `BaseCriticActorAgent`) may run their own
+  pre/post checks. Declared by an application class, or set on an instance (the streaming wrapper read
+  it from the instance), it switched the wrapper's checks off; inspection reported it (K9-GOV-007) but
+  nothing stopped it. Now: `PermissionError` at the call.
+- **`@govern_tool_call` / `@govern_tool_result` / `screen_tool_call()` / `screen_tool_result()` with no
+  governance** (`NoopGovernance` or `None`) let every tool call and result through. Now they refuse as
+  agents and `llm_invoke()` do, before the tool runs.
+
+**Upgrade notes.** In production: pass an agent its payload as the first argument (or `payload=` /
+`request=`); remove `_governs_own_execute` from application agents (subclass `K9ValidationLoopAgent` or
+`K9CriticActorAgent` if the agent runs its own loop); give tool decorators real governance. Nothing
+changes in development/test except a warning. Tests: `test_governance_gaps_1_22.py` (ten; the six
+behaviour tests fail on 1.21).
+
+---
+
 ## [1.21.0] — 2026-10-31
 
 ### Routing: hard constraints before scoring, fail closed

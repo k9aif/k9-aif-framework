@@ -187,6 +187,13 @@ A subclass calling `super().execute()` is governed once (a contextvar guard).
 `_governs_own_execute = True` (they run pre/post around the loop, on
 `result["output"]`) and get the assertion only. Tests:
 `tests/test_governance_by_construction.py`.
+**1.22 — no silent skips in production:** only the framework's agent ABBs
+(`k9_aif_abb.k9_agents`) may set `_governs_own_execute` (an application class
+or an instance setting it is refused); a call whose payload the wrapper cannot
+find (not the first argument, `payload=` or `request=`) is refused instead of
+running unchecked; `@govern_tool_call` / `@govern_tool_result` with no
+governance refuse before the tool runs. Development/test only warn. Tests:
+`tests/test_governance_gaps_1_22.py`.
 
 **Where governance comes from.** `governance=` if passed; otherwise
 `governance_from_config(config)`: `security.shield.enabled: true` →

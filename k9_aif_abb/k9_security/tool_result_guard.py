@@ -70,9 +70,18 @@ def result_text(result: Any) -> str:
         return str(result)
 
 
+def _require_governed(governance: Any, tool_name: str) -> None:
+    """No governance configured (``NoopGovernance`` or ``None``) is refused outside
+    development/test, as for agents and ``llm_invoke()`` (1.22). Before, a tool guarded
+    with no governance passed every call and result unchecked."""
+    from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, assert_governed
+    assert_governed(governance if governance is not None else NoopGovernance(), f"tool:{tool_name}", log)
+
+
 async def screen_tool_result(governance: Any, tool_name: str, result: Any,
                              ctx: Optional[Dict[str, Any]] = None) -> None:
     """Raise PermissionError when governance refuses this tool result."""
+    _require_governed(governance, tool_name)
     payload = {"query": result_text(result), "source": "tool_result", "source_tool": tool_name}
     context = {"component": f"tool:{tool_name}", **(ctx or {})}
     try:
@@ -118,6 +127,7 @@ def govern_tool_result(governance: Any, *, tool_name: Optional[str] = None,
         if inspect.iscoroutinefunction(fn):
             @functools.wraps(fn)
             async def async_wrapper(*args, **kwargs):
+                _require_governed(governance, name)
                 result = await fn(*args, **kwargs)
                 try:
                     await screen_tool_result(governance, name, result)
@@ -128,6 +138,7 @@ def govern_tool_result(governance: Any, *, tool_name: Optional[str] = None,
 
         @functools.wraps(fn)
         def sync_wrapper(*args, **kwargs):
+            _require_governed(governance, name)
             result = fn(*args, **kwargs)
             try:
                 _run_coro_sync(screen_tool_result(governance, name, result))
@@ -145,6 +156,7 @@ async def screen_tool_call(governance: Any, tool_name: str, arguments: Any,
     (1.21). The call goes through ingress governance as ``tool_name`` +
     ``tool_arguments``, the fields ToolArgumentCheck / ToolAuthorizationCheck
     read, before the tool runs."""
+    _require_governed(governance, tool_name)
     payload = {"tool_name": tool_name, "tool_arguments": arguments, "source": "tool_call"}
     context = {"component": f"tool:{tool_name}", **(ctx or {})}
     try:

@@ -34,7 +34,7 @@ class EnrichmentAgent(BaseAgent):
         Returns enriched text result as a simple string.
         """
         self.log(f"[{self.layer}] Running enrichment on text input", level="DEBUG")
-        out = self.execute(text=text)
+        out = self.execute({"text": text})   # the payload, so governance checks it (1.22)
         if isinstance(out, dict) and "result" in out:
             return out["result"]
         return str(out)

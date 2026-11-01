@@ -633,7 +633,10 @@ the result's audit fields are left as they are).</li>
 the caller. Overriding <code><a href="#CallingAgent.execute">execute()</a></code> does not bypass this: the override is
 wrapped too. Classes that run pre/post themselves around their own work
 (<code>BaseValidationLoopAgent</code>, <code>BaseCriticActorAgent</code>) set
-<code>_governs_own_execute = True</code> and get the assertion only.</p>
+<code>_governs_own_execute = True</code> and get the assertion only; from 1.22 only
+a framework agent ABB (<code><a href="../k9_agents.html">k9_aif_abb.k9_agents</a></code>) may set it (elsewhere it is refused in
+production), and a call whose payload the wrapper cannot find is refused
+in production instead of running unchecked.</p>
 
 <p>With no <code>governance=</code> argument, governance is built from the agent's
 config (<code>security.shield.enabled: true</code> → ShieldGovernance), so one

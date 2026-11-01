@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.21.0"
+framework_version: "1.22.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -236,7 +236,7 @@ capabilities:
     enabled_by_default: true
     covers: {LLM01: partial, ASI02: partial, ASI06: partial}
     summary: Indirect prompt injection in fetched pages, documents and other agents' replies.
-    limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result.
+    limits: Automatic only in the Claude Agent SDK adapter; CrewAI/LangGraph need @govern_tool_result. With no governance configured it refuses in production, before the tool runs (1.22).
 
   - id: tool_call_guard
     kind: component
@@ -246,7 +246,7 @@ capabilities:
     enabled_by_default: false
     covers: {LLM06: partial, ASI02: partial, ASI05: partial}
     summary: A model-proposed tool action (shell command, SQL, internal URL) is refused before it executes, even when the agent's input and final output are benign.
-    limits: Opt-in per tool function (decorator); the Claude Agent SDK adapter governs calls through can_use_tool instead.
+    limits: Opt-in per tool function (decorator); the Claude Agent SDK adapter governs calls through can_use_tool instead. With no governance configured it refuses in production (1.22; before, it let every call through).
 
   - id: governance.per_call_scope
     kind: component
@@ -392,7 +392,10 @@ capabilities:
       and Claude SDK adapters assert it around execute_flow(); llm_invoke()
       and llm_invoke_stream() check a model call themselves when it is not
       inside a governed agent or adapter flow (and refuse in production
-      without governance), so every inference call is governed exactly once
+      without governance), so every inference call is governed exactly once;
+      from 1.22 a call whose payload the wrapper cannot find, and a
+      _governs_own_execute opt-out outside the framework's agent ABBs, are
+      refused in production instead of running unchecked
     enabled_by_default: true
     covers: {ASI10: partial}
     summary: No agent runs without governance in production, and every agent action passes the configured pipeline.
