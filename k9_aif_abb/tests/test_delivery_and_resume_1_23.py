@@ -207,3 +207,24 @@ def test_the_streams_fabric_commits_only_after_an_event_is_projected(monkeypatch
     fabric._consumer_threads["orders"].join(timeout=10)
     dlq = [c for c in fabric._producer.send.call_args_list if c.args[0] == "orders.dlq"]
     assert seen == [1] and len(dlq) == 1 and msgs.commits == 2
+
+
+# ── object storage ──────────────────────────────────────────────────────────────────────
+
+def test_exists_is_false_only_for_a_missing_object_and_raises_on_an_outage():
+    from k9_aif_abb.k9_core.storage.base_object_storage import BaseObjectStorage
+
+    class Store(BaseObjectStorage):
+        def __init__(self, error):
+            self.error = error
+
+        def upload(self, *a, **k): ...
+        def download(self, bucket, key):
+            raise self.error
+        def delete(self, *a, **k): ...
+        def list_objects(self, *a, **k): return []
+        def get_uri(self, bucket, key): return f"mem://{bucket}/{key}"
+
+    assert Store(FileNotFoundError("gone")).exists("b", "k") is False
+    with pytest.raises(ConnectionError):
+        Store(ConnectionError("endpoint unreachable")).exists("b", "k")

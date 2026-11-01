@@ -85,11 +85,15 @@ class BaseObjectStorage(ABC):
     # ── Optional override ─────────────────────────────────────────────────
 
     def exists(self, bucket: str, key: str) -> bool:
-        """Return True if *bucket*/*key* exists in the store."""
+        """Return True if *bucket*/*key* exists in the store, False if it does not.
+
+        A store that cannot be reached (or refuses the request) raises (1.23): before, every
+        error read as "not found", so a caller deciding on existence (e.g. whether a decision
+        has a stored package to resume) acted on an outage as if the object were absent."""
         try:
             self.download(bucket, key)
             return True
-        except (FileNotFoundError, KeyError, Exception):
+        except (FileNotFoundError, KeyError):
             return False
 
     def ensure_bucket(self, bucket: str) -> None:

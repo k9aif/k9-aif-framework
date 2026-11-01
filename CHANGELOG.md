@@ -17,6 +17,8 @@ All notable changes to K9-AIF are documented here.
   the event is delivered again after a restart. Before, offsets were committed on a timer and a failed
   handler was logged, so the event was skipped for good (a HIL reply whose handling failed never resumed
   its flow). Values are decoded per event, so one malformed message no longer ends the consumer loop.
+- `BaseObjectStorage.exists()` is False only for a missing object; a store that cannot be reached raises.
+  Before, every error read as "not found", so a caller deciding on existence acted on an outage.
 - `K9EventBus.subscribe()` raises when its consumer cannot start (it logged and returned);
   `K9EventBus.close()` logs a failed flush instead of ignoring it.
 
@@ -35,7 +37,7 @@ All notable changes to K9-AIF are documented here.
 **Upgrade notes.** Consumers now see each event at least once: a handler that fails is called again, so it
 should be idempotent (the HIL resume already is). Watch `<topic>.dlq`. A process that relied on
 `subscribe()` returning when the broker is unreachable now gets the exception. Tests:
-`test_delivery_and_resume_1_23.py` (eleven; the eight behaviour tests fail on 1.22), and the subscribe
+`test_delivery_and_resume_1_23.py` (twelve; the nine behaviour tests fail on 1.22), and the subscribe
 tests now assert retry, dead-letter and commit.
 
 ---
