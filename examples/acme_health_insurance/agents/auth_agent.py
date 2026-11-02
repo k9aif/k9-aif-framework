@@ -46,7 +46,7 @@ class AuthAgent(BaseAgent):
             status = "unknown"
 
         # Publish governance event
-        self.publish_event({
+        self.notify_monitor({
             "event_type": "auth_event",
             "layer": self.layer,
             "user": username,

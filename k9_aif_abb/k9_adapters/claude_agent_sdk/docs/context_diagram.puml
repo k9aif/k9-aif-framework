@@ -30,7 +30,7 @@ package "ClaudeAgentSDKOrchestratorAdapter\n(sole capability broker)" as OrchAda
   rectangle "can_use_tool\n(egress gate, every tool call,\ntop-level AND subagent)" as CanUseTool
   rectangle "Subagent definitions\n(tools subset of _capabilities,\nvalidated at construction)" as Subagents
   rectangle "Final-output egress\napply_post_governance()" as FinalEgress
-  rectangle "Audit trail\npublish_event()" as Audit
+  rectangle "Audit trail\npublish_status()" as Audit
 }
 
 package "k9x_Shield (ShieldGovernance)" as Shield {

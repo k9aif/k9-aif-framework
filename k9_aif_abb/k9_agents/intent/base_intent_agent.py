@@ -134,5 +134,5 @@ class BaseIntentAgent(BaseAgent):
         result["confidence"] = score
 
         log.info("[%s] intent=%s confidence=%.2f", self.layer, intent, score)
-        self.publish_event({"type": "IntentClassified", "intent": intent, "confidence": score})
+        self.notify_monitor({"type": "IntentClassified", "intent": intent, "confidence": score})
         return result

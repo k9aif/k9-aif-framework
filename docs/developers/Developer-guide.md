@@ -363,8 +363,8 @@ class BaseAgent(ABC):
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise NotImplementedError("Subclasses must implement execute()")
 
-    def publish_event(self, event: Dict[str, Any]) -> None:
-        """Publish event to message bus and monitor."""
+    def notify_monitor(self, event: Dict[str, Any]) -> None:
+        """Hand an event to the monitor (if any) and the log. Never Kafka."""
 
     async def apply_pre_governance(self, payload, ctx=None) -> Dict[str, Any]:
         """Apply governance pre-process hook before payload is sent outward."""
@@ -917,7 +917,7 @@ class MyAssessmentAgent(BaseAgent):
         # orchestrator, which record it (see 6.5). Never return "[WARN] ..." in place of a result.
         resp = llm_invoke(self.config, req)
 
-        self.publish_event({"type": "AssessmentCompleted", "agent": self.layer})
+        self.notify_monitor({"type": "AssessmentCompleted", "agent": self.layer})
 
         return {
             "agent": self.layer,
@@ -997,12 +997,12 @@ The `execute()` method is the agent's only public interface to the framework. It
 
 The payload passed to an agent in a squad contains the original event plus all results from prior agents in the flow. Agents access prior results via standard dict keys.
 
-### 5.5 Event Publishing Expectations
+### 5.5 Reporting Outcomes to the Monitor
 
-Agents should publish events for significant outcomes:
+Agents report significant outcomes to the monitor:
 
 ```python
-self.publish_event({
+self.notify_monitor({
     "type": "AssessmentCompleted",
     "agent": self.layer,
     "correlation_id": payload.get("correlation_id"),
@@ -1011,7 +1011,7 @@ self.publish_event({
 })
 ```
 
-In standard K9-AIF solutions, agents are wired without a `message_bus`. Their `publish_event()` calls reach the monitor and logger only — not Kafka. This is intentional: agents share data sequentially through the squad flow, not through messaging.
+Agents are built without a `message_bus` (Inspector K9-KAF-001 reports one that is), so `notify_monitor()` reaches the monitor and logger only — never Kafka. Before 1.24 this method was called `publish_event()`; that name remains as a deprecated alias until 1.25. This is intentional: agents share data sequentially through the squad flow, not through messaging.
 
 ### 5.6 Governance Integration Expectations
 
@@ -1202,11 +1202,8 @@ class MyRouter(BaseRouter):
             self.logger.warning("[%s] No orchestrator for event_type: %s", self.layer, event_type)
             return {"status": "unrouted", "event_type": event_type}
 
-        self.publish_event({
-            "type": "EventRouted",
-            "event_type": event_type,
-            "correlation_id": payload.get("correlation_id"),
-        })
+        self.logger.info("[%s] routed event_type=%s correlation_id=%s", self.layer,
+                         event_type, payload.get("correlation_id"))
 
         return orchestrator.execute_flow(payload)
 
@@ -1479,7 +1476,7 @@ class ComplianceGapAgent(BaseValidationLoopAgent):
 
 ### 8.8 Telemetry Events
 
-`BaseValidationLoopAgent` emits these events via `publish_event()` at each step:
+`BaseValidationLoopAgent` emits these events via `notify_monitor()` at each step:
 
 | Event Type | When Emitted |
 |---|---|
@@ -2623,20 +2620,18 @@ Semantic screening — an LLM call (e.g. IBM Granite Guardian) wrapping an agent
 
 ## 15. Messaging, Events, and Telemetry
 
-### 15.1 publish_event()
+### 15.1 notify_monitor()
 
-`publish_event()` is defined on `BaseAgent` and routes events to the wired monitor and message bus:
+`notify_monitor()` is defined on `BaseAgent` and hands an event to the agent's monitor and the log:
 
 ```python
-def publish_event(self, event: Dict[str, Any]):
-    if self.message_bus:
-        self.message_bus.publish(event)   # → Kafka / Redpanda if wired
+def notify_monitor(self, event: Dict[str, Any]) -> None:
     if self.monitor:
         self.monitor.record_event(event)  # → Prometheus / OTEL / console
-    self.logger.info(f"[{self.layer}] Event published: {event}")
+    self.logger.info("[%s] Event: %s", self.layer, event)
 ```
 
-In standard K9-AIF solutions, agents are constructed without a `message_bus`. Their events reach the monitor and logger. Only the Router and Orchestrator are wired with a message bus for Kafka integration.
+It never publishes to Kafka: agents are constructed without a `message_bus`, and Inspector K9-KAF-001 reports one that is. Only the Router (`route()`, `message_bus.publish_to()`) and the Orchestrators (`publish_status()`, `message_bus.publish_to()`) publish. Before 1.24 this method was called `publish_event()`; that name is a deprecated alias until 1.25. Every shipped monitor implements `record_event()` from 1.23.1. Only the Router and Orchestrator are wired with a message bus for Kafka integration.
 
 ### 15.2 Message Bus Abstraction
 
@@ -3422,7 +3417,7 @@ Before submitting any agent or orchestrator:
 [ ] Flow steps are dicts with 'agent:' key (not plain strings)
 [ ] Tests mock llm_invoke, not internal LLM classes
 [ ] _TestGovernance defined inline in test file
-[ ] publish_event() called for significant outcomes
+[ ] notify_monitor() called for significant outcomes
 [ ] enforce_governance() called if agent handles regulated data
 [ ] K9_ENV set appropriately for test environment
 ```
@@ -3562,21 +3557,22 @@ Use HIL when an agent cannot decide with sufficient confidence, or when policy r
 
 ### 22.2 Wiring a HIL Breakpoint
 
-In your orchestrator, when the agent's confidence is below threshold:
+The agent (or squad) raises `RequiresHIL` when a person must decide; the orchestrator catches it and
+hands off to `handle_requires_hil()`, which publishes the HIL task, persists the pending row and returns:
 
 ```python
+from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+
+# in the agent
 if result.get("confidence", 1.0) < self.config.get("hil_threshold", 0.8):
-    self.publish_event({
-        "type": "hil.task.created",
-        "correlation_id": payload.get("correlation_id"),
-        "reply_to": "workflow.eoc.hil.response",
-        "title": f"Review: {payload.get('claim_id')}",
-        "description": "Agent confidence below threshold",
-        "ttl_hours": 168,
-        "ttl_action": "reject",
-        "payload": result,
-    })
-    return {"status": "awaiting_hil", "correlation_id": payload.get("correlation_id")}
+    raise RequiresHIL(reason="Agent confidence below threshold", queue="claims",
+                      context={"claim_id": payload.get("claim_id"), "result": result})
+
+# in the orchestrator's execute_flow()
+try:
+    results = self.execute_squads([self.claims_squad], payload)
+except RequiresHIL as exc:
+    return self.handle_requires_hil(exc, payload)   # {"status": "pending_hil", "correlation_id": ...}
 ```
 
 The orchestrator publishes and exits. No thread blocked. No resource consumed while waiting.
@@ -4059,9 +4055,9 @@ The Chain of Responsibility pattern passes a request along a chain of handlers u
 
 ### 27.6 Observer / Eventing
 
-**Where used:** `publish_event()`, `K9EventBus`, `BaseMonitor`
+**Where used:** `notify_monitor()`, `K9EventBus`, `BaseMonitor`
 
-The Observer pattern notifies interested parties of events without coupling the emitter to the observers. `publish_event()` decouples agents from the monitoring, messaging, and telemetry systems that consume their events.
+The Observer pattern notifies interested parties of events without coupling the emitter to the observers. `notify_monitor()` decouples agents from the monitoring, messaging, and telemetry systems that consume their events.
 
 ### 27.7 Adapter
 

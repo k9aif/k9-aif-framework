@@ -83,7 +83,7 @@ Agents plug into the K9-AIF framework via:
 - ``BaseAgent`` — lifecycle, governance hooks, monitor, message bus
 - ``ModelRouterFactory.get_router(config)`` — LLM routing via EOCModelRouter
 - ``InferenceRequest`` — typed LLM request with task_type and sensitivity
-- ``publish_event(event)`` — puts events on the K9EventBus (Redpanda)
+- ``notify_monitor(event)`` — hands an event to the monitor and the log (agents never publish to the K9EventBus)
 
 Example Usage
 -------------

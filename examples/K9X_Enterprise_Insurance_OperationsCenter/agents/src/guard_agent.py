@@ -139,7 +139,7 @@ class GuardAgent(BaseAgent):
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         }
 
-        self.publish_event({
+        self.notify_monitor({
             "type": "GuardCheckCompleted",
             "agent": "GuardAgent",
             "correlation_id": correlation_id,

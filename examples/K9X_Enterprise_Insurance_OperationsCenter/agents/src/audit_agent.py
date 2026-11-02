@@ -81,7 +81,7 @@ class AuditAgent(BaseAgent):
 
         self._persist_entry(entry)
 
-        self.publish_event({
+        self.notify_monitor({
             "type":         "AuditEntryWritten",
             "audit_id":     audit_id,
             "correlation_id": correlation_id,

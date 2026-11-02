@@ -55,7 +55,7 @@ class K9RetrievalAgent(BaseAgent):
 
         context_text = "\n\n---\n\n".join(h.get("text", "") for h in hits if h.get("text"))
 
-        self.publish_event({"type": "RetrievalCompleted", "query": query[:100], "hits": len(hits)})
+        self.notify_monitor({"type": "RetrievalCompleted", "query": query[:100], "hits": len(hits)})
         self.logger.info("[%s] Retrieved %d chunks for query: %s", self.layer, len(hits), query[:80])
 
         return {

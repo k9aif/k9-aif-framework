@@ -53,7 +53,7 @@ class GraphSyncAgent(BaseAgent):
         operations = self._build_operations(payload, event_type)
         results = self._execute_operations(operations)
 
-        self.publish_event({
+        self.notify_monitor({
             "type": "GraphSyncCompleted",
             "correlation_id": correlation_id,
             "operations_count": len(operations),

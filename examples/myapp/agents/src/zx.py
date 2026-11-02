@@ -28,7 +28,7 @@ class Zx(BaseAgent):
             self.logger.error("[%s] LLM unavailable: %s", self.layer, exc)
             return {"agent": "Zx", "output": "[WARN] LLM unavailable", "confidence": 0.0}
 
-        self.publish_event({"type": "ZxCompleted", "agent": "Zx"})
+        self.notify_monitor({"type": "ZxCompleted", "agent": "Zx"})
         return {
             "agent": "Zx",
             "output": resp.output.strip(),

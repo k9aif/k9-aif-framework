@@ -32,7 +32,7 @@ package "K9-AIF Core ABBs" <<Rectangle>> {
     +apply_pre_governance(payload, ctx): dict
     +apply_post_governance(payload, ctx): dict
     +apply_zero_trust(payload, ctx): dict
-    +publish_event(event): None
+    +publish_status(status, context): None
   }
 
 }

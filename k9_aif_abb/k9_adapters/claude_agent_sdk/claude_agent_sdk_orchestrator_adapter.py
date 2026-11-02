@@ -71,7 +71,7 @@ Beyond tool-call egress, this adapter also applies:
   PIIBoundaryCheck, ...) before being returned, catching anything in the
   finished response that individual tool-call checks wouldn't see.
 - **Audit trail** — ``publish_status()`` (inherited from ``BaseOrchestrator``
-  -- *not* ``publish_event()``, which is a ``BaseAgent``-only method;
+  -- *not* ``notify_monitor()``, which is a ``BaseAgent``-only method;
   ``BaseRouter`` has neither) fires at session start and completion.
 
 CONFORMANCE TIER — read this before assuming parity with a native K9-AIF

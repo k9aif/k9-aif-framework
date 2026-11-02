@@ -150,7 +150,7 @@ class DoclingParser(BaseAgent):
             result = {"status": "error", "error": f"File not found: {path}"}
         else:
             result = self.convert(filename, path.read_bytes())
-        self.publish_event({
+        self.notify_monitor({
             "type": "DocumentConverted" if result["status"] == "ok" else "DocumentConversionFailed",
             "agent": "DoclingParser",
             "filename": filename,

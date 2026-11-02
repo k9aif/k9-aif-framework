@@ -52,7 +52,7 @@ class RFPAnalysisAgent(BaseAgent):
         resp = llm_invoke(self.config, req)
         output = resp.output.strip()
 
-        self.publish_event({
+        self.notify_monitor({
             "type": "RFPAnalysisCompleted",
             "chunks_analyzed": retrieved_count,
         })

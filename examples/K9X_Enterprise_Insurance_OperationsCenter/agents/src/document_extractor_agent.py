@@ -184,7 +184,7 @@ class DocumentExtractorAgent(K9ValidationLoopAgent):
         }
 
         self._persist(loop_ctx.payload, result)
-        self.publish_event({
+        self.notify_monitor({
             "type":              "DocumentExtractionCompleted",
             "document_id":        document_id,
             "correlation_id":     correlation_id,

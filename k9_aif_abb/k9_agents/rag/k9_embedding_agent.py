@@ -72,7 +72,7 @@ class K9EmbeddingAgent(BaseAgent):
         if ids:
             self._vectordb.insert_batch(ids, embeddings, documents, metadatas)
 
-        self.publish_event({"type": "EmbeddingsGenerated", "count": len(ids)})
+        self.notify_monitor({"type": "EmbeddingsGenerated", "count": len(ids)})
         self.logger.info("[%s] Indexed %d chunks into VectorDB", self.layer, len(ids))
 
         return {

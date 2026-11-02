@@ -84,7 +84,7 @@ class <AgentName>(BaseAgent):
             self.logger.error("[%s] LLM unavailable: %s", self.layer, exc)
             return {"agent": "<AgentName>", "output": "[WARN] LLM unavailable", "confidence": 0.0}
 
-        self.publish_event({"type": "<AgentName>Completed", "agent": "<AgentName>"})
+        self.notify_monitor({"type": "<AgentName>Completed", "agent": "<AgentName>"})
         return {
             "agent": "<AgentName>",
             "output": resp.output.strip(),

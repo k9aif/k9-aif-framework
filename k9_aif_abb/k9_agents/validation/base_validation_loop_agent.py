@@ -341,13 +341,8 @@ class BaseValidationLoopAgent(BaseAgent):
     # ------------------------------------------------------------------
 
     def _emit(self, event_type: str, data: Dict[str, Any]) -> None:
-        # publish_event() is confirmed on BaseAgent. The hasattr guard protects
-        # against test doubles or future subclasses that omit the mixin.
         event = {"type": event_type, "agent": self.layer, **data}
-        if hasattr(self, "publish_event"):
-            self.publish_event(event)
-        else:
-            self.logger.info("[%s] event: %s", self.layer, event)
+        self.notify_monitor(event)
 
     def _extract_confidence(self, observation: Any) -> float:
         # Clamp to [0.0, 1.0] — bad subclasses must not break confidence semantics.

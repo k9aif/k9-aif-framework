@@ -345,10 +345,7 @@ class BaseCriticActorAgent(BaseAgent):
 
     def _emit(self, event_type: str, data: Dict[str, Any]) -> None:
         event = {"type": event_type, "agent": self.layer, **data}
-        if hasattr(self, "publish_event"):
-            self.publish_event(event)
-        else:
-            self.logger.info("[%s] event: %s", self.layer, event)
+        self.notify_monitor(event)
 
     def _extract_score(self, feedback: Any) -> float:
         if isinstance(feedback, dict):

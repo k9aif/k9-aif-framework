@@ -211,7 +211,7 @@ signatures that don't match `BaseAgent.__init__`.
 
 No dedicated security-monitoring subsystem exists (e.g., no SIEM
 integration, no anomaly-detection-over-time component). The nearest
-capability is the `publish_event()` audit trail (Router/Orchestrator only,
+capability is the audit trail: `publish_status()` on Orchestrators (and routing on the Router; agents' `notify_monitor()` reaches the monitor only, both
 per CLAUDE.md's Kafka ownership convention) and `RuntimePolicyEnforcer`'s
 `print()`-based audit logging (see Zero Trust section — not a structured
 log sink). See Gap Analysis, Gap G6.

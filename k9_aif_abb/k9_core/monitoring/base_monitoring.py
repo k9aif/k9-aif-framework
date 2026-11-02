@@ -41,7 +41,7 @@ class BaseMonitor(BaseComponent, ABC):
 
     # ---------- Structured events ----------
     def record_event(self, event: Dict[str, Any]) -> None:
-        """Record a structured event (``BaseAgent.publish_event()``,
+        """Record a structured event (``BaseAgent.notify_monitor()``,
         ``BaseOrchestrator.publish_status()``, ``K9EventRouter`` routing) as an
         observation named by its ``type``, else its ``status``, else ``"event"``.
 

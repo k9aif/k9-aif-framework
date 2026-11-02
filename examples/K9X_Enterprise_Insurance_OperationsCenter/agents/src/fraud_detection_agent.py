@@ -181,7 +181,7 @@ class FraudDetectionAgent(K9ValidationLoopAgent):
         }
 
         self._persist(loop_ctx.payload, result)
-        self.publish_event({
+        self.notify_monitor({
             "type":           "FraudAssessmentCompleted",
             "correlation_id":  correlation_id,
             "risk_score":      result["risk_score"],

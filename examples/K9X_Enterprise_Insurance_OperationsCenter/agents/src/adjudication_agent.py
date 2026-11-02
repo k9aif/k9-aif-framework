@@ -107,7 +107,7 @@ class AdjudicationAgent(BaseAgent):
 
         self._persist(result)
 
-        self.publish_event({
+        self.notify_monitor({
             "type": "AdjudicationCompleted",
             "agent": "AdjudicationAgent",
             "correlation_id": correlation_id,

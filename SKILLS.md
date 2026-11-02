@@ -98,7 +98,7 @@ class MyAgent(BaseAgent):
         }
 
         # 5. Publish event for audit trail
-        self.publish_event({"type": "MyAgentCompleted", "agent": "MyAgent"})
+        self.notify_monitor({"type": "MyAgentCompleted", "agent": "MyAgent"})
 
         return result
 ```
@@ -516,7 +516,7 @@ def test_llm_unavailable_propagates():
 
 ## Skill 7 — Event publishing — Router and Orchestrator only
 
-**Only the Router and the Orchestrators publish to Kafka; agents and squads never do.** This is a framework rule, enforced by Inspector **K9-KAF-001**: it reports agent or squad code that publishes and, from 1.21, any agent constructed with a `message_bus`. `BaseAgent.publish_event()` therefore reaches only the monitor (`monitor.record_event()`, when the agent has a monitor) and the log, never Kafka.
+**Only the Router and the Orchestrators publish to Kafka; agents and squads never do.** This is a framework rule, enforced by Inspector **K9-KAF-001**: it reports agent or squad code that publishes and, from 1.21, any agent constructed with a `message_bus`. `BaseAgent.notify_monitor()` therefore reaches only the monitor (`monitor.record_event()`, when the agent has a monitor) and the log, never Kafka. (Before 1.24 it was named `publish_event()`, which remains a deprecated alias until 1.25.)
 
 Agents within a Squad share data sequentially through the flow — each agent's output enriches the shared execution context, which is passed as the input to the next agent. The context grows progressively richer as it moves through the flow. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
 
@@ -553,7 +553,7 @@ A custom Router subclass publishes through its bus:
 self.message_bus.publish_to(resolved_topic, event)
 ```
 
-`BaseRouter` has no `publish_event()`; calling it raises `AttributeError`.
+`BaseRouter` has no `notify_monitor()` (or the old `publish_event()`); calling either raises `AttributeError`.
 
 ### Orchestrator — publishing a result event
 
@@ -570,7 +570,7 @@ self.message_bus.publish_to("claims.results", {...})
 ```
 
 `publish_status()` publishes on the orchestrator's bus and records the event with its monitor.
-`BaseOrchestrator` has no `publish_event()` (that method is `BaseAgent`'s, and reaches no bus).
+`BaseOrchestrator` has no `notify_monitor()` (that method is `BaseAgent`'s, and reaches no bus).
 
 ---
 
@@ -739,7 +739,7 @@ finalize_on_max_iterations: true   # true → finalize; false → escalate on ti
 
 `loop_started` · `hypothesis_generated` · `validation_tool_invoked` · `observation_evaluated` · `loop_continued` · `loop_finalized` · `loop_escalated` · `loop_failed`
 
-All go through `publish_event()` — wired to monitor + message_bus if configured.
+All go through `notify_monitor()`: the agent's monitor, if it has one, and the log. Never Kafka.
 
 ### OOB implementation — K9ValidationLoopAgent
 
@@ -1050,7 +1050,7 @@ Reference: `4Ds/AI Fluency_ Key Terminology Cheat Sheet.pdf`
 | **Delegation** | Agent scope, HIL boundaries, interaction mode | Agent YAML `delegation:` section, SA design decision |
 | **Description** | Agent prompt engineering — role, goal, instructions, output format | Agent YAML `role:`, `goal:`, `instructions:`, `output_schema:` |
 | **Discernment** | Validation loops, governance checks, quality evaluation | `K9ValidationLoopAgent` config, governance pipeline |
-| **Diligence** | Audit trail, transparency, deployment verification | Governance enforcement, `publish_event()`, record keeping |
+| **Diligence** | Audit trail, transparency, deployment verification | Governance enforcement, `notify_monitor()` / `publish_status()`, record keeping |
 
 ### Delegation — deciding what the agent does vs what stays human
 
@@ -1091,7 +1091,7 @@ These are already first-class in the K9-AIF agent YAML:
 | 4D sub-competency | K9-AIF mechanism |
 |---|---|
 | **Creation Diligence** — model selection rationale | Model catalog capabilities, `K9ModelRouter` scoring |
-| **Transparency Diligence** — disclosing AI role | `publish_event()` audit trail, governance logging |
+| **Transparency Diligence** — disclosing AI role | `notify_monitor()` / `publish_status()` audit trail, governance logging |
 | **Deployment Diligence** — verifying outputs | `enforce_governance()`, HIL escalation via `ValidationDisposition.ESCALATE` |
 
 ### Agent YAML with 4D annotations

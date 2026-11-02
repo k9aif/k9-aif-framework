@@ -118,7 +118,7 @@ class ClaimsTriageAgent(BaseAgent):
             result["priority"] = "critical"
             result["confidence"] = 0.0
 
-        self.publish_event({
+        self.notify_monitor({
             "type": "ClaimsTriageCompleted",
             "agent": "ClaimsTriageAgent",
             "correlation_id": correlation_id,

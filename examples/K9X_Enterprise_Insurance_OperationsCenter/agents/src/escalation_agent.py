@@ -107,7 +107,7 @@ class EscalationAgent(BaseAgent):
 
             self._persist(ticket)
 
-            self.publish_event({
+            self.notify_monitor({
                 "type": "EscalationRaised",
                 "ticket_id": ticket_id,
                 "correlation_id": correlation_id,

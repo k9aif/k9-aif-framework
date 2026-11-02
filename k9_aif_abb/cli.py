@@ -187,8 +187,8 @@ GoF PATTERNS (structurally present — not decorative):
   Chain of Resp.  GovernancePipeline
                   → pre_process → agent → post_process
 
-  Observer        publish_event() on every agent and orchestrator
-                  → audit trail, monitoring, Kafka events
+  Observer        notify_monitor() on agents → monitor + log (never Kafka)
+                  publish_status() on orchestrators → message bus + monitor
 
 POSA PATTERNS:
 
@@ -445,7 +445,7 @@ class MyAgent(BaseAgent):
             task_type="reasoning",   # general | reasoning | extraction | summarization
         )
         resp = llm_invoke(self.config, req)
-        self.publish_event({"type": "MyAgentCompleted", "job_id": payload.get("job_id")})
+        self.notify_monitor({"type": "MyAgentCompleted", "job_id": payload.get("job_id")})
         return {"agent": "MyAgent", "output": resp.output, "model": resp.model_alias}
 ''',
 
@@ -459,7 +459,7 @@ class MyRouter(BaseRouter):
 
     def route(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         event_type = payload.get("event_type", "")
-        self.publish_event({"type": "Routed", "event_type": event_type})
+        self.logger.info("[%s] routed event_type=%r", self.layer, event_type)
         # Return orchestrator result
         from my_orchestrator import MyOrchestrator
         return MyOrchestrator(config=self.config).execute_flow(payload)
@@ -537,7 +537,7 @@ class MyAgent(BaseAgent):
             task_type="general",
         )
         resp = llm_invoke(self.config, req)
-        self.publish_event({"type": "MyAgentCompleted"})
+        self.notify_monitor({"type": "MyAgentCompleted"})
         return {"agent": "MyAgent", "output": resp.output, "model": resp.model_alias}
 ''',
 
@@ -778,7 +778,7 @@ class MyAgent(BaseAgent):
         prompt = f"Role: {self.config.get('role')}\\nInput: {payload}"
         req = InferenceRequest(prompt=prompt, task_type=self.config.get("model", "general"))
         resp = llm_invoke(self.config, req)
-        self.publish_event({"type": "MyAgentCompleted"})
+        self.notify_monitor({"type": "MyAgentCompleted"})
         return {"agent": "MyAgent", "output": resp.output.strip(), "model_used": resp.model_alias}
 ```
 

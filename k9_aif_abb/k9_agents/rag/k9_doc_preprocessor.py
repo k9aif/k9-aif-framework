@@ -34,7 +34,7 @@ class K9DocPreprocessor(BaseAgent):
         sections = self._extract_sections(document)
         chunks = self._chunk_sections(sections)
 
-        self.publish_event({"type": "DocumentPreprocessed", "chunk_count": len(chunks)})
+        self.notify_monitor({"type": "DocumentPreprocessed", "chunk_count": len(chunks)})
         self.logger.info("[%s] Preprocessed document into %d chunks", self.layer, len(chunks))
 
         return {

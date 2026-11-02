@@ -4,6 +4,34 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.24.0] — 2026-11-02
+
+### `BaseAgent.notify_monitor()` replaces `publish_event()`
+
+- **Renamed.** The name `publish_event()` suggested a Kafka publish, but agents are built without a message
+  bus (Inspector K9-KAF-001), so the method only ever reached the monitor and the log. `notify_monitor(event)`
+  does exactly that: `monitor.record_event(event)` when the agent has a monitor, and a log line. It never
+  publishes, even on an agent that was given a bus.
+- **`publish_event()` is a deprecated alias until 1.25**, with its previous behaviour unchanged. Each call raises
+  a `DeprecationWarning`, and each agent class logs one warning line the first time it calls it.
+- Framework agents (`BaseValidationLoopAgent` and `BaseCriticActorAgent` step events, the RAG, retrieval, intent
+  and web-search agents), the examples (EOC, acme, rfp_analyzer, myapp) and the CLI templates use the new name.
+- **Fix: the CLI Router template** called `self.publish_event()`, which `BaseRouter` does not have, so a router
+  generated from it raised `AttributeError` on its first `route()`; it now logs the routing decision.
+- **Docs.** Developer Guide 5.5, 8.8, 15.1 and 27.6, SKILLS.md, CLAUDE.md, the add-agent plugin skill, the security
+  capability inventory and the Claude Agent SDK adapter notes and diagrams use the new name and describe the
+  Kafka-ownership rule as enforced. Developer Guide 22.2 now shows the real HIL breakpoint (`RequiresHIL` raised by
+  the agent, `handle_requires_hil()` in the orchestrator) instead of an orchestrator calling `publish_event()`,
+  which `BaseOrchestrator` does not have.
+- **Tests.** `tests/test_notify_monitor_1_24.py` (11 tests, real monitors): the new method reaches the monitor and
+  never a bus, the alias warns and keeps its behaviour, the warning is logged once per class, the loop agents emit
+  through the new name, and no framework code outside the alias calls the old one.
+
+**Upgrading:** replace `self.publish_event(` with `self.notify_monitor(` in your agents. Nothing breaks in 1.24;
+the alias is removed in 1.25. Orchestrators keep `publish_status()`, Routers `route()` / `message_bus.publish_to()`.
+
+---
+
 ## [1.23.1] — 2026-11-02
 
 ### Monitoring: every shipped monitor accepts `record_event()`

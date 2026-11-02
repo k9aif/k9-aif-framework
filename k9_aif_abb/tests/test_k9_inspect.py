@@ -102,7 +102,7 @@ def test_agent_not_extending_abb_and_kafka_and_decoupling(tmp_path):
 
 def test_agent_given_a_message_bus_is_a_kafka_ownership_violation(tmp_path):
     """1.21: the rule also catches an orchestrator handing an agent a bus, so
-    BaseAgent.publish_event() can only reach the monitor and log."""
+    BaseAgent.notify_monitor() can only reach the monitor and log."""
     clean(tmp_path)
     write(tmp_path, "orchestrators/o.py", """
         from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator

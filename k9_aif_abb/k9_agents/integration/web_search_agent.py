@@ -74,7 +74,7 @@ class WebSearchAgent(BaseMCPAgent):
         raw     = self._run_async(self._search(query))
         results = self._parse(raw)
 
-        self.publish_event({
+        self.notify_monitor({
             "type":         "WebSearchCompleted",
             "agent":        self.layer,
             "query":        query,
