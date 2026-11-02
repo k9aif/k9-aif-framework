@@ -4,6 +4,26 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.23.1] — 2026-11-02
+
+### Monitoring: every shipped monitor accepts `record_event()`
+
+- **Fix.** `BaseAgent.publish_event()`, `BaseOrchestrator.publish_status()` and `K9EventRouter.route()`
+  hand their event to `monitor.record_event()`, but no monitor defined it (`BaseMonitor`, `MonitorServer`,
+  `ConsoleMonitor`, `PrometheusMonitor`, `LoggerMonitor`). With a real monitor attached each call raised
+  `AttributeError`; `K9EventRouter.route()` raised after the event was already published, so a caller that
+  retried could publish it twice. Monitors default to `None` (and `SquadLoader` gives agents none), so a
+  default setup never reached this path.
+- `BaseMonitor.record_event(event)` now records the event as an observation named by its `type`, else its
+  `status`, else `"event"`, through the monitor's own `observe()`; `LoggerMonitor` gets the same method.
+- **Tests.** The previous test used `MagicMock`, which accepts any method and so passed while the real
+  monitors failed. `tests/test_monitor_record_event_1_23_1.py` runs the three callers with the real
+  `MonitorServer`, `ConsoleMonitor`, `LoggerMonitor` and `PrometheusMonitor` (10 tests; all fail on 1.23.0).
+- No API change. Kafka ownership is unchanged: agents are built without a message bus (K9-KAF-001), so
+  `publish_event()` reaches the monitor and the log only.
+
+---
+
 ## [1.23.0] — 2026-11-01
 
 ### Delivery: a consumed event is never skipped

@@ -516,11 +516,11 @@ def test_llm_unavailable_propagates():
 
 ## Skill 7 — Event publishing — Router and Orchestrator only
 
-`publish_event()` is defined on `BaseAgent` and will publish to Kafka if a `message_bus` is passed at construction. By convention in K9-AIF solutions, **only the Router and Orchestrator are wired with a message bus** — agents are constructed without one.
+**Only the Router and the Orchestrators publish to Kafka; agents and squads never do.** This is a framework rule, enforced by Inspector **K9-KAF-001**: it reports agent or squad code that publishes and, from 1.21, any agent constructed with a `message_bus`. `BaseAgent.publish_event()` therefore reaches only the monitor (`monitor.record_event()`, when the agent has a monitor) and the log, never Kafka.
 
 Agents within a Squad share data sequentially through the flow — each agent's output enriches the shared execution context, which is passed as the input to the next agent. The context grows progressively richer as it moves through the flow. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
 
-A2A via Kafka is architecturally possible — wire an agent with a `message_bus` at construction and `publish_event()` will publish to a Kafka topic. This is not used in standard K9-AIF solutions but is a valid extension for rare scenarios requiring loosely coupled or async agent handoffs across squads.
+Do not wire an agent with a `message_bus` for agent-to-agent messaging: K9-KAF-001 reports it. An agent that needs a human decision raises `RequiresHIL`; the orchestrator that catches it publishes the HIL task (see the HIL skill).
 
 ### Kafka event topology
 
@@ -544,29 +544,33 @@ app_backend → eoc-events → [IntentAgent] → Router (publishes) → eoc-clai
 
 ### Router — publishing a domain event
 
-`publish_event()` is called on the Router after routing decision is made:
+`K9EventRouter.route(payload)` resolves the topic and publishes the event itself
+(`message_bus.publish_to(topic, payload)`), so a Router built on it publishes nothing by hand.
+A custom Router subclass publishes through its bus:
 
 ```python
-# Inside a Router subclass (extends BaseRouter)
-self.publish_event({
-    "type": "ClaimRouted",
-    "event_type": event.get("event_type"),
-    "topic": resolved_topic,
-    "correlation_id": event.get("correlation_id"),
-})
+# Inside a Router subclass (extends BaseRouter), built with message_bus=
+self.message_bus.publish_to(resolved_topic, event)
 ```
+
+`BaseRouter` has no `publish_event()`; calling it raises `AttributeError`.
 
 ### Orchestrator — publishing a result event
 
 ```python
 # Inside an Orchestrator subclass (extends BaseOrchestrator)
-self.publish_event({
-    "type": "FlowCompleted",
+self.publish_status("completed", {
     "squad_id": _SQUAD_ID,
     "correlation_id": payload.get("correlation_id"),
     "result_summary": result.get("status"),
 })
+
+# or, to a specific downstream topic:
+self.message_bus.publish_to("claims.results", {...})
 ```
+
+`publish_status()` publishes on the orchestrator's bus and records the event with its monitor.
+`BaseOrchestrator` has no `publish_event()` (that method is `BaseAgent`'s, and reaches no bus).
 
 ---
 

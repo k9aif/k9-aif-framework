@@ -39,6 +39,17 @@ class BaseMonitor(BaseComponent, ABC):
         """Record an observation or structured event."""
         raise NotImplementedError
 
+    # ---------- Structured events ----------
+    def record_event(self, event: Dict[str, Any]) -> None:
+        """Record a structured event (``BaseAgent.publish_event()``,
+        ``BaseOrchestrator.publish_status()``, ``K9EventRouter`` routing) as an
+        observation named by its ``type``, else its ``status``, else ``"event"``.
+
+        Before 1.23.1 no monitor defined this, so those callers raised
+        AttributeError whenever a real monitor was attached."""
+        name = event.get("type") or event.get("status") or "event"
+        self.observe(str(name), event)
+
     # ---------- Optional Lifecycle Hooks ----------
     def start(self) -> None:
         self.logger.debug(f"[{self.layer}:{self.name}] start() called (no-op)")
