@@ -148,11 +148,11 @@ These principles govern how K9-AIF is designed and how solutions built on it sho
 
 ### 1.8 Developer Quick Start
 
-**Do you need CrewAI? LangChain? Any other framework?**
+**Do you need CrewAI? LangGraph? Any other framework?**
 
 No. K9-AIF is end-to-end. It provides the router, orchestrators, squads, agents, model routing, governance, messaging, persistence, and observability — out of the box, in one framework. You do not need to assemble these from separate libraries or integrate third-party orchestration tools to build a production-grade multi-agent AI system.
 
-CrewAI and LangChain are supported as optional execution backends for teams that already use them. They are not required.
+CrewAI and LangGraph are supported as optional execution backends for teams that already use them. They are not required.
 
 **The fastest path to a working system:**
 
