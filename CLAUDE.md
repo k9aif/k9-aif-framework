@@ -24,6 +24,17 @@ orchestrator adapter (`k9_adapters/crewai/`, `k9_adapters/langgraph/`,
 `k9_adapters/claude_agent_sdk/`), which adds K9-AIF governance at its
 boundary.
 
+## Capability index: read before designing anything
+
+Every ABB, what ships out of the box for it, and the factory that builds it
+(imported below; `k9_aif_abb/tests/test_capability_index.py` keeps it complete).
+Before proposing a new class, mechanism or config DSL, find the concern here
+and build on or extend the ABB that already owns it. Business rules, limits
+and policies are SBB content: the framework provides the adapters
+(`BaseRulesAdapter`: `K9RulesAdapter`, `RestRulesAdapter`), never the rules.
+
+@CAPABILITIES.md
+
 Diagrams default to PlantUML. BPMN swim lanes: horizontal bands top-to-bottom,
 labels left, activities left-to-right within a lane.
 
@@ -618,6 +629,9 @@ this automatically today; get it wrong and replies are silently dropped
   `env-example` template — copy it, never commit the real `.env`
 - No `__pycache__`/`.pyc` — `.gitignore` present before first commit
 - Three-layer decoupling preserved (see above)
+- A new or removed `Base*` ABB, or a new OOB implementation, has its row in
+  `CAPABILITIES.md` in the same commit (`test_capability_index.py` fails on a
+  missing ABB or a class name that doesn't exist)
 - After any `k9_aif_abb/` change: `./generate_pdoc.sh` (the `./` matters —
   without it, pdoc silently documents whatever `k9-aif` is pip-installed in
   `.venv` instead of the local tree) and commit `docs/pydocs/` in the same
