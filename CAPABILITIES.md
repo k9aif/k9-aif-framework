@@ -61,6 +61,14 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseSecretManager` | `EnvSecretAdapter`, `VaultSecretAdapter` (HashiCorp Vault KV v2), `AwsSecretAdapter`, `IbmSecretAdapter` (IBM Secrets Manager) | `SecretManagerFactory`, `SecurityFactory` |
 | (functions) | `@govern_tool_call`, `screen_tool_call`, `@govern_tool_result`, `screen_tool_result` | `k9_security/tool_result_guard.py` |
 
+## Tool gate (1.25.0, opt-in: `security.tool_gate.enabled`)
+
+| ABB | OOB | Built by / where |
+|---|---|---|
+| `BaseToolDispatcher` | the dispatcher itself; `ToolCallPendingReview` (a `RequiresHIL`), `ToolCallDenied` | `BaseToolDispatcher.from_config()`; built per agent by the `BaseAgent` wrapper, per orchestrator by `resume_tool_call()`; `k9_core/tools/` |
+| `BaseToolCallAuditLog` | `SQLiteToolCallAuditLog` (default `./runtime/tool_calls.db`), `InMemoryToolCallAuditLog` | `security.tool_gate.audit` |
+| (value types) | `ToolCall`, `ToolRegistry`, `ToolSpec`, `RecordCheck`, `ToolCallDecision` | `security.tool_gate.tools` |
+
 ## Integration and tools
 
 | ABB | OOB | Built by / where |

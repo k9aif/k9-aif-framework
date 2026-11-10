@@ -248,6 +248,16 @@ capabilities:
     summary: A model-proposed tool action (shell command, SQL, internal URL) is refused before it executes, even when the agent's input and final output are benign.
     limits: Opt-in per tool function (decorator); the Claude Agent SDK adapter governs calls through can_use_tool instead. With no governance configured it refuses in production (1.22; before, it let every call through).
 
+  - id: tool_gate
+    kind: component
+    component: k9_aif_abb.k9_core.tools.BaseToolDispatcher
+    stage: egress
+    mechanism: every BaseConnector.call_tool() inside a governed agent call is intercepted before it runs (1.25.0, security.tool_gate.enabled); Shield screens it, declared arguments are checked against their record through k9x Origin by the dispatcher itself, the solution's rules (BaseRulesAdapter) decide allow / deny / hil, and a held call runs only on a valid approval of that exact call, at most once; every step is in an append-only audit log
+    enabled_by_default: false
+    covers: {LLM06: partial, ASI01: partial, ASI02: partial}
+    summary: An allowed tool called with a wrong value the model extracted (for example a payment to an account that isn't the vendor's) is held for a person instead of running, whether or not the agent's code asked for review; undeclared tools count as irreversible.
+    limits: Opt-in in 1.x (the default in 2.0). Covers calls made through a BaseConnector inside a governed agent call; agent code that opens its own connection or process is flagged by Inspector K9-TOOL-001, not blocked at runtime. Every request is treated as carrying outside content. A value that matches a record someone already corrupted passes the record check. The review's approver and sign-in strength are taken from the HIL reply, which the reply channel must protect. The SQLite audit log is per host; Postgres is not yet supported.
+
   - id: governance.per_call_scope
     kind: component
     component: k9_aif_abb.k9_core.governance.pipeline.governance_scope

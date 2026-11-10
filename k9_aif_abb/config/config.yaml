@@ -52,6 +52,23 @@ security:
   # Router/Orchestrator process); anything else is anonymous.
   identity:
     mode: payload            # payload | signed
+
+  # Tool gate (1.25.0; off in 1.x, the default in 2.0). Every BaseConnector.call_tool()
+  # inside a governed agent call is decided before it runs: Shield, the tool's record
+  # checks (through k9x Origin), the solution's own rules, then run / refuse / hold for a
+  # person. Undeclared tools are irreversible. See k9_core/tools/.
+  tool_gate:
+    enabled: false
+    # queue: tool-review          # hil.requests.<queue> for held calls
+    # deadline_seconds: 86400     # a held call not approved by then never runs
+    # on_expiry: reject           # reject (safe) | approve (logs a warning: runs unapproved)
+    # audit: {db_path: ./runtime/tool_calls.db}
+    # rules: {adapter: rest_rules, engine_url: "${RULES_ENGINE_URL}", ruleset: tool_calls}
+    # tools:
+    #   release_payment:
+    #     irreversible: true
+    #     verify: {account: {entity: vendor, id_from: vendor, field: bank_account}}
+    #     connector: {client: streamable_http, params: {config: {kwargs: {url: "${PAYMENTS_MCP_URL}"}}}}
   # API-key authentication used by BaseRouter.admit(). Keys live in .env,
   # never here; one principal per agent, service or user (non-human identities).
   # auth:                    # AuthenticatorFactory (pip install "k9-aif[oidc]" for IdPs)

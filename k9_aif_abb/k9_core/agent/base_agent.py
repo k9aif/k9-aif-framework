@@ -26,6 +26,7 @@ from k9_aif_abb.k9_core.governance.pipeline import (
 # wrapper of the same agent, is governed once, not twice. The same mark tells
 # llm_invoke() that the model call it makes is already governed.
 from k9_aif_abb.k9_core.governance.call_context import GOVERNED_CALL as _GOVERNING  # noqa: E402
+from k9_aif_abb.k9_core.tools.tool_gate_context import ACTIVE_GATE as _ACTIVE_GATE  # noqa: E402
 
 import warnings  # noqa: E402
 
@@ -62,7 +63,7 @@ def _resolve_sync(value: Any) -> Any:
         # traceback, not "during handling of RuntimeError: no running event loop".
         return asyncio.run(_await())
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, _await()).result()
+        return pool.submit(contextvars.copy_context().run, asyncio.run, _await()).result()
 
 
 def _payload_of(args, kwargs):
@@ -189,6 +190,37 @@ def _governed_stream(fn):
     return wrapper
 
 
+def _tool_gate_session(agent, args, kwargs):
+    """The tool-gate session for one governed call, or None when the gate is off (1.25.0)."""
+    from k9_aif_abb.k9_core.tools.base_tool_dispatcher import BaseToolDispatcher, gate_enabled
+    from k9_aif_abb.k9_core.tools.tool_gate_context import ACTIVE_GATE, GateSession, require_gate
+    if not gate_enabled(agent.config):
+        return None
+    require_gate()
+    dispatcher = agent.__dict__.get("_k9_tool_dispatcher")
+    if dispatcher is None:
+        dispatcher = BaseToolDispatcher.from_config(agent.config, governance=agent.governance)
+        agent.__dict__["_k9_tool_dispatcher"] = dispatcher
+    payload, _ = _payload_of(args, kwargs)
+    request_id = payload.get("request_id") or payload.get("correlation_id") if isinstance(payload, dict) else None
+    # 1.25.0 treats every request as carrying outside content: nothing yet marks a request
+    # trusted in a way a caller couldn't forge, so the rules can't use this to loosen anything.
+    return GateSession(dispatcher=dispatcher, agent_id=type(agent).__name__, request_id=request_id,
+                       untrusted_input=True, parent=ACTIVE_GATE.get())
+
+
+def _surface_review(session, error=None):
+    """A tool call in this agent call is waiting for a person, but the agent's code caught the
+    review and carried on (or raised something else): raise the review again. Framework code,
+    around the agent's own code, so the agent can't stop it."""
+    if session is not None and session.pending:
+        review = session.pending[0]
+        if error is not review:
+            if error is not None:
+                raise review from error
+            raise review
+
+
 def _governed_execute(fn, *, pre_post: bool):
     """Wrap an agent's execute() so governance runs around it automatically:
     assert real governance (refused in production if none), pre_process the
@@ -216,7 +248,17 @@ def _governed_execute(fn, *, pre_post: bool):
                         if inspect.isawaitable(checked):
                             checked = await checked
                         args, kwargs = rebuild(checked)
-                result = await fn(self, *args, **kwargs)
+                session = _tool_gate_session(self, args, kwargs)
+                gate_token = _ACTIVE_GATE.set(session) if session is not None else None
+                try:
+                    result = await fn(self, *args, **kwargs)
+                except BaseException as exc:
+                    _surface_review(session, exc)
+                    raise
+                finally:
+                    if gate_token is not None:
+                        _ACTIVE_GATE.reset(gate_token)
+                _surface_review(session)
                 if pre_post and isinstance(result, dict) and "output" in result:
                     out = self.governance.post_process(result["output"], self._governance_context())
                     if inspect.isawaitable(out):
@@ -243,7 +285,17 @@ def _governed_execute(fn, *, pre_post: bool):
                     else:
                         checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
                         args, kwargs = rebuild(checked)
-                result = fn(self, *args, **kwargs)
+                session = _tool_gate_session(self, args, kwargs)
+                gate_token = _ACTIVE_GATE.set(session) if session is not None else None
+                try:
+                    result = fn(self, *args, **kwargs)
+                except BaseException as exc:
+                    _surface_review(session, exc)
+                    raise
+                finally:
+                    if gate_token is not None:
+                        _ACTIVE_GATE.reset(gate_token)
+                _surface_review(session)
                 if pre_post and isinstance(result, dict) and "output" in result:
                     out = _resolve_sync(self.governance.post_process(result["output"], self._governance_context()))
                     result = {**result, "output": out}

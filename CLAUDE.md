@@ -615,6 +615,41 @@ or a reply can never find the row it's meant to resolve — nothing enforces
 this automatically today; get it wrong and replies are silently dropped
 (logged as "matches no pending flow", not raised).
 
+## Tool gate (1.25.0, opt-in)
+
+**Property:** a prompt can't change an agent's code, but it can change the values the model
+returns, so no tool call made inside a governed agent call runs on a model-supplied value
+without being checked against facts the model didn't write. **Test:** an agent whose code
+never raises `RequiresHIL` calls an irreversible tool with an account that isn't the
+vendor's; the call is held and the tool never runs (`tests/test_tool_gate_1_25.py`).
+
+- `security.tool_gate.enabled: true` (off in 1.x, the default in 2.0). `BaseConnector.__init_subclass__`
+  wraps every async `call_tool()`; inside a governed agent call it goes to that agent's
+  `BaseToolDispatcher` (`k9_core/tools/`), built by the `BaseAgent` wrapper from config.
+- Dispatcher order: Shield (`screen_tool_call`) → `ToolRegistry` (undeclared = irreversible;
+  `verify:` argument → record field) → record lookup through k9x Origin by the dispatcher
+  itself → the solution's rules (`security.tool_gate.rules`, any `BaseRulesAdapter`) →
+  allow / deny (`ToolCallDenied`) / hil (`ToolCallPendingReview`, a `RequiresHIL`).
+  Rules can only make a call stricter: a mismatch or an unverifiable value never runs
+  without a person; an irreversible call auto-runs only when a **named** rule allows it
+  (`K9RulesAdapter`'s no-match `allow` has no rule name, so it doesn't count).
+- **Kafka ownership holds:** the dispatcher never publishes. It stores the exact call in the
+  audit log and raises; the Orchestrator publishes via `handle_requires_hil()` under the
+  call's `correlation_id`. If agent code catches the review, the `BaseAgent` wrapper raises
+  it again (nested agents too, via `GateSession.parent`).
+- **Resume:** first line of the SBB orchestrator's `execute_flow()`:
+  `resumed = self.resume_tool_call(payload); if resumed is not None: return resumed`. It runs
+  the *stored* call (never a re-proposal), at most once (`pending → executing` claim before
+  the call), only on a valid approval (`ToolCallDecision`: approving action, named actor,
+  before the deadline, matching `result.call_digest` when present). Running after review
+  needs `tools.<name>.connector` (client + params) unless the same process still holds it.
+- Thread bridges copy the caller's context (`contextvars.copy_context().run`, 1.25.0) so the
+  session follows sync agents into worker threads; if it's ever missing while any gate is
+  enabled, `call_tool()` is refused in production.
+- Not covered: agent code opening its own connection or process (Inspector **K9-TOOL-001**
+  flags it), calls outside an agent (orchestrator/script code), `execute_stream()` agents.
+  Every request counts as carrying outside content (`untrusted_input` is always true).
+
 ## Pre-Push Checklist
 
 - Every new `.py` file starts with the two-line header

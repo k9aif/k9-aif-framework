@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import asyncio
+
+import contextvars
 import concurrent.futures
 import hashlib
 import logging
@@ -42,7 +44,7 @@ def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
     # A loop is already running here — run the coroutine on a fresh loop in
     # a separate thread instead, and block this thread until it completes.
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, coro).result()
+        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
 
 from k9_aif_abb.k9_factories.llm_factory import LLMFactory
 from k9_aif_abb.k9_storage.routing_state_store import RoutingStateStore

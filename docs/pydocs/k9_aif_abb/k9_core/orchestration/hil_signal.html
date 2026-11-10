@@ -48,6 +48,9 @@
                         <li>
                                 <a class="variable" href="#RequiresHIL.queue">queue</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.correlation_id">correlation_id</a>
+                        </li>
                 </ul>
 
             </li>
@@ -132,12 +135,16 @@ style rule.</p>
 </span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
 </span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>    <span class="p">):</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>    <span class="p">):</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -177,12 +184,16 @@ style rule.</p>
 </span><span id="RequiresHIL-45"><a href="#RequiresHIL-45"><span class="linenos">45</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="RequiresHIL-46"><a href="#RequiresHIL-46"><span class="linenos">46</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
 </span><span id="RequiresHIL-47"><a href="#RequiresHIL-47"><span class="linenos">47</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL-48"><a href="#RequiresHIL-48"><span class="linenos">48</span></a>    <span class="p">):</span>
-</span><span id="RequiresHIL-49"><a href="#RequiresHIL-49"><span class="linenos">49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="RequiresHIL-50"><a href="#RequiresHIL-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL-51"><a href="#RequiresHIL-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="RequiresHIL-52"><a href="#RequiresHIL-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="RequiresHIL-53"><a href="#RequiresHIL-53"><span class="linenos">53</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+</span><span id="RequiresHIL-48"><a href="#RequiresHIL-48"><span class="linenos">48</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-49"><a href="#RequiresHIL-49"><span class="linenos">49</span></a>    <span class="p">):</span>
+</span><span id="RequiresHIL-50"><a href="#RequiresHIL-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="RequiresHIL-51"><a href="#RequiresHIL-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL-52"><a href="#RequiresHIL-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="RequiresHIL-53"><a href="#RequiresHIL-53"><span class="linenos">53</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="RequiresHIL-54"><a href="#RequiresHIL-54"><span class="linenos">54</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="RequiresHIL-55"><a href="#RequiresHIL-55"><span class="linenos">55</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="RequiresHIL-56"><a href="#RequiresHIL-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="RequiresHIL-57"><a href="#RequiresHIL-57"><span class="linenos">57</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -207,7 +218,7 @@ before this workflow can continue.</p>
                                         <input id="RequiresHIL.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">RequiresHIL</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span>,</span><span class="param">	<span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
+        <span class="name">RequiresHIL</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span>,</span><span class="param">	<span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
 
                 <label class="view-source-button" for="RequiresHIL.__init__-view-source"><span>View Source</span></label>
 
@@ -219,12 +230,16 @@ before this workflow can continue.</p>
 </span><span id="RequiresHIL.__init__-45"><a href="#RequiresHIL.__init__-45"><span class="linenos">45</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="RequiresHIL.__init__-46"><a href="#RequiresHIL.__init__-46"><span class="linenos">46</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
 </span><span id="RequiresHIL.__init__-47"><a href="#RequiresHIL.__init__-47"><span class="linenos">47</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-48"><a href="#RequiresHIL.__init__-48"><span class="linenos">48</span></a>    <span class="p">):</span>
-</span><span id="RequiresHIL.__init__-49"><a href="#RequiresHIL.__init__-49"><span class="linenos">49</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="RequiresHIL.__init__-50"><a href="#RequiresHIL.__init__-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL.__init__-51"><a href="#RequiresHIL.__init__-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="RequiresHIL.__init__-52"><a href="#RequiresHIL.__init__-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="RequiresHIL.__init__-53"><a href="#RequiresHIL.__init__-53"><span class="linenos">53</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+</span><span id="RequiresHIL.__init__-48"><a href="#RequiresHIL.__init__-48"><span class="linenos">48</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-49"><a href="#RequiresHIL.__init__-49"><span class="linenos">49</span></a>    <span class="p">):</span>
+</span><span id="RequiresHIL.__init__-50"><a href="#RequiresHIL.__init__-50"><span class="linenos">50</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="RequiresHIL.__init__-51"><a href="#RequiresHIL.__init__-51"><span class="linenos">51</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL.__init__-52"><a href="#RequiresHIL.__init__-52"><span class="linenos">52</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="RequiresHIL.__init__-53"><a href="#RequiresHIL.__init__-53"><span class="linenos">53</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="RequiresHIL.__init__-54"><a href="#RequiresHIL.__init__-54"><span class="linenos">54</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="RequiresHIL.__init__-55"><a href="#RequiresHIL.__init__-55"><span class="linenos">55</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="RequiresHIL.__init__-56"><a href="#RequiresHIL.__init__-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="RequiresHIL.__init__-57"><a href="#RequiresHIL.__init__-57"><span class="linenos">57</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -271,6 +286,17 @@ before this workflow can continue.</p>
         
     </div>
     <a class="headerlink" href="#RequiresHIL.queue"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.correlation_id" class="classattr">
+                                <div class="attr variable">
+            <span class="name">correlation_id</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.correlation_id"></a>
     
     
 

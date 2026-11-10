@@ -328,6 +328,46 @@ class KafkaOwnershipRule(BaseInspectionRule):
         return _dedupe(out)
 
 
+_RAW_IO_IMPORTS = {"requests", "httpx", "aiohttp", "urllib.request", "urllib3", "http.client", "socket",
+                   "subprocess", "smtplib", "ftplib", "paramiko", "pycurl"}
+_RAW_IO_CALLS = {"system", "popen", "urlopen"}
+
+
+@InspectionRuleRegistry.register
+class ToolBypassRule(BaseInspectionRule):
+    rule_id = "K9-TOOL-001"
+    title = "Agents reach tools only through a connector"
+    category = "Tool gate"
+    severity = Severity.VIOLATION
+    description = ("The tool gate (security.tool_gate) intercepts BaseConnector.call_tool(). Agent or squad code "
+                   "that opens its own network connection, starts a process, or marks its own calls as "
+                   "framework calls (framework_tool_call) goes around it: no record check, no rules, no review. "
+                   "Python can't block that inside the process, so it is caught here and by deployment isolation.")
+    fix = ("Serve the action as an MCP tool and call it through MCPClientConnectionFactory; declare it under "
+           "security.tool_gate.tools. Never use framework_tool_call() outside the framework.")
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for m in project.code_modules():
+            if not (m.roles & {"agent", "squad"}) or m.roles & {"orchestrator", "router"}:
+                continue
+            seen = set()
+            for full, alias, node in _imported_modules(m):
+                top = full.split(".")[0]
+                if (full in _RAW_IO_IMPORTS or top in _RAW_IO_IMPORTS) and id(node) not in seen:
+                    seen.add(id(node))
+                    out.append(self.at(m, node, f"agent/squad module imports {full}: a call outside the tool gate"))
+                if alias == "framework_tool_call" or full.endswith("framework_tool_call"):
+                    out.append(self.at(m, node, "agent/squad code uses framework_tool_call(), the framework's own "
+                                                "bypass of the tool gate"))
+            for name, node in _calls(m.tree):
+                if name in _RAW_IO_CALLS:
+                    out.append(self.at(m, node, f"agent/squad calls {name}(): a call outside the tool gate"))
+                elif name == "framework_tool_call":
+                    out.append(self.at(m, node, "agent/squad code uses framework_tool_call()"))
+        return _dedupe(out)
+
+
 @InspectionRuleRegistry.register
 class NoopGovernanceRule(BaseInspectionRule):
     rule_id = "K9-GOV-003"

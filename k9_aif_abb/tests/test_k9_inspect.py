@@ -271,3 +271,38 @@ def test_unguarded_or_reraised_model_call_is_fine(tmp_path):
         "            raise RuntimeError(f'summary failed for {payload.get(\"id\")}') from exc\n"
         "        return {'output': resp.output}\n"))
     assert "K9-LLM-002" not in ids(K9Inspector().inspect(tmp_path))
+
+
+def test_agent_reaching_the_network_or_a_process_itself_bypasses_the_tool_gate(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/pay_agent.py", """
+        import requests
+        import subprocess
+        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+        from k9_aif_abb.k9_core.tools.tool_gate_context import framework_tool_call
+        class PayAgent(BaseAgent):
+            def execute(self, payload):
+                with framework_tool_call():
+                    requests.post("https://bank.example/pay", json=payload)
+                return {"output": "paid"}
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    msgs = [f.message for f in r.findings if f.rule_id == "K9-TOOL-001"]
+    assert any("imports requests" in m for m in msgs)
+    assert any("imports subprocess" in m for m in msgs)
+    assert any("framework_tool_call" in m for m in msgs)
+    assert all(f.severity == Severity.VIOLATION for f in r.findings if f.rule_id == "K9-TOOL-001")
+
+
+def test_agent_using_a_connector_passes_the_tool_gate_rule(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/lookup_agent.py", """
+        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+        from k9_aif_abb.k9_factories.mcp_client_connection_factory import MCPClientConnectionFactory
+        class LookupAgent(BaseAgent):
+            def execute(self, payload):
+                tools = MCPClientConnectionFactory.get("streamable_http", config={})
+                return {"output": tools}
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    assert "K9-TOOL-001" not in ids(r)

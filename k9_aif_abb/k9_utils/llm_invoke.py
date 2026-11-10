@@ -37,6 +37,7 @@ def _resolve_sync(value: Any) -> Any:
     if not inspect.isawaitable(value):
         return value
     import asyncio
+    import contextvars
     import concurrent.futures
 
     async def _await():
@@ -46,7 +47,7 @@ def _resolve_sync(value: Any) -> Any:
     except RuntimeError:
         return asyncio.run(_await())
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, _await()).result()
+        return pool.submit(contextvars.copy_context().run, asyncio.run, _await()).result()
 
 log = logging.getLogger(__name__)
 

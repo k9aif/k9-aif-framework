@@ -28,6 +28,8 @@ Example config.yaml entry:
 """
 
 import asyncio
+
+import contextvars
 import concurrent.futures
 from typing import Any, Dict, List, Optional
 
@@ -133,6 +135,6 @@ class WebSearchAgent(BaseMCPAgent):
             asyncio.get_running_loop()
             # Already inside a running loop (e.g. FastAPI) — run in a thread
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, coro).result()
+                return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
         except RuntimeError:
             return asyncio.run(coro)

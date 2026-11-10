@@ -44,9 +44,13 @@ class RequiresHIL(Exception):
         context: Optional[Dict[str, Any]] = None,
         priority: str = "medium",
         queue: Optional[str] = None,
+        correlation_id: Optional[str] = None,
     ):
         self.reason = reason
         self.context = context or {}
         self.priority = priority
         self.queue = queue
+        # 1.25.0: set when the review must be published under a known id (the tool
+        # gate's pending call); None lets BaseHILOrchestrator generate one, as before.
+        self.correlation_id = correlation_id
         super().__init__(reason)

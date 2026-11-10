@@ -49,6 +49,8 @@ escalate_on_critic_error : bool  — older form: True means on_critic_error "esc
 """
 
 import asyncio
+
+import contextvars
 import concurrent.futures
 import logging
 from abc import abstractmethod
@@ -80,7 +82,7 @@ def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
     except RuntimeError:
         return asyncio.run(coro)
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, coro).result()
+        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
 
 
 class BaseCriticActorAgent(BaseAgent):

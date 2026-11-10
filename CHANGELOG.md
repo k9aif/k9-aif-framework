@@ -4,6 +4,38 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] — planned 1.25.0
+
+### Tool gate: every tool call checked before it runs (opt-in)
+
+- **New `k9_core/tools/`:** `BaseToolDispatcher`, `ToolRegistry`/`ToolSpec`/`RecordCheck`, `ToolCall`,
+  `ToolCallDecision`, `BaseToolCallAuditLog` (`SQLiteToolCallAuditLog` default, append-only events;
+  `InMemoryToolCallAuditLog`). Enabled with `security.tool_gate.enabled: true`; off by default in 1.x.
+- **Every `BaseConnector.call_tool()` inside a governed agent call is intercepted** (wrapped when the class is
+  defined, like `BaseAgent.execute()`), so agent code doesn't change. The dispatcher runs Shield, checks declared
+  arguments against their record through k9x Origin itself, applies the solution's rules through any
+  `BaseRulesAdapter`, then runs the call, refuses it (`ToolCallDenied`) or holds it for a person
+  (`ToolCallPendingReview`, a `RequiresHIL`). Undeclared tools are irreversible. The rules can make a call stricter,
+  never looser.
+- **Review and resume:** the Orchestrator publishes the review as for any `RequiresHIL`, under the held call's
+  `correlation_id` (new optional `RequiresHIL(correlation_id=...)`). `BaseOrchestrator.resume_tool_call(payload)`
+  runs the stored call at most once, only on a valid approval; rejected, expired, malformed or late replies never
+  run it. `expire_stale()` applies `on_expiry` (`reject` default; `approve` logs a warning).
+- **Agent code can't hide a review:** if it catches `ToolCallPendingReview`, the governed `BaseAgent` wrapper raises it
+  again, including from nested agents.
+- **Fix: thread bridges keep the caller's context.** The 11 sync-to-async bridges that ran a coroutine in a worker
+  thread (`base_agent`, `base_orchestrator`, `llm_invoke`, `k9_model_router`, `tool_result_guard`, the loop agents,
+  `WebSearchAgent`, the CrewAI and LangGraph adapters, `governance_event_gate`) now copy the caller's context, so the
+  governed-call mark and the tool gate follow the call into the thread.
+- **Inspector K9-TOOL-001:** agent or squad code that imports a raw network/process library (`requests`, `httpx`,
+  `subprocess`, `socket`, ...) or uses `framework_tool_call()` is a violation: it goes around the tool gate.
+- **Docs:** CLAUDE.md "Tool gate", CAPABILITIES.md, `capabilities.yaml` (`tool_gate`), framework `config.yaml`.
+- **Tests:** `tests/test_tool_gate_1_25.py` (31 tests: real agent and connector wrapping, real `K9RulesAdapter`,
+  SQLite audit log and `RoutingStateStore`, and a Router → Orchestrator → agent → reply round trip), plus two
+  K9-TOOL-001 tests in `test_k9_inspect.py`.
+
+---
+
 ## [1.24.0] — 2026-11-02
 
 ### `BaseAgent.notify_monitor()` replaces `publish_event()`

@@ -29,7 +29,7 @@ def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
     except RuntimeError:
         return asyncio.run(coro)
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(asyncio.run, coro).result()
+        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
 
 # Optional Zero Trust runtime enforcement layer
 try:
@@ -459,7 +459,8 @@ class BaseOrchestrator(ABC):
         hil_orchestrator = self._get_hil_orchestrator()
 
         hil_payload = {
-            "correlation_id": None,  # BaseHILOrchestrator generates one
+            # BaseHILOrchestrator generates one unless the raiser fixed it (the tool gate does)
+            "correlation_id": getattr(exc, "correlation_id", None),
             "source_orchestrator": self.layer,
             "reason": exc.reason,
             "priority": exc.priority,
@@ -470,6 +471,32 @@ class BaseOrchestrator(ABC):
             "resume_payload": payload,
         }
         return hil_orchestrator.execute_flow(hil_payload)
+
+    def resume_tool_call(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Resume branch for a tool call the tool gate held for review (1.25.0).
+
+        Returns None when ``payload`` is not a reply to a held tool call; otherwise the
+        outcome: the stored call ran once on a valid approval (``executed``), or never
+        (``not_executed`` / ``already_decided`` / ``not_found``). Agents are not re-run.
+        Put it first in ``execute_flow()``::
+
+            def execute_flow(self, payload):
+                resumed = self.resume_tool_call(payload)
+                if resumed is not None:
+                    return resumed
+                ...
+        """
+        from k9_aif_abb.k9_core.tools.base_tool_dispatcher import BaseToolDispatcher, gate_enabled
+        reply = payload.get("hil_decision") if isinstance(payload, dict) else None
+        if not isinstance(reply, dict) or not gate_enabled(self.config):
+            return None
+        dispatcher = getattr(self, "_tool_dispatcher", None)
+        if dispatcher is None:
+            dispatcher = BaseToolDispatcher.from_config(self.config, governance=self.governance)
+            self._tool_dispatcher = dispatcher
+        if not dispatcher.is_tool_call(reply.get("correlation_id")):
+            return None
+        return dispatcher.resume(reply)
 
     def _get_hil_orchestrator(self):
         """Lazily construct a BaseHILOrchestrator sharing this Orchestrator's
