@@ -204,6 +204,24 @@ signatures that don't match `BaseAgent.__init__`.
   partially-configured squad from silently skipping required steps.
 - **Router's `store_document()`** has no access-control check — any caller
   with a Router instance can write to any bucket/key it names.
+- **Tool gate (1.25.0, opt-in: `security.tool_gate.enabled`).** Every
+  `BaseConnector.call_tool()` inside a governed agent call is decided by
+  `BaseToolDispatcher` before it runs: Shield, the tool registry (undeclared =
+  irreversible), declared record checks looked up through k9x Origin by the
+  dispatcher itself, then the solution's rules (`BaseRulesAdapter`) → run /
+  refuse / hold for a person. A held call runs only on a valid approval of the
+  stored call, at most once; every step is in an append-only audit log.
+  Human review no longer depends on the agent raising `RequiresHIL`; the
+  existing `RequiresHIL` path is unchanged. **Covered** (`test_tool_gate_1_25.py`):
+  an agent that never raises `RequiresHIL` has its irreversible call held; a
+  review the agent's code swallows is raised again; a value that doesn't match
+  its record never runs without a person; reject / expire / malformed / late
+  replies never run the call. **Not covered:** agent code opening its own
+  connection or process (Inspector K9-TOOL-001 flags it; nothing blocks it at
+  runtime), tool calls from the CrewAI / LangGraph / Claude Agent SDK adapters'
+  tool handlers (no gate session yet: refused in production while the gate is
+  on), calls made outside an agent, a value that matches an already-corrupted
+  record, and the authenticity of the HIL reply itself.
 
 ---
 

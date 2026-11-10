@@ -36,7 +36,7 @@ _PUBLISH_EVENT_WARNED: set = set()
 
 def _warn_publish_event_deprecated(agent) -> None:
     msg = (f"{type(agent).__qualname__}: BaseAgent.publish_event() is deprecated since k9-aif 1.24 and is "
-           "removed in 1.25; use notify_monitor() (agents never publish to Kafka)")
+           "removed in 1.26; use notify_monitor() (agents never publish to Kafka)")
     warnings.warn(msg, DeprecationWarning, stacklevel=3)
     if type(agent) not in _PUBLISH_EVENT_WARNED:
         _PUBLISH_EVENT_WARNED.add(type(agent))
@@ -409,7 +409,7 @@ class BaseAgent(ABC):
     def publish_event(self, event: Dict[str, Any]):
         """Deprecated since 1.24: use :meth:`notify_monitor`. The name suggested a Kafka publish,
         but agents have no message bus, so it only ever reached the monitor and the log. Kept,
-        with its old behaviour unchanged, for one release; removed in 1.25."""
+        with its old behaviour unchanged; removed in 1.26 (kept through 1.25 for applications still migrating)."""
         _warn_publish_event_deprecated(self)
         if self.message_bus:
             self.message_bus.publish(event)

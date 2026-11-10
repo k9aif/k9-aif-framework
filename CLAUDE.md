@@ -478,7 +478,7 @@ downstream topics) touch Kafka directly — this hasn't changed. Agents are
 constructed without a `message_bus` — they share data sequentially through
 the Squad flow, not via A2A messaging. `notify_monitor()` on an agent reaches
 the logger/monitor only (1.24; before, it was named `publish_event()`, now a
-deprecated alias removed in 1.25). K9-KAF-001 flags an agent built with a
+deprecated alias, removed in 1.26). K9-KAF-001 flags an agent built with a
 `message_bus` (1.21) as well as agent/squad code that publishes.
 
 **One narrow, deliberate exception: triggering HIL.** An Agent or Squad may

@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] — planned 1.25.0
+## [1.25.0] — 2026-11-10
 
 ### Tool gate: every tool call checked before it runs (opt-in)
 
@@ -29,7 +29,15 @@ All notable changes to K9-AIF are documented here.
   governed-call mark and the tool gate follow the call into the thread.
 - **Inspector K9-TOOL-001:** agent or squad code that imports a raw network/process library (`requests`, `httpx`,
   `subprocess`, `socket`, ...) or uses `framework_tool_call()` is a violation: it goes around the tool gate.
-- **Docs:** CLAUDE.md "Tool gate", CAPABILITIES.md, `capabilities.yaml` (`tool_gate`), framework `config.yaml`.
+- **Docs:** CLAUDE.md "Tool gate", CAPABILITIES.md, `capabilities.yaml` (`tool_gate`), framework `config.yaml`, the security capability inventory (§6).
+- **Not covered yet:** the CrewAI, LangGraph and Claude Agent SDK adapters' tool handlers have no gate session, so
+  while the gate is on their tool calls are refused in production; calls made outside an agent are not gated; the
+  audit log is SQLite only. Enable the gate for applications whose tools are called from `BaseAgent` code.
+
+### `publish_event()` stays one more release
+
+- 1.24.0 said the deprecated alias would be removed in 1.25. It is kept until **1.26** because applications are still
+  migrating (DAS calls it in about 20 agents). Behaviour and warnings are unchanged; the warning now says 1.26.
 - **Tests:** `tests/test_tool_gate_1_25.py` (31 tests: real agent and connector wrapping, real `K9RulesAdapter`,
   SQLite audit log and `RoutingStateStore`, and a Router → Orchestrator → agent → reply round trip), plus two
   K9-TOOL-001 tests in `test_k9_inspect.py`.
@@ -60,7 +68,7 @@ All notable changes to K9-AIF are documented here.
   through the new name, and no framework code outside the alias calls the old one.
 
 **Upgrading:** replace `self.publish_event(` with `self.notify_monitor(` in your agents. Nothing breaks in 1.24;
-the alias is removed in 1.25. Orchestrators keep `publish_status()`, Routers `route()` / `message_bus.publish_to()`.
+the alias is removed in 1.26 (was 1.25; see 1.25.0). Orchestrators keep `publish_status()`, Routers `route()` / `message_bus.publish_to()`.
 
 ---
 
