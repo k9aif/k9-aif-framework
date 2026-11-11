@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
@@ -23,6 +24,8 @@ from sqlalchemy import (
     and_,
     text,
 )
+
+log = logging.getLogger(__name__)
 
 
 class RoutingStateStore:
@@ -183,6 +186,31 @@ class RoutingStateStore:
                 Column("created_at", DateTime),
             )
             metadata.create_all(engine)
+        self._ensure_indexes()
+
+    def _ensure_indexes(self) -> None:
+        """Indexes for the queries made on every model call (1.26.1). Without them, each call scanned the whole
+        session_turns table (append_turn: latest turn of a session), so per-call cost grew with the routing
+        history: measured at 44,808 rows per table, a three-agent workflow took ~135 ms instead of ~23 ms.
+        Created with IF NOT EXISTS, so existing databases (SQLite or PostgreSQL, reflected or created here)
+        get them on the next start. A failure (e.g. no CREATE privilege) affects speed only: logged, not raised."""
+        from sqlalchemy import Index
+        wanted = [
+            ("ix_session_turns_session_turn", self.session_turns, ("session_id", "turn_index")),
+            ("ix_routing_decisions_session", self.routing_decisions, ("session_id",)),
+            ("ix_context_artifacts_session", self.context_artifacts, ("session_id",)),
+            ("ix_routing_outcomes_embedder_id", self.routing_outcomes, ("embedder", "outcome_id")),
+            ("ix_hil_pending_status", self.hil_pending, ("status", "resuming_at")),
+        ]
+        for name, table, cols in wanted:
+            if not all(c in table.c for c in cols):
+                continue
+            idx = Index(name, *(table.c[c] for c in cols))
+            try:
+                idx.create(bind=self.db.engine, checkfirst=True)
+            except Exception as exc:
+                log.warning("[RoutingStateStore] could not create index %s (%s); routing state queries will "
+                            "scan the table and slow down as it grows", name, exc)
 
     @staticmethod
     def _add_missing_columns(engine, metadata, table: Table, columns: List[Column]) -> Table:

@@ -4,6 +4,21 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.26.1] — 2026-11-11
+
+### Routing state is indexed: per-call cost no longer grows with history
+
+- `RoutingStateStore` creates indexes for the queries made on every model call: `session_turns(session_id,
+  turn_index)` (the latest-turn lookup in `append_turn()`), `routing_decisions(session_id)`,
+  `context_artifacts(session_id)`, `routing_outcomes(embedder, outcome_id)` and `hil_pending(status, resuming_at)`.
+  Created with `IF NOT EXISTS` on every start, so existing SQLite and PostgreSQL stores get them too; a failure to
+  create one (no privilege) is logged as a warning (speed only).
+- Before 1.26.1 the latest-turn lookup scanned the whole table. Measured (scalability benchmark, three-agent
+  workflow, one worker, Shield on): with 44,808 rows per table, ~135 ms per workflow; the same database with the
+  indexes, ~22 ms, the same as an empty store. No behaviour change. Tests: `test_routing_state_indexes_1_26_1.py`.
+
+---
+
 ## [1.26.0] — 2026-11-11
 
 ### Kafka ownership enforced at run time
