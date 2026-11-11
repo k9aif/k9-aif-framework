@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [1.26.0] — unreleased
+## [1.26.0] — 2026-11-11
 
 ### Kafka ownership enforced at run time
 
