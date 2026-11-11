@@ -26,10 +26,10 @@ replace `self.publish_event(` with `self.notify_monitor(` before 2.0.
   default **0**). Before 1.26 no temperature was sent, so Ollama sampled at its default and the same content could
   get a different verdict on each run. Measured on a fixed 208-document corpus, 5 repeats each: as sent before
   1.26, 51 of 104 attack and 73 of 104 benign documents kept the same verdict (Fleiss' kappa 0.49 / 0.05); at
-  temperature 0, 99 of 104 each (kappa 0.94 / 0.69). The remaining flips all happened together, when the model
-  server changed the model's placement mid-run (median call time 5.7 s -> 2.3 s); repeats within one server
-  state agreed. So temperature 0 removes the sampling variation, and a borderline verdict can still move with
-  the serving hardware or its load. The named-risk checks (`ingress_risks`) already used temperature 0.
+  temperature 0, 99 of 104 each (kappa 0.94 / 0.69). Most remaining flips happened together, when the model
+  server changed the model's placement mid-run (median call time 5.7 s -> 2.3 s); with the model resident on the
+  GPU throughout, 19 of 20 documents kept their verdict over 3 repeats. Temperature 0 removes most of the
+  variation; GPU inference is not bit-exact, so a borderline verdict can still change between calls. The named-risk checks (`ingress_risks`) already used temperature 0.
   Tests: `test_guardian_temperature_1_26.py`.
 
 ### Zero Trust fails closed in production when its package is unavailable

@@ -210,9 +210,9 @@ governance refuse before the tool runs. Development/test only warn. Tests:
 `governance_from_config(config)`: `security.shield.enabled: true` →
 `ShieldGovernance(config)`; `governance.guardian.enabled: true` →
 `GuardianGovernance` (Granite Guardian, `on_unavailable` default
-`fail_closed`; `temperature` default 0 from 1.26, removing the sampling variation:
-before, Ollama sampled and the same document flipped between runs; a
-borderline verdict can still move when the server reloads the model); both → `ChainedGovernance(Shield, Guardian)`, Shield first.
+`fail_closed`; `temperature` default 0 from 1.26, removing most run-to-run variation:
+before, Ollama sampled and the same document flipped between runs; GPU
+inference is not bit-exact, so a borderline verdict can still change); both → `ChainedGovernance(Shield, Guardian)`, Shield first.
 One config setting therefore governs every agent of an application.
 Nothing configured → `NoopGovernance` (fine in development/test, refused in
 production).
