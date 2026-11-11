@@ -18,6 +18,15 @@ All notable changes to K9-AIF are documented here.
 **Upgrading:** replace `self.publish_event(` with `self.notify_monitor(`; remove `message_bus=` from any agent
 construction (K9-KAF-001 already reported it since 1.21).
 
+### Granite Guardian verdicts are repeatable
+
+- `GuardianGovernance` sends `temperature` with its ingress/egress classification (`governance.guardian.temperature`,
+  default **0**). Before 1.26 no temperature was sent, so Ollama sampled at its default and the same content could
+  get a different verdict on each run. Measured on a fixed 208-document corpus, 5 repeats each: as sent before
+  1.26, 51 of 104 attack and 73 of 104 benign documents kept the same verdict (Fleiss' kappa 0.49 / 0.05); at
+  temperature 0, all of them. The named-risk checks (`ingress_risks`) already used temperature 0.
+  Tests: `test_guardian_temperature_1_26.py`.
+
 ### Zero Trust fails closed in production when its package is unavailable
 
 - `BaseOrchestrator` and `BaseRouter` with `enable_zero_trust` on and the zero trust package failing to import:

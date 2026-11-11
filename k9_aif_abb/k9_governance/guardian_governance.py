@@ -155,6 +155,11 @@ class GuardianGovernance(BaseGovernance):
         guardian_cfg = self.config.get("governance", {}).get("guardian", {})
         self._model = guardian_cfg.get("model", _DEFAULT_GUARDIAN_MODEL)
         self._timeout = int(guardian_cfg.get("timeout", 30))
+        # Sampling temperature for the ingress/egress classification (1.26). Before 1.26 the request set none,
+        # so Ollama sampled at its default and the same document got different verdicts between runs (measured:
+        # 51 of 104 attack documents and 73 of 104 benign documents kept the same verdict over 5 repeats;
+        # at temperature 0, all of them). 0 makes the check deterministic; the named-risk checks were already 0.
+        self._temperature = float(guardian_cfg.get("temperature", 0))
 
         policy = guardian_cfg.get("on_unavailable", "fail_closed")
         if policy not in _VALID_UNAVAILABLE_POLICIES:
@@ -191,7 +196,8 @@ class GuardianGovernance(BaseGovernance):
         try:
             resp = requests.post(
                 f"{self._base}/api/generate",
-                json={"model": self._model, "prompt": prompt, "stream": False},
+                json={"model": self._model, "prompt": prompt, "stream": False,
+                      "options": {"temperature": self._temperature}},
                 timeout=self._timeout,
             )
         except requests.exceptions.RequestException as exc:
