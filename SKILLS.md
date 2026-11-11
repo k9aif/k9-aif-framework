@@ -516,7 +516,7 @@ def test_llm_unavailable_propagates():
 
 ## Skill 7 — Event publishing — Router and Orchestrator only
 
-**Only the Router and the Orchestrators publish to Kafka; agents and squads never do.** This is a framework rule, enforced by Inspector **K9-KAF-001**: it reports agent or squad code that publishes and, from 1.21, any agent constructed with a `message_bus`. `BaseAgent.notify_monitor()` therefore reaches only the monitor (`monitor.record_event()`, when the agent has a monitor) and the log, never Kafka. (Before 1.24 it was named `publish_event()`, which remains a deprecated alias until 1.25.)
+**Only the Router and the Orchestrators publish to Kafka; agents and squads never do.** This is a framework rule, enforced at run time from 1.26 (`BaseAgent.__init__` raises `TypeError` when given a `message_bus`) and by Inspector **K9-KAF-001**, which reports agent or squad code that publishes or imports a Kafka client directly. `BaseAgent.notify_monitor()` reaches only the monitor (`monitor.record_event()`, when the agent has a monitor) and the log, never Kafka. (The old name `publish_event()` was deprecated in 1.24 and removed in 1.26.)
 
 Agents within a Squad share data sequentially through the flow — each agent's output enriches the shared execution context, which is passed as the input to the next agent. The context grows progressively richer as it moves through the flow. There is no need for Agent-to-Agent (A2A) messaging over Kafka. Agents use `self.logger` for observability.
 
@@ -553,7 +553,7 @@ A custom Router subclass publishes through its bus:
 self.message_bus.publish_to(resolved_topic, event)
 ```
 
-`BaseRouter` has no `notify_monitor()` (or the old `publish_event()`); calling either raises `AttributeError`.
+`BaseRouter` has no `notify_monitor()`; calling it raises `AttributeError`.
 
 ### Orchestrator — publishing a result event
 

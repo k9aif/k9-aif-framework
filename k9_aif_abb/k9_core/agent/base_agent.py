@@ -28,20 +28,6 @@ from k9_aif_abb.k9_core.governance.pipeline import (
 from k9_aif_abb.k9_core.governance.call_context import GOVERNED_CALL as _GOVERNING  # noqa: E402
 from k9_aif_abb.k9_core.tools.tool_gate_context import ACTIVE_GATE as _ACTIVE_GATE  # noqa: E402
 
-import warnings  # noqa: E402
-
-# Agent classes already told that publish_event() is deprecated: one log line per class, not per call.
-_PUBLISH_EVENT_WARNED: set = set()
-
-
-def _warn_publish_event_deprecated(agent) -> None:
-    msg = (f"{type(agent).__qualname__}: BaseAgent.publish_event() is deprecated since k9-aif 1.24 and is "
-           "removed in 1.26; use notify_monitor() (agents never publish to Kafka)")
-    warnings.warn(msg, DeprecationWarning, stacklevel=3)
-    if type(agent) not in _PUBLISH_EVENT_WARNED:
-        _PUBLISH_EVENT_WARNED.add(type(agent))
-        agent.logger.warning(msg)
-
 
 def _resolve_sync(value: Any) -> Any:
     """Return *value*, or run it to completion if it is awaitable (governance
@@ -361,9 +347,17 @@ class BaseAgent(ABC):
         message_bus=None,
         governance=None,
     ):
+        # Kafka ownership, enforced at run time (1.26): only Routers and Orchestrators publish.
+        # An agent built with a message bus is refused; before 1.26 only K9-KAF-001 caught it.
+        if message_bus is not None:
+            raise TypeError(
+                f"{type(self).__qualname__}: agents are built without a message bus. Only the "
+                "Router and the Orchestrators publish to Kafka; an agent reports with "
+                "notify_monitor() or raises RequiresHIL (k9-aif 1.26, K9-KAF-001)."
+            )
         self.config = config or {}
         self.monitor = monitor
-        self.message_bus = message_bus
+        self.message_bus = None  # always None for agents; kept for code that reads the attribute
         if governance is None:
             governance = governance_from_config(self.config)
         self.governance = require_governance(
@@ -400,22 +394,12 @@ class BaseAgent(ABC):
         """Hand a structured event (``{"type": ..., ...}``) to this agent's monitor, when it has
         one, and log it.
 
-        This never publishes to Kafka: agents are built without a message bus (K9-KAF-001); only
-        the Router and the Orchestrators publish. Replaces ``publish_event()`` (1.24)."""
+        This never publishes to Kafka: an agent cannot hold a message bus (``__init__`` refuses one,
+        1.26); only the Router and the Orchestrators publish. Replaced ``publish_event`` (1.24;
+        removed in 1.26)."""
         if self.monitor:
             self.monitor.record_event(event)
         self.logger.info("[%s] Event: %s", self.layer, event)
-
-    def publish_event(self, event: Dict[str, Any]):
-        """Deprecated since 1.24: use :meth:`notify_monitor`. The name suggested a Kafka publish,
-        but agents have no message bus, so it only ever reached the monitor and the log. Kept,
-        with its old behaviour unchanged; removed in 1.26 (kept through 1.25 for applications still migrating)."""
-        _warn_publish_event_deprecated(self)
-        if self.message_bus:
-            self.message_bus.publish(event)
-        if self.monitor:
-            self.monitor.record_event(event)
-        self.logger.info(f"[{self.layer}] Event published: {event}")
 
     # ------------------------------------------------------------------
     async def apply_pre_governance(

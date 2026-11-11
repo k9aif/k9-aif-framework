@@ -31,7 +31,7 @@
             <h2>API Documentation</h2>
                 <ul class="memberlist">
             <li>
-                    <a class="function" href="#test_agent_publish_event_with_a_real_monitor">test_agent_publish_event_with_a_real_monitor</a>
+                    <a class="function" href="#test_agent_notify_monitor_with_a_real_monitor">test_agent_notify_monitor_with_a_real_monitor</a>
             </li>
             <li>
                     <a class="function" href="#test_orchestrator_publish_status_with_a_real_monitor">test_orchestrator_publish_status_with_a_real_monitor</a>
@@ -129,9 +129,9 @@ use the real monitor classes and no mocks.</p>
 </span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
 </span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="n">_real_monitors</span><span class="p">(),</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_publish_event_with_a_real_monitor</span><span class="p">(</span><span class="n">monitor</span><span class="p">):</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_notify_monitor_with_a_real_monitor</span><span class="p">(</span><span class="n">monitor</span><span class="p">):</span>
 </span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">MinimalAgent</span><span class="p">(</span><span class="n">governance</span><span class="o">=</span><span class="n">RealGovernance</span><span class="p">(),</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>    <span class="n">agent</span><span class="o">.</span><span class="n">publish_event</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TestEvent&quot;</span><span class="p">})</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>    <span class="n">agent</span><span class="o">.</span><span class="n">notify_monitor</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TestEvent&quot;</span><span class="p">})</span>  <span class="c1"># publish_event() removed in 1.26</span>
 </span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>
 </span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
 </span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="n">_real_monitors</span><span class="p">(),</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
@@ -160,22 +160,22 @@ use the real monitor classes and no mocks.</p>
 
 
             </section>
-                <section id="test_agent_publish_event_with_a_real_monitor">
-                            <input id="test_agent_publish_event_with_a_real_monitor-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+                <section id="test_agent_notify_monitor_with_a_real_monitor">
+                            <input id="test_agent_notify_monitor_with_a_real_monitor-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
                     <div class="decorator decorator-pytest.mark.parametrize">@pytest.mark.parametrize(&#39;monitor&#39;, _real_monitors(), ids=lambda m: type(m).__name__)</div>
 
         <span class="def">def</span>
-        <span class="name">test_agent_publish_event_with_a_real_monitor</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">monitor</span></span><span class="return-annotation">):</span></span>
+        <span class="name">test_agent_notify_monitor_with_a_real_monitor</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">monitor</span></span><span class="return-annotation">):</span></span>
 
-                <label class="view-source-button" for="test_agent_publish_event_with_a_real_monitor-view-source"><span>View Source</span></label>
+                <label class="view-source-button" for="test_agent_notify_monitor_with_a_real_monitor-view-source"><span>View Source</span></label>
 
     </div>
-    <a class="headerlink" href="#test_agent_publish_event_with_a_real_monitor"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="test_agent_publish_event_with_a_real_monitor-59"><a href="#test_agent_publish_event_with_a_real_monitor-59"><span class="linenos">59</span></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="n">_real_monitors</span><span class="p">(),</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span id="test_agent_publish_event_with_a_real_monitor-60"><a href="#test_agent_publish_event_with_a_real_monitor-60"><span class="linenos">60</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_publish_event_with_a_real_monitor</span><span class="p">(</span><span class="n">monitor</span><span class="p">):</span>
-</span><span id="test_agent_publish_event_with_a_real_monitor-61"><a href="#test_agent_publish_event_with_a_real_monitor-61"><span class="linenos">61</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">MinimalAgent</span><span class="p">(</span><span class="n">governance</span><span class="o">=</span><span class="n">RealGovernance</span><span class="p">(),</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
-</span><span id="test_agent_publish_event_with_a_real_monitor-62"><a href="#test_agent_publish_event_with_a_real_monitor-62"><span class="linenos">62</span></a>    <span class="n">agent</span><span class="o">.</span><span class="n">publish_event</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TestEvent&quot;</span><span class="p">})</span>
+    <a class="headerlink" href="#test_agent_notify_monitor_with_a_real_monitor"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_agent_notify_monitor_with_a_real_monitor-59"><a href="#test_agent_notify_monitor_with_a_real_monitor-59"><span class="linenos">59</span></a><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="n">_real_monitors</span><span class="p">(),</span> <span class="n">ids</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span id="test_agent_notify_monitor_with_a_real_monitor-60"><a href="#test_agent_notify_monitor_with_a_real_monitor-60"><span class="linenos">60</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_notify_monitor_with_a_real_monitor</span><span class="p">(</span><span class="n">monitor</span><span class="p">):</span>
+</span><span id="test_agent_notify_monitor_with_a_real_monitor-61"><a href="#test_agent_notify_monitor_with_a_real_monitor-61"><span class="linenos">61</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">MinimalAgent</span><span class="p">(</span><span class="n">governance</span><span class="o">=</span><span class="n">RealGovernance</span><span class="p">(),</span> <span class="n">monitor</span><span class="o">=</span><span class="n">monitor</span><span class="p">)</span>
+</span><span id="test_agent_notify_monitor_with_a_real_monitor-62"><a href="#test_agent_notify_monitor_with_a_real_monitor-62"><span class="linenos">62</span></a>    <span class="n">agent</span><span class="o">.</span><span class="n">notify_monitor</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TestEvent&quot;</span><span class="p">})</span>  <span class="c1"># publish_event() removed in 1.26</span>
 </span></pre></div>
 
 

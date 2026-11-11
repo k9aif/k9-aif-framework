@@ -56,9 +56,9 @@ class _Orchestrator(BaseOrchestrator):
 
 
 @pytest.mark.parametrize("monitor", _real_monitors(), ids=lambda m: type(m).__name__)
-def test_agent_publish_event_with_a_real_monitor(monitor):
+def test_agent_notify_monitor_with_a_real_monitor(monitor):
     agent = MinimalAgent(governance=RealGovernance(), monitor=monitor)
-    agent.publish_event({"type": "TestEvent"})
+    agent.notify_monitor({"type": "TestEvent"})  # publish_event() removed in 1.26
 
 
 @pytest.mark.parametrize("monitor", _real_monitors(), ids=lambda m: type(m).__name__)

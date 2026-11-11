@@ -347,7 +347,7 @@ capabilities:
     enabled_by_default: false
     covers: {LLM06: partial, ASI03: partial, LLM02: partial}
     summary: Per-request authorization of actions against roles, with masking obligations.
-    limits: Orchestrator only; its built-in compromise check is a plain substring match.
+    limits: Orchestrator only; its built-in compromise check is a plain substring match. Enabled with its package unavailable it fails closed in production (1.26), allows (logged) in development/test.
 
   - id: zero_trust.signed_identity
     kind: zero_trust

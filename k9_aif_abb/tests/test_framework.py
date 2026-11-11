@@ -177,26 +177,18 @@ class TestApplyGovernance:
         assert result["_async"] is True
 
 
-class TestPublishEvent:
+class TestKafkaOwnership:
+    """1.26: an agent cannot hold a message bus; publish_event() is removed."""
 
-    def test_publish_event_calls_message_bus(self):
-        bus = MagicMock()
-        gov = RealGovernance()
-        agent = MinimalAgent(governance=gov, message_bus=bus)
-        agent.publish_event({"type": "TestEvent"})
-        bus.publish.assert_called_once()
+    def test_agent_refuses_a_message_bus(self):
+        with pytest.raises(TypeError, match="without a message bus"):
+            MinimalAgent(governance=RealGovernance(), message_bus=MagicMock())
 
-    def test_publish_event_calls_monitor(self):
-        monitor = MagicMock()
-        gov = RealGovernance()
-        agent = MinimalAgent(governance=gov, monitor=monitor)
-        agent.publish_event({"type": "TestEvent"})
-        monitor.record_event.assert_called_once()
+    def test_agent_has_no_publish_event(self):
+        assert not hasattr(MinimalAgent(governance=RealGovernance()), "publish_event")
 
-    def test_publish_event_works_without_bus_or_monitor(self):
-        gov = RealGovernance()
-        agent = MinimalAgent(governance=gov)
-        agent.publish_event({"type": "TestEvent"})  # must not raise
+    def test_agent_message_bus_attribute_is_none(self):
+        assert MinimalAgent(governance=RealGovernance()).message_bus is None
 
 
 # ─── 3. ChatAgentABB ───────────────────────────────────────────────────────────
@@ -241,12 +233,13 @@ class TestChatAgentABB:
             with pytest.raises(PermissionError, match="enforce_governance"):
                 agent.execute({"message": "hello"})
 
-    def test_execute_publishes_to_message_bus(self):
-        bus = MagicMock()
-        gov = RealGovernance()
-        agent = ChatAgentABB(governance=gov, message_bus=bus)
+    def test_execute_reports_to_the_monitor_not_a_bus(self):
+        monitor = MagicMock()
+        agent = ChatAgentABB(governance=RealGovernance(), monitor=monitor)
         agent.execute({"message": "hello"})
-        assert bus.publish.called
+        assert monitor.record_event.called
+        with pytest.raises(TypeError):
+            ChatAgentABB(governance=RealGovernance(), message_bus=MagicMock())
 
     def test_execute_works_without_message_bus(self):
         gov = RealGovernance()

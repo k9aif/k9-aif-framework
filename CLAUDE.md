@@ -296,6 +296,10 @@ data-loss/masking → risk scoring) → `TrustDecision`. Lives on
 `False`** — `apply_zero_trust()` returns an unconditional
 `{"allowed": True, "decision": "BYPASSED", ...}` bypass when off, so
 calling it costs nothing when disabled but also protects nothing).
+Enabled but its package fails to import (1.26): production refuses to
+construct the Orchestrator/Router (`RuntimeError`); a flag switched on later
+denies (`UNAVAILABLE_DENY`); development/test keep the logged allow
+(`UNAVAILABLE_BYPASS`). Before 1.26 every environment allowed.
 `DefaultZeroTrustGuard`'s built-in `PromptInjectionGuard` is a **plain
 substring match** against 6 fixed phrases (`k9_security/zero_trust/guards.py`)
 — materially weaker than Shield's regex-based `PromptInjectionCheck`
@@ -476,10 +480,11 @@ Tests reset with `k9_aif_abb.k9_factories.reset_all()` (autouse in
 Only the **Router** (domain topics) and **Orchestrator** (results /
 downstream topics) touch Kafka directly — this hasn't changed. Agents are
 constructed without a `message_bus` — they share data sequentially through
-the Squad flow, not via A2A messaging. `notify_monitor()` on an agent reaches
-the logger/monitor only (1.24; before, it was named `publish_event()`, now a
-deprecated alias, removed in 1.26). K9-KAF-001 flags an agent built with a
-`message_bus` (1.21) as well as agent/squad code that publishes.
+the Squad flow, not via A2A messaging. **Enforced at run time from 1.26:**
+`BaseAgent.__init__` raises `TypeError` when given a `message_bus`, and
+`publish_event()` is removed. `notify_monitor()` on an agent reaches the
+logger/monitor only. K9-KAF-001 still flags agent/squad code that publishes
+or imports a Kafka client directly (the one bypass the constructor can't see).
 
 **One narrow, deliberate exception: triggering HIL.** An Agent or Squad may
 raise `RequiresHIL` to signal that a human decision is needed mid-flow (a

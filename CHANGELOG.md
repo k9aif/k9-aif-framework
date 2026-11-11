@@ -4,6 +4,29 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.26.0] — unreleased
+
+### Kafka ownership enforced at run time
+
+- **`BaseAgent` refuses a message bus.** `BaseAgent.__init__` raises `TypeError` when `message_bus` is not `None`;
+  `agent.message_bus` is always `None`. Only the Router and the Orchestrators publish to Kafka. Before 1.26 the rule
+  was enforced only by Inspector K9-KAF-001, and an agent built with a bus could publish through `publish_event()`.
+- **`publish_event()` removed** (deprecated since 1.24). Use `notify_monitor()`.
+- **`ChatAgentABB`** reports its audit events through `notify_monitor()` instead of publishing to a bus, and no longer
+  swallows a failed publish.
+
+**Upgrading:** replace `self.publish_event(` with `self.notify_monitor(`; remove `message_bus=` from any agent
+construction (K9-KAF-001 already reported it since 1.21).
+
+### Zero Trust fails closed in production when its package is unavailable
+
+- `BaseOrchestrator` and `BaseRouter` with `enable_zero_trust` on and the zero trust package failing to import:
+  production (or `K9_ENV` unset) refuses to construct (`RuntimeError` naming the import error); a flag switched on
+  after construction denies (`UNAVAILABLE_DENY`, `allowed: False`). Development/test keep the logged allow
+  (`UNAVAILABLE_BYPASS`). Before 1.26 every environment allowed. Tests: `test_zero_trust_fail_closed_1_26.py`.
+
+---
+
 ## [1.25.0] — 2026-11-10
 
 ### Tool gate: every tool call checked before it runs (opt-in)

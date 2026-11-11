@@ -15,7 +15,7 @@ class ChatAgentABB(BaseAgent):
     Provides the core orchestration and governance for all ChatAgents.
     Ensures:
       - Governance enforced automatically by BaseAgent around execute()
-      - Logging and audit events to MessageBus
+      - Audit events to the monitor and the log (agents never publish to Kafka)
       - Optional retrieval or LLM delegation handled by SBB subclass
     """
 
@@ -57,14 +57,11 @@ class ChatAgentABB(BaseAgent):
 
     # ------------------------------------------------------------------
     def _publish(self, event: Dict[str, Any]) -> None:
-        """Publish an audit event to the message bus if one is wired up."""
-        if not self.message_bus:
-            return
-        try:
-            self.message_bus.publish({
-                "layer": self.layer,
-                "agent": self.__class__.__name__,
-                **event,
-            })
-        except Exception:
-            pass
+        """Report an audit event to the monitor and the log. Agents never publish to Kafka
+        (1.26: an agent cannot hold a message bus); the orchestrator publishes results."""
+        self.notify_monitor({
+            "type": event.get("event_type", "ChatEvent"),
+            "layer": self.layer,
+            "agent": self.__class__.__name__,
+            **event,
+        })

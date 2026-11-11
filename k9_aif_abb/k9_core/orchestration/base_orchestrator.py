@@ -12,7 +12,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Coroutine, Dict, Optional
 
-from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, require_governance
+from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, is_permissive_env, require_governance
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, trace_scope
 from k9_aif_abb.k9_utils.config_flags import config_flag
@@ -54,8 +54,10 @@ try:
     )
 
     ZERO_TRUST_AVAILABLE = True
-except ImportError:
+    ZERO_TRUST_IMPORT_ERROR = None
+except ImportError as _zt_import_error:
     ZERO_TRUST_AVAILABLE = False
+    ZERO_TRUST_IMPORT_ERROR = repr(_zt_import_error)
     ExecutionContext = None
     IdentityContext = None
     AttributeContext = None
@@ -137,6 +139,19 @@ class BaseOrchestrator(ABC):
             if enable_zero_trust is not None
             else bool(config_flag(self.config.get("enable_zero_trust"), False))
         )
+
+        # Zero Trust enabled but its package failed to import (1.26): production refuses to
+        # start; development/test keep the logged allow. Before 1.26 every environment allowed.
+        if (
+            self.enable_zero_trust
+            and not ZERO_TRUST_AVAILABLE
+            and not is_permissive_env(self.config.get("k9_env"))
+        ):
+            raise RuntimeError(
+                "Zero Trust is enabled but the zero trust package could not be imported "
+                f"({ZERO_TRUST_IMPORT_ERROR}). Production refuses to run without it; fix the "
+                "import, disable enable_zero_trust, or set K9_ENV=development."
+            )
 
         if self.enable_zero_trust and ZERO_TRUST_AVAILABLE:
             self.zero_trust_guard = zero_trust_guard or DefaultZeroTrustGuard()
@@ -352,18 +367,25 @@ class BaseOrchestrator(ABC):
             }
 
         if not ZERO_TRUST_AVAILABLE:
+            # Normally unreachable in production (the constructor refuses); kept for a flag
+            # switched on after construction. Fail closed outside development/test (1.26).
+            permissive = is_permissive_env(self.config.get("k9_env"))
+            decision = "UNAVAILABLE_BYPASS" if permissive else "UNAVAILABLE_DENY"
+            reason = "Zero Trust package unavailable"
             self.logger.warning(
-                "[ZeroTrust] Enabled but zero trust package is unavailable. Bypassing."
+                "[ZeroTrust] Enabled but zero trust package is unavailable (%s). %s.",
+                ZERO_TRUST_IMPORT_ERROR,
+                "Allowing (development/test)" if permissive else "Denying",
             )
             emit_trace_event({
-                "type": "ZeroTrust", "agent": self.layer, "decision": "UNAVAILABLE_BYPASS",
-                "allowed": True, "risk": 0.0, "reason": "Zero Trust package unavailable",
+                "type": "ZeroTrust", "agent": self.layer, "decision": decision,
+                "allowed": permissive, "risk": 0.0 if permissive else 1.0, "reason": reason,
             })
             return {
-                "allowed": True,
-                "decision": "UNAVAILABLE_BYPASS",
-                "reason": "Zero Trust package unavailable",
-                "risk_score": 0.0,
+                "allowed": permissive,
+                "decision": decision,
+                "reason": reason,
+                "risk_score": 0.0 if permissive else 1.0,
                 "obligations": [],
                 "payload": payload,
             }
