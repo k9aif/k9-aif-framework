@@ -156,9 +156,10 @@ class GuardianGovernance(BaseGovernance):
         self._model = guardian_cfg.get("model", _DEFAULT_GUARDIAN_MODEL)
         self._timeout = int(guardian_cfg.get("timeout", 30))
         # Sampling temperature for the ingress/egress classification (1.26). Before 1.26 the request set none,
-        # so Ollama sampled at its default and the same document got different verdicts between runs (measured:
-        # 51 of 104 attack documents and 73 of 104 benign documents kept the same verdict over 5 repeats;
-        # at temperature 0, all of them). 0 makes the check deterministic; the named-risk checks were already 0.
+        # so Ollama sampled at its default and the same document got different verdicts between runs (measured,
+        # 5 repeats of 208 documents: 51/104 attack and 73/104 benign documents kept their verdict; at temperature
+        # 0, 99/104 and 99/104, and every flip coincided with the model server changing placement mid-run). 0
+        # removes the sampling variation; server state can still move a borderline verdict. Named-risk checks: 0.
         self._temperature = float(guardian_cfg.get("temperature", 0))
 
         policy = guardian_cfg.get("on_unavailable", "fail_closed")
