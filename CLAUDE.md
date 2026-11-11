@@ -482,9 +482,9 @@ Only the **Router** (domain topics) and **Orchestrator** (results /
 downstream topics) touch Kafka directly — this hasn't changed. Agents are
 constructed without a `message_bus` — they share data sequentially through
 the Squad flow, not via A2A messaging. **Enforced at run time from 1.26:**
-`BaseAgent.__init__` raises `TypeError` when given a `message_bus`, and
-`publish_event()` is removed. `notify_monitor()` on an agent reaches the
-logger/monitor only. K9-KAF-001 still flags agent/squad code that publishes
+`BaseAgent.__init__` raises `TypeError` when given a `message_bus`.
+`notify_monitor()` on an agent reaches the logger/monitor only; the old name
+`publish_event()` is a deprecated alias of it (warns; removed in 2.0). K9-KAF-001 still flags agent/squad code that publishes
 or imports a Kafka client directly (the one bypass the constructor can't see).
 
 **One narrow, deliberate exception: triggering HIL.** An Agent or Squad may

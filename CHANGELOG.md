@@ -11,12 +11,14 @@ All notable changes to K9-AIF are documented here.
 - **`BaseAgent` refuses a message bus.** `BaseAgent.__init__` raises `TypeError` when `message_bus` is not `None`;
   `agent.message_bus` is always `None`. Only the Router and the Orchestrators publish to Kafka. Before 1.26 the rule
   was enforced only by Inspector K9-KAF-001, and an agent built with a bus could publish through `publish_event()`.
-- **`publish_event()` removed** (deprecated since 1.24). Use `notify_monitor()`.
+- **`publish_event()` is now an alias of `notify_monitor()`** (deprecated since 1.24, warns; removed in 2.0, not
+  1.26 as announced): with no bus on an agent it can only reach the monitor and the log, and keeping it avoids
+  breaking applications and generated scaffolds (K9X Studio's agent template) that still call it.
 - **`ChatAgentABB`** reports its audit events through `notify_monitor()` instead of publishing to a bus, and no longer
   swallows a failed publish.
 
-**Upgrading:** replace `self.publish_event(` with `self.notify_monitor(`; remove `message_bus=` from any agent
-construction (K9-KAF-001 already reported it since 1.21).
+**Upgrading:** remove `message_bus=` from any agent construction (K9-KAF-001 already reported it since 1.21);
+replace `self.publish_event(` with `self.notify_monitor(` before 2.0.
 
 ### Granite Guardian verdicts are repeatable
 

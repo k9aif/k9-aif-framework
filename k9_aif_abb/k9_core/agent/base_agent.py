@@ -11,6 +11,7 @@ import functools
 import inspect
 import logging
 import os
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from k9_aif_abb.k9_core.governance.pipeline import (
@@ -27,6 +28,19 @@ from k9_aif_abb.k9_core.governance.pipeline import (
 # llm_invoke() that the model call it makes is already governed.
 from k9_aif_abb.k9_core.governance.call_context import GOVERNED_CALL as _GOVERNING  # noqa: E402
 from k9_aif_abb.k9_core.tools.tool_gate_context import ACTIVE_GATE as _ACTIVE_GATE  # noqa: E402
+
+
+# Agent classes already told that publish_event() is deprecated: one log line per class, not per call.
+_PUBLISH_EVENT_WARNED: set = set()
+
+
+def _warn_publish_event_deprecated(agent) -> None:
+    msg = (f"{type(agent).__qualname__}: BaseAgent.publish_event() is deprecated since k9-aif 1.24; use "
+           "notify_monitor(). It is an alias of notify_monitor() and never publishes to Kafka (removed in 2.0).")
+    warnings.warn(msg, DeprecationWarning, stacklevel=3)
+    if type(agent) not in _PUBLISH_EVENT_WARNED:
+        _PUBLISH_EVENT_WARNED.add(type(agent))
+        agent.logger.warning(msg)
 
 
 def _resolve_sync(value: Any) -> Any:
@@ -396,10 +410,17 @@ class BaseAgent(ABC):
 
         This never publishes to Kafka: an agent cannot hold a message bus (``__init__`` refuses one,
         1.26); only the Router and the Orchestrators publish. Replaced ``publish_event`` (1.24;
-        removed in 1.26)."""
+        removed in 2.0)."""
         if self.monitor:
             self.monitor.record_event(event)
         self.logger.info("[%s] Event: %s", self.layer, event)
+
+    def publish_event(self, event: Dict[str, Any]) -> None:
+        """Deprecated since 1.24: use :meth:`notify_monitor`. Kept as an alias of it (removal in 2.0), so
+        applications and generated scaffolds that still call it keep working. It cannot publish to Kafka:
+        from 1.26 an agent cannot hold a message bus."""
+        _warn_publish_event_deprecated(self)
+        self.notify_monitor(event)
 
     # ------------------------------------------------------------------
     async def apply_pre_governance(

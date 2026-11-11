@@ -184,8 +184,12 @@ class TestKafkaOwnership:
         with pytest.raises(TypeError, match="without a message bus"):
             MinimalAgent(governance=RealGovernance(), message_bus=MagicMock())
 
-    def test_agent_has_no_publish_event(self):
-        assert not hasattr(MinimalAgent(governance=RealGovernance()), "publish_event")
+    def test_publish_event_is_an_alias_that_reaches_only_the_monitor(self):
+        monitor = MagicMock()
+        agent = MinimalAgent(governance=RealGovernance(), monitor=monitor)
+        with pytest.warns(DeprecationWarning, match="notify_monitor"):
+            agent.publish_event({"type": "Old"})
+        monitor.record_event.assert_called_once()
 
     def test_agent_message_bus_attribute_is_none(self):
         assert MinimalAgent(governance=RealGovernance()).message_bus is None
