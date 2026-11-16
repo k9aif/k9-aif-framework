@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] — planned 1.27.0
+## [1.27.0] — 2026-11-16
 
 ### Added
 - **OpenAI Agents SDK adapter** (`k9_adapters/openai_agents/`, extra `k9-aif[openai-agents]`, openai-agents 0.24).
@@ -14,7 +14,8 @@ All notable changes to K9-AIF are documented here.
   hosted OpenAI tools can't be given to an agent. Checked: Zero Trust and Shield ingress before the run, Zero
   Trust for every agent that takes a turn, Shield on every tool call, tool result and model reply, Shield on
   the final output. `model_routing: k9` (default) makes the K9 Model Router the SDK's model provider, with
-  `tool_calling` required for agents with tools; `direct` passes the model through. Handoff groups capped
+  `tool_calling` required for agents with tools or handoffs (a handoff is a function call); `direct` passes the
+  model through. Handoff groups capped
   (`max_handoffs`, default 3). SDK trace export to OpenAI off unless `openai_agents.export_traces: true`.
   A tool handler's exception (including `RequiresHIL`) is raised with its own type, not the SDK's wrapper.
   Tests: `tests/test_openai_agents_adapter.py`; live example: k9-aif-examples `k9x_openai_bedrock/openai`.
