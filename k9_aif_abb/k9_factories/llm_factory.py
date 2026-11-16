@@ -153,6 +153,33 @@ class LLMFactory:
                 return str(own).lower()
         return cls.default_backend()
 
+    @classmethod
+    def endpoint_for(cls, alias: str) -> Dict[str, Any]:
+        """Where *alias* is served, without building a client (1.27.0).
+
+        Returns ``{"backend", "model", "connection"}``: the same backend, model name and
+        connection settings ``get()`` would use (factory-wide settings, overridden by the
+        alias's own). For a caller that makes the model call itself, such as the OpenAI
+        Agents SDK adapter, after ``llm_route()`` has chosen the alias.
+        """
+        if not cls._bootstrapped:
+            raise RuntimeError("LLMFactory.endpoint_for() called before bootstrap().")
+        fcfg = (cls._cfg or {}).get("inference", {}).get("llm_factory") or {}
+        model_cfg = (fcfg.get("models") or {}).get(alias)
+        if not model_cfg:
+            raise KeyError(f"LLM model alias '{alias}' is not configured under inference.llm_factory.models")
+        connection = {k: v for k, v in fcfg.items() if k not in ("models",) and k not in _MODEL_PARAMS}
+        if isinstance(model_cfg, str):
+            model_name = model_cfg
+        elif isinstance(model_cfg, dict):
+            model_name = model_cfg.get("model")
+            if not model_name:
+                raise KeyError(f"LLM model alias '{alias}' is missing required key 'model'")
+            connection.update({k: v for k, v in model_cfg.items() if k not in _MODEL_PARAMS})
+        else:
+            raise TypeError(f"LLM model alias '{alias}' must be a string or dict, got {type(model_cfg).__name__}")
+        return {"backend": cls.backend_for(alias), "model": model_name, "connection": connection}
+
     # ------------------------------------------------------------------
     # Get
     # ------------------------------------------------------------------

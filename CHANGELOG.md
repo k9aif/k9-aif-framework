@@ -4,6 +4,29 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] — planned 1.27.0
+
+### Added
+- **OpenAI Agents SDK adapter** (`k9_adapters/openai_agents/`, extra `k9-aif[openai-agents]`, openai-agents 0.24).
+  `K9OpenAIAgentsAdapter` (facade), `OpenAIAgentsOrchestratorAdapter`, `OpenAIAgentsPayloadMapper`,
+  `K9ModelProvider` / `K9GovernedModel`. Agents are declared in K9-AIF agent YAML (`load_agent_specs`, new
+  `tools:` and `handoffs:` fields) and built by the adapter; it never accepts a pre-built `Agent` or tool, so
+  hosted OpenAI tools can't be given to an agent. Checked: Zero Trust and Shield ingress before the run, Zero
+  Trust for every agent that takes a turn, Shield on every tool call, tool result and model reply, Shield on
+  the final output. `model_routing: k9` (default) makes the K9 Model Router the SDK's model provider, with
+  `tool_calling` required for agents with tools; `direct` passes the model through. Handoff groups capped
+  (`max_handoffs`, default 3). SDK trace export to OpenAI off unless `openai_agents.export_traces: true`.
+  A tool handler's exception (including `RequiresHIL`) is raised with its own type, not the SDK's wrapper.
+  Tests: `tests/test_openai_agents_adapter.py`; live example: k9-aif-examples `k9x_openai_bedrock/openai`.
+- `llm_route(config, request)` in `k9_utils/llm_invoke.py`: the router's choice (eligibility first) for a
+  caller that makes the model call itself; emits `LLMRoute`. `LLMFactory.endpoint_for(alias)`.
+- `k9_adapters/tool_capability.py`: `ToolCapability` shared by the Claude and OpenAI adapters (still
+  importable from the Claude adapter module).
+
+### Note
+- `openai-agents` requires `openai>=3`; `crewai` (through `instructor`) requires `openai<3`. They can't share
+  an environment, so `openai-agents` is not part of the `all` extra.
+
 ## [1.26.1] — 2026-11-11
 
 ### Routing state is indexed: per-call cost no longer grows with history
