@@ -228,6 +228,19 @@ def test_sdk_tracing_to_openai_is_off_by_default():
 
 # ── K9 Model Router as the model provider ─────────────────────────────────
 
+def test_agent_with_handoffs_but_no_tools_requires_a_tool_calling_model():
+    """Property: a handoff is a function call, so an entry agent with handoffs and no tools of its own still
+    gets a tool-calling model. Found in a Studio scaffold (2026-11-16): FrontDeskAgent (handoffs only) was routed
+    to a 2B chat model, which wrote the handoff out as text and made up the weather instead of handing off."""
+    specs = {"FrontDeskAgent": _spec(name="FrontDeskAgent", model="desk", tools=[], handoffs=["WeatherAgent"]),
+             "WeatherAgent": _spec(), "Chat": _spec(name="Chat", model="chat", tools=[])}
+    adapter = OpenAIAgentsOrchestratorAdapter(capabilities=[_lookup_cap([])], agents=specs,
+                                              entry_agent="FrontDeskAgent", config=CONFIG,
+                                              governance=ShieldGovernance(CONFIG))
+    provider = adapter._run_config().model_provider
+    assert provider.tools_by_alias == {"desk": True, "weather": True, "chat": False}
+
+
 def test_k9_model_provider_routes_with_tool_calling_required(monkeypatch):
     seen = {}
 

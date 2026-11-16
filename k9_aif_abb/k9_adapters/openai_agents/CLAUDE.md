@@ -16,7 +16,8 @@ its agents take the place of Squad -> Agent on that path.
 Stronger than the Claude adapter (action only), because the OpenAI SDK has a model seam
 (`RunConfig.model_provider`). With `model_routing: k9` (default) `K9ModelProvider` asks the router
 through `llm_route()` for every model the SDK needs; eligibility applies (`tool_calling` is
-required for agents with tools; `confidential` for a confidential request) and fails closed. The
+required for agents with tools or handoffs, since a handoff is a function call; `confidential` for a
+confidential request) and fails closed. The
 SDK makes the call through `OpenAIChatCompletionsModel`, so only OpenAI-compatible backends
 (`ollama`, `openai`) are served; any other backend raises `ValueError`.
 

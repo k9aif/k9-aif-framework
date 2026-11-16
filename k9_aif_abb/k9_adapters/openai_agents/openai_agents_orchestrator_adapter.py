@@ -400,7 +400,10 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
             tools_by_alias: Dict[str, bool] = {}
             for spec in self._specs.values():
                 alias = spec.get("model") or "general"
-                tools_by_alias[alias] = tools_by_alias.get(alias, False) or bool(spec.get("tools"))
+                # a handoff is a function call too: an agent with handoffs needs a tool-calling model
+                # just like one with tools, or it writes the handoff out as text and the run ends there
+                calls = bool(spec.get("tools")) or bool(spec.get("handoffs"))
+                tools_by_alias[alias] = tools_by_alias.get(alias, False) or calls
             kwargs["model_provider"] = K9ModelProvider(
                 self.config, tools_by_alias=tools_by_alias, sensitivity=self.sensitivity,
                 required_capabilities=self.required_capabilities, agent_name=self.adapter_name)
