@@ -39,13 +39,14 @@ package "k9_adapters.openai_agents" {
     -_max_handoffs: int
     +execute_flow(payload): dict
     +execute_flow_async(payload): dict
-    -_build_agent(): Agent
-    -_build_function_tools(): list
-    -_run(prompt): RunResult
+    -_build_agents(): dict[str, Agent]
+    -_function_tool(cap): FunctionTool
+    -_run_config(): RunConfig
+    -_run(prompt, hooks): RunResult
   }
-  class K9ToolGuardrail {
-    +input_guardrail(data): ToolGuardrailFunctionOutput
-    +output_guardrail(data): ToolGuardrailFunctionOutput
+  class "K9 tool guardrails" as K9ToolGuardrail <<per tool>> {
+    k9_tool_call_check(data): ToolGuardrailFunctionOutput
+    k9_tool_result_check(data): ToolGuardrailFunctionOutput
   }
   class K9ModelProvider {
     +get_model(name): Model
@@ -100,8 +101,8 @@ OpenAIAgentsOrchestratorAdapter ..> FunctionTool : builds from capabilities
 OpenAIAgentsOrchestratorAdapter ..> Runner : run()
 K9ToolGuardrail ..> ToolInputGuardrail : provides
 K9ToolGuardrail ..> ToolOutputGuardrail : provides
-K9ToolGuardrail ..> BaseGovernance : tool args, tool result
-K9ToolGuardrail ..> BaseToolDispatcher : propose()
+K9ToolGuardrail ..> BaseGovernance : screen_tool_call(),\nscreen_tool_result()
+OpenAIAgentsOrchestratorAdapter ..> BaseToolDispatcher : gate session around the run\n(security.tool_gate.enabled)
 K9ModelProvider ..> BaseModelRouter : llm_route()\n(llm_invoke module only)
 K9ModelProvider ..> K9GovernedModel : returns
 K9OpenAIAgentsAdapter ..> LoadSpecs : agent YAML\n(tools, handoffs, model alias)
