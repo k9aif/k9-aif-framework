@@ -31,7 +31,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseSecurityAgent` | (contract only) | |
 | `BaseMessageAgent` | `QueueMessageAgent`, `TopicMessageAgent` | |
 | `BaseLoggingAgent` | `ConsoleLoggingAgent`, `FileLoggingAgent`, `CloudLoggingAgent`, `LoggingAgent` | |
-| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter` | wrap an existing crew/graph/SDK agent with K9 governance |
+| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider) | wrap an existing crew/graph/SDK agent with K9 governance |
 
 ## Inference
 

@@ -1,0 +1,60 @@
+@startuml block_diagram
+title K9-AIF with the OpenAI Agents SDK: where the adapter sits
+top to bottom direction
+
+rectangle "Client / event source" as Client
+
+rectangle "K9-AIF Router\n(admit: authenticate, route by event_type)" as Router
+
+rectangle "Native K9-AIF path" as Native {
+  rectangle "Orchestrator\n(BaseOrchestrator)" as Orch
+  rectangle "Squad\n(BaseSquad, YAML flow)" as Squad
+  rectangle "Agents\n(BaseAgent, llm_invoke)" as Agents
+}
+
+rectangle "OpenAI path" as OAI {
+  rectangle "OpenAIAgentsOrchestratorAdapter\n(is an Orchestrator: BaseOrchestrator + BaseAdapter)" as Adapter
+  rectangle "OpenAI Agents SDK Runner\n(agent loop)" as Runner
+  rectangle "OpenAI Agent + handoff agents\n(built by the adapter)" as OAgents
+}
+
+rectangle "Shared K9-AIF services (same config for both paths)" as Shared {
+  rectangle "Shield governance\n(ingress, egress,\ntool args, tool results)" as Shield
+  rectangle "Tool gate\n(registry, record checks,\nrules -> allow / deny / hil)" as Gate
+  rectangle "HIL Orchestrator\n-> k9x HIL" as HIL
+  rectangle "Model Router\n(eligibility, learned scores)" as MR
+}
+
+rectangle "Models\n(OpenAI, Azure OpenAI,\nOllama, vLLM)" as Models
+rectangle "Tool handlers\n(registered capabilities)" as Tools
+
+Client --> Router
+Router --> Orch : event_type A
+Router --> Adapter : event_type B
+
+Orch --> Squad
+Squad --> Agents
+
+Adapter --> Runner : run()
+Runner --> OAgents
+
+Adapter ..> Shield : ingress, final output
+OAgents ..> Shield : every tool call and result\n(K9ToolGuardrail)
+OAgents ..> Gate : every tool call
+OAgents ..> MR : every model call\n(K9ModelProvider)
+Agents ..> Shield : governed by construction
+Agents ..> MR : llm_invoke
+Gate ..> HIL : review needed
+MR --> Models
+Gate --> Tools : allowed call
+
+note right of OAI
+  The adapter is one of the Router's
+  orchestrators. The OpenAI Runner and
+  its agents take the place of
+  Squad -> Agent on this path.
+  Hosted tools (web search, file search,
+  code interpreter, hosted MCP) run on
+  OpenAI servers: refused by default.
+end note
+@enduml

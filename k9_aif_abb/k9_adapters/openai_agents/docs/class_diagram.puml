@@ -1,0 +1,116 @@
+@startuml class_diagram
+title OpenAI Agents SDK adapter: class diagram (k9-aif 1.27.0)
+
+package "K9-AIF ABBs" {
+  abstract class BaseAdapter {
+    +adapter_name: str
+    +validate_payload(payload)
+    #adapt_input(payload): dict
+    #adapt_output(result): dict
+  }
+  abstract class BaseOrchestrator {
+    +governance: BaseGovernance
+    +execute_flow(payload): dict
+    +apply_pre_governance(payload): dict
+    +apply_post_governance(payload): dict
+    +apply_zero_trust(payload): dict
+    +publish_status(status, context)
+  }
+  abstract class BaseModelRouter {
+    +route(request): RouteDecision
+  }
+  class BaseToolDispatcher {
+    +propose(call): Any
+    +resume(reply): dict
+  }
+  abstract class BaseGovernance
+}
+
+package "k9_adapters.openai_agents" {
+  class ToolCapability <<shared>> {
+    +name: str
+    +description: str
+    +input_schema: dict
+    +handler: Callable
+  }
+  class OpenAIAgentsOrchestratorAdapter {
+    -_capabilities: dict
+    -_agent_specs: dict
+    -_max_handoffs: int
+    +execute_flow(payload): dict
+    +execute_flow_async(payload): dict
+    -_build_agent(): Agent
+    -_build_function_tools(): list
+    -_run(prompt): RunResult
+  }
+  class K9ToolGuardrail {
+    +input_guardrail(data): ToolGuardrailFunctionOutput
+    +output_guardrail(data): ToolGuardrailFunctionOutput
+  }
+  class K9ModelProvider {
+    +get_model(name): Model
+  }
+  class K9GovernedModel {
+    +get_response(...): ModelResponse
+    +stream_response(...): AsyncIterator
+  }
+  class _K9RunHooks {
+    +on_agent_start(ctx, agent)
+    +on_handoff(ctx, from, to)
+    +on_llm_end(ctx, agent, response)
+  }
+  class "load_agent_specs()" as LoadSpecs
+  class OpenAIAgentsPayloadMapper {
+    +to_sdk_input(payload): dict
+    +from_sdk_output(result): dict
+  }
+  class K9OpenAIAgentsAdapter {
+    +execute(payload): dict
+    +execute_async(payload): dict
+  }
+}
+
+package "openai-agents (external)" {
+  class Agent
+  class Runner
+  class FunctionTool
+  abstract class Model
+  abstract class ModelProvider
+  class RunHooks
+  class ToolInputGuardrail
+  class ToolOutputGuardrail
+}
+
+BaseAdapter <|-- OpenAIAgentsOrchestratorAdapter
+BaseOrchestrator <|-- OpenAIAgentsOrchestratorAdapter
+ModelProvider <|-- K9ModelProvider
+Model <|-- K9GovernedModel
+RunHooks <|-- _K9RunHooks
+OpenAIAgentsOrchestratorAdapter *-- _K9RunHooks
+_K9RunHooks ..> BaseGovernance : reply egress\n(every agent)
+
+K9OpenAIAgentsAdapter *-- OpenAIAgentsOrchestratorAdapter
+K9OpenAIAgentsAdapter *-- OpenAIAgentsPayloadMapper
+OpenAIAgentsOrchestratorAdapter o-- "1..N" ToolCapability
+OpenAIAgentsOrchestratorAdapter *-- K9ToolGuardrail
+OpenAIAgentsOrchestratorAdapter *-- K9ModelProvider
+
+OpenAIAgentsOrchestratorAdapter ..> Agent : builds, every call
+OpenAIAgentsOrchestratorAdapter ..> FunctionTool : builds from capabilities
+OpenAIAgentsOrchestratorAdapter ..> Runner : run()
+K9ToolGuardrail ..> ToolInputGuardrail : provides
+K9ToolGuardrail ..> ToolOutputGuardrail : provides
+K9ToolGuardrail ..> BaseGovernance : tool args, tool result
+K9ToolGuardrail ..> BaseToolDispatcher : propose()
+K9ModelProvider ..> BaseModelRouter : llm_route()\n(llm_invoke module only)
+K9ModelProvider ..> K9GovernedModel : returns
+K9OpenAIAgentsAdapter ..> LoadSpecs : agent YAML\n(tools, handoffs, model alias)
+
+note bottom of OpenAIAgentsOrchestratorAdapter
+  Builds every Agent from agent YAML;
+  never accepts a pre-built Agent.
+  Handoff agents capped (default 3).
+  Hosted tools refused at construction.
+  Tier: action and inference governed.
+end note
+@enduml

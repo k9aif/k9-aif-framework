@@ -501,6 +501,7 @@ class OrchestratorIngressRule(BaseInspectionRule):
     _HOOKS = ("apply_shield", "apply_pre_governance", "apply_zero_trust", "governance=", "ShieldGovernance(",
               "GuardianGovernance(", "ChainedGovernance(", "assert_governed", "_build_ingress_chain")
     _ADAPTERS = {"CrewAIOrchestratorAdapter", "LangGraphOrchestratorAdapter", "ClaudeAgentSDKOrchestratorAdapter",
+                 "OpenAIAgentsOrchestratorAdapter",
                  "BaseHILOrchestrator"}
 
     def inspect(self, project: SolutionProject) -> List[Finding]:

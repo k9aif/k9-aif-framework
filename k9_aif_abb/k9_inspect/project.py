@@ -34,7 +34,7 @@ ROLE_BASES: Dict[str, Set[str]] = {
     "squad": {"BaseSquad", "IntentSquad"},
     "orchestrator": {"BaseOrchestrator", "BaseHILOrchestrator", "IntentOrchestrator", "BaseIntegrationAdapter",
                      "CrewAIOrchestratorAdapter", "LangGraphOrchestratorAdapter",
-                     "ClaudeAgentSDKOrchestratorAdapter"},
+                     "ClaudeAgentSDKOrchestratorAdapter", "OpenAIAgentsOrchestratorAdapter"},
     "router": {"BaseRouter", "K9EventRouter"},
 }
 LOOP_AGENT_BASES = {"BaseValidationLoopAgent", "K9ValidationLoopAgent", "K9PlanningLoopAgent",

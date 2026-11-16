@@ -132,7 +132,6 @@ re-verify before revisiting this.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from claude_agent_sdk import (
@@ -146,6 +145,7 @@ from claude_agent_sdk import (
     tool as sdk_tool,
 )
 
+from k9_aif_abb.k9_adapters.tool_capability import ToolCapability  # noqa: F401  (re-exported, pre-1.27 import path)
 from k9_aif_abb.k9_core.base_adapter import BaseAdapter
 from k9_aif_abb.k9_core.governance.call_context import governed_call
 from k9_aif_abb.k9_utils.trace_events import trace_id_from, trace_scope
@@ -154,22 +154,6 @@ from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_security.tool_result_guard import screen_tool_result, withheld_value
 
 _MCP_SERVER_NAME = "k9x_adapter_tools"
-
-
-@dataclass(frozen=True)
-class ToolCapability:
-    """One capability this adapter is willing to broker to the SDK.
-
-    ``handler`` is an async callable matching the SDK's own tool-handler
-    contract: ``async def handler(args: dict) -> dict``. It is wrapped
-    with the SDK's ``@tool`` decorator inside ``_build_mcp_server`` — the
-    caller never touches the SDK's tool machinery directly.
-    """
-
-    name: str
-    description: str
-    input_schema: Any
-    handler: Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
 
 
 class ClaudeAgentSDKOrchestratorAdapter(BaseOrchestrator, BaseAdapter):

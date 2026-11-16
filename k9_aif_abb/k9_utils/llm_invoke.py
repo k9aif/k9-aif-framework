@@ -245,6 +245,44 @@ def llm_invoke(
     return resp
 
 
+def llm_route(config: Dict[str, Any], request: InferenceRequest) -> Dict[str, Any]:
+    """
+    Choose a model for a caller that makes the model call itself (1.27.0).
+
+    An external agent runtime that runs its own loop with native tool calling (the
+    OpenAI Agents SDK adapter) can't send its calls through :func:`llm_invoke`, which is
+    text in, text out. It still gets the same choice: the router's eligibility rules
+    (``required_capabilities``, ``sensitivity``) and scoring decide, and a request no
+    model is eligible for raises ``NoEligibleModelError``. The caller then calls the
+    returned endpoint. This keeps the rule that only this module touches the router.
+
+    Returns ``{"alias", "llm_ref", "backend", "model", "connection", "rationale"}``.
+    The choice is emitted as an ``LLMRoute`` trace event.
+    """
+    from k9_aif_abb.k9_factories.llm_factory import LLMFactory
+
+    router = ModelRouterFactory.get_router(config)
+    LLMFactory.ensure_bootstrapped(config)
+    decision = router.route(request)
+    alias = decision.model_alias
+    catalog = getattr(router, "catalog", None)
+    entry = catalog.get_model(alias) if catalog is not None else {}
+    llm_ref = (entry or {}).get("llm_ref", alias)
+    endpoint = LLMFactory.endpoint_for(llm_ref)
+    emit_trace_event({
+        "type":       "LLMRoute",
+        "agent":      (request.metadata or {}).get("agent", "unknown"),
+        "task_type":  request.task_type or "general",
+        "model":      endpoint["model"],
+        "model_alias": alias,
+        "provider":   endpoint["backend"],
+        "rationale":  (decision.rationale or "")[:300],
+    })
+    log.info("[llm_route] agent=%s task=%s -> %s (%s via %s)", (request.metadata or {}).get("agent", "?"),
+             request.task_type, alias, endpoint["model"], endpoint["backend"])
+    return {"alias": alias, "llm_ref": llm_ref, "rationale": decision.rationale, **endpoint}
+
+
 async def llm_invoke_stream(config: Dict[str, Any], request: InferenceRequest):
     """
     Invoke the LLM router and yield the response incrementally.
