@@ -66,6 +66,7 @@ import yaml
 from agents import (
     Agent,
     FunctionTool,
+    ModelSettings,
     RunConfig,
     RunHooks,
     Runner,
@@ -127,6 +128,12 @@ def _instructions(spec: Dict[str, Any]) -> str:
     elif rules:
         parts.append(str(rules).strip())
     return "\n\n".join(parts)
+
+
+def _model_settings(spec: Dict[str, Any]) -> ModelSettings:
+    """``temperature`` / ``max_tokens`` from the agent YAML, as for framework agents."""
+    kwargs = {k: spec[k] for k in ("temperature", "max_tokens") if spec.get(k) is not None}
+    return ModelSettings(**kwargs)
 
 
 def _json_schema(schema: Any) -> Dict[str, Any]:
@@ -278,6 +285,7 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
                 instructions=_instructions(spec),
                 model=spec.get("model") or ("general" if self.model_routing == "k9" else None),
                 tools=[self._function_tool(self._capabilities[t]) for t in spec.get("tools") or []],
+                model_settings=_model_settings(spec),
             )
         for name, spec in self._specs.items():
             built[name].handoffs = [built[h] for h in spec.get("handoffs") or []]

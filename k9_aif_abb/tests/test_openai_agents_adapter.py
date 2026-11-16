@@ -279,3 +279,9 @@ def test_llm_route_resolves_catalog_alias_to_endpoint():
 def test_tool_capability_is_shared_with_the_claude_adapter():
     claude = pytest.importorskip("k9_aif_abb.k9_adapters.claude_agent_sdk")
     assert claude.ToolCapability is ToolCapability
+
+
+def test_agent_yaml_temperature_reaches_the_model_settings():
+    adapter = _adapter(ScriptedModel([]), [], specs={"WeatherAgent": _spec(temperature=0, max_tokens=200)})
+    settings = adapter.orchestrator_adapter._agents["WeatherAgent"].model_settings
+    assert settings.temperature == 0 and settings.max_tokens == 200

@@ -90,6 +90,9 @@
             <li>
                     <a class="function" href="#test_tool_capability_is_shared_with_the_claude_adapter">test_tool_capability_is_shared_with_the_claude_adapter</a>
             </li>
+            <li>
+                    <a class="function" href="#test_agent_yaml_temperature_reaches_the_model_settings">test_agent_yaml_temperature_reaches_the_model_settings</a>
+            </li>
     </ul>
 
 
@@ -400,6 +403,12 @@ k9-aif-examples/k9x_openai_bedrock/openai (weather_zip --demo).</p>
 </span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_tool_capability_is_shared_with_the_claude_adapter</span><span class="p">():</span>
 </span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>    <span class="n">claude</span> <span class="o">=</span> <span class="n">pytest</span><span class="o">.</span><span class="n">importorskip</span><span class="p">(</span><span class="s2">&quot;k9_aif_abb.k9_adapters.claude_agent_sdk&quot;</span><span class="p">)</span>
 </span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a>    <span class="k">assert</span> <span class="n">claude</span><span class="o">.</span><span class="n">ToolCapability</span> <span class="ow">is</span> <span class="n">ToolCapability</span>
+</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>
+</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a>
+</span><span id="L-284"><a href="#L-284"><span class="linenos">284</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_yaml_temperature_reaches_the_model_settings</span><span class="p">():</span>
+</span><span id="L-285"><a href="#L-285"><span class="linenos">285</span></a>    <span class="n">adapter</span> <span class="o">=</span> <span class="n">_adapter</span><span class="p">(</span><span class="n">ScriptedModel</span><span class="p">([]),</span> <span class="p">[],</span> <span class="n">specs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;WeatherAgent&quot;</span><span class="p">:</span> <span class="n">_spec</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">)})</span>
+</span><span id="L-286"><a href="#L-286"><span class="linenos">286</span></a>    <span class="n">settings</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">orchestrator_adapter</span><span class="o">.</span><span class="n">_agents</span><span class="p">[</span><span class="s2">&quot;WeatherAgent&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">model_settings</span>
+</span><span id="L-287"><a href="#L-287"><span class="linenos">287</span></a>    <span class="k">assert</span> <span class="n">settings</span><span class="o">.</span><span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">settings</span><span class="o">.</span><span class="n">max_tokens</span> <span class="o">==</span> <span class="mi">200</span>
 </span></pre></div>
 
 
@@ -885,6 +894,27 @@ k9-aif-examples/k9x_openai_bedrock/openai (weather_zip --demo).</p>
             <div class="pdoc-code codehilite"><pre><span></span><span id="test_tool_capability_is_shared_with_the_claude_adapter-280"><a href="#test_tool_capability_is_shared_with_the_claude_adapter-280"><span class="linenos">280</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_tool_capability_is_shared_with_the_claude_adapter</span><span class="p">():</span>
 </span><span id="test_tool_capability_is_shared_with_the_claude_adapter-281"><a href="#test_tool_capability_is_shared_with_the_claude_adapter-281"><span class="linenos">281</span></a>    <span class="n">claude</span> <span class="o">=</span> <span class="n">pytest</span><span class="o">.</span><span class="n">importorskip</span><span class="p">(</span><span class="s2">&quot;k9_aif_abb.k9_adapters.claude_agent_sdk&quot;</span><span class="p">)</span>
 </span><span id="test_tool_capability_is_shared_with_the_claude_adapter-282"><a href="#test_tool_capability_is_shared_with_the_claude_adapter-282"><span class="linenos">282</span></a>    <span class="k">assert</span> <span class="n">claude</span><span class="o">.</span><span class="n">ToolCapability</span> <span class="ow">is</span> <span class="n">ToolCapability</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_agent_yaml_temperature_reaches_the_model_settings">
+                            <input id="test_agent_yaml_temperature_reaches_the_model_settings-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_agent_yaml_temperature_reaches_the_model_settings</span><span class="signature pdoc-code condensed">(<span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_agent_yaml_temperature_reaches_the_model_settings-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_agent_yaml_temperature_reaches_the_model_settings"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_agent_yaml_temperature_reaches_the_model_settings-285"><a href="#test_agent_yaml_temperature_reaches_the_model_settings-285"><span class="linenos">285</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_yaml_temperature_reaches_the_model_settings</span><span class="p">():</span>
+</span><span id="test_agent_yaml_temperature_reaches_the_model_settings-286"><a href="#test_agent_yaml_temperature_reaches_the_model_settings-286"><span class="linenos">286</span></a>    <span class="n">adapter</span> <span class="o">=</span> <span class="n">_adapter</span><span class="p">(</span><span class="n">ScriptedModel</span><span class="p">([]),</span> <span class="p">[],</span> <span class="n">specs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;WeatherAgent&quot;</span><span class="p">:</span> <span class="n">_spec</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">200</span><span class="p">)})</span>
+</span><span id="test_agent_yaml_temperature_reaches_the_model_settings-287"><a href="#test_agent_yaml_temperature_reaches_the_model_settings-287"><span class="linenos">287</span></a>    <span class="n">settings</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">orchestrator_adapter</span><span class="o">.</span><span class="n">_agents</span><span class="p">[</span><span class="s2">&quot;WeatherAgent&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">model_settings</span>
+</span><span id="test_agent_yaml_temperature_reaches_the_model_settings-288"><a href="#test_agent_yaml_temperature_reaches_the_model_settings-288"><span class="linenos">288</span></a>    <span class="k">assert</span> <span class="n">settings</span><span class="o">.</span><span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">settings</span><span class="o">.</span><span class="n">max_tokens</span> <span class="o">==</span> <span class="mi">200</span>
 </span></pre></div>
 
 
