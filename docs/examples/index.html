@@ -92,8 +92,9 @@
         <div class="eyebrow">Examples</div>
         <h1>Built with K9-AIF</h1>
         <p class="hero-subtitle">
-          Two applications running live that you can try today, and focused examples that each teach one idea:
-          routing, governance, Zero Trust, retrieval, or wrapping an existing CrewAI or LangGraph application.
+          Three applications running live that you can try today, and focused examples that each teach one idea:
+          routing, governance, Zero Trust, retrieval, or wrapping an existing CrewAI, LangGraph or OpenAI Agents SDK
+          application.
         </p>
         <div class="hero-actions">
           <a class="btn-primary" href="#das">Start with DAS</a>
@@ -108,6 +109,7 @@
         <ul>
           <li><a href="#das"><span class="dot"></span>DAS</a></li>
           <li><a href="#k9chat"><span class="dot"></span>K9Chat</a></li>
+          <li><a href="#weather-assist-openai"><span class="dot"></span>Weather Assist (OpenAI)</a></li>
         </ul>
         <h3>Focused examples</h3>
         <ul>
@@ -179,6 +181,29 @@
                 <div class="actions">
                   <a class="primary" href="https://chat.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
                   <a href="https://github.com/k9aif/examples/tree/main/k9chat" target="_blank" rel="noopener noreferrer">Code</a>
+                </div>
+              </div>
+            </article>
+
+            <article class="live-card" id="weather-assist-openai">
+              <div class="live-body">
+                <div><span class="badge live">Live</span><span class="badge">OpenAI Agents SDK</span></div>
+                <h3>Weather Assist (OpenAI)</h3>
+                <p>
+                  An OpenAI Agents SDK agent finds the weather for a US zip code; K9-AIF governs every step it takes and
+                  lists each check on the page. No OpenAI key needed: it runs on a local model through Ollama.
+                </p>
+                <ul class="feature-list">
+                  <li>The <strong>OpenAI Agents SDK adapter</strong>: an orchestrator that builds the agent from K9-AIF agent YAML</li>
+                  <li><strong>k9x Shield</strong> on the request, every tool call and result, and every reply</li>
+                  <li><strong>Zero Trust</strong> for the caller and for each agent that takes a turn</li>
+                  <li>The <strong>K9 Model Router</strong> picks every model: tool-using agents get tool-calling models</li>
+                  <li>Download and run with <strong>./run.sh</strong>; Ubuntu and container scripts included</li>
+                </ul>
+                <div class="actions">
+                  <a class="primary" href="https://openai.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
+                  <a href="https://github.com/k9aif/examples/tree/main/k9x_openai_bedrock/openai" target="_blank" rel="noopener noreferrer">Code</a>
+                  <a href="https://blog.k9x.ai/k9-aif-with-openai-agents-sdk/" target="_blank" rel="noopener noreferrer">Blog post</a>
                 </div>
               </div>
             </article>
