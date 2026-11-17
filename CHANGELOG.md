@@ -4,6 +4,24 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.28.0] — 2026-11-17
+
+### Added
+- **`K9OpenAIAgent`** (`k9_adapters/openai_agents/k9_openai_agent.py`): one OpenAI agent as one step of a
+  K9-AIF squad. The squad decides which agent runs next, never the model: each OpenAI agent is an individual,
+  runnable K9-AIF agent (a small subclass per agent, found by class name like any other), and `BaseSquad` runs
+  them in the order its `flow:` sets, with its `synthesis:` setting. The model is never offered a handoff
+  (YAML `handoffs:` on a step is refused). Each step reads the request plus the squad's digest or each earlier
+  step's `output`, and returns `{"output": ...}`. Governed like any agent (Shield on the step's input and
+  output, by construction), with the same K9 guardrails on every tool call and result as the orchestrator
+  adapter, and the K9 Model Router choosing each model (`model_routing: k9`, default). Tools come from
+  `SquadLoader.from_agents(..., agent_kwargs={"capabilities": [...]})`. The OpenAI Agents SDK's guide calls this
+  "orchestrating via code". Tests: `tests/test_openai_agent_squad.py`.
+- `build_function_tool()` and `run_capturing_tool_errors()`, shared by the orchestrator adapter and
+  `K9OpenAIAgent` (the adapter's behaviour is unchanged).
+
+---
+
 ## [1.27.0] — 2026-11-16
 
 ### Added

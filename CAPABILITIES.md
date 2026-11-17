@@ -20,7 +20,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseOrchestrator` | `IntentOrchestrator`, `GovernanceOrchestrator`, `DiagnosticOrchestrator`, the three framework adapters below | `OrchestrationFactory`, `OrchestratorRegistry` |
 | `BaseHILOrchestrator` | used by `handle_requires_hil()` | publishes `hil.requests.<queue>`; see CLAUDE.md HIL |
 | `BaseSquad` | `IntentSquad`; any squad YAML runs on `BaseSquad` | `SquadLoader.from_agents()` |
-| `BaseAgent` | `K9ContextSynthesizerAgent`, `EnrichmentAgent`, `K9RetrievalAgent`, `K9EmbeddingAgent`, `K9DocPreprocessor`, `DoclingParser`, `AsyncAgent`, `ChatAgentABB`, `EncryptionAgent`, `AuthAgent`, `SecretManagerAgent`, `MessageAgent`, `ProcessorAgent` | `AgentLoader` (`class:` + `module:` in agent YAML), `AgentRegistry` |
+| `BaseAgent` | `K9ContextSynthesizerAgent`, `EnrichmentAgent`, `K9RetrievalAgent`, `K9EmbeddingAgent`, `K9DocPreprocessor`, `DoclingParser`, `AsyncAgent`, `ChatAgentABB`, `EncryptionAgent`, `AuthAgent`, `SecretManagerAgent`, `MessageAgent`, `ProcessorAgent`, `K9OpenAIAgent` (1.28.0: one OpenAI agent as a squad step; the squad sets the order) | `AgentLoader` (`class:` + `module:` in agent YAML), `AgentRegistry` |
 | `BaseValidationLoopAgent` | `K9ValidationLoopAgent`, `K9PlanningLoopAgent` | SKILLS.md Skill 10 |
 | `BaseCriticActorAgent` | `K9CriticActorAgent` | |
 | `BaseIntentAgent` | `K9IntentAgent` | unknown `event_type` → `intent.in` |
@@ -31,7 +31,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseSecurityAgent` | (contract only) | |
 | `BaseMessageAgent` | `QueueMessageAgent`, `TopicMessageAgent` | |
 | `BaseLoggingAgent` | `ConsoleLoggingAgent`, `FileLoggingAgent`, `CloudLoggingAgent`, `LoggingAgent` | |
-| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider) | wrap an existing crew/graph/SDK agent with K9 governance |
+| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider; a handoff group, where the model picks the next agent) | wrap an existing crew/graph/SDK agent with K9 governance |
 
 ## Inference
 

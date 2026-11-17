@@ -1,0 +1,176 @@
+# SPDX-License-Identifier: Apache-2.0
+# K9-AIF Framework
+"""
+K9OpenAIAgent: one OpenAI agent as one step of a K9-AIF squad (1.28.0).
+
+THE SQUAD DECIDES, NOT THE MODEL. With handoffs (``OpenAIAgentsOrchestratorAdapter``) the model
+picks the next agent. Here each OpenAI agent is an individual, runnable K9-AIF agent, and the
+squad runs them in the order its YAML ``flow:`` sets, with its ``synthesis:`` setting, exactly as
+it runs any other agents. The OpenAI Agents SDK runs one agent's turn; it never chooses what runs
+next. The SDK's own guide calls this "orchestrating via code".
+
+HOW AN APPLICATION USES IT. One small class per agent, so the squad and ``AgentLoader`` find it by
+class name like every other agent::
+
+    # agents/src/weather_agent.py
+    from k9_aif_abb.k9_adapters.openai_agents import K9OpenAIAgent
+    class WeatherAgent(K9OpenAIAgent):
+        pass
+
+    # agents/yaml/weather_agent.yaml
+    class: WeatherAgent
+    module: myapp.agents.src.weather_agent
+    name: WeatherAgent
+    role: You report the current weather.
+    instructions: [Use the tools; never guess a temperature]
+    model: tools                # a K9 model catalog alias
+    tools: [current_weather]    # registered ToolCapability names
+
+    # squads.yaml
+    squads:
+      weather_desk:
+        agents: [FrontDeskAgent, WeatherAgent, AttireAdvisorAgent]
+        flow:
+          - {agent: FrontDeskAgent}
+          - {agent: WeatherAgent}
+          - {agent: AttireAdvisorAgent}
+        synthesis: auto
+
+The tools come from the squad loader: ``SquadLoader.from_agents(agents_dir, config,
+agent_kwargs={"capabilities": CAPABILITIES})``.
+
+WHAT IS CHECKED. Governance by construction (``BaseAgent``): Shield on the step's input and on its
+output. Every tool call and tool result: the same K9 guardrails as the orchestrator adapter
+(``build_function_tool``). Every model call: the K9 Model Router (``model_routing="k9"``, default).
+Zero Trust stays where it lives in K9-AIF, on the orchestrator that runs the squad.
+
+WHAT THE AGENT READS. The request text (``prompt``, ``query``, ``question``, ``text`` or ``input``,
+the first one present), then what earlier steps produced: the squad's digest
+(``squad_digest``) when synthesis made one, otherwise each earlier step's ``output``. A step's
+reply is returned as ``{"output": text, ...}``, so the next step and the synthesizer read it.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Dict, List, Optional
+
+from agents import Agent, RunConfig, Runner
+
+from k9_aif_abb.k9_adapters.tool_capability import ToolCapability
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
+
+from .k9_model_provider import K9ModelProvider
+from .openai_agents_orchestrator_adapter import (
+    _instructions,
+    _model_settings,
+    build_function_tool,
+    run_capturing_tool_errors,
+)
+
+_REQUEST_KEYS = ("prompt", "query", "question", "text", "input")
+_NOT_UPSTREAM = {"squad_id", "squad_digest", "squad_digest_keys"}
+
+
+def step_prompt(payload: Dict[str, Any]) -> str:
+    """The request, then what earlier squad steps produced (their digest, or each ``output``)."""
+    request = next((str(payload[k]) for k in _REQUEST_KEYS if payload.get(k)), "")
+    earlier: List[str] = []
+    if payload.get("squad_digest"):
+        earlier.append(str(payload["squad_digest"]))
+    else:
+        for key, value in payload.items():
+            if key in _NOT_UPSTREAM or key in _REQUEST_KEYS:
+                continue
+            if isinstance(value, dict) and value.get("output"):
+                earlier.append(f"{key}: {value['output']}")
+    if not earlier:
+        return request
+    return f"{request}\n\nWhat earlier steps found:\n" + "\n".join(f"- {e}" for e in earlier)
+
+
+class K9OpenAIAgent(BaseAgent):
+    """One OpenAI agent, built from its agent YAML, run as one governed squad step.
+
+    Parameters
+    ----------
+    capabilities:
+        Every tool an agent of this application may call (``ToolCapability``). The agent gets the
+        ones its YAML lists under ``tools``; a name not registered is refused at construction.
+    model_routing:
+        ``"k9"`` (default): the K9 Model Router picks the model, the YAML ``model`` being a catalog
+        alias. ``"direct"``: ``model`` goes to the SDK unchanged (with ``model_provider``).
+    max_turns:
+        Most model turns for this step's run (tool calls included), passed to ``Runner.run``.
+    """
+
+    def __init__(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+        monitor: Any = None,
+        governance: Any = None,
+        capabilities: Optional[List[ToolCapability]] = None,
+        model_routing: str = "k9",
+        max_turns: int = 10,
+        model_provider: Any = None,
+        govern_tool_results: bool = True,
+    ) -> None:
+        super().__init__(config=config, monitor=monitor, governance=governance)
+        cls = type(self).__name__
+        if model_routing not in ("k9", "direct"):
+            raise ValueError(f"[{cls}] model_routing must be 'k9' or 'direct', got {model_routing!r}")
+        if model_provider is not None and model_routing != "direct":
+            raise ValueError(f"[{cls}] model_provider= is for model_routing='direct'; "
+                             "with 'k9' the K9 Model Router chooses the model")
+        if self.config.get("handoffs"):
+            raise ValueError(
+                f"[{cls}] a squad step has no handoffs: the squad's flow sets which agent runs next. "
+                "Remove 'handoffs' from its YAML, or run the group with OpenAIAgentsOrchestratorAdapter.")
+        registered = {c.name: c for c in capabilities or []}
+        wanted = list(self.config.get("tools") or [])
+        unknown = [t for t in wanted if t not in registered]
+        if unknown:
+            raise ValueError(
+                f"[{cls}] names tool(s) never registered: {unknown}. Registered: {sorted(registered)}. "
+                "Pass them as SquadLoader agent_kwargs={'capabilities': [...]}; hosted OpenAI tools "
+                "can't be given at all.")
+        self.model_routing = model_routing
+        self.max_turns = max_turns
+        self.govern_tool_results = govern_tool_results
+        self._direct_provider = model_provider
+        self.agent_name = (self.config.get("name") or cls).strip()
+        self._alias = self.config.get("model") or ("general" if model_routing == "k9" else None)
+        self._agent = Agent(
+            name=self.agent_name,
+            instructions=_instructions(self.config),
+            model=self._alias,
+            tools=[build_function_tool(registered[t], lambda: self.governance, self._governance_context,
+                                       lambda: self.govern_tool_results) for t in wanted],
+            model_settings=_model_settings(self.config),
+        )
+
+    def _governance_context(self) -> Dict[str, Any]:
+        return {"layer": self.layer, "component": self.agent_name, "component_type": "agent"}
+
+    def _run_config(self) -> RunConfig:
+        export = bool(((self.config or {}).get("openai_agents") or {}).get("export_traces"))
+        kwargs: Dict[str, Any] = {"tracing_disabled": not export, "workflow_name": self.agent_name}
+        if self.model_routing == "k9":
+            kwargs["model_provider"] = K9ModelProvider(
+                self.config, tools_by_alias={self._alias: bool(self._agent.tools)},
+                agent_name=self.agent_name)
+        elif self._direct_provider is not None:
+            kwargs["model_provider"] = self._direct_provider
+        return RunConfig(**kwargs)
+
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        prompt = step_prompt(payload or {})
+        if not prompt:
+            raise ValueError(f"[{self.agent_name}] no request text in the step's input "
+                             f"(looked for {', '.join(_REQUEST_KEYS)})")
+        result = _run_coro_sync(run_capturing_tool_errors(
+            lambda: Runner.run(self._agent, prompt, run_config=self._run_config(), max_turns=self.max_turns)))
+        final = result.final_output
+        text = final if isinstance(final, str) else json.dumps(final, default=str)
+        return {"output": text, "agent": self.agent_name, "model_calls": len(result.raw_responses)}

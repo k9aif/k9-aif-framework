@@ -11,6 +11,24 @@ Same three-part shape as `crewai/`, `langgraph/`, `claude_agent_sdk/`: facade
 mapper. The adapter is an orchestrator: the Router sends it an `event_type`; the SDK's Runner and
 its agents take the place of Squad -> Agent on that path.
 
+## Two ways to run several agents (1.28.0)
+
+| | `K9OpenAIAgent` in a squad (recommended) | `OpenAIAgentsOrchestratorAdapter` handoffs |
+|---|---|---|
+| Who picks the next agent | The squad's `flow:` (the architecture) | The model, from `transfer_to_<agent>` tools |
+| Same input, same path | Yes | Not guaranteed |
+| Synthesis | The squad's `synthesis:` (`K9ContextSynthesizerAgent`) | None |
+| Zero Trust | On the orchestrator that runs the squad | Also per agent turn (`openai_agent:<name>`) |
+| Tools, model | Same `build_function_tool` guardrails, same `K9ModelProvider` | Same |
+
+`K9OpenAIAgent` (`k9_openai_agent.py`): one OpenAI agent, built from its agent YAML, run as one governed
+squad step through `Runner.run` with no handoffs (`handoffs:` in its YAML is refused). The application
+adds one small subclass per agent (`class WeatherAgent(K9OpenAIAgent): pass`) so `AgentLoader` and
+`BaseSquad` find it by class name; tools come in as `SquadLoader` `agent_kwargs={"capabilities": [...]}`.
+The step prompt is the request (`prompt`/`query`/`question`/`text`/`input`) plus `squad_digest`, or each
+earlier step's `output`. Tests: `tests/test_openai_agent_squad.py` (no handoff offered to the model, flow
+order, earlier results read, digest used, governance at each step, `RequiresHIL` keeps its type).
+
 ## Conformance tier: action and inference governed
 
 Stronger than the Claude adapter (action only), because the OpenAI SDK has a model seam
@@ -64,7 +82,7 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 
 1. Never accept a pre-built `Agent`, tool or `RunConfig` from a caller.
 2. Every tool and handoff name in a spec is validated at construction (`ValueError`), never filtered.
-3. The handoff group stays capped (`max_handoffs`); a known multi-step process is a K9 squad.
+3. The handoff group stays capped (`max_handoffs`); a known multi-step process is a K9 squad of `K9OpenAIAgent` steps (1.28.0).
 4. `adapt_input` / `adapt_output` stay thin; the mapper normalizes once, at the facade.
 5. Router access only through `llm_route()`; this package never imports `ModelRouterFactory`.
 

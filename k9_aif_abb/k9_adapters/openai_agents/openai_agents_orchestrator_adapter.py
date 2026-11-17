@@ -60,7 +60,7 @@ import asyncio
 import contextvars
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 import yaml
 from agents import (
@@ -143,6 +143,73 @@ def _json_schema(schema: Any) -> Dict[str, Any]:
     names = {str: "string", int: "integer", float: "number", bool: "boolean"}
     props = {k: {"type": names.get(v, "string")} for k, v in (schema or {}).items()}
     return {"type": "object", "properties": props, "required": list(props), "additionalProperties": False}
+
+
+def build_function_tool(cap: ToolCapability, governance: Callable[[], Any],
+                        governance_context: Callable[[], Dict[str, Any]],
+                        govern_results: Callable[[], bool]) -> FunctionTool:
+    """A ``FunctionTool`` for one registered capability, with K9 guardrails on its call and its
+    result. Shared by the orchestrator adapter and ``K9OpenAIAgent`` (1.28.0); the callables are
+    read when the tool runs, so a governance object swapped after construction is the one used."""
+
+    async def invoke(ctx: Any, args_json: str) -> str:
+        args = json.loads(args_json or "{}")
+        try:
+            result = await cap.handler(args)
+        except Exception as exc:
+            errors = _TOOL_ERRORS.get()
+            if errors is not None:
+                errors.append(exc)
+            raise
+        return result if isinstance(result, str) else json.dumps(result, default=str)
+
+    @tool_input_guardrail
+    async def k9_tool_call_check(data):
+        args = json.loads(data.context.tool_arguments or "{}")
+        try:
+            await screen_tool_call(governance(), cap.name, args, ctx=governance_context())
+        except PermissionError as exc:
+            return ToolGuardrailFunctionOutput.reject_content(
+                f"Tool call refused by governance: {exc}", output_info={"refused": True})
+        return ToolGuardrailFunctionOutput.allow()
+
+    @tool_output_guardrail
+    async def k9_tool_result_check(data):
+        if not govern_results():
+            return ToolGuardrailFunctionOutput.allow()
+        try:
+            await screen_tool_result(governance(), cap.name, data.output, ctx=governance_context())
+        except PermissionError as exc:
+            return ToolGuardrailFunctionOutput.reject_content(
+                f"Tool result withheld by governance: {exc}. Do not guess its content.",
+                output_info={"withheld": True})
+        return ToolGuardrailFunctionOutput.allow()
+
+    tool = FunctionTool(
+        name=cap.name,
+        description=cap.description,
+        params_json_schema=_json_schema(cap.input_schema),
+        on_invoke_tool=invoke,
+        strict_json_schema=False,
+        tool_input_guardrails=[k9_tool_call_check],
+        tool_output_guardrails=[k9_tool_result_check],
+    )
+    return set_function_tool_failure_error_function(tool, None)   # handler errors raise
+
+
+async def run_capturing_tool_errors(run: Callable[[], Awaitable[Any]]) -> Any:
+    """Await ``run()``; if it fails after a tool handler raised, raise the handler's own exception
+    (the SDK wraps it in ``UserError``), so ``RequiresHIL`` / ``PermissionError`` keep their type."""
+    errors: List[BaseException] = []
+    token = _TOOL_ERRORS.set(errors)
+    try:
+        return await run()
+    except Exception:
+        if errors:                 # the handler's own exception, not the SDK's wrapper
+            raise errors[0]
+        raise
+    finally:
+        _TOOL_ERRORS.reset(token)
 
 
 def _reply_text(response: Any) -> str:
@@ -292,52 +359,8 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         return built
 
     def _function_tool(self, cap: ToolCapability) -> FunctionTool:
-        adapter = self
-
-        async def invoke(ctx: Any, args_json: str) -> str:
-            args = json.loads(args_json or "{}")
-            try:
-                result = await cap.handler(args)
-            except Exception as exc:
-                errors = _TOOL_ERRORS.get()
-                if errors is not None:
-                    errors.append(exc)
-                raise
-            return result if isinstance(result, str) else json.dumps(result, default=str)
-
-        @tool_input_guardrail
-        async def k9_tool_call_check(data):
-            args = json.loads(data.context.tool_arguments or "{}")
-            try:
-                await screen_tool_call(adapter.governance, cap.name, args, ctx=adapter._governance_context())
-            except PermissionError as exc:
-                return ToolGuardrailFunctionOutput.reject_content(
-                    f"Tool call refused by governance: {exc}", output_info={"refused": True})
-            return ToolGuardrailFunctionOutput.allow()
-
-        @tool_output_guardrail
-        async def k9_tool_result_check(data):
-            if not adapter.govern_tool_results:
-                return ToolGuardrailFunctionOutput.allow()
-            try:
-                await screen_tool_result(adapter.governance, cap.name, data.output,
-                                         ctx=adapter._governance_context())
-            except PermissionError as exc:
-                return ToolGuardrailFunctionOutput.reject_content(
-                    f"Tool result withheld by governance: {exc}. Do not guess its content.",
-                    output_info={"withheld": True})
-            return ToolGuardrailFunctionOutput.allow()
-
-        tool = FunctionTool(
-            name=cap.name,
-            description=cap.description,
-            params_json_schema=_json_schema(cap.input_schema),
-            on_invoke_tool=invoke,
-            strict_json_schema=False,
-            tool_input_guardrails=[k9_tool_call_check],
-            tool_output_guardrails=[k9_tool_result_check],
-        )
-        return set_function_tool_failure_error_function(tool, None)   # handler errors raise
+        return build_function_tool(cap, lambda: self.governance, self._governance_context,
+                                   lambda: self.govern_tool_results)
 
     # ── BaseAdapter contract (thin; the mapper normalizes once, at the facade) ──
 
@@ -412,16 +435,7 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
         return RunConfig(**kwargs)
 
     async def _run(self, prompt: str, hooks: _K9RunHooks):
-        errors: List[BaseException] = []
-        token = _TOOL_ERRORS.set(errors)
-        try:
-            return await self._run_gated(prompt, hooks)
-        except Exception:
-            if errors:                 # the handler's own exception, not the SDK's wrapper
-                raise errors[0]
-            raise
-        finally:
-            _TOOL_ERRORS.reset(token)
+        return await run_capturing_tool_errors(lambda: self._run_gated(prompt, hooks))
 
     async def _run_gated(self, prompt: str, hooks: _K9RunHooks):
         entry = self._agents[self._entry_name]
