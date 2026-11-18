@@ -86,7 +86,7 @@ from k9_aif_abb.k9_core.tools.tool_gate_context import GateSession, gate_session
 from k9_aif_abb.k9_security.tool_result_guard import screen_tool_call, screen_tool_result
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, trace_scope
 
-from .k9_model_provider import K9ModelProvider
+from .k9_model_provider import K9ModelProvider, run_closing_provider
 
 # Exceptions raised by tool handlers during the current run. The SDK re-raises a handler's
 # exception wrapped in its own UserError; the adapter raises the original instead, so a
@@ -441,13 +441,15 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
     async def _run_gated(self, prompt: str, hooks: _K9RunHooks):
         entry = self._agents[self._entry_name]
         if not gate_enabled(self.config):
-            return await Runner.run(entry, prompt, run_config=self._run_config(), hooks=hooks,
-                                    max_turns=self.max_turns)
+            run_config = self._run_config()
+            return await run_closing_provider(run_config, lambda: Runner.run(
+                entry, prompt, run_config=run_config, hooks=hooks, max_turns=self.max_turns))
         session = GateSession(BaseToolDispatcher.from_config(self.config, governance=self.governance),
                               agent_id=self.adapter_name)
         with gate_session(session):
-            result = await Runner.run(entry, prompt, run_config=self._run_config(), hooks=hooks,
-                                      max_turns=self.max_turns)
+            run_config = self._run_config()
+            result = await run_closing_provider(run_config, lambda: Runner.run(
+                entry, prompt, run_config=run_config, hooks=hooks, max_turns=self.max_turns))
         if session.pending:            # a review the SDK swallowed is raised again
             raise session.pending[0]
         return result

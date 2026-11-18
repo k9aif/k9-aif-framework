@@ -103,6 +103,7 @@ class AgentLoader:
     def __init__(self, yaml_dir: str | Path) -> None:
         self.yaml_dir = Path(yaml_dir)
         self._by_class: Dict[str, Dict[str, Any]] = {}
+        self._unreadable: Dict[str, str] = {}   # file -> why it could not be loaded
         self._load_all()
 
     # ------------------------------------------------------------------
@@ -121,11 +122,13 @@ class AgentLoader:
                 else:
                     log.warning("AgentLoader: no 'class' field in %s — skipped", path.name)
             except Exception as exc:
+                self._unreadable[path.name] = f"{type(exc).__name__}: {exc}"
                 log.warning("AgentLoader: could not load %s: %s", path, exc)
 
     def refresh(self) -> None:
         """Re-read the agent YAML directory (picks up agents added since start-up)."""
         self._by_class = {}
+        self._unreadable = {}
         self._load_all()
 
     # ------------------------------------------------------------------
@@ -175,7 +178,8 @@ class AgentLoader:
             self.refresh()     # an agent YAML added since start-up (a squad gained an agent)
             spec = self._by_class.get(class_name)
         if not spec:
-            raise KeyError(f"AgentLoader: no agent YAML with class: {class_name} in {self.yaml_dir}")
+            unreadable = "".join(f"; {name} could not be loaded ({why})" for name, why in self._unreadable.items())
+            raise KeyError(f"AgentLoader: no agent YAML with class: {class_name} in {self.yaml_dir}{unreadable}")
         module = (spec.get("module") or "").strip()
         if not module:
             raise KeyError(f"AgentLoader: agent YAML for {class_name} has no 'module:' field")

@@ -62,7 +62,7 @@ from k9_aif_abb.k9_adapters.tool_capability import ToolCapability
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
 
-from .k9_model_provider import K9ModelProvider
+from .k9_model_provider import K9ModelProvider, run_closing_provider
 from .openai_hil_adapter import OpenAIHILAdapter
 from .openai_agents_orchestrator_adapter import (
     _instructions,
@@ -207,7 +207,7 @@ class K9OpenAIAgent(BaseAgent):
                 raise ValueError(f"[{self.agent_name}] no request text in the step's input "
                                  f"(looked for {', '.join(_REQUEST_KEYS)})")
             result = _run_coro_sync(run_capturing_tool_errors(
-                lambda: Runner.run(self._agent, prompt, run_config=self._run_config(), max_turns=self.max_turns)))
+                lambda: self._run(prompt)))
         if saved is not None:
             self.hil.finished(saved)
         if result.interruptions:     # a tool marked needs_approval wants to run: pause for a person
@@ -221,7 +221,12 @@ class K9OpenAIAgent(BaseAgent):
     async def _resume(self, saved: Dict[str, Any], decision: Any):
         """Restore the paused run with the person's decision applied, and continue it where it stopped."""
         state = await self.hil.restore(self._agent, saved, decision)
-        return await Runner.run(self._agent, state, run_config=self._run_config(), max_turns=self.max_turns)
+        return await self._run(state)
+
+    async def _run(self, run_input: Any):
+        run_config = self._run_config()
+        return await run_closing_provider(run_config, lambda: Runner.run(
+            self._agent, run_input, run_config=run_config, max_turns=self.max_turns))
 
 
 def _approval_policy(always: bool, when: Any):

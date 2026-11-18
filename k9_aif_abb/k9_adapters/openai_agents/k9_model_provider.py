@@ -93,6 +93,7 @@ class K9ModelProvider(ModelProvider):
         self.required_capabilities = list(required_capabilities or [])
         self.agent_name = agent_name
         self.last_route: Optional[Dict[str, Any]] = None
+        self._clients: List[AsyncOpenAI] = []
 
     def get_model(self, model_name: Optional[str]) -> Model:
         alias = model_name or "general"
@@ -115,9 +116,28 @@ class K9ModelProvider(ModelProvider):
             )
         client = AsyncOpenAI(base_url=_base_url(backend, route["connection"]),
                              api_key=_api_key(backend, route["connection"]))
+        self._clients.append(client)
         inner = OpenAIChatCompletionsModel(model=route["model"], openai_client=client)
         return K9GovernedModel(inner, alias=route["alias"], model_name=route["model"], backend=backend,
                                agent=self.agent_name)
+
+
+    async def aclose(self) -> None:
+        """Close the clients this provider opened, on the event loop that used them. A run is bridged from sync code
+        on a loop of its own; a client left open is closed later on that closed loop ('Event loop is closed')."""
+        clients, self._clients = self._clients, []
+        for client in clients:
+            await client.close()
+
+
+async def run_closing_provider(run_config: Any, run: Any) -> Any:
+    """Await ``run()``, then close the run's K9ModelProvider clients (same loop), whatever the outcome."""
+    try:
+        return await run()
+    finally:
+        provider = getattr(run_config, "model_provider", None)
+        if isinstance(provider, K9ModelProvider):
+            await provider.aclose()
 
 
 def _base_url(backend: str, connection: Dict[str, Any]) -> Optional[str]:

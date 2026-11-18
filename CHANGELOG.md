@@ -4,6 +4,19 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- `AgentLoader`: an agent YAML that does not parse is named in the error for the class it should have provided
+  (`no agent YAML with class: X ...; x.yaml could not be loaded (ScannerError: ...)`); before, the parse error was a
+  warning and the error said only that the class was missing. Test: `tests/test_agent_loader_unreadable.py`.
+- OpenAI agents (`K9OpenAIAgent`, `OpenAIAgentsOrchestratorAdapter`): `K9ModelProvider.aclose()` closes the clients
+  it opened, on the run's own event loop, after every run (`run_closing_provider`). Before, each client was closed
+  later on the bridge's closed loop ("Task exception was never retrieved ... Event loop is closed").
+  Test: `tests/test_openai_provider_close.py`.
+
+---
+
 ## [1.29.0] — 2026-11-17
 
 ### Added
