@@ -4,6 +4,16 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [Unreleased] (1.30.1)
+
+### Fixed
+- `PIIRequestCheck` matched only singular field names, so "list the bank account and routing numbers" passed; plurals
+  now match (`account numbers`, `routing numbers`, `credit card numbers`). New solicitation phrase: asking for what is
+  held about others ("list/share/send/give/show ... on file / you have / for all vendors"). Ordinary AP text still
+  passes. Tests: `tests/test_pii_request_check.py`. Found building the openai.k9x.ai accounts payable attack examples.
+
+---
+
 ## [1.30.0] — 2026-11-18
 
 ### Changed
