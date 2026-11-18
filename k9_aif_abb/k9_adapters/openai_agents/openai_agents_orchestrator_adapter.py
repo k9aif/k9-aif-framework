@@ -147,7 +147,7 @@ def _json_schema(schema: Any) -> Dict[str, Any]:
 
 def build_function_tool(cap: ToolCapability, governance: Callable[[], Any],
                         governance_context: Callable[[], Dict[str, Any]],
-                        govern_results: Callable[[], bool]) -> FunctionTool:
+                        govern_results: Callable[[], bool], needs_approval: bool = False) -> FunctionTool:
     """A ``FunctionTool`` for one registered capability, with K9 guardrails on its call and its
     result. Shared by the orchestrator adapter and ``K9OpenAIAgent`` (1.28.0); the callables are
     read when the tool runs, so a governance object swapped after construction is the one used."""
@@ -193,6 +193,7 @@ def build_function_tool(cap: ToolCapability, governance: Callable[[], Any],
         strict_json_schema=False,
         tool_input_guardrails=[k9_tool_call_check],
         tool_output_guardrails=[k9_tool_result_check],
+        needs_approval=needs_approval,       # 1.29.0: the run pauses for a person before this tool runs
     )
     return set_function_tool_failure_error_function(tool, None)   # handler errors raise
 

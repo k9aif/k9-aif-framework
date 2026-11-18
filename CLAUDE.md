@@ -583,6 +583,12 @@ at once; a failed dead-letter publish raises and commits nothing). Before
 HIL reply whose handling failed was skipped for good. Tests:
 `tests/test_delivery_and_resume_1_23.py`.
 
+**Agent frameworks' own approval pauses (1.29.0).** `BaseHILAdapter` maps a framework's pause (first:
+`OpenAIHILAdapter`, the OpenAI Agents SDK's `needs_approval`) to `RequiresHIL` and the K9X HIL reply back. The
+paused run waits in `PausedRunStore` (PostgreSQL schema or SQLite); only its key travels, in
+`RequiresHIL.resume_state` → the resume payload's `_k9_resume`. `BaseSquad` then resumes at the paused step
+instead of rerunning the flow. Test: `tests/test_openai_agent_hil.py`.
+
 **Request fields not yet passed:** `BaseHILOrchestrator.execute_flow()`
 builds the request from `title`/`reason`/`priority`/`source_orchestrator`
 plus `payload` (the `RequiresHIL` context). It does not pass per-task TTL,

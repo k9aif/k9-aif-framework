@@ -355,7 +355,12 @@ model_routing:
     <code>"k9"</code> (default): the K9 Model Router picks the model, the YAML <code>model</code> being a catalog
     alias. <code>"direct"</code>: <code>model</code> goes to the SDK unchanged (with <code>model_provider</code>).
 max_turns:
-    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.</p>
+    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.
+hil_adapter:
+    (1.29.0) Maps the SDK's approval pause to K9X HIL and the decision back. Default: an
+    <code>OpenAIHILAdapter</code> with the YAML's <code>hil_queue</code> / <code>hil_priority</code>, storing paused runs per the
+    config (PostgreSQL when <code>postgres.enabled</code>, else SQLite). Tools named in the YAML's
+    <code>needs_approval</code> pause the run for a person.</p>
 </div>
 
 
@@ -407,7 +412,12 @@ model_routing:
     <code>"k9"</code> (default): the K9 Model Router picks the model, the YAML <code>model</code> being a catalog
     alias. <code>"direct"</code>: <code>model</code> goes to the SDK unchanged (with <code>model_provider</code>).
 max_turns:
-    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.</p>
+    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.
+hil_adapter:
+    (1.29.0) Maps the SDK's approval pause to K9X HIL and the decision back. Default: an
+    <code>OpenAIHILAdapter</code> with the YAML's <code>hil_queue</code> / <code>hil_priority</code>, storing paused runs per the
+    config (PostgreSQL when <code>postgres.enabled</code>, else SQLite). Tools named in the YAML's
+    <code>needs_approval</code> pause the run for a person.</p>
 </div>
 
 
@@ -459,7 +469,12 @@ model_routing:
     <code>"k9"</code> (default): the K9 Model Router picks the model, the YAML <code>model</code> being a catalog
     alias. <code>"direct"</code>: <code>model</code> goes to the SDK unchanged (with <code>model_provider</code>).
 max_turns:
-    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.</p>
+    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.
+hil_adapter:
+    (1.29.0) Maps the SDK's approval pause to K9X HIL and the decision back. Default: an
+    <code>OpenAIHILAdapter</code> with the YAML's <code>hil_queue</code> / <code>hil_priority</code>, storing paused runs per the
+    config (PostgreSQL when <code>postgres.enabled</code>, else SQLite). Tools named in the YAML's
+    <code>needs_approval</code> pause the run for a person.</p>
 </div>
 
 

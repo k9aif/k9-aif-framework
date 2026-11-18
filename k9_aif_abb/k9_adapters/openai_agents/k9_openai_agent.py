@@ -62,6 +62,7 @@ from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
 
 from .k9_model_provider import K9ModelProvider
+from .openai_hil_adapter import OpenAIHILAdapter
 from .openai_agents_orchestrator_adapter import (
     _instructions,
     _model_settings,
@@ -103,6 +104,11 @@ class K9OpenAIAgent(BaseAgent):
         alias. ``"direct"``: ``model`` goes to the SDK unchanged (with ``model_provider``).
     max_turns:
         Most model turns for this step's run (tool calls included), passed to ``Runner.run``.
+    hil_adapter:
+        (1.29.0) Maps the SDK's approval pause to K9X HIL and the decision back. Default: an
+        ``OpenAIHILAdapter`` with the YAML's ``hil_queue`` / ``hil_priority``, storing paused runs per the
+        config (PostgreSQL when ``postgres.enabled``, else SQLite). Tools named in the YAML's
+        ``needs_approval`` pause the run for a person.
     """
 
     def __init__(
@@ -115,6 +121,7 @@ class K9OpenAIAgent(BaseAgent):
         max_turns: int = 10,
         model_provider: Any = None,
         govern_tool_results: bool = True,
+        hil_adapter: Any = None,
     ) -> None:
         super().__init__(config=config, monitor=monitor, governance=governance)
         cls = type(self).__name__
@@ -139,14 +146,22 @@ class K9OpenAIAgent(BaseAgent):
         self.max_turns = max_turns
         self.govern_tool_results = govern_tool_results
         self._direct_provider = model_provider
+        approvals = list(self.config.get("needs_approval") or [])
+        not_given = [t for t in approvals if t not in wanted]
+        if not_given:
+            raise ValueError(f"[{cls}] needs_approval names tool(s) this agent isn't given: {not_given}. "
+                             f"Its tools: {wanted}")
         self.agent_name = (self.config.get("name") or cls).strip()
+        self.hil = hil_adapter or OpenAIHILAdapter(config=self.config, queue=self.config.get("hil_queue"),
+                                                   priority=self.config.get("hil_priority", "high"))
         self._alias = self.config.get("model") or ("general" if model_routing == "k9" else None)
         self._agent = Agent(
             name=self.agent_name,
             instructions=_instructions(self.config),
             model=self._alias,
             tools=[build_function_tool(registered[t], lambda: self.governance, self._governance_context,
-                                       lambda: self.govern_tool_results) for t in wanted],
+                                       lambda: self.govern_tool_results, needs_approval=t in approvals)
+                   for t in wanted],
             model_settings=_model_settings(self.config),
         )
 
@@ -165,12 +180,28 @@ class K9OpenAIAgent(BaseAgent):
         return RunConfig(**kwargs)
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = step_prompt(payload or {})
-        if not prompt:
-            raise ValueError(f"[{self.agent_name}] no request text in the step's input "
-                             f"(looked for {', '.join(_REQUEST_KEYS)})")
-        result = _run_coro_sync(run_capturing_tool_errors(
-            lambda: Runner.run(self._agent, prompt, run_config=self._run_config(), max_turns=self.max_turns)))
+        payload = payload or {}
+        saved = self.hil.saved_for(payload, self.agent_name)
+        if saved is not None:        # resuming a paused run after the person decided in K9X HIL
+            decision = self.hil.adapt_input(payload)["decision"]
+            result = _run_coro_sync(run_capturing_tool_errors(lambda: self._resume(saved, decision)))
+            prompt = ""
+        else:
+            prompt = step_prompt(payload)
+            if not prompt:
+                raise ValueError(f"[{self.agent_name}] no request text in the step's input "
+                                 f"(looked for {', '.join(_REQUEST_KEYS)})")
+            result = _run_coro_sync(run_capturing_tool_errors(
+                lambda: Runner.run(self._agent, prompt, run_config=self._run_config(), max_turns=self.max_turns)))
+        if saved is not None:
+            self.hil.finished(saved)
+        if result.interruptions:     # a tool marked needs_approval wants to run: pause for a person
+            raise self.hil.pause(result, agent=self.agent_name, request=prompt)
         final = result.final_output
         text = final if isinstance(final, str) else json.dumps(final, default=str)
         return {"output": text, "agent": self.agent_name, "model_calls": len(result.raw_responses)}
+
+    async def _resume(self, saved: Dict[str, Any], decision: Any):
+        """Restore the paused run with the person's decision applied, and continue it where it stopped."""
+        state = await self.hil.restore(self._agent, saved, decision)
+        return await Runner.run(self._agent, state, run_config=self._run_config(), max_turns=self.max_turns)

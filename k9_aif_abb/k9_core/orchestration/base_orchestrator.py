@@ -18,6 +18,14 @@ from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, tr
 from k9_aif_abb.k9_utils.config_flags import config_flag
 
 
+def resume_payload_with_state(payload: Dict[str, Any], resume_state: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """The payload to resume with (1.29.0): the original payload, plus the raiser's ``resume_state`` under
+    ``_k9_resume`` when there is one. Kept out of the reviewer's ``context``."""
+    if not resume_state:
+        return payload
+    return {**payload, "_k9_resume": resume_state}
+
+
 def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
     """Run an async coroutine from sync code, safe whether or not a loop is
     already running on this thread. Same pattern as
@@ -490,7 +498,7 @@ class BaseOrchestrator(ABC):
             "context": exc.context,
             "resume_module": type(self).__module__,
             "resume_class": type(self).__name__,
-            "resume_payload": payload,
+            "resume_payload": resume_payload_with_state(payload, getattr(exc, "resume_state", None)),
         }
         return hil_orchestrator.execute_flow(hil_payload)
 

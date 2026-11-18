@@ -89,9 +89,18 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 ## Open
 
 - Tool gate: the run executes in a gate session, so connector calls inside a handler are proposed
-  to the dispatcher, and a review is raised with its type. Resuming the OpenAI run after approval
-  is not built: the orchestrator's `resume_tool_call()` runs the stored call, the agent loop does not
-  continue from where it stopped.
+  to the dispatcher, and a review is raised with its type. (The SDK's own approval pause is a separate,
+  built path: `needs_approval` + `OpenAIHILAdapter`, below.)
+
+## Human in the loop (1.29.0)
+
+A tool listed under `needs_approval:` in a `K9OpenAIAgent`'s YAML pauses the OpenAI run. `OpenAIHILAdapter`
+(`BaseHILAdapter`) saves the SDK's run state in `PausedRunStore` and the agent raises `RequiresHIL` (reviewer
+`context`: agent, request, tool calls with arguments; `resume_state`: only the store key). The orchestrator
+publishes it; on the reply the Router resumes; the squad skips the steps already done; the agent restores the
+`RunState`, approves or rejects every waiting call, and continues the same run. Approved = K9X HIL `action:
+complete`. Tests: `tests/test_openai_agent_hil.py`. Applies to `K9OpenAIAgent` (squad steps), not to the handoff
+adapter.
 - `K9TraceProcessor` (SDK spans -> K9 trace events) is not built; the hooks emit K9 events for agent
   turns, handoffs, model replies and calls, and the tool guardrails for tool calls and results.
 - Streaming (`Runner.run_streamed`) is not wrapped.

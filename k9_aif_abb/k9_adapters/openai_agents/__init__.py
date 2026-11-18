@@ -18,10 +18,12 @@ from .openai_agents_orchestrator_adapter import OpenAIAgentsOrchestratorAdapter,
 from .openai_agents_payload_mapper import OpenAIAgentsPayloadMapper
 from .k9_model_provider import K9ModelProvider, K9GovernedModel
 from .k9_openai_agent import K9OpenAIAgent
+from .openai_hil_adapter import OpenAIHILAdapter
 from k9_aif_abb.k9_adapters.tool_capability import ToolCapability
 
 __all__ = [
     "K9OpenAIAgent",
+    "OpenAIHILAdapter",
     "K9OpenAIAgentsAdapter",
     "OpenAIAgentsOrchestratorAdapter",
     "OpenAIAgentsPayloadMapper",

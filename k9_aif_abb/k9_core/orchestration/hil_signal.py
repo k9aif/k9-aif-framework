@@ -36,6 +36,10 @@ class RequiresHIL(Exception):
                   fraud-detection orchestrator's HIL requests land in a
                   fraud-shaped queue without every raise site having to
                   know the queue name.
+        resume_state: (1.29.0) what the flow needs to continue where it stopped
+                  after the decision (e.g. a paused OpenAI run, the squad steps
+                  already done). Never shown to the reviewer: the orchestrator
+                  stores it in the resume payload under ``_k9_resume``.
     """
 
     def __init__(
@@ -45,6 +49,7 @@ class RequiresHIL(Exception):
         priority: str = "medium",
         queue: Optional[str] = None,
         correlation_id: Optional[str] = None,
+        resume_state: Optional[Dict[str, Any]] = None,
     ):
         self.reason = reason
         self.context = context or {}
@@ -53,4 +58,5 @@ class RequiresHIL(Exception):
         # 1.25.0: set when the review must be published under a known id (the tool
         # gate's pending call); None lets BaseHILOrchestrator generate one, as before.
         self.correlation_id = correlation_id
+        self.resume_state = resume_state or {}
         super().__init__(reason)

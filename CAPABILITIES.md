@@ -19,6 +19,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseRouter` | `K9EventRouter`, `RouterAgent` | `RouterFactory`; `BaseRouter.admit()` is the auth edge |
 | `BaseOrchestrator` | `IntentOrchestrator`, `GovernanceOrchestrator`, `DiagnosticOrchestrator`, the three framework adapters below | `OrchestrationFactory`, `OrchestratorRegistry` |
 | `BaseHILOrchestrator` | used by `handle_requires_hil()` | publishes `hil.requests.<queue>`; see CLAUDE.md HIL |
+| `BaseHILAdapter` | `OpenAIHILAdapter` (1.29.0: the OpenAI Agents SDK's `needs_approval` pause, routed through K9X HIL and resumed after the decision) | `k9_core/orchestration/base_hil_adapter.py`; paused runs in `PausedRunStore` (PostgreSQL schema or SQLite) |
 | `BaseSquad` | `IntentSquad`; any squad YAML runs on `BaseSquad` | `SquadLoader.from_agents()` |
 | `BaseAgent` | `K9ContextSynthesizerAgent`, `EnrichmentAgent`, `K9RetrievalAgent`, `K9EmbeddingAgent`, `K9DocPreprocessor`, `DoclingParser`, `AsyncAgent`, `ChatAgentABB`, `EncryptionAgent`, `AuthAgent`, `SecretManagerAgent`, `MessageAgent`, `ProcessorAgent`, `K9OpenAIAgent` (1.28.0: one OpenAI agent as a squad step; the squad sets the order) | `AgentLoader` (`class:` + `module:` in agent YAML), `AgentRegistry` |
 | `BaseValidationLoopAgent` | `K9ValidationLoopAgent`, `K9PlanningLoopAgent` | SKILLS.md Skill 10 |

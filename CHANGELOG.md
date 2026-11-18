@@ -4,6 +4,32 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.29.0] — 2026-11-17
+
+### Added
+- **Human-in-the-loop for agent frameworks through K9X HIL.** `BaseHILAdapter` (new ABB,
+  `k9_core/orchestration/base_hil_adapter.py`) maps an agent framework's own approval pause to a K9X HIL request
+  and the K9X HIL reply back (`HILDecision`: approved, actor, role, comment). First implementation:
+  **`OpenAIHILAdapter`**: a tool named in a `K9OpenAIAgent`'s YAML `needs_approval:` pauses the OpenAI run
+  (`needs_approval=True` on the SDK tool); the agent raises `RequiresHIL` with the tool and its arguments for the
+  reviewer; the orchestrator publishes it as usual; after the decision the Router resumes the flow and the agent
+  restores the SDK's `RunState`, applies `approve()` / `reject()`, and continues the same run.
+- **`PausedRunStore`** (`k9_storage/paused_run_store.py`): the paused run waits in one table, `k9_paused_runs`
+  (PostgreSQL in the `postgres.schema` when `postgres.enabled`, else SQLite). Only its key travels with the HIL
+  request; the run state is never in a payload governance screens again or a reviewer sees.
+- `RequiresHIL(resume_state=...)`: what the flow needs to continue, stored by `handle_requires_hil()` in the resume
+  payload under `_k9_resume` (`resume_payload_with_state()`), never in the reviewer's `context`.
+- `BaseSquad` resumes at the paused step: when a step raises `RequiresHIL`, the results of the steps already done
+  go into `resume_state`; on resume (a payload with `hil_decision` and `_k9_resume`) those steps are not run again.
+  Flows without `_k9_resume` are unchanged.
+
+### Verified
+- `tests/test_openai_agent_hil.py` (9): no tool runs without a decision; the reviewer gets the call, not the run
+  state; the resume payload carries only the key; approved, the same run continues and the tool runs once;
+  rejected, it never runs and the model is told why; earlier steps not rerun; a missing paused run fails loudly.
+
+---
+
 ## [1.28.0] — 2026-11-17
 
 ### Added

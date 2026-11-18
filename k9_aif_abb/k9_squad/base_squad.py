@@ -5,6 +5,8 @@ import json
 import logging
 import time
 
+from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+
 log = logging.getLogger(__name__)
 
 
@@ -148,6 +150,12 @@ class BaseSquad:
 
         context = {**payload, "squad_id": self.squad_id}
         results = {}
+        # Resume after a human decision (1.29.0): the steps done before the pause are carried in the resume
+        # payload and not run again; the flow continues at the step that raised RequiresHIL.
+        done = self._resumed_results(payload)
+        if done:
+            context.update(done)
+            results.update(done)
         synthesis = synthesis_config(self.metadata)
         synthesis_log = []
         digest_cache = {}
@@ -156,6 +164,11 @@ class BaseSquad:
             agent_name = step["agent"]
             result_key = step.get("result_key", agent_name)
             when_cfg   = step.get("when")
+
+            if result_key in done:
+                log.info("[%s] step %d agent=%s already done before the human decision; not run again",
+                         self.squad_id, step_idx + 1, agent_name)
+                continue
 
             if not _eval_when(when_cfg, context):
                 log.debug("[%s] step %d agent=%s skipped (when: condition false)",
@@ -186,6 +199,12 @@ class BaseSquad:
             t0 = time.monotonic()
             try:
                 result = agent_map[agent_name].execute(step_context)
+            except RequiresHIL as exc:
+                # The orchestrator stores this with the resume payload, so the squad resumes at this step.
+                exc.resume_state.setdefault("squad", {})[self.squad_id] = {"results": dict(results)}
+                log.info("[%s] step %d agent=%s needs a human decision; flow paused",
+                         self.squad_id, step_idx + 1, agent_name)
+                raise
             except Exception:
                 elapsed_ms = int((time.monotonic() - t0) * 1000)
                 log.exception("[%s] step %d agent=%s FAILED elapsed_ms=%d",
@@ -204,6 +223,14 @@ class BaseSquad:
         if synthesis_log:
             out["squad_synthesis"] = synthesis_log
         return out
+
+    # ------------------------------------------------------------------
+    def _resumed_results(self, payload: dict) -> dict:
+        """Results of the steps done before a pause, when this payload resumes one (1.29.0)."""
+        if "hil_decision" not in payload:
+            return {}
+        saved = ((payload.get("_k9_resume") or {}).get("squad") or {}).get(self.squad_id) or {}
+        return dict(saved.get("results") or {})
 
     # ------------------------------------------------------------------
     def _apply_synthesis(self, step_idx, agent_name, step_context, results,
