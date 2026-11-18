@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_core.governance.base_rules_agent import BaseRulesAgent
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+from k9_aif_abb.k9_core.orchestration.hil_task import ROLES
 
 
 class K9RulesAgent(BaseRulesAgent):
@@ -58,7 +59,11 @@ class K9RulesAgent(BaseRulesAgent):
             decision = {"decision": decision}
         verdict = str(decision.get("decision", "allow"))
         if verdict in self.hil_decisions:
+            role = decision.get("approver_role")
             raise RequiresHIL(decision.get("reason") or f"rule {decision.get('rule')}",
                               context={"rule": decision.get("rule"), "decision": verdict},
-                              queue=self.hil_queue)
-        return {"output": {"decision": verdict, "rule": decision.get("rule"), "reason": decision.get("reason")}}
+                              queue=self.hil_queue, task_type="rules-decision",
+                              required_role=role if role in ROLES else None)
+        # 1.30.0: every field the rules returned (e.g. approver_role), not only decision, rule and reason
+        return {"output": {**decision, "decision": verdict, "rule": decision.get("rule"),
+                           "reason": decision.get("reason")}}

@@ -38,6 +38,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+from k9_aif_abb.k9_core.orchestration.hil_task import build_hil_task_message
 
 log = logging.getLogger(__name__)
 
@@ -102,15 +103,27 @@ class BaseHILOrchestrator(BaseOrchestrator):
         request_topic = f"{prefix}requests.{queue}"
         reply_topic = f"{prefix}replies.{queue}"
 
-        message = {
-            "correlation_id": correlation_id,
-            "reply_to": reply_topic,
-            "title": payload.get("title") or payload.get("reason", "Human review requested"),
-            "description": payload.get("reason"),
-            "priority": payload.get("priority", "medium"),
-            "source_orchestrator": payload.get("source_orchestrator"),
-            "payload": payload.get("context", {}),
-        }
+        # 1.30.0: K9X HIL's task contract (k9x.hil.task/v1); HIL dead-letters a message that doesn't conform
+        task = payload.get("task") or {}
+        message = build_hil_task_message(
+            correlation_id=correlation_id,
+            reply_to=reply_topic,
+            title=task.get("title") or payload.get("title") or payload.get("reason") or "Human review requested",
+            description=payload.get("reason"),
+            source_orchestrator=payload.get("source_orchestrator"),
+            source_topic=request_topic,
+            priority=payload.get("priority") or "medium",
+            task_type=task.get("task_type"),
+            required_role=task.get("required_role"),
+            decision_authority=task.get("decision_authority"),
+            require_comment=bool(task.get("require_comment")),
+            ttl_hours=task.get("ttl_hours"),
+            ttl_action=task.get("ttl_action"),
+            pii=bool(task.get("pii")),
+            pii_fields=task.get("pii_fields"),
+            payload=payload.get("context") or {},
+            artifacts=task.get("artifacts"),
+        )
 
         if self.message_bus and hasattr(self.message_bus, "publish_to"):
             self.message_bus.publish_to(request_topic, message)

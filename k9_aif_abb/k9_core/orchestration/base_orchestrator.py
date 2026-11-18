@@ -499,6 +499,8 @@ class BaseOrchestrator(ABC):
             "resume_module": type(self).__module__,
             "resume_class": type(self).__name__,
             "resume_payload": resume_payload_with_state(payload, getattr(exc, "resume_state", None)),
+            # 1.30.0: K9X HIL task fields (title, task_type, artifacts, required_role, ...)
+            "task": exc.task_fields() if hasattr(exc, "task_fields") else {},
         }
         return hil_orchestrator.execute_flow(hil_payload)
 

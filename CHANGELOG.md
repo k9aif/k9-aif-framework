@@ -4,7 +4,27 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased]
+## [1.30.0] — 2026-11-18
+
+### Changed
+- **HIL requests follow K9X HIL's task contract `k9x.hil.task/v1`.** K9X HIL (1.6.0) owns the structure of a task and
+  publishes it as JSON Schema (`GET /api/contract/task`); `BaseHILOrchestrator` now builds every request with
+  `build_hil_task_message()` (`k9_core/orchestration/hil_task.py`): `contract`, `task_type`, `title`, `description`,
+  `correlation_id`, `reply_to`, `source_orchestrator`, `source_topic`, `priority`, `required_role`,
+  `decision_authority`, `require_comment`, `ttl_hours`/`ttl_action`, `pii`/`pii_fields`, `payload`, `artifacts`.
+  Before, only title, reason, priority, source and payload were sent, so tasks from K9-AIF applications had no
+  documents, deciding role or deadline. Test: `tests/test_hil_task_contract.py`, which validates the published messages
+  against HIL's schema.
+- `RequiresHIL` takes the contract's fields (`title`, `task_type`, `artifacts`, `required_role`,
+  `decision_authority`, `require_comment`, `ttl_hours`, `ttl_action`, `pii`, `pii_fields`); `set_task_fields()` fills
+  them in after the signal was raised (an orchestrator that caught an agent framework's own pause). **`HILArtifact`**
+  `(uri, title, media_type, role, pii)`: `s3://bucket/key` (HIL fetches it from S3/MinIO) or `https://` links, up to
+  50 per task. A value HIL would refuse (a priority outside low/medium/high/critical, an unknown role, an `ftp://`
+  artifact) now raises `ValueError` where `RequiresHIL` is raised, instead of the task being dead-lettered by HIL.
+- `K9RulesAgent` returns every field the rules returned (e.g. GoRules' `approver_role`), not only decision, rule and
+  reason; when the rules send the case to a person, the rules' `approver_role` (worker, manager, admin) becomes the HIL
+  task's `required_role`.
+
 
 ### Fixed
 - `AgentLoader`: an agent YAML that does not parse is named in the error for the class it should have provided

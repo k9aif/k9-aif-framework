@@ -589,14 +589,21 @@ paused run waits in `PausedRunStore` (PostgreSQL schema or SQLite); only its key
 `RequiresHIL.resume_state` → the resume payload's `_k9_resume`. `BaseSquad` then resumes at the paused step
 instead of rerunning the flow. Test: `tests/test_openai_agent_hil.py`.
 
-**Request fields not yet passed:** `BaseHILOrchestrator.execute_flow()`
-builds the request from `title`/`reason`/`priority`/`source_orchestrator`
-plus `payload` (the `RequiresHIL` context). It does not pass per-task TTL,
-PII field lists, required role, or `artifacts` — the list of object-storage
-links (`s3://bucket/key`, S3/MinIO) that k9x-hil reads to fetch the review
-document directly. k9x-hil falls back to queue defaults for the first
-three; a solution that needs documents shown to the reviewer must add
-`artifacts` itself.
+**K9X HIL owns the task structure (1.30.0).** Every HIL request
+`BaseHILOrchestrator` publishes conforms to HIL's contract `k9x.hil.task/v1`
+(JSON Schema served by HIL at `GET /api/contract/task`; HIL dead-letters a
+message that names the contract and doesn't conform). `RequiresHIL` carries
+the contract's fields: `title`, `task_type`, `artifacts` (any number of
+`HILArtifact(uri, title, media_type, role, pii)`: `s3://bucket/key`, which HIL
+fetches itself from S3/MinIO, or `https://` links), `required_role`,
+`decision_authority`, `require_comment`, `ttl_hours`/`ttl_action`, `pii`/
+`pii_fields`. Values HIL would refuse raise `ValueError` at the raise site.
+An orchestrator that catches a framework's own pause (an OpenAI agent's
+`needs_approval`) fills them in with `exc.set_task_fields(...)` before
+`handle_requires_hil()`. Builder: `k9_core/orchestration/hil_task.py`.
+Test: `tests/test_hil_task_contract.py` (checks the published messages
+against a copy of HIL's schema). Before 1.30.0 only title, reason,
+priority, source and payload were sent.
 
 **Not every HIL-consumer action is a decision worth publishing.** The
 reference reply-side implementation, `k9x-hil`

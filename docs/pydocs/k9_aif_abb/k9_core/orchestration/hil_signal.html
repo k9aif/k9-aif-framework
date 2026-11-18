@@ -54,6 +54,42 @@
                         <li>
                                 <a class="variable" href="#RequiresHIL.resume_state">resume_state</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.title">title</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.task_type">task_type</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.artifacts">artifacts</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.required_role">required_role</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.decision_authority">decision_authority</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.require_comment">require_comment</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.ttl_hours">ttl_hours</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.ttl_action">ttl_action</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.pii">pii</a>
+                        </li>
+                        <li>
+                                <a class="variable" href="#RequiresHIL.pii_fields">pii_fields</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#RequiresHIL.set_task_fields">set_task_fields</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#RequiresHIL.task_fields">task_fields</a>
+                        </li>
                 </ul>
 
             </li>
@@ -92,68 +128,136 @@ style rule.</p>
 
                         <label class="view-source-button" for="mod-hil_signal-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a><span class="c1"># K9-AIF Framework</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">RequiresHIL -- the signal an Agent or Squad raises to trigger human review.</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="sd">Deliberately an exception, not a return-value flag. A Squad&#39;s ``execute()``</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="sd">drives a sequential agent flow it doesn&#39;t fully control the top of; if</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="sd">&quot;needs HIL&quot; were just a dict key, it only reaches the Orchestrator when</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="sd">every layer in between remembers to check for it. An exception unwinds the</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="sd">call stack automatically -- it reaches the Orchestrator whether or not the</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="sd">Squad author ever thought about HIL.</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="sd">Only the Orchestrator may catch it (see BaseOrchestrator.handle_requires_hil()).</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">Agents and Squads never touch Kafka directly, even for HIL -- see CLAUDE.md&#39;s</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">Kafka ownership section for why that&#39;s a consistency requirement, not a</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">style rule.</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RequiresHIL</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">    Raised by an Agent or Squad to signal that a human decision is needed</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">    before this workflow can continue.</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">    Args:</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="sd">        reason:   human-readable explanation (e.g. &quot;fraud_probability 0.82</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="sd">                  exceeds auto-approve threshold&quot;).</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="sd">        context:  the review payload a human reviewer needs to see -- not</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="sd">                  necessarily the full execution payload.</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="sd">        priority: &quot;low&quot; | &quot;medium&quot; | &quot;high&quot; | &quot;critical&quot;. Default &quot;medium&quot;.</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">        queue:    optional HIL queue/domain name. When omitted, the</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="sd">                  catching Orchestrator&#39;s own ``layer`` is used, so a</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="sd">                  fraud-detection orchestrator&#39;s HIL requests land in a</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="sd">                  fraud-shaped queue without every raise site having to</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">                  know the queue name.</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="sd">        resume_state: (1.29.0) what the flow needs to continue where it stopped</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="sd">                  after the decision (e.g. a paused OpenAI run, the squad steps</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="sd">                  already done). Never shown to the reviewer: the orchestrator</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="sd">                  stores it in the resume payload under ``_k9_resume``.</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>    <span class="p">):</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="c1"># SPDX-License-Identifier: Apache-2.0</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="c1"># K9-AIF Framework</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="sd">RequiresHIL -- the signal an Agent or Squad raises to trigger human review.</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">Deliberately an exception, not a return-value flag. A Squad&#39;s ``execute()``</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="sd">drives a sequential agent flow it doesn&#39;t fully control the top of; if</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">&quot;needs HIL&quot; were just a dict key, it only reaches the Orchestrator when</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="sd">every layer in between remembers to check for it. An exception unwinds the</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="sd">call stack automatically -- it reaches the Orchestrator whether or not the</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">Squad author ever thought about HIL.</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a><span class="sd">Only the Orchestrator may catch it (see BaseOrchestrator.handle_requires_hil()).</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">Agents and Squads never touch Kafka directly, even for HIL -- see CLAUDE.md&#39;s</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">Kafka ownership section for why that&#39;s a consistency requirement, not a</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a><span class="sd">style rule.</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_core.orchestration.hil_task</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_task_fields</span><span class="p">,</span> <span class="n">coerce_artifacts</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RequiresHIL</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">    Raised by an Agent or Squad to signal that a human decision is needed</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">    before this workflow can continue.</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">    Args:</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">        reason:   human-readable explanation (e.g. &quot;fraud_probability 0.82</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a><span class="sd">                  exceeds auto-approve threshold&quot;).</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a><span class="sd">        context:  the review payload a human reviewer needs to see -- not</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="sd">                  necessarily the full execution payload.</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a><span class="sd">        priority: &quot;low&quot; | &quot;medium&quot; | &quot;high&quot; | &quot;critical&quot;. Default &quot;medium&quot;.</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">        queue:    optional HIL queue/domain name. When omitted, the</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">                  catching Orchestrator&#39;s own ``layer`` is used, so a</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a><span class="sd">                  fraud-detection orchestrator&#39;s HIL requests land in a</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">                  fraud-shaped queue without every raise site having to</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="sd">                  know the queue name.</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">        resume_state: (1.29.0) what the flow needs to continue where it stopped</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="sd">                  after the decision (e.g. a paused OpenAI run, the squad steps</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a><span class="sd">                  already done). Never shown to the reviewer: the orchestrator</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">                  stores it in the resume payload under ``_k9_resume``.</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd">    K9X HIL task fields (1.30.0, the contract ``k9x.hil.task/v1``, owned by K9X HIL; checked here so a value</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">    HIL would refuse fails at the raise site, not after the flow paused):</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">        title:    the task&#39;s title (default: ``reason``); ``reason`` becomes its description.</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">        task_type: what kind of task, e.g. ``invoice-approval``.</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a><span class="sd">        artifacts: documents and links for the reviewer, any number: ``HILArtifact``, a dict</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a><span class="sd">                  ``{uri, title, media_type, role, pii}`` or a URI string; ``s3://bucket/key`` or ``https://``.</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a><span class="sd">        required_role, decision_authority: the lowest HIL role allowed to decide, and who decides.</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="sd">        require_comment: approval needs a written justification.</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a><span class="sd">        ttl_hours, ttl_action: the deadline and what happens after it (reject | expire | escalate).</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="sd">        pii, pii_fields: personal data in the task.</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="n">artifacts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="n">required_role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="n">decision_authority</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>        <span class="n">require_comment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="n">ttl_hours</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="n">ttl_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="n">pii</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>        <span class="n">pii_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>    <span class="p">):</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="n">task_type</span><span class="p">,</span> <span class="n">required_role</span><span class="o">=</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="n">ttl_action</span><span class="o">=</span><span class="n">ttl_action</span><span class="p">)</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span> <span class="o">=</span> <span class="n">task_type</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">artifacts</span><span class="p">)</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span> <span class="o">=</span> <span class="n">required_role</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span> <span class="o">=</span> <span class="n">decision_authority</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">require_comment</span><span class="p">)</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span> <span class="o">=</span> <span class="n">ttl_hours</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span> <span class="o">=</span> <span class="n">ttl_action</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">pii</span><span class="p">)</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pii_fields</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RequiresHIL&quot;</span><span class="p">:</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill in K9X HIL task fields after the signal was raised: e.g. the orchestrator that caught a framework&#39;s</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a><span class="sd">        own pause (an OpenAI agent&#39;s needs_approval) adds the task type, the role the rules named, and the document</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a><span class="sd">        under review. Checked like the constructor&#39;s; unknown names raise. Returns self.&quot;&quot;&quot;</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="n">allowed</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">,</span> <span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="s2">&quot;decision_authority&quot;</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">,</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>                   <span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">,</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">,</span> <span class="s2">&quot;priority&quot;</span><span class="p">}</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="n">allowed</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown HIL task fields </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority</span><span class="p">),</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>                          <span class="n">task_type</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">),</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>                          <span class="n">required_role</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">),</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">),</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>                          <span class="n">ttl_action</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">))</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;require_comment&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">):</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The K9X HIL task fields this signal sets (for BaseHILOrchestrator).&quot;&quot;&quot;</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a>                <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span><span class="p">],</span> <span class="s2">&quot;required_role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>                <span class="s2">&quot;decision_authority&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span><span class="p">,</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a>                <span class="s2">&quot;ttl_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii</span><span class="p">,</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a>                <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span><span class="p">}</span>
 </span></pre></div>
 
 
@@ -169,46 +273,112 @@ style rule.</p>
 
     </div>
     <a class="headerlink" href="#RequiresHIL"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL-24"><a href="#RequiresHIL-24"><span class="linenos">24</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RequiresHIL</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-</span><span id="RequiresHIL-25"><a href="#RequiresHIL-25"><span class="linenos">25</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="RequiresHIL-26"><a href="#RequiresHIL-26"><span class="linenos">26</span></a><span class="sd">    Raised by an Agent or Squad to signal that a human decision is needed</span>
-</span><span id="RequiresHIL-27"><a href="#RequiresHIL-27"><span class="linenos">27</span></a><span class="sd">    before this workflow can continue.</span>
-</span><span id="RequiresHIL-28"><a href="#RequiresHIL-28"><span class="linenos">28</span></a>
-</span><span id="RequiresHIL-29"><a href="#RequiresHIL-29"><span class="linenos">29</span></a><span class="sd">    Args:</span>
-</span><span id="RequiresHIL-30"><a href="#RequiresHIL-30"><span class="linenos">30</span></a><span class="sd">        reason:   human-readable explanation (e.g. &quot;fraud_probability 0.82</span>
-</span><span id="RequiresHIL-31"><a href="#RequiresHIL-31"><span class="linenos">31</span></a><span class="sd">                  exceeds auto-approve threshold&quot;).</span>
-</span><span id="RequiresHIL-32"><a href="#RequiresHIL-32"><span class="linenos">32</span></a><span class="sd">        context:  the review payload a human reviewer needs to see -- not</span>
-</span><span id="RequiresHIL-33"><a href="#RequiresHIL-33"><span class="linenos">33</span></a><span class="sd">                  necessarily the full execution payload.</span>
-</span><span id="RequiresHIL-34"><a href="#RequiresHIL-34"><span class="linenos">34</span></a><span class="sd">        priority: &quot;low&quot; | &quot;medium&quot; | &quot;high&quot; | &quot;critical&quot;. Default &quot;medium&quot;.</span>
-</span><span id="RequiresHIL-35"><a href="#RequiresHIL-35"><span class="linenos">35</span></a><span class="sd">        queue:    optional HIL queue/domain name. When omitted, the</span>
-</span><span id="RequiresHIL-36"><a href="#RequiresHIL-36"><span class="linenos">36</span></a><span class="sd">                  catching Orchestrator&#39;s own ``layer`` is used, so a</span>
-</span><span id="RequiresHIL-37"><a href="#RequiresHIL-37"><span class="linenos">37</span></a><span class="sd">                  fraud-detection orchestrator&#39;s HIL requests land in a</span>
-</span><span id="RequiresHIL-38"><a href="#RequiresHIL-38"><span class="linenos">38</span></a><span class="sd">                  fraud-shaped queue without every raise site having to</span>
-</span><span id="RequiresHIL-39"><a href="#RequiresHIL-39"><span class="linenos">39</span></a><span class="sd">                  know the queue name.</span>
-</span><span id="RequiresHIL-40"><a href="#RequiresHIL-40"><span class="linenos">40</span></a><span class="sd">        resume_state: (1.29.0) what the flow needs to continue where it stopped</span>
-</span><span id="RequiresHIL-41"><a href="#RequiresHIL-41"><span class="linenos">41</span></a><span class="sd">                  after the decision (e.g. a paused OpenAI run, the squad steps</span>
-</span><span id="RequiresHIL-42"><a href="#RequiresHIL-42"><span class="linenos">42</span></a><span class="sd">                  already done). Never shown to the reviewer: the orchestrator</span>
-</span><span id="RequiresHIL-43"><a href="#RequiresHIL-43"><span class="linenos">43</span></a><span class="sd">                  stores it in the resume payload under ``_k9_resume``.</span>
-</span><span id="RequiresHIL-44"><a href="#RequiresHIL-44"><span class="linenos">44</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="RequiresHIL-45"><a href="#RequiresHIL-45"><span class="linenos">45</span></a>
-</span><span id="RequiresHIL-46"><a href="#RequiresHIL-46"><span class="linenos">46</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span id="RequiresHIL-47"><a href="#RequiresHIL-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="RequiresHIL-48"><a href="#RequiresHIL-48"><span class="linenos">48</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="RequiresHIL-49"><a href="#RequiresHIL-49"><span class="linenos">49</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL-50"><a href="#RequiresHIL-50"><span class="linenos">50</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
-</span><span id="RequiresHIL-51"><a href="#RequiresHIL-51"><span class="linenos">51</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL-52"><a href="#RequiresHIL-52"><span class="linenos">52</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL-53"><a href="#RequiresHIL-53"><span class="linenos">53</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL-54"><a href="#RequiresHIL-54"><span class="linenos">54</span></a>    <span class="p">):</span>
-</span><span id="RequiresHIL-55"><a href="#RequiresHIL-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="RequiresHIL-56"><a href="#RequiresHIL-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL-57"><a href="#RequiresHIL-57"><span class="linenos">57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="RequiresHIL-58"><a href="#RequiresHIL-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="RequiresHIL-59"><a href="#RequiresHIL-59"><span class="linenos">59</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
-</span><span id="RequiresHIL-60"><a href="#RequiresHIL-60"><span class="linenos">60</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
-</span><span id="RequiresHIL-61"><a href="#RequiresHIL-61"><span class="linenos">61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
-</span><span id="RequiresHIL-62"><a href="#RequiresHIL-62"><span class="linenos">62</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL-63"><a href="#RequiresHIL-63"><span class="linenos">63</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL-26"><a href="#RequiresHIL-26"><span class="linenos"> 26</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RequiresHIL</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+</span><span id="RequiresHIL-27"><a href="#RequiresHIL-27"><span class="linenos"> 27</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="RequiresHIL-28"><a href="#RequiresHIL-28"><span class="linenos"> 28</span></a><span class="sd">    Raised by an Agent or Squad to signal that a human decision is needed</span>
+</span><span id="RequiresHIL-29"><a href="#RequiresHIL-29"><span class="linenos"> 29</span></a><span class="sd">    before this workflow can continue.</span>
+</span><span id="RequiresHIL-30"><a href="#RequiresHIL-30"><span class="linenos"> 30</span></a>
+</span><span id="RequiresHIL-31"><a href="#RequiresHIL-31"><span class="linenos"> 31</span></a><span class="sd">    Args:</span>
+</span><span id="RequiresHIL-32"><a href="#RequiresHIL-32"><span class="linenos"> 32</span></a><span class="sd">        reason:   human-readable explanation (e.g. &quot;fraud_probability 0.82</span>
+</span><span id="RequiresHIL-33"><a href="#RequiresHIL-33"><span class="linenos"> 33</span></a><span class="sd">                  exceeds auto-approve threshold&quot;).</span>
+</span><span id="RequiresHIL-34"><a href="#RequiresHIL-34"><span class="linenos"> 34</span></a><span class="sd">        context:  the review payload a human reviewer needs to see -- not</span>
+</span><span id="RequiresHIL-35"><a href="#RequiresHIL-35"><span class="linenos"> 35</span></a><span class="sd">                  necessarily the full execution payload.</span>
+</span><span id="RequiresHIL-36"><a href="#RequiresHIL-36"><span class="linenos"> 36</span></a><span class="sd">        priority: &quot;low&quot; | &quot;medium&quot; | &quot;high&quot; | &quot;critical&quot;. Default &quot;medium&quot;.</span>
+</span><span id="RequiresHIL-37"><a href="#RequiresHIL-37"><span class="linenos"> 37</span></a><span class="sd">        queue:    optional HIL queue/domain name. When omitted, the</span>
+</span><span id="RequiresHIL-38"><a href="#RequiresHIL-38"><span class="linenos"> 38</span></a><span class="sd">                  catching Orchestrator&#39;s own ``layer`` is used, so a</span>
+</span><span id="RequiresHIL-39"><a href="#RequiresHIL-39"><span class="linenos"> 39</span></a><span class="sd">                  fraud-detection orchestrator&#39;s HIL requests land in a</span>
+</span><span id="RequiresHIL-40"><a href="#RequiresHIL-40"><span class="linenos"> 40</span></a><span class="sd">                  fraud-shaped queue without every raise site having to</span>
+</span><span id="RequiresHIL-41"><a href="#RequiresHIL-41"><span class="linenos"> 41</span></a><span class="sd">                  know the queue name.</span>
+</span><span id="RequiresHIL-42"><a href="#RequiresHIL-42"><span class="linenos"> 42</span></a><span class="sd">        resume_state: (1.29.0) what the flow needs to continue where it stopped</span>
+</span><span id="RequiresHIL-43"><a href="#RequiresHIL-43"><span class="linenos"> 43</span></a><span class="sd">                  after the decision (e.g. a paused OpenAI run, the squad steps</span>
+</span><span id="RequiresHIL-44"><a href="#RequiresHIL-44"><span class="linenos"> 44</span></a><span class="sd">                  already done). Never shown to the reviewer: the orchestrator</span>
+</span><span id="RequiresHIL-45"><a href="#RequiresHIL-45"><span class="linenos"> 45</span></a><span class="sd">                  stores it in the resume payload under ``_k9_resume``.</span>
+</span><span id="RequiresHIL-46"><a href="#RequiresHIL-46"><span class="linenos"> 46</span></a>
+</span><span id="RequiresHIL-47"><a href="#RequiresHIL-47"><span class="linenos"> 47</span></a><span class="sd">    K9X HIL task fields (1.30.0, the contract ``k9x.hil.task/v1``, owned by K9X HIL; checked here so a value</span>
+</span><span id="RequiresHIL-48"><a href="#RequiresHIL-48"><span class="linenos"> 48</span></a><span class="sd">    HIL would refuse fails at the raise site, not after the flow paused):</span>
+</span><span id="RequiresHIL-49"><a href="#RequiresHIL-49"><span class="linenos"> 49</span></a><span class="sd">        title:    the task&#39;s title (default: ``reason``); ``reason`` becomes its description.</span>
+</span><span id="RequiresHIL-50"><a href="#RequiresHIL-50"><span class="linenos"> 50</span></a><span class="sd">        task_type: what kind of task, e.g. ``invoice-approval``.</span>
+</span><span id="RequiresHIL-51"><a href="#RequiresHIL-51"><span class="linenos"> 51</span></a><span class="sd">        artifacts: documents and links for the reviewer, any number: ``HILArtifact``, a dict</span>
+</span><span id="RequiresHIL-52"><a href="#RequiresHIL-52"><span class="linenos"> 52</span></a><span class="sd">                  ``{uri, title, media_type, role, pii}`` or a URI string; ``s3://bucket/key`` or ``https://``.</span>
+</span><span id="RequiresHIL-53"><a href="#RequiresHIL-53"><span class="linenos"> 53</span></a><span class="sd">        required_role, decision_authority: the lowest HIL role allowed to decide, and who decides.</span>
+</span><span id="RequiresHIL-54"><a href="#RequiresHIL-54"><span class="linenos"> 54</span></a><span class="sd">        require_comment: approval needs a written justification.</span>
+</span><span id="RequiresHIL-55"><a href="#RequiresHIL-55"><span class="linenos"> 55</span></a><span class="sd">        ttl_hours, ttl_action: the deadline and what happens after it (reject | expire | escalate).</span>
+</span><span id="RequiresHIL-56"><a href="#RequiresHIL-56"><span class="linenos"> 56</span></a><span class="sd">        pii, pii_fields: personal data in the task.</span>
+</span><span id="RequiresHIL-57"><a href="#RequiresHIL-57"><span class="linenos"> 57</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="RequiresHIL-58"><a href="#RequiresHIL-58"><span class="linenos"> 58</span></a>
+</span><span id="RequiresHIL-59"><a href="#RequiresHIL-59"><span class="linenos"> 59</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span id="RequiresHIL-60"><a href="#RequiresHIL-60"><span class="linenos"> 60</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="RequiresHIL-61"><a href="#RequiresHIL-61"><span class="linenos"> 61</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="RequiresHIL-62"><a href="#RequiresHIL-62"><span class="linenos"> 62</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-63"><a href="#RequiresHIL-63"><span class="linenos"> 63</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+</span><span id="RequiresHIL-64"><a href="#RequiresHIL-64"><span class="linenos"> 64</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-65"><a href="#RequiresHIL-65"><span class="linenos"> 65</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-66"><a href="#RequiresHIL-66"><span class="linenos"> 66</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-67"><a href="#RequiresHIL-67"><span class="linenos"> 67</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="RequiresHIL-68"><a href="#RequiresHIL-68"><span class="linenos"> 68</span></a>        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-69"><a href="#RequiresHIL-69"><span class="linenos"> 69</span></a>        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-70"><a href="#RequiresHIL-70"><span class="linenos"> 70</span></a>        <span class="n">artifacts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-71"><a href="#RequiresHIL-71"><span class="linenos"> 71</span></a>        <span class="n">required_role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-72"><a href="#RequiresHIL-72"><span class="linenos"> 72</span></a>        <span class="n">decision_authority</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-73"><a href="#RequiresHIL-73"><span class="linenos"> 73</span></a>        <span class="n">require_comment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="RequiresHIL-74"><a href="#RequiresHIL-74"><span class="linenos"> 74</span></a>        <span class="n">ttl_hours</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-75"><a href="#RequiresHIL-75"><span class="linenos"> 75</span></a>        <span class="n">ttl_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-76"><a href="#RequiresHIL-76"><span class="linenos"> 76</span></a>        <span class="n">pii</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="RequiresHIL-77"><a href="#RequiresHIL-77"><span class="linenos"> 77</span></a>        <span class="n">pii_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL-78"><a href="#RequiresHIL-78"><span class="linenos"> 78</span></a>    <span class="p">):</span>
+</span><span id="RequiresHIL-79"><a href="#RequiresHIL-79"><span class="linenos"> 79</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="n">task_type</span><span class="p">,</span> <span class="n">required_role</span><span class="o">=</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="RequiresHIL-80"><a href="#RequiresHIL-80"><span class="linenos"> 80</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="n">ttl_action</span><span class="o">=</span><span class="n">ttl_action</span><span class="p">)</span>
+</span><span id="RequiresHIL-81"><a href="#RequiresHIL-81"><span class="linenos"> 81</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="RequiresHIL-82"><a href="#RequiresHIL-82"><span class="linenos"> 82</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL-83"><a href="#RequiresHIL-83"><span class="linenos"> 83</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="RequiresHIL-84"><a href="#RequiresHIL-84"><span class="linenos"> 84</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="RequiresHIL-85"><a href="#RequiresHIL-85"><span class="linenos"> 85</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="RequiresHIL-86"><a href="#RequiresHIL-86"><span class="linenos"> 86</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="RequiresHIL-87"><a href="#RequiresHIL-87"><span class="linenos"> 87</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="RequiresHIL-88"><a href="#RequiresHIL-88"><span class="linenos"> 88</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL-89"><a href="#RequiresHIL-89"><span class="linenos"> 89</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+</span><span id="RequiresHIL-90"><a href="#RequiresHIL-90"><span class="linenos"> 90</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span> <span class="o">=</span> <span class="n">task_type</span>
+</span><span id="RequiresHIL-91"><a href="#RequiresHIL-91"><span class="linenos"> 91</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">artifacts</span><span class="p">)</span>
+</span><span id="RequiresHIL-92"><a href="#RequiresHIL-92"><span class="linenos"> 92</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span> <span class="o">=</span> <span class="n">required_role</span>
+</span><span id="RequiresHIL-93"><a href="#RequiresHIL-93"><span class="linenos"> 93</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span> <span class="o">=</span> <span class="n">decision_authority</span>
+</span><span id="RequiresHIL-94"><a href="#RequiresHIL-94"><span class="linenos"> 94</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">require_comment</span><span class="p">)</span>
+</span><span id="RequiresHIL-95"><a href="#RequiresHIL-95"><span class="linenos"> 95</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span> <span class="o">=</span> <span class="n">ttl_hours</span>
+</span><span id="RequiresHIL-96"><a href="#RequiresHIL-96"><span class="linenos"> 96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span> <span class="o">=</span> <span class="n">ttl_action</span>
+</span><span id="RequiresHIL-97"><a href="#RequiresHIL-97"><span class="linenos"> 97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">pii</span><span class="p">)</span>
+</span><span id="RequiresHIL-98"><a href="#RequiresHIL-98"><span class="linenos"> 98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pii_fields</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="RequiresHIL-99"><a href="#RequiresHIL-99"><span class="linenos"> 99</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+</span><span id="RequiresHIL-100"><a href="#RequiresHIL-100"><span class="linenos">100</span></a>
+</span><span id="RequiresHIL-101"><a href="#RequiresHIL-101"><span class="linenos">101</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RequiresHIL&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL-102"><a href="#RequiresHIL-102"><span class="linenos">102</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill in K9X HIL task fields after the signal was raised: e.g. the orchestrator that caught a framework&#39;s</span>
+</span><span id="RequiresHIL-103"><a href="#RequiresHIL-103"><span class="linenos">103</span></a><span class="sd">        own pause (an OpenAI agent&#39;s needs_approval) adds the task type, the role the rules named, and the document</span>
+</span><span id="RequiresHIL-104"><a href="#RequiresHIL-104"><span class="linenos">104</span></a><span class="sd">        under review. Checked like the constructor&#39;s; unknown names raise. Returns self.&quot;&quot;&quot;</span>
+</span><span id="RequiresHIL-105"><a href="#RequiresHIL-105"><span class="linenos">105</span></a>        <span class="n">allowed</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">,</span> <span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="s2">&quot;decision_authority&quot;</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">,</span>
+</span><span id="RequiresHIL-106"><a href="#RequiresHIL-106"><span class="linenos">106</span></a>                   <span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">,</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">,</span> <span class="s2">&quot;priority&quot;</span><span class="p">}</span>
+</span><span id="RequiresHIL-107"><a href="#RequiresHIL-107"><span class="linenos">107</span></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="n">allowed</span>
+</span><span id="RequiresHIL-108"><a href="#RequiresHIL-108"><span class="linenos">108</span></a>        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+</span><span id="RequiresHIL-109"><a href="#RequiresHIL-109"><span class="linenos">109</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown HIL task fields </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="RequiresHIL-110"><a href="#RequiresHIL-110"><span class="linenos">110</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority</span><span class="p">),</span>
+</span><span id="RequiresHIL-111"><a href="#RequiresHIL-111"><span class="linenos">111</span></a>                          <span class="n">task_type</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">),</span>
+</span><span id="RequiresHIL-112"><a href="#RequiresHIL-112"><span class="linenos">112</span></a>                          <span class="n">required_role</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">),</span>
+</span><span id="RequiresHIL-113"><a href="#RequiresHIL-113"><span class="linenos">113</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">),</span>
+</span><span id="RequiresHIL-114"><a href="#RequiresHIL-114"><span class="linenos">114</span></a>                          <span class="n">ttl_action</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">))</span>
+</span><span id="RequiresHIL-115"><a href="#RequiresHIL-115"><span class="linenos">115</span></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="RequiresHIL-116"><a href="#RequiresHIL-116"><span class="linenos">116</span></a>            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL-117"><a href="#RequiresHIL-117"><span class="linenos">117</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL-118"><a href="#RequiresHIL-118"><span class="linenos">118</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;require_comment&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">):</span>
+</span><span id="RequiresHIL-119"><a href="#RequiresHIL-119"><span class="linenos">119</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL-120"><a href="#RequiresHIL-120"><span class="linenos">120</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL-121"><a href="#RequiresHIL-121"><span class="linenos">121</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="RequiresHIL-122"><a href="#RequiresHIL-122"><span class="linenos">122</span></a>            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL-123"><a href="#RequiresHIL-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="RequiresHIL-124"><a href="#RequiresHIL-124"><span class="linenos">124</span></a>
+</span><span id="RequiresHIL-125"><a href="#RequiresHIL-125"><span class="linenos">125</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="RequiresHIL-126"><a href="#RequiresHIL-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The K9X HIL task fields this signal sets (for BaseHILOrchestrator).&quot;&quot;&quot;</span>
+</span><span id="RequiresHIL-127"><a href="#RequiresHIL-127"><span class="linenos">127</span></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
+</span><span id="RequiresHIL-128"><a href="#RequiresHIL-128"><span class="linenos">128</span></a>                <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span><span class="p">],</span> <span class="s2">&quot;required_role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="RequiresHIL-129"><a href="#RequiresHIL-129"><span class="linenos">129</span></a>                <span class="s2">&quot;decision_authority&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span><span class="p">,</span>
+</span><span id="RequiresHIL-130"><a href="#RequiresHIL-130"><span class="linenos">130</span></a>                <span class="s2">&quot;ttl_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii</span><span class="p">,</span>
+</span><span id="RequiresHIL-131"><a href="#RequiresHIL-131"><span class="linenos">131</span></a>                <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span><span class="p">}</span>
 </span></pre></div>
 
 
@@ -230,6 +400,17 @@ before this workflow can continue.</p>
               after the decision (e.g. a paused OpenAI run, the squad steps
               already done). Never shown to the reviewer: the orchestrator
               stores it in the resume payload under <code>_k9_resume</code>.</p>
+
+<p>K9X HIL task fields (1.30.0, the contract <code>k9x.hil.task/v1</code>, owned by K9X HIL; checked here so a value
+HIL would refuse fails at the raise site, not after the flow paused):
+    title:    the task's title (default: <code><a href="#RequiresHIL.reason">reason</a></code>); <code><a href="#RequiresHIL.reason">reason</a></code> becomes its description.
+    task_type: what kind of task, e.g. <code>invoice-approval</code>.
+    artifacts: documents and links for the reviewer, any number: <code>HILArtifact</code>, a dict
+              <code>{uri, title, media_type, role, pii}</code> or a URI string; <code>s3://bucket/key</code> or <code>https://</code>.
+    required_role, decision_authority: the lowest HIL role allowed to decide, and who decides.
+    require_comment: approval needs a written justification.
+    ttl_hours, ttl_action: the deadline and what happens after it (reject | expire | escalate).
+    pii, pii_fields: personal data in the task.</p>
 </div>
 
 
@@ -237,30 +418,53 @@ before this workflow can continue.</p>
                                         <input id="RequiresHIL.__init__-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
             
-        <span class="name">RequiresHIL</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span>,</span><span class="param">	<span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
+        <span class="name">RequiresHIL</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>,</span><span class="param">	<span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span>,</span><span class="param">	<span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">artifacts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">required_role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">decision_authority</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">require_comment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>,</span><span class="param">	<span class="n">ttl_hours</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">ttl_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">pii</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>,</span><span class="param">	<span class="n">pii_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span>)</span>
 
                 <label class="view-source-button" for="RequiresHIL.__init__-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#RequiresHIL.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL.__init__-46"><a href="#RequiresHIL.__init__-46"><span class="linenos">46</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-</span><span id="RequiresHIL.__init__-47"><a href="#RequiresHIL.__init__-47"><span class="linenos">47</span></a>        <span class="bp">self</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-48"><a href="#RequiresHIL.__init__-48"><span class="linenos">48</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-49"><a href="#RequiresHIL.__init__-49"><span class="linenos">49</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-50"><a href="#RequiresHIL.__init__-50"><span class="linenos">50</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-51"><a href="#RequiresHIL.__init__-51"><span class="linenos">51</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-52"><a href="#RequiresHIL.__init__-52"><span class="linenos">52</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-53"><a href="#RequiresHIL.__init__-53"><span class="linenos">53</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="RequiresHIL.__init__-54"><a href="#RequiresHIL.__init__-54"><span class="linenos">54</span></a>    <span class="p">):</span>
-</span><span id="RequiresHIL.__init__-55"><a href="#RequiresHIL.__init__-55"><span class="linenos">55</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
-</span><span id="RequiresHIL.__init__-56"><a href="#RequiresHIL.__init__-56"><span class="linenos">56</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL.__init__-57"><a href="#RequiresHIL.__init__-57"><span class="linenos">57</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
-</span><span id="RequiresHIL.__init__-58"><a href="#RequiresHIL.__init__-58"><span class="linenos">58</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
-</span><span id="RequiresHIL.__init__-59"><a href="#RequiresHIL.__init__-59"><span class="linenos">59</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
-</span><span id="RequiresHIL.__init__-60"><a href="#RequiresHIL.__init__-60"><span class="linenos">60</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
-</span><span id="RequiresHIL.__init__-61"><a href="#RequiresHIL.__init__-61"><span class="linenos">61</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
-</span><span id="RequiresHIL.__init__-62"><a href="#RequiresHIL.__init__-62"><span class="linenos">62</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span id="RequiresHIL.__init__-63"><a href="#RequiresHIL.__init__-63"><span class="linenos">63</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL.__init__-59"><a href="#RequiresHIL.__init__-59"><span class="linenos">59</span></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span id="RequiresHIL.__init__-60"><a href="#RequiresHIL.__init__-60"><span class="linenos">60</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-61"><a href="#RequiresHIL.__init__-61"><span class="linenos">61</span></a>        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-62"><a href="#RequiresHIL.__init__-62"><span class="linenos">62</span></a>        <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-63"><a href="#RequiresHIL.__init__-63"><span class="linenos">63</span></a>        <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-64"><a href="#RequiresHIL.__init__-64"><span class="linenos">64</span></a>        <span class="n">queue</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-65"><a href="#RequiresHIL.__init__-65"><span class="linenos">65</span></a>        <span class="n">correlation_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-66"><a href="#RequiresHIL.__init__-66"><span class="linenos">66</span></a>        <span class="n">resume_state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-67"><a href="#RequiresHIL.__init__-67"><span class="linenos">67</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-68"><a href="#RequiresHIL.__init__-68"><span class="linenos">68</span></a>        <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-69"><a href="#RequiresHIL.__init__-69"><span class="linenos">69</span></a>        <span class="n">task_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-70"><a href="#RequiresHIL.__init__-70"><span class="linenos">70</span></a>        <span class="n">artifacts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-71"><a href="#RequiresHIL.__init__-71"><span class="linenos">71</span></a>        <span class="n">required_role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-72"><a href="#RequiresHIL.__init__-72"><span class="linenos">72</span></a>        <span class="n">decision_authority</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-73"><a href="#RequiresHIL.__init__-73"><span class="linenos">73</span></a>        <span class="n">require_comment</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-74"><a href="#RequiresHIL.__init__-74"><span class="linenos">74</span></a>        <span class="n">ttl_hours</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-75"><a href="#RequiresHIL.__init__-75"><span class="linenos">75</span></a>        <span class="n">ttl_action</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-76"><a href="#RequiresHIL.__init__-76"><span class="linenos">76</span></a>        <span class="n">pii</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-77"><a href="#RequiresHIL.__init__-77"><span class="linenos">77</span></a>        <span class="n">pii_fields</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-78"><a href="#RequiresHIL.__init__-78"><span class="linenos">78</span></a>    <span class="p">):</span>
+</span><span id="RequiresHIL.__init__-79"><a href="#RequiresHIL.__init__-79"><span class="linenos">79</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span> <span class="n">task_type</span><span class="o">=</span><span class="n">task_type</span><span class="p">,</span> <span class="n">required_role</span><span class="o">=</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="RequiresHIL.__init__-80"><a href="#RequiresHIL.__init__-80"><span class="linenos">80</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="n">ttl_action</span><span class="o">=</span><span class="n">ttl_action</span><span class="p">)</span>
+</span><span id="RequiresHIL.__init__-81"><a href="#RequiresHIL.__init__-81"><span class="linenos">81</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+</span><span id="RequiresHIL.__init__-82"><a href="#RequiresHIL.__init__-82"><span class="linenos">82</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL.__init__-83"><a href="#RequiresHIL.__init__-83"><span class="linenos">83</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+</span><span id="RequiresHIL.__init__-84"><a href="#RequiresHIL.__init__-84"><span class="linenos">84</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span>
+</span><span id="RequiresHIL.__init__-85"><a href="#RequiresHIL.__init__-85"><span class="linenos">85</span></a>        <span class="c1"># 1.25.0: set when the review must be published under a known id (the tool</span>
+</span><span id="RequiresHIL.__init__-86"><a href="#RequiresHIL.__init__-86"><span class="linenos">86</span></a>        <span class="c1"># gate&#39;s pending call); None lets BaseHILOrchestrator generate one, as before.</span>
+</span><span id="RequiresHIL.__init__-87"><a href="#RequiresHIL.__init__-87"><span class="linenos">87</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">correlation_id</span> <span class="o">=</span> <span class="n">correlation_id</span>
+</span><span id="RequiresHIL.__init__-88"><a href="#RequiresHIL.__init__-88"><span class="linenos">88</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">resume_state</span> <span class="o">=</span> <span class="n">resume_state</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span id="RequiresHIL.__init__-89"><a href="#RequiresHIL.__init__-89"><span class="linenos">89</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+</span><span id="RequiresHIL.__init__-90"><a href="#RequiresHIL.__init__-90"><span class="linenos">90</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span> <span class="o">=</span> <span class="n">task_type</span>
+</span><span id="RequiresHIL.__init__-91"><a href="#RequiresHIL.__init__-91"><span class="linenos">91</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">artifacts</span><span class="p">)</span>
+</span><span id="RequiresHIL.__init__-92"><a href="#RequiresHIL.__init__-92"><span class="linenos">92</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span> <span class="o">=</span> <span class="n">required_role</span>
+</span><span id="RequiresHIL.__init__-93"><a href="#RequiresHIL.__init__-93"><span class="linenos">93</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span> <span class="o">=</span> <span class="n">decision_authority</span>
+</span><span id="RequiresHIL.__init__-94"><a href="#RequiresHIL.__init__-94"><span class="linenos">94</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">require_comment</span><span class="p">)</span>
+</span><span id="RequiresHIL.__init__-95"><a href="#RequiresHIL.__init__-95"><span class="linenos">95</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span> <span class="o">=</span> <span class="n">ttl_hours</span>
+</span><span id="RequiresHIL.__init__-96"><a href="#RequiresHIL.__init__-96"><span class="linenos">96</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span> <span class="o">=</span> <span class="n">ttl_action</span>
+</span><span id="RequiresHIL.__init__-97"><a href="#RequiresHIL.__init__-97"><span class="linenos">97</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">pii</span><span class="p">)</span>
+</span><span id="RequiresHIL.__init__-98"><a href="#RequiresHIL.__init__-98"><span class="linenos">98</span></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pii_fields</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="RequiresHIL.__init__-99"><a href="#RequiresHIL.__init__-99"><span class="linenos">99</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -331,6 +535,186 @@ before this workflow can continue.</p>
     <a class="headerlink" href="#RequiresHIL.resume_state"></a>
     
     
+
+                            </div>
+                            <div id="RequiresHIL.title" class="classattr">
+                                <div class="attr variable">
+            <span class="name">title</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.title"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.task_type" class="classattr">
+                                <div class="attr variable">
+            <span class="name">task_type</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.task_type"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.artifacts" class="classattr">
+                                <div class="attr variable">
+            <span class="name">artifacts</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.artifacts"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.required_role" class="classattr">
+                                <div class="attr variable">
+            <span class="name">required_role</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.required_role"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.decision_authority" class="classattr">
+                                <div class="attr variable">
+            <span class="name">decision_authority</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.decision_authority"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.require_comment" class="classattr">
+                                <div class="attr variable">
+            <span class="name">require_comment</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.require_comment"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.ttl_hours" class="classattr">
+                                <div class="attr variable">
+            <span class="name">ttl_hours</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.ttl_hours"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.ttl_action" class="classattr">
+                                <div class="attr variable">
+            <span class="name">ttl_action</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.ttl_action"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.pii" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pii</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.pii"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.pii_fields" class="classattr">
+                                <div class="attr variable">
+            <span class="name">pii_fields</span>
+
+        
+    </div>
+    <a class="headerlink" href="#RequiresHIL.pii_fields"></a>
+    
+    
+
+                            </div>
+                            <div id="RequiresHIL.set_task_fields" class="classattr">
+                                        <input id="RequiresHIL.set_task_fields-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">set_task_fields</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span></span><span class="return-annotation">) -> <span class="n"><a href="#RequiresHIL">RequiresHIL</a></span>:</span></span>
+
+                <label class="view-source-button" for="RequiresHIL.set_task_fields-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#RequiresHIL.set_task_fields"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL.set_task_fields-101"><a href="#RequiresHIL.set_task_fields-101"><span class="linenos">101</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RequiresHIL&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL.set_task_fields-102"><a href="#RequiresHIL.set_task_fields-102"><span class="linenos">102</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Fill in K9X HIL task fields after the signal was raised: e.g. the orchestrator that caught a framework&#39;s</span>
+</span><span id="RequiresHIL.set_task_fields-103"><a href="#RequiresHIL.set_task_fields-103"><span class="linenos">103</span></a><span class="sd">        own pause (an OpenAI agent&#39;s needs_approval) adds the task type, the role the rules named, and the document</span>
+</span><span id="RequiresHIL.set_task_fields-104"><a href="#RequiresHIL.set_task_fields-104"><span class="linenos">104</span></a><span class="sd">        under review. Checked like the constructor&#39;s; unknown names raise. Returns self.&quot;&quot;&quot;</span>
+</span><span id="RequiresHIL.set_task_fields-105"><a href="#RequiresHIL.set_task_fields-105"><span class="linenos">105</span></a>        <span class="n">allowed</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">,</span> <span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="s2">&quot;decision_authority&quot;</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">,</span>
+</span><span id="RequiresHIL.set_task_fields-106"><a href="#RequiresHIL.set_task_fields-106"><span class="linenos">106</span></a>                   <span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">,</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">,</span> <span class="s2">&quot;priority&quot;</span><span class="p">}</span>
+</span><span id="RequiresHIL.set_task_fields-107"><a href="#RequiresHIL.set_task_fields-107"><span class="linenos">107</span></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">-</span> <span class="n">allowed</span>
+</span><span id="RequiresHIL.set_task_fields-108"><a href="#RequiresHIL.set_task_fields-108"><span class="linenos">108</span></a>        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+</span><span id="RequiresHIL.set_task_fields-109"><a href="#RequiresHIL.set_task_fields-109"><span class="linenos">109</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown HIL task fields </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="RequiresHIL.set_task_fields-110"><a href="#RequiresHIL.set_task_fields-110"><span class="linenos">110</span></a>        <span class="n">check_task_fields</span><span class="p">(</span><span class="n">priority</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;priority&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority</span><span class="p">),</span>
+</span><span id="RequiresHIL.set_task_fields-111"><a href="#RequiresHIL.set_task_fields-111"><span class="linenos">111</span></a>                          <span class="n">task_type</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_type&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">),</span>
+</span><span id="RequiresHIL.set_task_fields-112"><a href="#RequiresHIL.set_task_fields-112"><span class="linenos">112</span></a>                          <span class="n">required_role</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required_role&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">),</span>
+</span><span id="RequiresHIL.set_task_fields-113"><a href="#RequiresHIL.set_task_fields-113"><span class="linenos">113</span></a>                          <span class="n">ttl_hours</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_hours&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">),</span>
+</span><span id="RequiresHIL.set_task_fields-114"><a href="#RequiresHIL.set_task_fields-114"><span class="linenos">114</span></a>                          <span class="n">ttl_action</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ttl_action&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">))</span>
+</span><span id="RequiresHIL.set_task_fields-115"><a href="#RequiresHIL.set_task_fields-115"><span class="linenos">115</span></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span id="RequiresHIL.set_task_fields-116"><a href="#RequiresHIL.set_task_fields-116"><span class="linenos">116</span></a>            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL.set_task_fields-117"><a href="#RequiresHIL.set_task_fields-117"><span class="linenos">117</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">coerce_artifacts</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL.set_task_fields-118"><a href="#RequiresHIL.set_task_fields-118"><span class="linenos">118</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;require_comment&quot;</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">):</span>
+</span><span id="RequiresHIL.set_task_fields-119"><a href="#RequiresHIL.set_task_fields-119"><span class="linenos">119</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL.set_task_fields-120"><a href="#RequiresHIL.set_task_fields-120"><span class="linenos">120</span></a>            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span>
+</span><span id="RequiresHIL.set_task_fields-121"><a href="#RequiresHIL.set_task_fields-121"><span class="linenos">121</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span id="RequiresHIL.set_task_fields-122"><a href="#RequiresHIL.set_task_fields-122"><span class="linenos">122</span></a>            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span id="RequiresHIL.set_task_fields-123"><a href="#RequiresHIL.set_task_fields-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Fill in K9X HIL task fields after the signal was raised: e.g. the orchestrator that caught a framework's
+own pause (an OpenAI agent's needs_approval) adds the task type, the role the rules named, and the document
+under review. Checked like the constructor's; unknown names raise. Returns self.</p>
+</div>
+
+
+                            </div>
+                            <div id="RequiresHIL.task_fields" class="classattr">
+                                        <input id="RequiresHIL.task_fields-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">task_fields</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="RequiresHIL.task_fields-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#RequiresHIL.task_fields"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RequiresHIL.task_fields-125"><a href="#RequiresHIL.task_fields-125"><span class="linenos">125</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">task_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="RequiresHIL.task_fields-126"><a href="#RequiresHIL.task_fields-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The K9X HIL task fields this signal sets (for BaseHILOrchestrator).&quot;&quot;&quot;</span>
+</span><span id="RequiresHIL.task_fields-127"><a href="#RequiresHIL.task_fields-127"><span class="linenos">127</span></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_type</span><span class="p">,</span>
+</span><span id="RequiresHIL.task_fields-128"><a href="#RequiresHIL.task_fields-128"><span class="linenos">128</span></a>                <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">artifacts</span><span class="p">],</span> <span class="s2">&quot;required_role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_role</span><span class="p">,</span>
+</span><span id="RequiresHIL.task_fields-129"><a href="#RequiresHIL.task_fields-129"><span class="linenos">129</span></a>                <span class="s2">&quot;decision_authority&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision_authority</span><span class="p">,</span> <span class="s2">&quot;require_comment&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">require_comment</span><span class="p">,</span>
+</span><span id="RequiresHIL.task_fields-130"><a href="#RequiresHIL.task_fields-130"><span class="linenos">130</span></a>                <span class="s2">&quot;ttl_hours&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_hours</span><span class="p">,</span> <span class="s2">&quot;ttl_action&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl_action</span><span class="p">,</span> <span class="s2">&quot;pii&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii</span><span class="p">,</span>
+</span><span id="RequiresHIL.task_fields-131"><a href="#RequiresHIL.task_fields-131"><span class="linenos">131</span></a>                <span class="s2">&quot;pii_fields&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pii_fields</span><span class="p">}</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>The K9X HIL task fields this signal sets (for BaseHILOrchestrator).</p>
+</div>
+
 
                             </div>
                 </section>
