@@ -196,6 +196,18 @@
 
             </li>
             <li>
+                    <a class="class" href="#GoRulesAdapter">GoRulesAdapter</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#GoRulesAdapter.facts_from">facts_from</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#GoRulesAdapter.evaluate">evaluate</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
                     <a class="class" href="#K9RulesAdapter">K9RulesAdapter</a>
                             <ul class="memberlist">
                         <li>
@@ -259,28 +271,31 @@ enterprise systems. These are ABB contracts; SBBs are registered via
 </span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.http_api_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpApiAdapter</span>
 </span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.sql_data_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">SqlDataAdapter</span>
 </span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.k9_rules_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">K9RulesAdapter</span><span class="p">,</span> <span class="n">RestRulesAdapter</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="c1"># Built-in implementations (1.18); solutions register their own the same way.</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="n">HttpApiAdapter</span><span class="p">)</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sql&quot;</span><span class="p">,</span> <span class="n">SqlDataAdapter</span><span class="p">)</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;k9_rules&quot;</span><span class="p">,</span> <span class="n">K9RulesAdapter</span><span class="p">)</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;rest_rules&quot;</span><span class="p">,</span> <span class="n">RestRulesAdapter</span><span class="p">)</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="s2">&quot;BaseIntegrationAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="s2">&quot;BaseApiAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="s2">&quot;BaseMessagingAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="s2">&quot;BaseRulesAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="s2">&quot;BaseWorkflowAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="s2">&quot;BaseProcessFlowAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="s2">&quot;BaseBpmAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>    <span class="s2">&quot;BaseDataAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="s2">&quot;IntegrationAdapterFactory&quot;</span><span class="p">,</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="s2">&quot;HttpApiAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="s2">&quot;SqlDataAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="s2">&quot;K9RulesAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="s2">&quot;RestRulesAdapter&quot;</span><span class="p">,</span>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="p">]</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.gorules_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">GoRulesAdapter</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="c1"># Built-in implementations (1.18); solutions register their own the same way.</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">,</span> <span class="n">HttpApiAdapter</span><span class="p">)</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sql&quot;</span><span class="p">,</span> <span class="n">SqlDataAdapter</span><span class="p">)</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;k9_rules&quot;</span><span class="p">,</span> <span class="n">K9RulesAdapter</span><span class="p">)</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;rest_rules&quot;</span><span class="p">,</span> <span class="n">RestRulesAdapter</span><span class="p">)</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="n">IntegrationAdapterFactory</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;gorules&quot;</span><span class="p">,</span> <span class="n">GoRulesAdapter</span><span class="p">)</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="s2">&quot;BaseIntegrationAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="s2">&quot;BaseApiAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="s2">&quot;BaseMessagingAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="s2">&quot;BaseRulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="s2">&quot;BaseWorkflowAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>    <span class="s2">&quot;BaseProcessFlowAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="s2">&quot;BaseBpmAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="s2">&quot;BaseDataAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="s2">&quot;IntegrationAdapterFactory&quot;</span><span class="p">,</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="s2">&quot;HttpApiAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="s2">&quot;SqlDataAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="s2">&quot;GoRulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a>    <span class="s2">&quot;K9RulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>    <span class="s2">&quot;RestRulesAdapter&quot;</span><span class="p">,</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="p">]</span>
 </span></pre></div>
 
 
@@ -1650,6 +1665,114 @@ in IntegrationAdapterFactory.</p>
 
 
             <div class="docstring"><p>Execute a read operation. Return list of result records.</p>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="GoRulesAdapter">
+                            <input id="GoRulesAdapter-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">GoRulesAdapter</span><wbr>(<span class="base"><a href="#BaseRulesAdapter">k9_aif_abb.k9_adapters.integration.BaseRulesAdapter</a></span>):
+
+                <label class="view-source-button" for="GoRulesAdapter-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#GoRulesAdapter"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="GoRulesAdapter-34"><a href="#GoRulesAdapter-34"><span class="linenos">34</span></a><span class="k">class</span><span class="w"> </span><span class="nc">GoRulesAdapter</span><span class="p">(</span><span class="n">BaseRulesAdapter</span><span class="p">):</span>
+</span><span id="GoRulesAdapter-35"><a href="#GoRulesAdapter-35"><span class="linenos">35</span></a>
+</span><span id="GoRulesAdapter-36"><a href="#GoRulesAdapter-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">facts_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="GoRulesAdapter-37"><a href="#GoRulesAdapter-37"><span class="linenos">37</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The facts sent to GoRules: the payload, or the value at ``facts`` (a dotted path); JSON text is parsed.&quot;&quot;&quot;</span>
+</span><span id="GoRulesAdapter-38"><a href="#GoRulesAdapter-38"><span class="linenos">38</span></a>        <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">payload</span>
+</span><span id="GoRulesAdapter-39"><a href="#GoRulesAdapter-39"><span class="linenos">39</span></a>        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;facts&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter-40"><a href="#GoRulesAdapter-40"><span class="linenos">40</span></a>        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+</span><span id="GoRulesAdapter-41"><a href="#GoRulesAdapter-41"><span class="linenos">41</span></a>            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+</span><span id="GoRulesAdapter-42"><a href="#GoRulesAdapter-42"><span class="linenos">42</span></a>                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="GoRulesAdapter-43"><a href="#GoRulesAdapter-43"><span class="linenos">43</span></a>                    <span class="n">value</span> <span class="o">=</span> <span class="n">_parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="GoRulesAdapter-44"><a href="#GoRulesAdapter-44"><span class="linenos">44</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="GoRulesAdapter-45"><a href="#GoRulesAdapter-45"><span class="linenos">45</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="GoRulesAdapter-46"><a href="#GoRulesAdapter-46"><span class="linenos">46</span></a>            <span class="n">value</span> <span class="o">=</span> <span class="n">_parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="GoRulesAdapter-47"><a href="#GoRulesAdapter-47"><span class="linenos">47</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="GoRulesAdapter-48"><a href="#GoRulesAdapter-48"><span class="linenos">48</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[GoRulesAdapter] no facts at </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> in the payload (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter-49"><a href="#GoRulesAdapter-49"><span class="linenos">49</span></a>        <span class="k">return</span> <span class="n">value</span>
+</span><span id="GoRulesAdapter-50"><a href="#GoRulesAdapter-50"><span class="linenos">50</span></a>
+</span><span id="GoRulesAdapter-51"><a href="#GoRulesAdapter-51"><span class="linenos">51</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="GoRulesAdapter-52"><a href="#GoRulesAdapter-52"><span class="linenos">52</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="GoRulesAdapter-53"><a href="#GoRulesAdapter-53"><span class="linenos">53</span></a>        <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;engine_url&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter-54"><a href="#GoRulesAdapter-54"><span class="linenos">54</span></a>        <span class="n">project</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">]</span>
+</span><span id="GoRulesAdapter-55"><a href="#GoRulesAdapter-55"><span class="linenos">55</span></a>        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">/api/projects/</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">/evaluate/</span><span class="si">{</span><span class="n">ruleset</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="GoRulesAdapter-56"><a href="#GoRulesAdapter-56"><span class="linenos">56</span></a>        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">facts_from</span><span class="p">(</span><span class="n">facts</span><span class="p">)},</span>
+</span><span id="GoRulesAdapter-57"><a href="#GoRulesAdapter-57"><span class="linenos">57</span></a>                             <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;headers&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">timeout</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)))</span>
+</span><span id="GoRulesAdapter-58"><a href="#GoRulesAdapter-58"><span class="linenos">58</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="GoRulesAdapter-59"><a href="#GoRulesAdapter-59"><span class="linenos">59</span></a>        <span class="n">body</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="GoRulesAdapter-60"><a href="#GoRulesAdapter-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">body</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>ABB for deterministic rules engine evaluation — no LLM inference.</p>
+</div>
+
+
+                            <div id="GoRulesAdapter.facts_from" class="classattr">
+                                        <input id="GoRulesAdapter.facts_from-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">facts_from</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="GoRulesAdapter.facts_from-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#GoRulesAdapter.facts_from"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="GoRulesAdapter.facts_from-36"><a href="#GoRulesAdapter.facts_from-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">facts_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="GoRulesAdapter.facts_from-37"><a href="#GoRulesAdapter.facts_from-37"><span class="linenos">37</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The facts sent to GoRules: the payload, or the value at ``facts`` (a dotted path); JSON text is parsed.&quot;&quot;&quot;</span>
+</span><span id="GoRulesAdapter.facts_from-38"><a href="#GoRulesAdapter.facts_from-38"><span class="linenos">38</span></a>        <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">payload</span>
+</span><span id="GoRulesAdapter.facts_from-39"><a href="#GoRulesAdapter.facts_from-39"><span class="linenos">39</span></a>        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;facts&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter.facts_from-40"><a href="#GoRulesAdapter.facts_from-40"><span class="linenos">40</span></a>        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+</span><span id="GoRulesAdapter.facts_from-41"><a href="#GoRulesAdapter.facts_from-41"><span class="linenos">41</span></a>            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+</span><span id="GoRulesAdapter.facts_from-42"><a href="#GoRulesAdapter.facts_from-42"><span class="linenos">42</span></a>                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="GoRulesAdapter.facts_from-43"><a href="#GoRulesAdapter.facts_from-43"><span class="linenos">43</span></a>                    <span class="n">value</span> <span class="o">=</span> <span class="n">_parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="GoRulesAdapter.facts_from-44"><a href="#GoRulesAdapter.facts_from-44"><span class="linenos">44</span></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span id="GoRulesAdapter.facts_from-45"><a href="#GoRulesAdapter.facts_from-45"><span class="linenos">45</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="GoRulesAdapter.facts_from-46"><a href="#GoRulesAdapter.facts_from-46"><span class="linenos">46</span></a>            <span class="n">value</span> <span class="o">=</span> <span class="n">_parse</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span id="GoRulesAdapter.facts_from-47"><a href="#GoRulesAdapter.facts_from-47"><span class="linenos">47</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="GoRulesAdapter.facts_from-48"><a href="#GoRulesAdapter.facts_from-48"><span class="linenos">48</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[GoRulesAdapter] no facts at </span><span class="si">{</span><span class="n">path</span><span class="si">!r}</span><span class="s2"> in the payload (got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter.facts_from-49"><a href="#GoRulesAdapter.facts_from-49"><span class="linenos">49</span></a>        <span class="k">return</span> <span class="n">value</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>The facts sent to GoRules: the payload, or the value at <code>facts</code> (a dotted path); JSON text is parsed.</p>
+</div>
+
+
+                            </div>
+                            <div id="GoRulesAdapter.evaluate" class="classattr">
+                                        <input id="GoRulesAdapter.evaluate-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">evaluate</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span>, </span><span class="param"><span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span>, </span><span class="param"><span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Any</span>:</span></span>
+
+                <label class="view-source-button" for="GoRulesAdapter.evaluate-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#GoRulesAdapter.evaluate"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="GoRulesAdapter.evaluate-51"><a href="#GoRulesAdapter.evaluate-51"><span class="linenos">51</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ruleset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span id="GoRulesAdapter.evaluate-52"><a href="#GoRulesAdapter.evaluate-52"><span class="linenos">52</span></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+</span><span id="GoRulesAdapter.evaluate-53"><a href="#GoRulesAdapter.evaluate-53"><span class="linenos">53</span></a>        <span class="n">base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;engine_url&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+</span><span id="GoRulesAdapter.evaluate-54"><a href="#GoRulesAdapter.evaluate-54"><span class="linenos">54</span></a>        <span class="n">project</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;project&quot;</span><span class="p">]</span>
+</span><span id="GoRulesAdapter.evaluate-55"><a href="#GoRulesAdapter.evaluate-55"><span class="linenos">55</span></a>        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">/api/projects/</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">/evaluate/</span><span class="si">{</span><span class="n">ruleset</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="GoRulesAdapter.evaluate-56"><a href="#GoRulesAdapter.evaluate-56"><span class="linenos">56</span></a>        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">facts_from</span><span class="p">(</span><span class="n">facts</span><span class="p">)},</span>
+</span><span id="GoRulesAdapter.evaluate-57"><a href="#GoRulesAdapter.evaluate-57"><span class="linenos">57</span></a>                             <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;headers&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">timeout</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)))</span>
+</span><span id="GoRulesAdapter.evaluate-58"><a href="#GoRulesAdapter.evaluate-58"><span class="linenos">58</span></a>        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+</span><span id="GoRulesAdapter.evaluate-59"><a href="#GoRulesAdapter.evaluate-59"><span class="linenos">59</span></a>        <span class="n">body</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</span><span id="GoRulesAdapter.evaluate-60"><a href="#GoRulesAdapter.evaluate-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="n">body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">body</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Submit facts to the rules engine and return the decision output.</p>
 </div>
 
 

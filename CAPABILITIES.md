@@ -75,7 +75,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | ABB | OOB | Built by / where |
 |---|---|---|
 | `BaseIntegrationAdapter` | (root of the adapter family) | `IntegrationAdapterFactory` |
-| `BaseRulesAdapter` | `K9RulesAdapter` (YAML rules), `RestRulesAdapter` (decision service: ODM, Drools, ...) | rules themselves are SBB content |
+| `BaseRulesAdapter` | `K9RulesAdapter` (YAML rules), `RestRulesAdapter` (decision service: ODM, Drools, ...), `GoRulesAdapter` (1.29.0: GoRules agent; the K9X Rules Engine) | rules themselves are SBB content |
 | `BaseApiAdapter` | `HttpApiAdapter` | |
 | `BaseDataAdapter` | `SqlDataAdapter` | |
 | `BaseMessagingAdapter` | (contract only) | |

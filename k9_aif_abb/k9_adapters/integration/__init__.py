@@ -19,12 +19,14 @@ from .integration_adapter_factory import IntegrationAdapterFactory
 from .http_api_adapter import HttpApiAdapter
 from .sql_data_adapter import SqlDataAdapter
 from .k9_rules_adapter import K9RulesAdapter, RestRulesAdapter
+from .gorules_adapter import GoRulesAdapter
 
 # Built-in implementations (1.18); solutions register their own the same way.
 IntegrationAdapterFactory.register("http", HttpApiAdapter)
 IntegrationAdapterFactory.register("sql", SqlDataAdapter)
 IntegrationAdapterFactory.register("k9_rules", K9RulesAdapter)
 IntegrationAdapterFactory.register("rest_rules", RestRulesAdapter)
+IntegrationAdapterFactory.register("gorules", GoRulesAdapter)
 
 __all__ = [
     "BaseIntegrationAdapter",
@@ -38,6 +40,7 @@ __all__ = [
     "IntegrationAdapterFactory",
     "HttpApiAdapter",
     "SqlDataAdapter",
+    "GoRulesAdapter",
     "K9RulesAdapter",
     "RestRulesAdapter",
 ]

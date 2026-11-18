@@ -17,6 +17,11 @@ All notable changes to K9-AIF are documented here.
 - **`PausedRunStore`** (`k9_storage/paused_run_store.py`): the paused run waits in one table, `k9_paused_runs`
   (PostgreSQL in the `postgres.schema` when `postgres.enabled`, else SQLite). Only its key travels with the HIL
   request; the run state is never in a payload governance screens again or a reviewer sees.
+- **`GoRulesAdapter`** (`k9_adapters/integration/gorules_adapter.py`, registered as `gorules`): a GoRules decision
+  service as a `BaseRulesAdapter` (`POST /api/projects/{project}/evaluate/{ruleset}` with the facts; optional
+  `facts:` path, JSON text parsed). `K9RulesAgent` decides through it; an engine that can't answer raises
+  `RequiresHIL`, never a silent allow. In K9X it is the K9X Rules Engine (currently GoRules). Tests:
+  `tests/test_gorules_adapter.py` (unit, plus eight live accounts-payable rules with `K9_TEST_GORULES_URL`).
 - `RequiresHIL(resume_state=...)`: what the flow needs to continue, stored by `handle_requires_hil()` in the resume
   payload under `_k9_resume` (`resume_payload_with_state()`), never in the reviewer's `context`.
 - `BaseSquad` resumes at the paused step: when a step raises `RequiresHIL`, the results of the steps already done
