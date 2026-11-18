@@ -96,10 +96,6 @@
           routing, governance, Zero Trust, retrieval, or wrapping an existing CrewAI, LangGraph or OpenAI Agents SDK
           application.
         </p>
-        <div class="hero-actions">
-          <a class="btn-primary" href="#das">Start with DAS</a>
-          <a class="btn-secondary" href="https://pydocs.k9x.ai/starthere/">Start Here (docs)</a>
-        </div>
       </div>
     </section>
 
@@ -107,9 +103,9 @@
       <aside class="ex-toc" aria-label="Examples on this page">
         <h3>Live applications</h3>
         <ul>
-          <li><a href="#das"><span class="dot"></span>DAS</a></li>
           <li><a href="#k9chat"><span class="dot"></span>K9Chat</a></li>
-          <li><a href="#weather-assist-openai"><span class="dot"></span>Weather Assist (OpenAI)</a></li>
+          <li><a href="#openai-agents-sdk-demos"><span class="dot"></span>OpenAI Agents SDK Demos</a></li>
+          <li><a href="#das"><span class="dot"></span>DAS</a></li>
         </ul>
         <h3>Focused examples</h3>
         <ul>
@@ -139,31 +135,6 @@
           <p class="lead">Complete applications on K9-AIF, running in public. Try them, then read the code.</p>
 
           <div class="live-grid">
-            <article class="live-card" id="das">
-              <div class="live-body">
-                <div><span class="badge live">Live</span><span class="badge">Flagship</span></div>
-                <h3>DAS: Defense Acquisition System</h3>
-                <p>
-                  AI agents prepare the defense acquisition package; a person decides at every gate. A Service capability
-                  requirement goes from the sponsor's documents through Service validation, the Materiel Development
-                  Decision, Milestone A and the System Requirements Review, following the process in force today.
-                </p>
-                <ul class="feature-list">
-                  <li>A <strong>versioned process model</strong>: every stage and gate cites its policy source</li>
-                  <li>Every section screened by <strong>k9x Shield</strong> and <strong>Granite Guardian</strong>; red-team documents included</li>
-                  <li>A verdict per criterion, with the <strong>score computed in code</strong>; an <strong>independent grader</strong> from a different model family</li>
-                  <li>Every gate decided by a person in <strong>K9X HIL</strong>; undecided gates fail closed</li>
-                  <li>A sample <strong>AWS GovCloud</strong> deployment guideline</li>
-                </ul>
-                <div class="actions">
-                  <a class="primary" href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
-                  <a href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">Code</a>
-                  <a href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">▶ In depth (7 min)</a>
-                  <a href="https://youtu.be/uVWQMQDU0HY" target="_blank" rel="noopener noreferrer">▶ Tour (4 min)</a>
-                </div>
-              </div>
-            </article>
-
             <article class="live-card" id="k9chat">
               <div class="live-body">
                 <div><span class="badge live">Live</span><span class="badge">Assistant</span></div>
@@ -185,25 +156,50 @@
               </div>
             </article>
 
-            <article class="live-card" id="weather-assist-openai">
+            <article class="live-card" id="openai-agents-sdk-demos">
               <div class="live-body">
                 <div><span class="badge live">Live</span><span class="badge">OpenAI Agents SDK</span></div>
-                <h3>Weather Assist (OpenAI)</h3>
+                <h3>OpenAI Agents SDK Demos</h3>
                 <p>
-                  An OpenAI Agents SDK agent finds the weather for a US zip code; K9-AIF governs every step it takes and
-                  lists each check on the page. No OpenAI key needed: it runs on a local model through Ollama.
+                  OpenAI Agents SDK agents governed by K9-AIF, one use case per page, each adding more of the SDK. No
+                  OpenAI key needed: they run on local models through Ollama.
                 </p>
                 <ul class="feature-list">
-                  <li>The <strong>OpenAI Agents SDK adapter</strong>: an orchestrator that builds the agent from K9-AIF agent YAML</li>
-                  <li><strong>k9x Shield</strong> on the request, every tool call and result, and every reply</li>
-                  <li><strong>Zero Trust</strong> for the caller and for each agent that takes a turn</li>
-                  <li>The <strong>K9 Model Router</strong> picks every model: tool-using agents get tool-calling models</li>
-                  <li>Download and run with <strong>./run.sh</strong>; Ubuntu and container scripts included</li>
+                  <li><strong>Weather:</strong> one agent, a tool, k9x Shield on every tool call, result and reply, Zero Trust per agent turn</li>
+                  <li><strong>Weather desk (multi-agent):</strong> a K9-AIF squad runs the OpenAI agents in a known order, not the model's choice</li>
+                  <li><strong>Accounts payable with K9X HIL:</strong> the K9X Rules Engine decides; over $15,000 or a changed bank account, the SDK's <code>needs_approval</code> pause becomes a K9X HIL task and the same run resumes after the decision</li>
+                  <li><strong>Bad invoices:</strong> prompt injection, bank data requests and payment diversion stopped before the model reads them</li>
+                  <li>The <strong>K9 Model Router</strong> picks every model; download and run with <strong>./run.sh</strong></li>
                 </ul>
                 <div class="actions">
                   <a class="primary" href="https://openai.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
                   <a href="https://github.com/k9aif/examples/tree/main/k9x_openai_bedrock/openai" target="_blank" rel="noopener noreferrer">Code</a>
                   <a href="https://blog.k9x.ai/k9-aif-with-openai-agents-sdk/" target="_blank" rel="noopener noreferrer">Blog post</a>
+                </div>
+              </div>
+            </article>
+
+            <article class="live-card" id="das">
+              <div class="live-body">
+                <div><span class="badge live">Live</span><span class="badge">Flagship</span></div>
+                <h3>DAS: Defense Acquisition System</h3>
+                <p>
+                  AI agents prepare the defense acquisition package; a person decides at every gate. A Service capability
+                  requirement goes from the sponsor's documents through Service validation, the Materiel Development
+                  Decision, Milestone A and the System Requirements Review, following the process in force today.
+                </p>
+                <ul class="feature-list">
+                  <li>A <strong>versioned process model</strong>: every stage and gate cites its policy source</li>
+                  <li>Every section screened by <strong>k9x Shield</strong> and <strong>Granite Guardian</strong>; red-team documents included</li>
+                  <li>A verdict per criterion, with the <strong>score computed in code</strong>; an <strong>independent grader</strong> from a different model family</li>
+                  <li>Every gate decided by a person in <strong>K9X HIL</strong>; undecided gates fail closed</li>
+                  <li>A sample <strong>AWS GovCloud</strong> deployment guideline</li>
+                </ul>
+                <div class="actions">
+                  <a class="primary" href="https://das.k9x.ai" target="_blank" rel="noopener noreferrer">Try it</a>
+                  <a href="https://github.com/k9aif/dow-k9x" target="_blank" rel="noopener noreferrer">Code</a>
+                  <a href="https://youtu.be/V9mSkMHXArI" target="_blank" rel="noopener noreferrer">▶ In depth (7 min)</a>
+                  <a href="https://youtu.be/uVWQMQDU0HY" target="_blank" rel="noopener noreferrer">▶ Tour (4 min)</a>
                 </div>
               </div>
             </article>
