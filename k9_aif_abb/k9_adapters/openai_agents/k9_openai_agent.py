@@ -52,6 +52,7 @@ reply is returned as ``{"output": text, ...}``, so the next step and the synthes
 
 from __future__ import annotations
 
+import contextvars
 import json
 from typing import Any, Dict, List, Optional
 
@@ -71,6 +72,10 @@ from .openai_agents_orchestrator_adapter import (
 )
 
 _REQUEST_KEYS = ("prompt", "query", "question", "text", "input")
+_TYPES = {"string": str, "str": str, "number": float, "float": float, "integer": int, "int": int,
+          "boolean": bool, "bool": bool}
+# The step's payload while its run is in progress: read by conditional approval (needs_approval_when).
+_STEP_PAYLOAD: contextvars.ContextVar = contextvars.ContextVar("k9_openai_step_payload", default=None)
 _NOT_UPSTREAM = {"squad_id", "squad_digest", "squad_digest_keys"}
 
 
@@ -147,7 +152,8 @@ class K9OpenAIAgent(BaseAgent):
         self.govern_tool_results = govern_tool_results
         self._direct_provider = model_provider
         approvals = list(self.config.get("needs_approval") or [])
-        not_given = [t for t in approvals if t not in wanted]
+        conditional = dict(self.config.get("needs_approval_when") or {})
+        not_given = [t for t in [*approvals, *conditional] if t not in wanted]
         if not_given:
             raise ValueError(f"[{cls}] needs_approval names tool(s) this agent isn't given: {not_given}. "
                              f"Its tools: {wanted}")
@@ -160,9 +166,11 @@ class K9OpenAIAgent(BaseAgent):
             instructions=_instructions(self.config),
             model=self._alias,
             tools=[build_function_tool(registered[t], lambda: self.governance, self._governance_context,
-                                       lambda: self.govern_tool_results, needs_approval=t in approvals)
+                                       lambda: self.govern_tool_results,
+                                       needs_approval=_approval_policy(t in approvals, conditional.get(t)))
                    for t in wanted],
             model_settings=_model_settings(self.config),
+            output_type=_output_type(self.agent_name, self.config.get("structured_output")),
         )
 
     def _governance_context(self) -> Dict[str, Any]:
@@ -181,6 +189,13 @@ class K9OpenAIAgent(BaseAgent):
 
     def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         payload = payload or {}
+        token = _STEP_PAYLOAD.set(payload)
+        try:
+            return self._execute(payload)
+        finally:
+            _STEP_PAYLOAD.reset(token)
+
+    def _execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         saved = self.hil.saved_for(payload, self.agent_name)
         if saved is not None:        # resuming a paused run after the person decided in K9X HIL
             decision = self.hil.adapt_input(payload)["decision"]
@@ -198,6 +213,8 @@ class K9OpenAIAgent(BaseAgent):
         if result.interruptions:     # a tool marked needs_approval wants to run: pause for a person
             raise self.hil.pause(result, agent=self.agent_name, request=prompt)
         final = result.final_output
+        if hasattr(final, "model_dump"):                  # structured output: a typed result, sent on as JSON
+            final = final.model_dump()
         text = final if isinstance(final, str) else json.dumps(final, default=str)
         return {"output": text, "agent": self.agent_name, "model_calls": len(result.raw_responses)}
 
@@ -205,3 +222,44 @@ class K9OpenAIAgent(BaseAgent):
         """Restore the paused run with the person's decision applied, and continue it where it stopped."""
         state = await self.hil.restore(self._agent, saved, decision)
         return await Runner.run(self._agent, state, run_config=self._run_config(), max_turns=self.max_turns)
+
+
+def _approval_policy(always: bool, when: Any):
+    """``needs_approval`` for one tool: True (always), False, or (1.29.0) a policy that asks the step's payload,
+    with the squad's ``when:`` syntax, e.g. ``{key: rules_check.output.decision, eq: needs_approval}``."""
+    if always or when is None:
+        return bool(always)
+    from k9_aif_abb.k9_squad.base_squad import _eval_when
+
+    async def policy(_ctx: Any, _params: Any, _call_id: str) -> bool:
+        return bool(_eval_when(when, _parsed(_STEP_PAYLOAD.get() or {})))
+    return policy
+
+
+def _parsed(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Earlier steps' outputs may be JSON text (structured output); parse them so a condition can reach inside."""
+    out: Dict[str, Any] = {}
+    for key, value in payload.items():
+        if isinstance(value, dict) and isinstance(value.get("output"), str):
+            try:
+                value = {**value, "output": json.loads(value["output"])}
+            except ValueError:
+                pass
+        out[key] = value
+    return out
+
+
+def _output_type(agent: str, schema: Any):
+    """A pydantic model from ``structured_output: {field: type}`` (string, number, integer, boolean); None = text."""
+    if not schema:
+        return None
+    from pydantic import create_model
+    fields = {}
+    for name, kind in dict(schema).items():
+        py = _TYPES.get(str(kind).lower())
+        if py is None:
+            raise ValueError(f"[{agent}] structured_output field {name!r} has unknown type {kind!r}; "
+                             f"use one of {sorted(_TYPES)}")
+        fields[name] = (py, ...)
+    return create_model(f"{agent}Output", **fields)
+

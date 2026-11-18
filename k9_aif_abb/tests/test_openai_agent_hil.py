@@ -193,3 +193,50 @@ def test_orchestrator_stores_resume_state_with_the_resume_payload():
     payload = resume_payload_with_state({"prompt": "p"}, exc.resume_state)
     assert payload == {"prompt": "p", "_k9_resume": {"hil_adapter": {"A": {"run_key": "k"}}}}
     assert resume_payload_with_state({"prompt": "p"}, {}) == {"prompt": "p"}
+
+
+# ── conditional approval and structured output (accounts payable flow) ────────────────────────────────────
+
+class InvoiceAgent(K9OpenAIAgent):
+    pass
+
+
+def _conditional_payment(store, paid, model):
+    return PaymentAgent(
+        config={"name": "PaymentAgent", "role": "You pay invoices.", "tools": ["pay_invoice"],
+                "needs_approval_when": {"pay_invoice": {"key": "rules_check.output.decision", "eq": "needs_approval"}}},
+        governance=ShieldGovernance(CONFIG), capabilities=[_pay_cap(paid)], model_routing="direct",
+        model_provider=_Provider(model), hil_adapter=OpenAIHILAdapter(store=store, queue="openai-demo"))
+
+
+def test_the_tool_pauses_only_when_the_rules_say_so(store):
+    paid = []
+    auto = _conditional_payment(store, paid, ScriptedModel([
+        [function_call("pay_invoice", {**INVOICE, "amount": 900}, call_id="c1")], [assistant_message("Paid.")]]))
+    out = auto.execute({**REQUEST, "rules_check": {"output": {"decision": "auto_pay", "rule": "AP-08"}}})
+    assert paid == [{**INVOICE, "amount": 900}] and out["output"] == "Paid."     # no person needed
+
+    held = _conditional_payment(store, paid, ScriptedModel([
+        [function_call("pay_invoice", INVOICE, call_id="c2")]]))
+    with pytest.raises(RequiresHIL):
+        held.execute({**REQUEST, "rules_check": {"output": {"decision": "needs_approval", "rule": "AP-07"}}})
+    assert len(paid) == 1                                                         # the large one did not run
+
+
+def test_structured_output_is_returned_as_typed_json(store):
+    model = ScriptedModel([[assistant_message(json.dumps({"vendor": "Acme Supplies", "amount": 48500,
+                                                         "po_matched": True}))]])
+    agent = InvoiceAgent(
+        config={"name": "InvoiceAgent", "role": "You read invoices.",
+                "structured_output": {"vendor": "string", "amount": "number", "po_matched": "boolean"}},
+        governance=ShieldGovernance(CONFIG), model_routing="direct", model_provider=_Provider(model),
+        hil_adapter=OpenAIHILAdapter(store=store))
+    out = agent.execute({"prompt": "Invoice INV-1042 from Acme Supplies, $48,500, PO 7781."})
+    assert json.loads(out["output"]) == {"vendor": "Acme Supplies", "amount": 48500.0, "po_matched": True}
+    assert model.calls[0].output_schema is not None                               # the SDK asked for the schema
+
+
+def test_unknown_structured_output_type_is_refused(store):
+    with pytest.raises(ValueError, match="unknown type"):
+        InvoiceAgent(config={"name": "InvoiceAgent", "structured_output": {"amount": "money"}},
+                     governance=ShieldGovernance(CONFIG), hil_adapter=OpenAIHILAdapter(store=store))

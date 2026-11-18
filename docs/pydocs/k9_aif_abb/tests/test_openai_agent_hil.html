@@ -81,6 +81,21 @@
             <li>
                     <a class="function" href="#test_orchestrator_stores_resume_state_with_the_resume_payload">test_orchestrator_stores_resume_state_with_the_resume_payload</a>
             </li>
+            <li>
+                    <a class="class" href="#InvoiceAgent">InvoiceAgent</a>
+                            <ul class="memberlist">
+                </ul>
+
+            </li>
+            <li>
+                    <a class="function" href="#test_the_tool_pauses_only_when_the_rules_say_so">test_the_tool_pauses_only_when_the_rules_say_so</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_structured_output_is_returned_as_typed_json">test_structured_output_is_returned_as_typed_json</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_unknown_structured_output_type_is_refused">test_unknown_structured_output_type_is_refused</a>
+            </li>
     </ul>
 
 
@@ -306,6 +321,53 @@ Steps done before the pause are not run again.</p>
 </span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a>    <span class="n">payload</span> <span class="o">=</span> <span class="n">resume_payload_with_state</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">},</span> <span class="n">exc</span><span class="o">.</span><span class="n">resume_state</span><span class="p">)</span>
 </span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a>    <span class="k">assert</span> <span class="n">payload</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="s2">&quot;_k9_resume&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hil_adapter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;run_key&quot;</span><span class="p">:</span> <span class="s2">&quot;k&quot;</span><span class="p">}}}}</span>
 </span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a>    <span class="k">assert</span> <span class="n">resume_payload_with_state</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">},</span> <span class="p">{})</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">}</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a><span class="c1"># ── conditional approval and structured output (accounts payable flow) ────────────────────────────────────</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a><span class="k">class</span><span class="w"> </span><span class="nc">InvoiceAgent</span><span class="p">(</span><span class="n">K9OpenAIAgent</span><span class="p">):</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>    <span class="k">pass</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a><span class="k">def</span><span class="w"> </span><span class="nf">_conditional_payment</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">paid</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>    <span class="k">return</span> <span class="n">PaymentAgent</span><span class="p">(</span>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>        <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;PaymentAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;You pay invoices.&quot;</span><span class="p">,</span> <span class="s2">&quot;tools&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">],</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>                <span class="s2">&quot;needs_approval_when&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="s2">&quot;rules_check.output.decision&quot;</span><span class="p">,</span> <span class="s2">&quot;eq&quot;</span><span class="p">:</span> <span class="s2">&quot;needs_approval&quot;</span><span class="p">}}},</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>        <span class="n">governance</span><span class="o">=</span><span class="n">ShieldGovernance</span><span class="p">(</span><span class="n">CONFIG</span><span class="p">),</span> <span class="n">capabilities</span><span class="o">=</span><span class="p">[</span><span class="n">_pay_cap</span><span class="p">(</span><span class="n">paid</span><span class="p">)],</span> <span class="n">model_routing</span><span class="o">=</span><span class="s2">&quot;direct&quot;</span><span class="p">,</span>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>        <span class="n">model_provider</span><span class="o">=</span><span class="n">_Provider</span><span class="p">(</span><span class="n">model</span><span class="p">),</span> <span class="n">hil_adapter</span><span class="o">=</span><span class="n">OpenAIHILAdapter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="s2">&quot;openai-demo&quot;</span><span class="p">))</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_the_tool_pauses_only_when_the_rules_say_so</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a>    <span class="n">paid</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>    <span class="n">auto</span> <span class="o">=</span> <span class="n">_conditional_payment</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">paid</span><span class="p">,</span> <span class="n">ScriptedModel</span><span class="p">([</span>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>        <span class="p">[</span><span class="n">function_call</span><span class="p">(</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">INVOICE</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">},</span> <span class="n">call_id</span><span class="o">=</span><span class="s2">&quot;c1&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="n">assistant_message</span><span class="p">(</span><span class="s2">&quot;Paid.&quot;</span><span class="p">)]]))</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">auto</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="o">**</span><span class="n">REQUEST</span><span class="p">,</span> <span class="s2">&quot;rules_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;auto_pay&quot;</span><span class="p">,</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="s2">&quot;AP-08&quot;</span><span class="p">}}})</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>    <span class="k">assert</span> <span class="n">paid</span> <span class="o">==</span> <span class="p">[{</span><span class="o">**</span><span class="n">INVOICE</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">}]</span> <span class="ow">and</span> <span class="n">out</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Paid.&quot;</span>     <span class="c1"># no person needed</span>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>    <span class="n">held</span> <span class="o">=</span> <span class="n">_conditional_payment</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">paid</span><span class="p">,</span> <span class="n">ScriptedModel</span><span class="p">([</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>        <span class="p">[</span><span class="n">function_call</span><span class="p">(</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">,</span> <span class="n">INVOICE</span><span class="p">,</span> <span class="n">call_id</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)]]))</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">RequiresHIL</span><span class="p">):</span>
+</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>        <span class="n">held</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="o">**</span><span class="n">REQUEST</span><span class="p">,</span> <span class="s2">&quot;rules_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;needs_approval&quot;</span><span class="p">,</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="s2">&quot;AP-07&quot;</span><span class="p">}}})</span>
+</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">paid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>                                                         <span class="c1"># the large one did not run</span>
+</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>
+</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>
+</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_structured_output_is_returned_as_typed_json</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">ScriptedModel</span><span class="p">([[</span><span class="n">assistant_message</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme Supplies&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">48500</span><span class="p">,</span>
+</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>                                                         <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))]])</span>
+</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">InvoiceAgent</span><span class="p">(</span>
+</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>        <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;InvoiceAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;You read invoices.&quot;</span><span class="p">,</span>
+</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a>                <span class="s2">&quot;structured_output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span><span class="p">}},</span>
+</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a>        <span class="n">governance</span><span class="o">=</span><span class="n">ShieldGovernance</span><span class="p">(</span><span class="n">CONFIG</span><span class="p">),</span> <span class="n">model_routing</span><span class="o">=</span><span class="s2">&quot;direct&quot;</span><span class="p">,</span> <span class="n">model_provider</span><span class="o">=</span><span class="n">_Provider</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>        <span class="n">hil_adapter</span><span class="o">=</span><span class="n">OpenAIHILAdapter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">))</span>
+</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;Invoice INV-1042 from Acme Supplies, $48,500, PO 7781.&quot;</span><span class="p">})</span>
+</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a>    <span class="k">assert</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme Supplies&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mf">48500.0</span><span class="p">,</span> <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a>    <span class="k">assert</span> <span class="n">model</span><span class="o">.</span><span class="n">calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">output_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>                               <span class="c1"># the SDK asked for the schema</span>
+</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a>
+</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a>
+</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_unknown_structured_output_type_is_refused</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;unknown type&quot;</span><span class="p">):</span>
+</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a>        <span class="n">InvoiceAgent</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;InvoiceAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;structured_output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;money&quot;</span><span class="p">}},</span>
+</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a>                     <span class="n">governance</span><span class="o">=</span><span class="n">ShieldGovernance</span><span class="p">(</span><span class="n">CONFIG</span><span class="p">),</span> <span class="n">hil_adapter</span><span class="o">=</span><span class="n">OpenAIHILAdapter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">))</span>
 </span></pre></div>
 
 
@@ -701,6 +763,141 @@ hil_adapter:
 </span><span id="test_orchestrator_stores_resume_state_with_the_resume_payload-194"><a href="#test_orchestrator_stores_resume_state_with_the_resume_payload-194"><span class="linenos">194</span></a>    <span class="n">payload</span> <span class="o">=</span> <span class="n">resume_payload_with_state</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">},</span> <span class="n">exc</span><span class="o">.</span><span class="n">resume_state</span><span class="p">)</span>
 </span><span id="test_orchestrator_stores_resume_state_with_the_resume_payload-195"><a href="#test_orchestrator_stores_resume_state_with_the_resume_payload-195"><span class="linenos">195</span></a>    <span class="k">assert</span> <span class="n">payload</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">,</span> <span class="s2">&quot;_k9_resume&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hil_adapter&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;run_key&quot;</span><span class="p">:</span> <span class="s2">&quot;k&quot;</span><span class="p">}}}}</span>
 </span><span id="test_orchestrator_stores_resume_state_with_the_resume_payload-196"><a href="#test_orchestrator_stores_resume_state_with_the_resume_payload-196"><span class="linenos">196</span></a>    <span class="k">assert</span> <span class="n">resume_payload_with_state</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">},</span> <span class="p">{})</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;p&quot;</span><span class="p">}</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="InvoiceAgent">
+                            <input id="InvoiceAgent-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">InvoiceAgent</span><wbr>(<span class="base">k9_aif_abb.k9_adapters.openai_agents.k9_openai_agent.K9OpenAIAgent</span>):
+
+                <label class="view-source-button" for="InvoiceAgent-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#InvoiceAgent"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="InvoiceAgent-201"><a href="#InvoiceAgent-201"><span class="linenos">201</span></a><span class="k">class</span><span class="w"> </span><span class="nc">InvoiceAgent</span><span class="p">(</span><span class="n">K9OpenAIAgent</span><span class="p">):</span>
+</span><span id="InvoiceAgent-202"><a href="#InvoiceAgent-202"><span class="linenos">202</span></a>    <span class="k">pass</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>One OpenAI agent, built from its agent YAML, run as one governed squad step.</p>
+
+<h2 id="parameters">Parameters</h2>
+
+<p>capabilities:
+    Every tool an agent of this application may call (<code>ToolCapability</code>). The agent gets the
+    ones its YAML lists under <code>tools</code>; a name not registered is refused at construction.
+model_routing:
+    <code>"k9"</code> (default): the K9 Model Router picks the model, the YAML <code>model</code> being a catalog
+    alias. <code>"direct"</code>: <code>model</code> goes to the SDK unchanged (with <code>model_provider</code>).
+max_turns:
+    Most model turns for this step's run (tool calls included), passed to <code>Runner.run</code>.
+hil_adapter:
+    (1.29.0) Maps the SDK's approval pause to K9X HIL and the decision back. Default: an
+    <code>OpenAIHILAdapter</code> with the YAML's <code>hil_queue</code> / <code>hil_priority</code>, storing paused runs per the
+    config (PostgreSQL when <code>postgres.enabled</code>, else SQLite). Tools named in the YAML's
+    <code>needs_approval</code> pause the run for a person.</p>
+</div>
+
+
+                            <div class="inherited">
+                                <h5>Inherited Members</h5>
+                                <dl>
+                                    <div><dt><a href="../k9_core/agent/base_agent.html#BaseAgent">k9_aif_abb.k9_core.agent.base_agent.BaseAgent</a></dt>
+                                <dd id="InvoiceAgent.layer" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.layer">layer</a></dd>
+                <dd id="InvoiceAgent.config" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.config">config</a></dd>
+                <dd id="InvoiceAgent.monitor" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.monitor">monitor</a></dd>
+                <dd id="InvoiceAgent.message_bus" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.message_bus">message_bus</a></dd>
+                <dd id="InvoiceAgent.governance" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.governance">governance</a></dd>
+                <dd id="InvoiceAgent.logger" class="variable"><a href="../k9_core/agent/base_agent.html#BaseAgent.logger">logger</a></dd>
+                <dd id="InvoiceAgent.execute_stream" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.execute_stream">execute_stream</a></dd>
+                <dd id="InvoiceAgent.notify_monitor" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.notify_monitor">notify_monitor</a></dd>
+                <dd id="InvoiceAgent.publish_event" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.publish_event">publish_event</a></dd>
+                <dd id="InvoiceAgent.apply_pre_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.apply_pre_governance">apply_pre_governance</a></dd>
+                <dd id="InvoiceAgent.apply_post_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.apply_post_governance">apply_post_governance</a></dd>
+                <dd id="InvoiceAgent.enforce_governance" class="function"><a href="../k9_core/agent/base_agent.html#BaseAgent.enforce_governance">enforce_governance</a></dd>
+
+            </div>
+                                </dl>
+                            </div>
+                </section>
+                <section id="test_the_tool_pauses_only_when_the_rules_say_so">
+                            <input id="test_the_tool_pauses_only_when_the_rules_say_so-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_the_tool_pauses_only_when_the_rules_say_so</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">store</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_the_tool_pauses_only_when_the_rules_say_so-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_the_tool_pauses_only_when_the_rules_say_so"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_the_tool_pauses_only_when_the_rules_say_so-213"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-213"><span class="linenos">213</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_the_tool_pauses_only_when_the_rules_say_so</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-214"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-214"><span class="linenos">214</span></a>    <span class="n">paid</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-215"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-215"><span class="linenos">215</span></a>    <span class="n">auto</span> <span class="o">=</span> <span class="n">_conditional_payment</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">paid</span><span class="p">,</span> <span class="n">ScriptedModel</span><span class="p">([</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-216"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-216"><span class="linenos">216</span></a>        <span class="p">[</span><span class="n">function_call</span><span class="p">(</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">INVOICE</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">},</span> <span class="n">call_id</span><span class="o">=</span><span class="s2">&quot;c1&quot;</span><span class="p">)],</span> <span class="p">[</span><span class="n">assistant_message</span><span class="p">(</span><span class="s2">&quot;Paid.&quot;</span><span class="p">)]]))</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-217"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-217"><span class="linenos">217</span></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">auto</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="o">**</span><span class="n">REQUEST</span><span class="p">,</span> <span class="s2">&quot;rules_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;auto_pay&quot;</span><span class="p">,</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="s2">&quot;AP-08&quot;</span><span class="p">}}})</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-218"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-218"><span class="linenos">218</span></a>    <span class="k">assert</span> <span class="n">paid</span> <span class="o">==</span> <span class="p">[{</span><span class="o">**</span><span class="n">INVOICE</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">900</span><span class="p">}]</span> <span class="ow">and</span> <span class="n">out</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Paid.&quot;</span>     <span class="c1"># no person needed</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-219"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-219"><span class="linenos">219</span></a>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-220"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-220"><span class="linenos">220</span></a>    <span class="n">held</span> <span class="o">=</span> <span class="n">_conditional_payment</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">paid</span><span class="p">,</span> <span class="n">ScriptedModel</span><span class="p">([</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-221"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-221"><span class="linenos">221</span></a>        <span class="p">[</span><span class="n">function_call</span><span class="p">(</span><span class="s2">&quot;pay_invoice&quot;</span><span class="p">,</span> <span class="n">INVOICE</span><span class="p">,</span> <span class="n">call_id</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)]]))</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-222"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-222"><span class="linenos">222</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="n">RequiresHIL</span><span class="p">):</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-223"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-223"><span class="linenos">223</span></a>        <span class="n">held</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="o">**</span><span class="n">REQUEST</span><span class="p">,</span> <span class="s2">&quot;rules_check&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;needs_approval&quot;</span><span class="p">,</span> <span class="s2">&quot;rule&quot;</span><span class="p">:</span> <span class="s2">&quot;AP-07&quot;</span><span class="p">}}})</span>
+</span><span id="test_the_tool_pauses_only_when_the_rules_say_so-224"><a href="#test_the_tool_pauses_only_when_the_rules_say_so-224"><span class="linenos">224</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">paid</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>                                                         <span class="c1"># the large one did not run</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_structured_output_is_returned_as_typed_json">
+                            <input id="test_structured_output_is_returned_as_typed_json-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_structured_output_is_returned_as_typed_json</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">store</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_structured_output_is_returned_as_typed_json-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_structured_output_is_returned_as_typed_json"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_structured_output_is_returned_as_typed_json-227"><a href="#test_structured_output_is_returned_as_typed_json-227"><span class="linenos">227</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_structured_output_is_returned_as_typed_json</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-228"><a href="#test_structured_output_is_returned_as_typed_json-228"><span class="linenos">228</span></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">ScriptedModel</span><span class="p">([[</span><span class="n">assistant_message</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme Supplies&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mi">48500</span><span class="p">,</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-229"><a href="#test_structured_output_is_returned_as_typed_json-229"><span class="linenos">229</span></a>                                                         <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))]])</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-230"><a href="#test_structured_output_is_returned_as_typed_json-230"><span class="linenos">230</span></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">InvoiceAgent</span><span class="p">(</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-231"><a href="#test_structured_output_is_returned_as_typed_json-231"><span class="linenos">231</span></a>        <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;InvoiceAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;You read invoices.&quot;</span><span class="p">,</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-232"><a href="#test_structured_output_is_returned_as_typed_json-232"><span class="linenos">232</span></a>                <span class="s2">&quot;structured_output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span><span class="p">}},</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-233"><a href="#test_structured_output_is_returned_as_typed_json-233"><span class="linenos">233</span></a>        <span class="n">governance</span><span class="o">=</span><span class="n">ShieldGovernance</span><span class="p">(</span><span class="n">CONFIG</span><span class="p">),</span> <span class="n">model_routing</span><span class="o">=</span><span class="s2">&quot;direct&quot;</span><span class="p">,</span> <span class="n">model_provider</span><span class="o">=</span><span class="n">_Provider</span><span class="p">(</span><span class="n">model</span><span class="p">),</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-234"><a href="#test_structured_output_is_returned_as_typed_json-234"><span class="linenos">234</span></a>        <span class="n">hil_adapter</span><span class="o">=</span><span class="n">OpenAIHILAdapter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">))</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-235"><a href="#test_structured_output_is_returned_as_typed_json-235"><span class="linenos">235</span></a>    <span class="n">out</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">execute</span><span class="p">({</span><span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="s2">&quot;Invoice INV-1042 from Acme Supplies, $48,500, PO 7781.&quot;</span><span class="p">})</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-236"><a href="#test_structured_output_is_returned_as_typed_json-236"><span class="linenos">236</span></a>    <span class="k">assert</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Acme Supplies&quot;</span><span class="p">,</span> <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="mf">48500.0</span><span class="p">,</span> <span class="s2">&quot;po_matched&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+</span><span id="test_structured_output_is_returned_as_typed_json-237"><a href="#test_structured_output_is_returned_as_typed_json-237"><span class="linenos">237</span></a>    <span class="k">assert</span> <span class="n">model</span><span class="o">.</span><span class="n">calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">output_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>                               <span class="c1"># the SDK asked for the schema</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_unknown_structured_output_type_is_refused">
+                            <input id="test_unknown_structured_output_type_is_refused-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_unknown_structured_output_type_is_refused</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">store</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_unknown_structured_output_type_is_refused-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_unknown_structured_output_type_is_refused"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_unknown_structured_output_type_is_refused-240"><a href="#test_unknown_structured_output_type_is_refused-240"><span class="linenos">240</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_unknown_structured_output_type_is_refused</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+</span><span id="test_unknown_structured_output_type_is_refused-241"><a href="#test_unknown_structured_output_type_is_refused-241"><span class="linenos">241</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;unknown type&quot;</span><span class="p">):</span>
+</span><span id="test_unknown_structured_output_type_is_refused-242"><a href="#test_unknown_structured_output_type_is_refused-242"><span class="linenos">242</span></a>        <span class="n">InvoiceAgent</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;InvoiceAgent&quot;</span><span class="p">,</span> <span class="s2">&quot;structured_output&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;money&quot;</span><span class="p">}},</span>
+</span><span id="test_unknown_structured_output_type_is_refused-243"><a href="#test_unknown_structured_output_type_is_refused-243"><span class="linenos">243</span></a>                     <span class="n">governance</span><span class="o">=</span><span class="n">ShieldGovernance</span><span class="p">(</span><span class="n">CONFIG</span><span class="p">),</span> <span class="n">hil_adapter</span><span class="o">=</span><span class="n">OpenAIHILAdapter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">))</span>
 </span></pre></div>
 
 

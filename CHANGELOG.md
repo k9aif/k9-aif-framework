@@ -17,6 +17,9 @@ All notable changes to K9-AIF are documented here.
 - **`PausedRunStore`** (`k9_storage/paused_run_store.py`): the paused run waits in one table, `k9_paused_runs`
   (PostgreSQL in the `postgres.schema` when `postgres.enabled`, else SQLite). Only its key travels with the HIL
   request; the run state is never in a payload governance screens again or a reviewer sees.
+- `K9OpenAIAgent` YAML: **`needs_approval_when:`** pauses a tool only when a condition on the step's input holds
+  (the squad's `when:` syntax, e.g. the rules step's decision), and **`structured_output:`** (`{field: type}`) becomes
+  the SDK's `output_type`, returned as JSON for the next step.
 - **`GoRulesAdapter`** (`k9_adapters/integration/gorules_adapter.py`, registered as `gorules`): a GoRules decision
   service as a `BaseRulesAdapter` (`POST /api/projects/{project}/evaluate/{ruleset}` with the facts; optional
   `facts:` path, JSON text parsed). `K9RulesAgent` decides through it; an engine that can't answer raises
