@@ -16,22 +16,7 @@ from k9_aif_abb.k9_core.governance.pipeline import assert_governed
 from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 
 
-def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
-    """
-    Execute an async coroutine from synchronous code — safe whether or not
-    an event loop is already running on the calling thread. Mirrors
-    K9ModelRouter's helper of the same name (k9_inference/routers/
-    k9_model_router.py) — same problem (a sync contract, apply_pre/post_
-    governance() are async), same fix, kept local rather than shared
-    since neither has grown a shared-utils home yet.
-    """
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
+from k9_aif_abb.k9_utils.async_bridge import run_sync as _run_coro_sync  # noqa: E402  (one bridge, 1.31.0)
 
 
 class CrewAIOrchestratorAdapter(BaseOrchestrator, BaseAdapter):

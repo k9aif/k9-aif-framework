@@ -102,6 +102,21 @@
             <li>
                     <a class="function" href="#test_agent_using_a_connector_passes_the_tool_gate_rule">test_agent_using_a_connector_passes_the_tool_gate_rule</a>
             </li>
+            <li>
+                    <a class="function" href="#test_duplicate_yaml_key_is_reported">test_duplicate_yaml_key_is_reported</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_same_key_in_different_mappings_is_fine">test_same_key_in_different_mappings_is_fine</a>
+            </li>
+            <li>
+                    <a class="variable" href="#ASYNC_AGENT">ASYNC_AGENT</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_async_agent_called_without_await_is_reported">test_async_agent_called_without_await_is_reported</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_async_agent_awaited_or_bridged_is_fine">test_async_agent_awaited_or_bridged_is_fine</a>
+            </li>
     </ul>
 
 
@@ -433,6 +448,60 @@
 </span><span id="L-306"><a href="#L-306"><span class="linenos">306</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
 </span><span id="L-307"><a href="#L-307"><span class="linenos">307</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
 </span><span id="L-308"><a href="#L-308"><span class="linenos">308</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-TOOL-001&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</span><span id="L-309"><a href="#L-309"><span class="linenos">309</span></a>
+</span><span id="L-310"><a href="#L-310"><span class="linenos">310</span></a>
+</span><span id="L-311"><a href="#L-311"><span class="linenos">311</span></a><span class="c1"># ── 1.31.0: duplicate YAML keys, async agents not awaited ─────────────────────</span>
+</span><span id="L-312"><a href="#L-312"><span class="linenos">312</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_duplicate_yaml_key_is_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-313"><a href="#L-313"><span class="linenos">313</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-314"><a href="#L-314"><span class="linenos">314</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;config/extra.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;agents:</span><span class="se">\n</span><span class="s2">  a: {model: general}</span><span class="se">\n</span><span class="s2">logging: {level: INFO}</span><span class="se">\n</span><span class="s2">agents:</span><span class="se">\n</span><span class="s2">  b: x</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-315"><a href="#L-315"><span class="linenos">315</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-316"><a href="#L-316"><span class="linenos">316</span></a>    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">findings</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">rule_id</span> <span class="o">==</span> <span class="s2">&quot;K9-CFG-005&quot;</span><span class="p">]</span>
+</span><span id="L-317"><a href="#L-317"><span class="linenos">317</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">line</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="s2">&quot;lines 1 and 4&quot;</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span>
+</span><span id="L-318"><a href="#L-318"><span class="linenos">318</span></a>
+</span><span id="L-319"><a href="#L-319"><span class="linenos">319</span></a>
+</span><span id="L-320"><a href="#L-320"><span class="linenos">320</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_same_key_in_different_mappings_is_fine</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-321"><a href="#L-321"><span class="linenos">321</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-322"><a href="#L-322"><span class="linenos">322</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;config/extra.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;a: </span><span class="si">{model: x}</span><span class="se">\n</span><span class="s2">b: {model: y}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="L-323"><a href="#L-323"><span class="linenos">323</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-CFG-005&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span><span id="L-324"><a href="#L-324"><span class="linenos">324</span></a>
+</span><span id="L-325"><a href="#L-325"><span class="linenos">325</span></a>
+</span><span id="L-326"><a href="#L-326"><span class="linenos">326</span></a><span class="n">ASYNC_AGENT</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-327"><a href="#L-327"><span class="linenos">327</span></a><span class="s2">from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-328"><a href="#L-328"><span class="linenos">328</span></a><span class="s2">class LookupAgent(BaseAgent):</span>
+</span><span id="L-329"><a href="#L-329"><span class="linenos">329</span></a><span class="s2">    async def execute(self, payload):</span>
+</span><span id="L-330"><a href="#L-330"><span class="linenos">330</span></a><span class="s2">        return {&quot;output&quot;: &quot;x&quot;}</span>
+</span><span id="L-331"><a href="#L-331"><span class="linenos">331</span></a><span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-332"><a href="#L-332"><span class="linenos">332</span></a>
+</span><span id="L-333"><a href="#L-333"><span class="linenos">333</span></a>
+</span><span id="L-334"><a href="#L-334"><span class="linenos">334</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_async_agent_called_without_await_is_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-335"><a href="#L-335"><span class="linenos">335</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-336"><a href="#L-336"><span class="linenos">336</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/lookup_agent.py&quot;</span><span class="p">,</span> <span class="n">ASYNC_AGENT</span><span class="p">)</span>
+</span><span id="L-337"><a href="#L-337"><span class="linenos">337</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;services/svc.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-338"><a href="#L-338"><span class="linenos">338</span></a><span class="s2">        from .resolver import create_agent</span>
+</span><span id="L-339"><a href="#L-339"><span class="linenos">339</span></a><span class="s2">        def handle(config, q):</span>
+</span><span id="L-340"><a href="#L-340"><span class="linenos">340</span></a><span class="s2">            agent = create_agent(config, &quot;LookupAgent&quot;)</span>
+</span><span id="L-341"><a href="#L-341"><span class="linenos">341</span></a><span class="s2">            return agent.execute({&quot;q&quot;: q}).get(&quot;output&quot;)</span>
+</span><span id="L-342"><a href="#L-342"><span class="linenos">342</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-343"><a href="#L-343"><span class="linenos">343</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-344"><a href="#L-344"><span class="linenos">344</span></a>    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">findings</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">rule_id</span> <span class="o">==</span> <span class="s2">&quot;K9-ASY-001&quot;</span><span class="p">]</span>
+</span><span id="L-345"><a href="#L-345"><span class="linenos">345</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">file</span> <span class="o">==</span> <span class="s2">&quot;services/svc.py&quot;</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">line</span> <span class="o">==</span> <span class="mi">5</span>
+</span><span id="L-346"><a href="#L-346"><span class="linenos">346</span></a>
+</span><span id="L-347"><a href="#L-347"><span class="linenos">347</span></a>
+</span><span id="L-348"><a href="#L-348"><span class="linenos">348</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_async_agent_awaited_or_bridged_is_fine</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-349"><a href="#L-349"><span class="linenos">349</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-350"><a href="#L-350"><span class="linenos">350</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/lookup_agent.py&quot;</span><span class="p">,</span> <span class="n">ASYNC_AGENT</span><span class="p">)</span>
+</span><span id="L-351"><a href="#L-351"><span class="linenos">351</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;services/svc.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-352"><a href="#L-352"><span class="linenos">352</span></a><span class="s2">        from k9_aif_abb.k9_utils.async_bridge import run_sync</span>
+</span><span id="L-353"><a href="#L-353"><span class="linenos">353</span></a><span class="s2">        from agents.lookup_agent import LookupAgent</span>
+</span><span id="L-354"><a href="#L-354"><span class="linenos">354</span></a><span class="s2">        class Svc:</span>
+</span><span id="L-355"><a href="#L-355"><span class="linenos">355</span></a><span class="s2">            def __init__(self):</span>
+</span><span id="L-356"><a href="#L-356"><span class="linenos">356</span></a><span class="s2">                self.agent = LookupAgent(</span><span class="si">{}</span><span class="s2">)</span>
+</span><span id="L-357"><a href="#L-357"><span class="linenos">357</span></a><span class="s2">            async def a(self, q):</span>
+</span><span id="L-358"><a href="#L-358"><span class="linenos">358</span></a><span class="s2">                return await self.agent.execute({&quot;q&quot;: q})</span>
+</span><span id="L-359"><a href="#L-359"><span class="linenos">359</span></a><span class="s2">            def b(self, q):</span>
+</span><span id="L-360"><a href="#L-360"><span class="linenos">360</span></a><span class="s2">                return run_sync(self.agent.execute({&quot;q&quot;: q}))</span>
+</span><span id="L-361"><a href="#L-361"><span class="linenos">361</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-362"><a href="#L-362"><span class="linenos">362</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-ASY-001&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
 </span></pre></div>
 
 
@@ -1051,6 +1120,124 @@ BaseAgent.notify_monitor() can only reach the monitor and log.</p>
 </span><span id="test_agent_using_a_connector_passes_the_tool_gate_rule-307"><a href="#test_agent_using_a_connector_passes_the_tool_gate_rule-307"><span class="linenos">307</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
 </span><span id="test_agent_using_a_connector_passes_the_tool_gate_rule-308"><a href="#test_agent_using_a_connector_passes_the_tool_gate_rule-308"><span class="linenos">308</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
 </span><span id="test_agent_using_a_connector_passes_the_tool_gate_rule-309"><a href="#test_agent_using_a_connector_passes_the_tool_gate_rule-309"><span class="linenos">309</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-TOOL-001&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_duplicate_yaml_key_is_reported">
+                            <input id="test_duplicate_yaml_key_is_reported-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_duplicate_yaml_key_is_reported</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_duplicate_yaml_key_is_reported-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_duplicate_yaml_key_is_reported"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_duplicate_yaml_key_is_reported-313"><a href="#test_duplicate_yaml_key_is_reported-313"><span class="linenos">313</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_duplicate_yaml_key_is_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_duplicate_yaml_key_is_reported-314"><a href="#test_duplicate_yaml_key_is_reported-314"><span class="linenos">314</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_duplicate_yaml_key_is_reported-315"><a href="#test_duplicate_yaml_key_is_reported-315"><span class="linenos">315</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;config/extra.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;agents:</span><span class="se">\n</span><span class="s2">  a: {model: general}</span><span class="se">\n</span><span class="s2">logging: {level: INFO}</span><span class="se">\n</span><span class="s2">agents:</span><span class="se">\n</span><span class="s2">  b: x</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="test_duplicate_yaml_key_is_reported-316"><a href="#test_duplicate_yaml_key_is_reported-316"><span class="linenos">316</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_duplicate_yaml_key_is_reported-317"><a href="#test_duplicate_yaml_key_is_reported-317"><span class="linenos">317</span></a>    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">findings</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">rule_id</span> <span class="o">==</span> <span class="s2">&quot;K9-CFG-005&quot;</span><span class="p">]</span>
+</span><span id="test_duplicate_yaml_key_is_reported-318"><a href="#test_duplicate_yaml_key_is_reported-318"><span class="linenos">318</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">line</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="s2">&quot;lines 1 and 4&quot;</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_same_key_in_different_mappings_is_fine">
+                            <input id="test_same_key_in_different_mappings_is_fine-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_same_key_in_different_mappings_is_fine</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_same_key_in_different_mappings_is_fine-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_same_key_in_different_mappings_is_fine"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_same_key_in_different_mappings_is_fine-321"><a href="#test_same_key_in_different_mappings_is_fine-321"><span class="linenos">321</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_same_key_in_different_mappings_is_fine</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_same_key_in_different_mappings_is_fine-322"><a href="#test_same_key_in_different_mappings_is_fine-322"><span class="linenos">322</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_same_key_in_different_mappings_is_fine-323"><a href="#test_same_key_in_different_mappings_is_fine-323"><span class="linenos">323</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;config/extra.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;a: </span><span class="si">{model: x}</span><span class="se">\n</span><span class="s2">b: {model: y}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="test_same_key_in_different_mappings_is_fine-324"><a href="#test_same_key_in_different_mappings_is_fine-324"><span class="linenos">324</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-CFG-005&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="ASYNC_AGENT">
+                    <div class="attr variable">
+            <span class="name">ASYNC_AGENT</span>        =
+<input id="ASYNC_AGENT-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="ASYNC_AGENT-view-value"></label><span class="default_value">&#39;\nfrom <a href="../k9_core/agent/base_agent.html">k9_aif_abb.k9_core.agent.base_agent</a> import BaseAgent\nclass LookupAgent(BaseAgent):\n    async def execute(self, payload):\n        return {&#34;output&#34;: &#34;x&#34;}\n&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ASYNC_AGENT"></a>
+    
+    
+
+                </section>
+                <section id="test_async_agent_called_without_await_is_reported">
+                            <input id="test_async_agent_called_without_await_is_reported-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_async_agent_called_without_await_is_reported</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_async_agent_called_without_await_is_reported-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_async_agent_called_without_await_is_reported"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_async_agent_called_without_await_is_reported-335"><a href="#test_async_agent_called_without_await_is_reported-335"><span class="linenos">335</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_async_agent_called_without_await_is_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_async_agent_called_without_await_is_reported-336"><a href="#test_async_agent_called_without_await_is_reported-336"><span class="linenos">336</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-337"><a href="#test_async_agent_called_without_await_is_reported-337"><span class="linenos">337</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/lookup_agent.py&quot;</span><span class="p">,</span> <span class="n">ASYNC_AGENT</span><span class="p">)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-338"><a href="#test_async_agent_called_without_await_is_reported-338"><span class="linenos">338</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;services/svc.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="test_async_agent_called_without_await_is_reported-339"><a href="#test_async_agent_called_without_await_is_reported-339"><span class="linenos">339</span></a><span class="s2">        from .resolver import create_agent</span>
+</span><span id="test_async_agent_called_without_await_is_reported-340"><a href="#test_async_agent_called_without_await_is_reported-340"><span class="linenos">340</span></a><span class="s2">        def handle(config, q):</span>
+</span><span id="test_async_agent_called_without_await_is_reported-341"><a href="#test_async_agent_called_without_await_is_reported-341"><span class="linenos">341</span></a><span class="s2">            agent = create_agent(config, &quot;LookupAgent&quot;)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-342"><a href="#test_async_agent_called_without_await_is_reported-342"><span class="linenos">342</span></a><span class="s2">            return agent.execute({&quot;q&quot;: q}).get(&quot;output&quot;)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-343"><a href="#test_async_agent_called_without_await_is_reported-343"><span class="linenos">343</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-344"><a href="#test_async_agent_called_without_await_is_reported-344"><span class="linenos">344</span></a>    <span class="n">r</span> <span class="o">=</span> <span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_async_agent_called_without_await_is_reported-345"><a href="#test_async_agent_called_without_await_is_reported-345"><span class="linenos">345</span></a>    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">findings</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">rule_id</span> <span class="o">==</span> <span class="s2">&quot;K9-ASY-001&quot;</span><span class="p">]</span>
+</span><span id="test_async_agent_called_without_await_is_reported-346"><a href="#test_async_agent_called_without_await_is_reported-346"><span class="linenos">346</span></a>    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">file</span> <span class="o">==</span> <span class="s2">&quot;services/svc.py&quot;</span> <span class="ow">and</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">line</span> <span class="o">==</span> <span class="mi">5</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_async_agent_awaited_or_bridged_is_fine">
+                            <input id="test_async_agent_awaited_or_bridged_is_fine-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_async_agent_awaited_or_bridged_is_fine</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_async_agent_awaited_or_bridged_is_fine-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_async_agent_awaited_or_bridged_is_fine"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_async_agent_awaited_or_bridged_is_fine-349"><a href="#test_async_agent_awaited_or_bridged_is_fine-349"><span class="linenos">349</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_async_agent_awaited_or_bridged_is_fine</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-350"><a href="#test_async_agent_awaited_or_bridged_is_fine-350"><span class="linenos">350</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-351"><a href="#test_async_agent_awaited_or_bridged_is_fine-351"><span class="linenos">351</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/lookup_agent.py&quot;</span><span class="p">,</span> <span class="n">ASYNC_AGENT</span><span class="p">)</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-352"><a href="#test_async_agent_awaited_or_bridged_is_fine-352"><span class="linenos">352</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;services/svc.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-353"><a href="#test_async_agent_awaited_or_bridged_is_fine-353"><span class="linenos">353</span></a><span class="s2">        from k9_aif_abb.k9_utils.async_bridge import run_sync</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-354"><a href="#test_async_agent_awaited_or_bridged_is_fine-354"><span class="linenos">354</span></a><span class="s2">        from agents.lookup_agent import LookupAgent</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-355"><a href="#test_async_agent_awaited_or_bridged_is_fine-355"><span class="linenos">355</span></a><span class="s2">        class Svc:</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-356"><a href="#test_async_agent_awaited_or_bridged_is_fine-356"><span class="linenos">356</span></a><span class="s2">            def __init__(self):</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-357"><a href="#test_async_agent_awaited_or_bridged_is_fine-357"><span class="linenos">357</span></a><span class="s2">                self.agent = LookupAgent(</span><span class="si">{}</span><span class="s2">)</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-358"><a href="#test_async_agent_awaited_or_bridged_is_fine-358"><span class="linenos">358</span></a><span class="s2">            async def a(self, q):</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-359"><a href="#test_async_agent_awaited_or_bridged_is_fine-359"><span class="linenos">359</span></a><span class="s2">                return await self.agent.execute({&quot;q&quot;: q})</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-360"><a href="#test_async_agent_awaited_or_bridged_is_fine-360"><span class="linenos">360</span></a><span class="s2">            def b(self, q):</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-361"><a href="#test_async_agent_awaited_or_bridged_is_fine-361"><span class="linenos">361</span></a><span class="s2">                return run_sync(self.agent.execute({&quot;q&quot;: q}))</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-362"><a href="#test_async_agent_awaited_or_bridged_is_fine-362"><span class="linenos">362</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="test_async_agent_awaited_or_bridged_is_fine-363"><a href="#test_async_agent_awaited_or_bridged_is_fine-363"><span class="linenos">363</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-ASY-001&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
 </span></pre></div>
 
 

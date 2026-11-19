@@ -126,9 +126,9 @@ class RetrieverAgent(BaseAgent):
                 )
 
             except Exception as le:
+                # No stand-in answer: the member must not be shown "LLM reasoning failed." as a result.
                 self.logger.error(f"[{self.layer}] Router fallback failed: {le}")
-                traceback.print_exc()
-                results = [{"text": "LLM reasoning failed.", "score": 0.0}]
+                raise
 
         # 4) Confidence computation
         confidence = 0.0

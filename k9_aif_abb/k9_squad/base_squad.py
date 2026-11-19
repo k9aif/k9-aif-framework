@@ -6,6 +6,7 @@ import logging
 import time
 
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
+from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve
 
 log = logging.getLogger(__name__)
 
@@ -198,7 +199,9 @@ class BaseSquad:
             log.info("[%s] step %d executing agent=%s", self.squad_id, step_idx + 1, agent_name)
             t0 = time.monotonic()
             try:
-                result = agent_map[agent_name].execute(step_context)
+                # An async agent's execute() returns a coroutine: run it here (1.31.0). Before, the
+                # coroutine itself was stored as the step's result and the squad reported completed.
+                result = _resolve(agent_map[agent_name].execute(step_context))
             except RequiresHIL as exc:
                 # The orchestrator stores this with the resume payload, so the squad resumes at this step.
                 exc.resume_state.setdefault("squad", {})[self.squad_id] = {"results": dict(results)}
@@ -247,7 +250,7 @@ class BaseSquad:
         keys = tuple(upstream)
         if keys not in digest_cache:
             synthesizer = self._get_synthesizer(synthesis)
-            res = synthesizer.execute({"results": upstream, "task": self.description})
+            res = _resolve(synthesizer.execute({"results": upstream, "task": self.description}))
             digest_cache[keys] = (res or {}).get("output", "") if isinstance(res, dict) else str(res)
         digest = digest_cache[keys]
         synthesis_log.append({"step": step_idx + 1, "agent": agent_name,

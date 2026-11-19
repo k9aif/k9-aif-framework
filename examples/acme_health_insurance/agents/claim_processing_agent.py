@@ -47,59 +47,39 @@ class ClaimProcessingAgent(BaseAgent):
                 "notes": payload.get("notes", ""),
             }
 
-            reasoning_summary = ""
-            compliance_flag = "clear"
+            # Both model calls must succeed: a failed compliance check must never read as "clear",
+            # and a claim is not stored unchecked. A failure propagates to the squad and orchestrator.
+            prompt = (
+                f"Analyze this insurance claim:\n"
+                f"Provider: {record['provider']}\n"
+                f"Amount: {record['amount']}\n"
+                f"Status: {record['status']}\n"
+                f"Notes: {record['notes']}\n\n"
+                f"Return a concise summary and detect if the claim seems unusually high or potentially fraudulent."
+            )
+            response = llm_invoke(self.config, InferenceRequest(
+                prompt=prompt,
+                task_type="reasoning",
+                metadata={"agent": "claim_processing_agent", "stage": "reasoning"},
+            ))
+            reasoning_summary = (response.output or "").strip()
+            self.logger.info(
+                f"[{self.layer}] Claim reasoning complete "
+                f"(model={response.model_alias}, provider={response.provider})."
+            )
 
-            try:
-                prompt = (
-                    f"Analyze this insurance claim:\n"
-                    f"Provider: {record['provider']}\n"
-                    f"Amount: {record['amount']}\n"
-                    f"Status: {record['status']}\n"
-                    f"Notes: {record['notes']}\n\n"
-                    f"Return a concise summary and detect if the claim seems unusually high or potentially fraudulent."
-                )
-
-                req = InferenceRequest(
-                    prompt=prompt,
-                    task_type="reasoning",
-                    metadata={"agent": "claim_processing_agent", "stage": "reasoning"},
-                )
-
-                response = llm_invoke(self.config, req)
-                reasoning_summary = (response.output or "").strip()
-                self.logger.info(
-                    f"[{self.layer}] Claim reasoning complete "
-                    f"(model={response.model_alias}, provider={response.provider})."
-                )
-            except Exception as le:
-                self.logger.warning(f"[{self.layer}] Router reasoning skipped: {le}")
-
-            try:
-                guard_prompt = (
-                    f"Check if this claim text contains sensitive or prohibited data:\n"
-                    f"{record['notes']}"
-                )
-
-                guard_req = InferenceRequest(
-                    prompt=guard_prompt,
-                    task_type="policy",
-                    sensitivity="confidential",
-                    metadata={"agent": "claim_processing_agent", "stage": "compliance"},
-                )
-
-                guard_resp = llm_invoke(self.config, guard_req)
-                guard_text = (guard_resp.output or "").strip()
-
-                if "prohibited" in guard_text.lower() or "violation" in guard_text.lower():
-                    compliance_flag = "flagged"
-
-                self.logger.info(
-                    f"[{self.layer}] Compliance check result: {compliance_flag} "
-                    f"(model={guard_resp.model_alias}, provider={guard_resp.provider})."
-                )
-            except Exception as ge:
-                self.logger.warning(f"[{self.layer}] Router compliance check skipped: {ge}")
+            guard_resp = llm_invoke(self.config, InferenceRequest(
+                prompt=f"Check if this claim text contains sensitive or prohibited data:\n{record['notes']}",
+                task_type="policy",
+                sensitivity="confidential",
+                metadata={"agent": "claim_processing_agent", "stage": "compliance"},
+            ))
+            guard_text = (guard_resp.output or "").strip().lower()
+            compliance_flag = "flagged" if ("prohibited" in guard_text or "violation" in guard_text) else "clear"
+            self.logger.info(
+                f"[{self.layer}] Compliance check result: {compliance_flag} "
+                f"(model={guard_resp.model_alias}, provider={guard_resp.provider})."
+            )
 
             result = self.persistence.execute({
                 "action": "insert",
@@ -121,4 +101,4 @@ class ClaimProcessingAgent(BaseAgent):
 
         except Exception as e:
             self.logger.error(f"[{self.layer}] Claim processing failed: {e}")
-            return {"status": "error", "error": str(e)}
+            raise

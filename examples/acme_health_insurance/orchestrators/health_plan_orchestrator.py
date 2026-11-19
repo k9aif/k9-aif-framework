@@ -6,11 +6,10 @@
 
 import traceback
 from typing import Dict, Any
-from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
-from .agent_resolver import create_agent
+from .acme_squads import AcmeDomainOrchestrator
 
 
-class HealthPlanOrchestrator(BaseOrchestrator):
+class HealthPlanOrchestrator(AcmeDomainOrchestrator):
     """
     HealthPlanOrchestrator
     ======================
@@ -18,7 +17,7 @@ class HealthPlanOrchestrator(BaseOrchestrator):
 
     Responsibilities
     ----------------
-     Routes user questions to the :class:`RetrieverAgent` for semantic search.  
+ Runs PlanLookupSquad (config/squads.yaml) for semantic search.  
      Retrieves relevant chunks from ChromaDB (`acme_health_knowledge`).  
      Formats results into a human-readable Markdown reply.  
      Publishes orchestration status updates for observability.
@@ -63,12 +62,11 @@ class HealthPlanOrchestrator(BaseOrchestrator):
             # ------------------------------------------------------------------
             # Step 1  Retrieve relevant plan information
             # ------------------------------------------------------------------
-            retriever = create_agent(self.config, "RetrieverAgent", monitor=self.monitor)
-            retrieval = retriever.execute({
+            retrieval = (await self.run_squad("PlanLookupSquad", {
                 "query": query,
                 "top_k": 5,
                 "collection": "acme_health_knowledge"
-            })
+            }))["retrieval"]
 
             results = retrieval.get("results", [])
             if not results:
@@ -85,7 +83,8 @@ class HealthPlanOrchestrator(BaseOrchestrator):
                 ""
             ]
             for idx, r in enumerate(results[:5]):
-                doc = r.get("document") if isinstance(r, dict) else str(r)
+                # RetrieverAgent returns {"text": ...}; a vector store hit may carry "document".
+                doc = (r.get("text") or r.get("document") or "") if isinstance(r, dict) else str(r)
                 reply_lines.append(f"**{idx+1}.** {doc[:500]}...")
 
             reply = "\n".join(reply_lines)
@@ -101,4 +100,4 @@ class HealthPlanOrchestrator(BaseOrchestrator):
             self.logger.error(f"[{self.layer}]  Error: {e}")
             self.publish_status("error", {"error": str(e)})
             traceback.print_exc()
-            return {"reply": "Error while processing your plan inquiry."}
+            return {"reply": "Error while processing your plan inquiry.", "status": "error"}

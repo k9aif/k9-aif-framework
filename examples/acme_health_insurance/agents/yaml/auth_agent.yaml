@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Agent definition: the squad layer (SquadLoader.from_agents) builds the class from class: + module:.
+name: AuthAgent
+class: AuthAgent
+module: examples.acme_health_insurance.agents.auth_agent
+description: Signs members in and registers new accounts.
+role: Member authentication for ACME HealthCare.
+goal: Sign in or register the user, and say clearly when that fails.

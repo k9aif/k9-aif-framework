@@ -306,3 +306,57 @@ def test_agent_using_a_connector_passes_the_tool_gate_rule(tmp_path):
     """)
     r = K9Inspector().inspect(tmp_path)
     assert "K9-TOOL-001" not in ids(r)
+
+
+# ── 1.31.0: duplicate YAML keys, async agents not awaited ─────────────────────
+def test_duplicate_yaml_key_is_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "config/extra.yaml", "agents:\n  a: {model: general}\nlogging: {level: INFO}\nagents:\n  b: x\n")
+    r = K9Inspector().inspect(tmp_path)
+    found = [f for f in r.findings if f.rule_id == "K9-CFG-005"]
+    assert len(found) == 1 and found[0].line == 4 and "lines 1 and 4" in found[0].message
+
+
+def test_same_key_in_different_mappings_is_fine(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "config/extra.yaml", "a: {model: x}\nb: {model: y}\n")
+    assert "K9-CFG-005" not in ids(K9Inspector().inspect(tmp_path))
+
+
+ASYNC_AGENT = """
+from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+class LookupAgent(BaseAgent):
+    async def execute(self, payload):
+        return {"output": "x"}
+"""
+
+
+def test_async_agent_called_without_await_is_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/lookup_agent.py", ASYNC_AGENT)
+    write(tmp_path, "services/svc.py", """
+        from .resolver import create_agent
+        def handle(config, q):
+            agent = create_agent(config, "LookupAgent")
+            return agent.execute({"q": q}).get("output")
+    """)
+    r = K9Inspector().inspect(tmp_path)
+    found = [f for f in r.findings if f.rule_id == "K9-ASY-001"]
+    assert len(found) == 1 and found[0].file == "services/svc.py" and found[0].line == 5
+
+
+def test_async_agent_awaited_or_bridged_is_fine(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "agents/lookup_agent.py", ASYNC_AGENT)
+    write(tmp_path, "services/svc.py", """
+        from k9_aif_abb.k9_utils.async_bridge import run_sync
+        from agents.lookup_agent import LookupAgent
+        class Svc:
+            def __init__(self):
+                self.agent = LookupAgent({})
+            async def a(self, q):
+                return await self.agent.execute({"q": q})
+            def b(self, q):
+                return run_sync(self.agent.execute({"q": q}))
+    """)
+    assert "K9-ASY-001" not in ids(K9Inspector().inspect(tmp_path))

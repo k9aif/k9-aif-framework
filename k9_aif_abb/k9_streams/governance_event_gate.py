@@ -70,11 +70,4 @@ class GovernanceEventGate(EventGovernanceGate):
         return GateResult(GateDecision.PERMIT, envelope)
 
 
-def _run_coro_sync(coro: Any) -> Any:
-    """Same sync bridge as BaseOrchestrator / tool_result_guard: safe inside a running loop."""
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
+from k9_aif_abb.k9_utils.async_bridge import run_sync as _run_coro_sync  # noqa: E402  (one bridge, 1.31.0)

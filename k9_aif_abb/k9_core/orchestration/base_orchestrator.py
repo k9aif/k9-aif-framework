@@ -26,18 +26,8 @@ def resume_payload_with_state(payload: Dict[str, Any], resume_state: Optional[Di
     return {**payload, "_k9_resume": resume_state}
 
 
-def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
-    """Run an async coroutine from sync code, safe whether or not a loop is
-    already running on this thread. Same pattern as
-    k9_inference/routers/k9_model_router.py's own _run_coro_sync — kept
-    local rather than imported since the framework doesn't share it from
-    one place today."""
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
+from k9_aif_abb.k9_utils.async_bridge import run_sync as _run_coro_sync  # noqa: E402  (one bridge, 1.31.0)
+from k9_aif_abb.k9_utils.async_bridge import resolve as _run_coro_sync_if_needed  # noqa: E402
 
 # Optional Zero Trust runtime enforcement layer
 try:
@@ -210,7 +200,7 @@ class BaseOrchestrator(ABC):
                 self.logger.info(
                     "[%s] Executing squad: %s (sequential)", self.layer, squad.squad_id,
                 )
-                result = squad.execute(self._with_origin(squad, payload))
+                result = _run_coro_sync_if_needed(squad.execute(self._with_origin(squad, payload)))
                 results[squad.squad_id] = result
             return results
 
@@ -231,7 +221,7 @@ class BaseOrchestrator(ABC):
             for future in as_completed(futures):
                 squad = futures[future]
                 try:
-                    results[squad.squad_id] = future.result()
+                    results[squad.squad_id] = _run_coro_sync_if_needed(future.result())
                 except RequiresHIL:
                     # Never swallow a HIL signal into a generic failure --
                     # cancel remaining futures and propagate immediately so

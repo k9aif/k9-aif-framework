@@ -43,27 +43,7 @@ def _warn_publish_event_deprecated(agent) -> None:
         agent.logger.warning(msg)
 
 
-def _resolve_sync(value: Any) -> Any:
-    """Return *value*, or run it to completion if it is awaitable (governance
-    backends may be sync or async). Safe inside a running event loop."""
-    if not inspect.isawaitable(value):
-        return value
-
-    async def _await():
-        return await value
-
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        loop_running = False
-    else:
-        loop_running = True
-    if not loop_running:
-        # Outside the except block: a governance PermissionError then reads as itself in a
-        # traceback, not "during handling of RuntimeError: no running event loop".
-        return asyncio.run(_await())
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, _await()).result()
+from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve_sync  # noqa: E402  (one bridge, 1.31.0)
 
 
 def _payload_of(args, kwargs):

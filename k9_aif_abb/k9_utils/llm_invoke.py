@@ -31,23 +31,7 @@ from k9_aif_abb.k9_core.governance.pipeline import (NoopGovernance, assert_gover
                                                       governance_scope)
 
 
-def _resolve_sync(value: Any) -> Any:
-    """Governance backends may be sync or async; run an awaitable to completion."""
-    import inspect
-    if not inspect.isawaitable(value):
-        return value
-    import asyncio
-    import contextvars
-    import concurrent.futures
-
-    async def _await():
-        return await value
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(_await())
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, _await()).result()
+from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve_sync  # noqa: E402  (one bridge, 1.31.0)
 
 log = logging.getLogger(__name__)
 

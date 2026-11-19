@@ -10,6 +10,8 @@ from pathlib import Path
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+import yaml
+
 from ..base_inspection_rule import BaseInspectionRule
 from ..models import Finding, Severity
 from ..project import SolutionProject, YamlDoc
@@ -585,3 +587,54 @@ class ModelDigestPinRule(BaseInspectionRule):
                                         d.rel, _line_of(d, "models:")))
         return out
 
+
+
+class _DuplicateKeyLoader(yaml.SafeLoader):
+    """SafeLoader that records every mapping key given twice (YAML keeps the last one silently)."""
+
+    def construct_mapping(self, node, deep=False):
+        seen: Dict[Any, int] = {}
+        for key_node, _ in node.value:
+            try:
+                key = self.construct_object(key_node, deep=True)
+                hash(key)
+            except Exception:
+                continue
+            line = key_node.start_mark.line + 1
+            if key in seen:
+                self.duplicates.append((key, seen[key], line))
+            else:
+                seen[key] = line
+        return super().construct_mapping(node, deep=deep)
+
+
+@InspectionRuleRegistry.register
+class DuplicateYamlKeyRule(BaseInspectionRule):
+    rule_id = "K9-CFG-005"
+    title = "No duplicate keys in YAML"
+    category = "Configuration"
+    severity = Severity.VIOLATION
+    description = ("A key given twice in one mapping is not an error to the YAML loader: the last one wins and the "
+                   "first block is dropped without a word. In a config.yaml that silently discards settings "
+                   "(models, governance checks, agents) the author believes are in force.")
+    fix = "Merge the two blocks under one key; keep each setting once."
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        out = []
+        for d in project.yaml_docs:
+            if d.error or not d.text:
+                continue
+            loader = _DuplicateKeyLoader(d.text)
+            loader.duplicates = []
+            try:
+                while loader.check_data():
+                    loader.get_data()
+            except yaml.YAMLError:
+                continue
+            finally:
+                loader.dispose()
+            for key, first, again in loader.duplicates:
+                out.append(self.finding(f"key '{key}' appears twice in one mapping (lines {first} and {again}); "
+                                        f"the block at line {first} is ignored", d.rel, again,
+                                        d.text.splitlines()[again - 1].strip() if again <= len(d.text.splitlines()) else ""))
+        return out

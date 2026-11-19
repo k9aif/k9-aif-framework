@@ -200,12 +200,4 @@ def govern_tool_call(governance: Any, *, tool_name: Optional[str] = None) -> Cal
     return decorate
 
 
-def _run_coro_sync(coro):
-    """Run a coroutine from sync code, safe inside an already-running loop
-    (same bridge as BaseOrchestrator / the CrewAI and LangGraph adapters)."""
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
+from k9_aif_abb.k9_utils.async_bridge import run_sync as _run_coro_sync  # noqa: E402  (one bridge, 1.31.0)

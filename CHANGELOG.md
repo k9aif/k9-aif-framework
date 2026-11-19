@@ -4,9 +4,44 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [Unreleased] (1.30.1)
+## [1.31.0] — 2026-11-19
+
+### Changed
+- **`BaseSquad` runs async agents.** An agent whose `execute()` is `async` returns a coroutine; `BaseSquad.execute()`
+  stored that coroutine as the step's result, the next step got it instead of a result, and the squad reported
+  `completed` although the agent never ran. Now every step's result is run to completion (also the squad
+  synthesizer, `IntentSquad`'s agent, and a squad whose own `execute()` is async in `execute_squads()`), in or outside
+  a running event loop; failures and `RequiresHIL` propagate unchanged. Test: `tests/test_async_agents_in_squads.py`.
+- **One sync-over-async bridge: `k9_aif_abb.k9_utils.async_bridge`** (`run_sync(awaitable)`, `resolve(value)`).
+  It replaces eleven private copies: `_run_coro_sync` in `BaseOrchestrator`, `K9ModelRouter`, the validation-loop and
+  critic-actor ABBs, `tool_result_guard`, the CrewAI and LangGraph adapters and `GovernanceEventGate`;
+  `_resolve_sync` in `BaseAgent` and `llm_invoke`; `WebSearchAgent._run_async`. The old private names remain as
+  aliases. Context variables (trace ids, identity, the tool-gate session) still follow into the worker thread.
+  `tests/test_one_async_bridge.py` fails on a new `asyncio.run()` outside the bridge (the OpenAI and Claude adapters'
+  sync entry points, which refuse inside a running loop and offer an async twin, are listed).
+
+### Added
+- **Inspection rule K9-ASY-001 "Async agents are awaited"** (violation): an async agent's `execute()` called without
+  `await` and not handed to a bridge, where the agent is bound by its class or named by string (a resolver or
+  registry). Found in `examples/acme_health_insurance`, where every plan question failed this way.
+- K9X Inspector 1.2.0 (separate repo) shows these versions on About and updates itself from a button; it needs this
+  release on PyPI to run K9-ASY-001 and K9-CFG-005.
+- **Inspection rule K9-CFG-005 "No duplicate keys in YAML"** (violation): YAML keeps the last of two equal keys and
+  drops the first block without a word. Found in the same example: a second top-level `agents:` erased the first.
 
 ### Fixed
+- `WebSearchAgent._run_async` re-ran a coroutine that raised `RuntimeError` inside a running loop, replacing the real
+  error with "cannot reuse already awaited coroutine" (now the shared bridge).
+- `examples/acme_health_insurance` conforms (K9X Inspector: three K9-DEC-002 violations):
+  - Orchestrators know only squads: `config/squads.yaml` (`ClaimsSquad`, `PlanLookupSquad`, `AuthSquad`), agent
+    YAML in `agents/yaml/`, `SquadLoader.from_agents` built once in `app_backend.py`. The name-based
+    `agent_resolver.py` (it removed the imports but kept the coupling) is gone.
+  - `ClaimProcessingAgent` no longer reports a failed compliance check as `clear` and stores the claim anyway; model
+    failures propagate. `RetrieverAgent` no longer shows "LLM reasoning failed." to the member as an answer.
+  - Plan answers read the retriever's `text` field (they read `document` and always failed).
+  - `orchestrators.yaml` pointed `talk_to_agent` and `fallback` at modules that do not exist.
+  - Egress adds `OutboundLinkCheck` and `SystemPromptLeakageCheck`; the unused `HealthMonitorAgent` (direct HTTP and
+    its own publishing) is removed. Test: `examples/acme_health_insurance/tests/test_squad_flows.py`.
 - `PIIRequestCheck` matched only singular field names, so "list the bank account and routing numbers" passed; plurals
   now match (`account numbers`, `routing numbers`, `credit card numbers`). New solicitation phrase: asking for what is
   held about others ("list/share/send/give/show ... on file / you have / for all vendors"). Ordinary AP text still

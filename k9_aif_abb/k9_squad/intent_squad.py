@@ -69,6 +69,7 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
+from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve
 from k9_aif_abb.k9_squad.base_squad import BaseSquad
 
 log = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ class IntentSquad(BaseSquad):
         log.info("[%s] classifying intent via %s", self.squad_id, type(agent).__name__)
         t0 = time.monotonic()
         try:
-            intent_result = agent.execute(payload)
+            intent_result = _resolve(agent.execute(payload))   # sync or async agent (1.31.0)
         except Exception:
             elapsed_ms = int((time.monotonic() - t0) * 1000)
             log.exception(

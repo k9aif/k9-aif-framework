@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Agent definition: the squad layer (SquadLoader.from_agents) builds the class from class: + module:.
+name: ClaimProcessingAgent
+class: ClaimProcessingAgent
+module: examples.acme_health_insurance.agents.claim_processing_agent
+description: Files a health insurance claim, summarizes it and flags unusual amounts.
+role: Claims processor for ACME HealthCare.
+goal: Record the claim and give the member a short, accurate summary of it.

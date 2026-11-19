@@ -7,13 +7,12 @@
 import traceback
 from typing import Dict, Any
 
-from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
 from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
 from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
-from .agent_resolver import create_agent
+from .acme_squads import AcmeDomainOrchestrator
 
 
-class ClaimsOrchestrator(BaseOrchestrator):
+class ClaimsOrchestrator(AcmeDomainOrchestrator):
     """
     Specialized orchestrator for ACME HealthCare claims operations.
     """
@@ -23,8 +22,6 @@ class ClaimsOrchestrator(BaseOrchestrator):
     def __init__(self, config=None, monitor=None, **kwargs):
         super().__init__(config=config or {}, monitor=monitor, **kwargs)
         self.logger.info(f"[{self.layer}] Initialized ClaimsOrchestrator")
-
-        self.claim_agent = create_agent(self.config, "ClaimProcessingAgent", monitor=monitor)
 
     async def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         # Screen ingress with this orchestrator's governance (Shield from config.yaml).
@@ -71,15 +68,17 @@ class ClaimsOrchestrator(BaseOrchestrator):
                 self.logger.warning(f"[{self.layer}] Router classification failed: {le}")
 
             if "submit" in intent or "file" in query.lower():
-                result = await self.claim_agent.execute(
+                out = await self.run_squad(
+                    "ClaimsSquad",
                     {
                         "provider": "CityCare Hospital",
                         "member_id": "M12345",
                         "amount": 1250.50,
                         "status": "submitted",
                         "notes": query,
-                    }
+                    },
                 )
+                result = out["claim"]
                 reply = (
                     f"Claim filed successfully!\n"
                     f"Claim ID: **{result.get('claim_id')}**\n"
@@ -116,4 +115,4 @@ class ClaimsOrchestrator(BaseOrchestrator):
             self.publish_status("error", {"error": str(e)})
             self.logger.error(f"[{self.layer}] Error: {e}")
             traceback.print_exc()
-            return {"reply": f"An internal error occurred in claims orchestration: {str(e)}"}
+            return {"reply": f"An internal error occurred in claims orchestration: {str(e)}", "status": "error"}

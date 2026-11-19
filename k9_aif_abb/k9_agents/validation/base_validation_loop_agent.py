@@ -57,18 +57,7 @@ _DEFAULT_CONFIDENCE_THRESHOLD      = 0.8
 _DEFAULT_FINALIZE_ON_MAX           = True
 
 
-def _run_coro_sync(coro: "Coroutine[Any, Any, Any]") -> Any:
-    """Run an async coroutine from sync code, safe whether or not a loop is
-    already running on this thread. Same pattern as
-    k9_inference/routers/k9_model_router.py's own _run_coro_sync — kept
-    local rather than imported since the framework doesn't share it from
-    one place today (three independent copies already exist)."""
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
+from k9_aif_abb.k9_utils.async_bridge import run_sync as _run_coro_sync  # noqa: E402  (one bridge, 1.31.0)
 
 
 class BaseValidationLoopAgent(BaseAgent):

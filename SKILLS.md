@@ -338,6 +338,11 @@ squads:
         result_key: audit
 ```
 
+Agents in a squad may be sync or async (1.31.0): `BaseSquad` runs an
+`async def execute()` to completion and passes its result on. Outside a squad,
+`await agent.execute(p)`, or from sync code
+`k9_aif_abb.k9_utils.async_bridge.run_sync(agent.execute(p))` (K9-ASY-001).
+
 ### Bounding squad context (1.16)
 
 Each step receives the full accumulated context by default, so prompts grow with every step. Two controls:

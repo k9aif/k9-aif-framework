@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Agent definition: the squad layer (SquadLoader.from_agents) builds the class from class: + module:.
+name: RetrieverAgent
+class: RetrieverAgent
+module: examples.acme_health_insurance.agents.retriever_agent
+description: Semantic search over the ACME plan documents (ChromaDB collection acme_health_knowledge).
+role: Plan knowledge retriever for ACME HealthCare.
+goal: Return the passages of the plan documents that answer the member's question.

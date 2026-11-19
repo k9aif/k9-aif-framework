@@ -553,3 +553,71 @@ class LegacyAgentHooksRule(BaseInspectionRule):
                                    f"{c.name}.execute() calls no governance hook on k9-aif "
                                    + (f"{spec['version']} (bundled)" if spec['op'] == 'bundled' else f"{spec['op']}{spec['version']}")))
         return out
+
+
+def _parents(tree: ast.AST) -> Dict[ast.AST, ast.AST]:
+    out = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            out[child] = node
+    return out
+
+
+def _target_key(node: ast.AST) -> str:
+    """'name' for a local, 'self.attr' for an attribute on self; '' otherwise."""
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "self":
+        return f"self.{node.attr}"
+    return ""
+
+
+@InspectionRuleRegistry.register
+class AsyncAgentAwaitedRule(BaseInspectionRule):
+    rule_id = "K9-ASY-001"
+    title = "Async agents are awaited"
+    category = "Code"
+    severity = Severity.VIOLATION
+    description = ("An agent whose execute() is async returns a coroutine. Calling it without await hands the caller "
+                   "a coroutine instead of a result: the next line fails (or, stored, nothing fails at all) and the "
+                   "agent never ran. BaseSquad runs sync and async agents alike (k9-aif 1.31); direct calls must "
+                   "await.")
+    fix = ("Run the agent from a squad (BaseSquad awaits it), or await it: result = await agent.execute(payload). "
+           "From sync code use k9_aif_abb.k9_utils.async_bridge.run_sync(agent.execute(payload)).")
+
+    def inspect(self, project: SolutionProject) -> List[Finding]:
+        async_agents: Set[str] = set()
+        for cls in project.classes("agent"):
+            ex = cls.methods.get("execute")
+            if isinstance(ex, ast.AsyncFunctionDef):
+                async_agents.add(cls.name)
+        if not async_agents:
+            return []
+        out: List[Finding] = []
+        for mod in project.code_modules():
+            if mod.tree is None:
+                continue
+            parents = _parents(mod.tree)
+            # Names bound to an async agent: X(...), or any call naming it by string (a resolver / registry).
+            bound: Set[str] = set()
+            for node in ast.walk(mod.tree):
+                if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+                    call = node.value
+                    named = _call_name(call) in async_agents or any(
+                        isinstance(a, ast.Constant) and a.value in async_agents for a in call.args)
+                    if named:
+                        bound.update(k for k in (_target_key(t) for t in node.targets) if k)
+            if not bound:
+                continue
+            for node in ast.walk(mod.tree):
+                if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "execute" and _target_key(node.func.value) in bound):
+                    continue
+                parent = parents.get(node)
+                if isinstance(parent, ast.Await):
+                    continue
+                if isinstance(parent, ast.Call):        # handed to a bridge: run_sync(...), asyncio.run(...)
+                    continue
+                out.append(self.at(mod, node, f"{_target_key(node.func.value)}.execute() is an async agent "
+                                              "called without await: the caller gets a coroutine, not a result"))
+        return _dedupe(out)

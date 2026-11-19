@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# ACME HealthCare squads. Orchestrators load a squad by this file and its id; the agents each
+# squad needs are named here only (three-layer decoupling: change a squad's agents, the
+# orchestrator does not change). BaseSquad runs sync and async agents alike (k9-aif >= 1.31).
+squads:
+  ClaimsSquad:
+    description: File a claim and summarize it.
+    agents: [ClaimProcessingAgent]
+    flow:
+      - agent: ClaimProcessingAgent
+        result_key: claim
+
+  PlanLookupSquad:
+    description: Find the plan passages that answer a member's question.
+    agents: [RetrieverAgent]
+    flow:
+      - agent: RetrieverAgent
+        result_key: retrieval
+
+  AuthSquad:
+    description: Sign in or register a user.
+    agents: [AuthAgent]
+    flow:
+      - agent: AuthAgent
+        result_key: auth

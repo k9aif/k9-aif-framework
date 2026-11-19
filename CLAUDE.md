@@ -85,6 +85,15 @@ own `AgentLoader` docstring and the EOC taught registering agents inside the
 orchestrator; registering by name (1.15) removed the imports but kept the
 coupling — don't copy that pattern from older code.
 
+**Agents may be sync or async (1.31.0).** `BaseSquad` runs an `async def
+execute()` to completion (in or outside a running event loop) and hands the
+next step its real result; before 1.31.0 it stored the coroutine and reported
+`completed`. Code that calls an agent directly must `await` it, or from sync
+code use `k9_aif_abb.k9_utils.async_bridge.run_sync(agent.execute(p))`.
+k9_inspect **K9-ASY-001** flags an async agent called without either. An
+async orchestrator that runs a squad: `await asyncio.to_thread(squad.execute,
+payload)` keeps the event loop free. Test: `tests/test_async_agents_in_squads.py`.
+
 Cardinality: Router 1→N Orchestrators, Orchestrator 1→N Squads
 (`execute_squads(..., parallel=True/False)`), Squad 1→N Agents (sequential
 `flow`).
@@ -234,8 +243,10 @@ letting the model pick the specialist is the point. Test: `tests/test_openai_age
 (it is the same assertion) and is harmless to call.
 
 **The governance hooks on Orchestrator/Router are `async`.** From sync
-code use `_run_coro_sync(self.apply_pre_governance(payload))`, never
-`asyncio.run()` (fails inside a running event loop). Orchestrators also have
+code use `run_sync(self.apply_pre_governance(payload))` (`k9_utils/async_bridge.py`,
+the framework's one sync-over-async bridge since 1.31.0; `_run_coro_sync` is
+its old name), never `asyncio.run()` (fails inside a running event loop).
+Never add another private copy of the bridge. Orchestrators also have
 a sync ingress wrapper, `apply_shield(payload)` → `{"allowed", "reason",
 "payload"}`. (BaseAgent's automatic wrapper calls the governance backend
 directly and resolves an awaitable result safely.)
@@ -687,6 +698,8 @@ vendor's; the call is held and the tool never runs (`tests/test_tool_gate_1_25.p
 - No hardcoded IPs (`192.168.x.x` etc.) — env vars with localhost defaults:
   `"${POSTGRES_HOST:-localhost}"`, `"${OLLAMA_BASE_URL:-http://localhost:11434}"`
 - No credentials in `config.yaml` — secrets in `.env` (gitignored) only
+- No key twice in one YAML mapping — the loader keeps the last and drops the
+  first silently (k9_inspect K9-CFG-005)
 - `.env` never staged; example apps and generated projects ship an
   `env-example` template — copy it, never commit the real `.env`
 - No `__pycache__`/`.pyc` — `.gitignore` present before first commit
@@ -738,8 +751,8 @@ sudo podman logs eoc-app-backend
 ## Known gotchas (not obvious from the code alone)
 
 - `K9ModelRouter.invoke()` bridges sync `BaseAgent.execute()` to async
-  `BaseLLM.generate()` via `_run_coro_sync()` — never call `asyncio.run()`
-  directly there. Inside an already-running event loop (FastAPI etc.),
+  `BaseLLM.generate()` via the shared `async_bridge.run_sync()` — never call
+  `asyncio.run()` directly there. Inside an already-running event loop (FastAPI etc.),
   `asyncio.run()` raises, and a broad `except Exception` upstream will
   silently swallow it and fall back to stub output.
 - Any new `BaseLLM.generate()` implementation must accept

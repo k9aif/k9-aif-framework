@@ -99,8 +99,10 @@ class AcmeOrchestrator(BaseOrchestrator):
         try:
             module = importlib.import_module(entry["module"])
             cls = getattr(module, entry["name"])
-            # The sub-orchestrator gets the same governance, so it screens whatever reaches it.
-            orchestrator = cls(config=self.config, monitor=self.monitor, governance=self.governance)
+            # The sub-orchestrator gets the same governance (it screens whatever reaches it) and the
+            # squad layer built at the entry point (it loads its squads by id; it never builds agents).
+            orchestrator = cls(config=self.config, monitor=self.monitor, governance=self.governance,
+                               squads=self.squads)
             self.logger.info(f"[{self.layer}]  Delegating to {entry['name']} ({entry['module']})")
 
             # Execute the sub-orchestrator (supports async)
@@ -109,6 +111,6 @@ class AcmeOrchestrator(BaseOrchestrator):
             return result
 
         except Exception as e:
-            self.logger.error(f"[{self.layer}]  Delegation failed: {e}")
-            self.publish_status("error", {"intent": intent, "error": str(e)})
-            return {"reply": "ACME orchestration error."}
+            self.logger.exception(f"[{self.layer}]  Delegation to {entry['name']} failed: {e}")
+            self.publish_status("error", {"intent": intent, "orchestrator": entry["name"], "error": str(e)})
+            return {"reply": "ACME orchestration error.", "status": "error", "error": str(e)}

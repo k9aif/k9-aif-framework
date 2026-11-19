@@ -315,15 +315,7 @@ PromptInjectionCheck + Granite Guardian.</p>
 </span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>    <span class="k">return</span> <span class="n">decorate</span>
 </span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>
 </span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>
-</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a><span class="k">def</span><span class="w"> </span><span class="nf">_run_coro_sync</span><span class="p">(</span><span class="n">coro</span><span class="p">):</span>
-</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a coroutine from sync code, safe inside an already-running loop</span>
-</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a><span class="sd">    (same bridge as BaseOrchestrator / the CrewAI and LangGraph adapters).&quot;&quot;&quot;</span>
-</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>    <span class="k">try</span><span class="p">:</span>
-</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>        <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span>
-</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
-</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">coro</span><span class="p">)</span>
-</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>    <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
-</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>        <span class="k">return</span> <span class="n">pool</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">contextvars</span><span class="o">.</span><span class="n">copy_context</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">,</span> <span class="n">coro</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_utils.async_bridge</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_sync</span> <span class="k">as</span> <span class="n">_run_coro_sync</span>  <span class="c1"># noqa: E402  (one bridge, 1.31.0)</span>
 </span></pre></div>
 
 

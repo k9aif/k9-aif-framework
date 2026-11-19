@@ -130,11 +130,6 @@ class WebSearchAgent(BaseMCPAgent):
 
     @staticmethod
     def _run_async(coro) -> Any:
-        """Run a coroutine from a synchronous context."""
-        try:
-            asyncio.get_running_loop()
-            # Already inside a running loop (e.g. FastAPI) — run in a thread
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(contextvars.copy_context().run, asyncio.run, coro).result()
-        except RuntimeError:
-            return asyncio.run(coro)
+        """Run a coroutine from a synchronous context (the framework's one bridge, 1.31.0)."""
+        from k9_aif_abb.k9_utils.async_bridge import run_sync
+        return run_sync(coro)
