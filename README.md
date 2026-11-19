@@ -30,6 +30,24 @@ The goal is to enable **composable, scalable, and governed agentic AI applicatio
 
 ---
 
+## What's new in 1.31
+
+**Thanks to [K9X Inspector](https://inspector.k9x.ai)**, which spotted and recommended these changes while inspecting
+the ACME Health Insurance example:
+
+- **Squads run async agents.** An agent with `async def execute()` works in any squad flow; `BaseSquad` runs it to
+  completion and hands the next step its real result.
+- **One sync-over-async bridge** (`k9_aif_abb.k9_utils.async_bridge`) replaces eleven private copies across the
+  framework.
+- **New inspection rules:** K9-ASY-001 (async agents are awaited) and K9-CFG-005 (no duplicate keys in YAML); 34 rules
+  in all. K9-LLM-002 now recognises an orchestrator that records a failure, as the framework requires.
+- **ACME Health Insurance** is a reference squad application again: orchestrators know only squads, failures
+  propagate, and it inspects as COMPLIANT.
+
+Full history: [CHANGELOG](https://github.com/k9aif/k9-aif-framework/blob/main/CHANGELOG.md).
+
+---
+
 ## Table of Contents
 
 - [A Simple Way to Think About It](#a-simple-way-to-think-about-it)

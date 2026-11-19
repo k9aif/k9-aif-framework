@@ -6,6 +6,9 @@ All notable changes to K9-AIF are documented here.
 
 ## [1.31.1] — 2026-11-19
 
+Thanks to **K9X Inspector** (inspector.k9x.ai), which spotted and recommended the changes in 1.31.0 and 1.31.1 while
+inspecting the ACME Health Insurance example.
+
 ### Fixed
 - **K9-LLM-002 no longer reports an orchestrator for doing its job.** The framework requires the orchestrator to catch
   a failure around its work and record it (`publish_status(...)`, or `handle_requires_hil()`); the rule could not tell
