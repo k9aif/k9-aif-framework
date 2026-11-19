@@ -65,7 +65,9 @@ class ClaimsOrchestrator(AcmeDomainOrchestrator):
                     f"(model={response.model_alias}, provider={response.provider})"
                 )
             except Exception as le:
-                self.logger.warning(f"[{self.layer}] Router classification failed: {le}")
+                # Degrade on purpose: keyword matching below still routes the request. Recorded, not hidden.
+                self.logger.warning(f"[{self.layer}] Intent classification failed; using keywords: {le}")
+                self.publish_status("degraded", {"stage": "intent_classification", "error": str(le)})
 
             if "submit" in intent or "file" in query.lower():
                 out = await self.run_squad(

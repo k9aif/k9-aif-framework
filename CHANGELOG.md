@@ -4,6 +4,19 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.31.1] — 2026-11-19
+
+### Fixed
+- **K9-LLM-002 no longer reports an orchestrator for doing its job.** The framework requires the orchestrator to catch
+  a failure around its work and record it (`publish_status(...)`, or `handle_requires_hil()`); the rule could not tell
+  that from an agent hiding a model failure. A handler in an orchestrator class that records is now accepted; an
+  orchestrator that only logs, and any agent that does not re-raise, are still reported. Found in the ACME example's
+  claims orchestrator. Tests in `tests/test_k9_inspect.py`.
+- `examples/acme_health_insurance`: a failed intent classification is recorded as `degraded` (keyword routing still
+  answers); the unused `ChatAgent` and `CrewAI_agent` are removed. K9X Inspector: COMPLIANT, 94%.
+
+---
+
 ## [1.31.0] — 2026-11-19
 
 ### Changed

@@ -107,7 +107,8 @@ class LlmInvokeErrorHandlingRule(BaseInspectionRule):
                    "and carries on (returns a stand-in result, a warning string, an empty output, or passes) lets "
                    "later steps run on a missing result while the run reports success.")
     fix = ("Let the RuntimeError propagate, or re-raise after adding context (raise ... from exc). Degrading on "
-           "purpose outside a squad flow: log what was skipped and record the failure.")
+           "purpose outside a squad flow: log what was skipped and record the failure (in an orchestrator: "
+           "publish_status(...), which this rule accepts).")
     _BROAD = {"RuntimeError", "Exception", "BaseException"}
 
     def _catches_model_failure(self, handler: ast.ExceptHandler) -> bool:
@@ -117,11 +118,16 @@ class LlmInvokeErrorHandlingRule(BaseInspectionRule):
         return any((n.id if isinstance(n, ast.Name) else n.attr if isinstance(n, ast.Attribute) else "") in self._BROAD
                    for n in names)
 
+    # An orchestrator is the layer that records a failure (CLAUDE.md "Failures propagate"): a handler there that
+    # publishes the status (or hands the run to HIL) is the required behaviour, not a failure turned into a result.
+    _RECORDS = {"publish_status", "handle_requires_hil"}
+
     def inspect(self, project: SolutionProject) -> List[Finding]:
         out = []
         for m in project.code_modules():
             if _inside_llm_invoke_module(m):
                 continue
+            orchestrator_nodes = {id(n) for c in m.classes if c.role == "orchestrator" for n in ast.walk(c.node)}
             for node in ast.walk(m.tree):
                 if not isinstance(node, ast.Try):
                     continue
@@ -131,7 +137,10 @@ class LlmInvokeErrorHandlingRule(BaseInspectionRule):
                 for h in node.handlers:
                     if not self._catches_model_failure(h):
                         continue
-                    if any(isinstance(n, ast.Raise) for n in ast.walk(ast.Module(body=h.body, type_ignores=[]))):
+                    handler = ast.Module(body=h.body, type_ignores=[])
+                    if any(isinstance(n, ast.Raise) for n in ast.walk(handler)):
+                        continue
+                    if id(h) in orchestrator_nodes and any(name in self._RECORDS for name, _ in _calls(handler)):
                         continue
                     caught = ast.unparse(h.type) if h.type else "everything"
                     out.append(self.at(m, h, f"except {caught} around llm_invoke() carries on instead of re-raising"))

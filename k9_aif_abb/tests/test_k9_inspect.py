@@ -360,3 +360,49 @@ def test_async_agent_awaited_or_bridged_is_fine(tmp_path):
                 return run_sync(self.agent.execute({"q": q}))
     """)
     assert "K9-ASY-001" not in ids(K9Inspector().inspect(tmp_path))
+
+
+# ── 1.31.1: an orchestrator that records the failure is not "carrying on" ─────
+ORCH_WITH_MODEL_CALL = """
+from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator
+from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+class O(BaseOrchestrator):
+    def execute_flow(self, payload):
+        try:
+            r = llm_invoke(self.config, InferenceRequest(prompt="x", task_type="chat"))
+        except Exception as e:
+            {handler}
+        return {{"reply": "ok"}}
+"""
+
+
+def test_orchestrator_recording_the_failure_passes_llm_002(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "orchestrators/o.py", ORCH_WITH_MODEL_CALL.format(
+        handler='self.publish_status("error", {"error": str(e)}); return {"status": "error"}'))
+    assert "K9-LLM-002" not in ids(K9Inspector().inspect(tmp_path))
+
+
+def test_orchestrator_swallowing_the_failure_is_still_reported(tmp_path):
+    clean(tmp_path)
+    write(tmp_path, "orchestrators/o.py", ORCH_WITH_MODEL_CALL.format(handler='self.logger.warning(str(e))'))
+    assert "K9-LLM-002" in ids(K9Inspector().inspect(tmp_path))
+
+
+def test_agent_publishing_status_is_still_reported(tmp_path):
+    """Only an orchestrator records failures; an agent must re-raise."""
+    clean(tmp_path)
+    write(tmp_path, "agents/a.py", """
+        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
+        from k9_aif_abb.k9_utils.llm_invoke import llm_invoke
+        from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest
+        class A(BaseAgent):
+            def execute(self, payload):
+                try:
+                    return {"output": llm_invoke(self.config, InferenceRequest(prompt="x", task_type="chat")).output}
+                except Exception as e:
+                    self.publish_status("error", {})
+                    return {"output": ""}
+    """)
+    assert "K9-LLM-002" in ids(K9Inspector().inspect(tmp_path))

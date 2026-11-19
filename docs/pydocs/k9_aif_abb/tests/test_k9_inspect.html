@@ -117,6 +117,18 @@
             <li>
                     <a class="function" href="#test_async_agent_awaited_or_bridged_is_fine">test_async_agent_awaited_or_bridged_is_fine</a>
             </li>
+            <li>
+                    <a class="variable" href="#ORCH_WITH_MODEL_CALL">ORCH_WITH_MODEL_CALL</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_orchestrator_recording_the_failure_passes_llm_002">test_orchestrator_recording_the_failure_passes_llm_002</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_orchestrator_swallowing_the_failure_is_still_reported">test_orchestrator_swallowing_the_failure_is_still_reported</a>
+            </li>
+            <li>
+                    <a class="function" href="#test_agent_publishing_status_is_still_reported">test_agent_publishing_status_is_still_reported</a>
+            </li>
     </ul>
 
 
@@ -502,6 +514,52 @@
 </span><span id="L-360"><a href="#L-360"><span class="linenos">360</span></a><span class="s2">                return run_sync(self.agent.execute({&quot;q&quot;: q}))</span>
 </span><span id="L-361"><a href="#L-361"><span class="linenos">361</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
 </span><span id="L-362"><a href="#L-362"><span class="linenos">362</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-ASY-001&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span><span id="L-363"><a href="#L-363"><span class="linenos">363</span></a>
+</span><span id="L-364"><a href="#L-364"><span class="linenos">364</span></a>
+</span><span id="L-365"><a href="#L-365"><span class="linenos">365</span></a><span class="c1"># ── 1.31.1: an orchestrator that records the failure is not &quot;carrying on&quot; ─────</span>
+</span><span id="L-366"><a href="#L-366"><span class="linenos">366</span></a><span class="n">ORCH_WITH_MODEL_CALL</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-367"><a href="#L-367"><span class="linenos">367</span></a><span class="s2">from k9_aif_abb.k9_core.orchestration.base_orchestrator import BaseOrchestrator</span>
+</span><span id="L-368"><a href="#L-368"><span class="linenos">368</span></a><span class="s2">from k9_aif_abb.k9_utils.llm_invoke import llm_invoke</span>
+</span><span id="L-369"><a href="#L-369"><span class="linenos">369</span></a><span class="s2">from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest</span>
+</span><span id="L-370"><a href="#L-370"><span class="linenos">370</span></a><span class="s2">class O(BaseOrchestrator):</span>
+</span><span id="L-371"><a href="#L-371"><span class="linenos">371</span></a><span class="s2">    def execute_flow(self, payload):</span>
+</span><span id="L-372"><a href="#L-372"><span class="linenos">372</span></a><span class="s2">        try:</span>
+</span><span id="L-373"><a href="#L-373"><span class="linenos">373</span></a><span class="s2">            r = llm_invoke(self.config, InferenceRequest(prompt=&quot;x&quot;, task_type=&quot;chat&quot;))</span>
+</span><span id="L-374"><a href="#L-374"><span class="linenos">374</span></a><span class="s2">        except Exception as e:</span>
+</span><span id="L-375"><a href="#L-375"><span class="linenos">375</span></a><span class="s2">            </span><span class="si">{handler}</span>
+</span><span id="L-376"><a href="#L-376"><span class="linenos">376</span></a><span class="s2">        return {{&quot;reply&quot;: &quot;ok&quot;}}</span>
+</span><span id="L-377"><a href="#L-377"><span class="linenos">377</span></a><span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-378"><a href="#L-378"><span class="linenos">378</span></a>
+</span><span id="L-379"><a href="#L-379"><span class="linenos">379</span></a>
+</span><span id="L-380"><a href="#L-380"><span class="linenos">380</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_orchestrator_recording_the_failure_passes_llm_002</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-381"><a href="#L-381"><span class="linenos">381</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-382"><a href="#L-382"><span class="linenos">382</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;orchestrators/o.py&quot;</span><span class="p">,</span> <span class="n">ORCH_WITH_MODEL_CALL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span id="L-383"><a href="#L-383"><span class="linenos">383</span></a>        <span class="n">handler</span><span class="o">=</span><span class="s1">&#39;self.publish_status(&quot;error&quot;, {&quot;error&quot;: str(e)}); return {&quot;status&quot;: &quot;error&quot;}&#39;</span><span class="p">))</span>
+</span><span id="L-384"><a href="#L-384"><span class="linenos">384</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span><span id="L-385"><a href="#L-385"><span class="linenos">385</span></a>
+</span><span id="L-386"><a href="#L-386"><span class="linenos">386</span></a>
+</span><span id="L-387"><a href="#L-387"><span class="linenos">387</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_orchestrator_swallowing_the_failure_is_still_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-388"><a href="#L-388"><span class="linenos">388</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-389"><a href="#L-389"><span class="linenos">389</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;orchestrators/o.py&quot;</span><span class="p">,</span> <span class="n">ORCH_WITH_MODEL_CALL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">handler</span><span class="o">=</span><span class="s1">&#39;self.logger.warning(str(e))&#39;</span><span class="p">))</span>
+</span><span id="L-390"><a href="#L-390"><span class="linenos">390</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span><span id="L-391"><a href="#L-391"><span class="linenos">391</span></a>
+</span><span id="L-392"><a href="#L-392"><span class="linenos">392</span></a>
+</span><span id="L-393"><a href="#L-393"><span class="linenos">393</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_publishing_status_is_still_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="L-394"><a href="#L-394"><span class="linenos">394</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Only an orchestrator records failures; an agent must re-raise.&quot;&quot;&quot;</span>
+</span><span id="L-395"><a href="#L-395"><span class="linenos">395</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="L-396"><a href="#L-396"><span class="linenos">396</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/a.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="L-397"><a href="#L-397"><span class="linenos">397</span></a><span class="s2">        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="L-398"><a href="#L-398"><span class="linenos">398</span></a><span class="s2">        from k9_aif_abb.k9_utils.llm_invoke import llm_invoke</span>
+</span><span id="L-399"><a href="#L-399"><span class="linenos">399</span></a><span class="s2">        from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest</span>
+</span><span id="L-400"><a href="#L-400"><span class="linenos">400</span></a><span class="s2">        class A(BaseAgent):</span>
+</span><span id="L-401"><a href="#L-401"><span class="linenos">401</span></a><span class="s2">            def execute(self, payload):</span>
+</span><span id="L-402"><a href="#L-402"><span class="linenos">402</span></a><span class="s2">                try:</span>
+</span><span id="L-403"><a href="#L-403"><span class="linenos">403</span></a><span class="s2">                    return {&quot;output&quot;: llm_invoke(self.config, InferenceRequest(prompt=&quot;x&quot;, task_type=&quot;chat&quot;)).output}</span>
+</span><span id="L-404"><a href="#L-404"><span class="linenos">404</span></a><span class="s2">                except Exception as e:</span>
+</span><span id="L-405"><a href="#L-405"><span class="linenos">405</span></a><span class="s2">                    self.publish_status(&quot;error&quot;, </span><span class="si">{}</span><span class="s2">)</span>
+</span><span id="L-406"><a href="#L-406"><span class="linenos">406</span></a><span class="s2">                    return {&quot;output&quot;: &quot;&quot;}</span>
+</span><span id="L-407"><a href="#L-407"><span class="linenos">407</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-408"><a href="#L-408"><span class="linenos">408</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
 </span></pre></div>
 
 
@@ -1242,6 +1300,97 @@ BaseAgent.notify_monitor() can only reach the monitor and log.</p>
 
 
     
+
+                </section>
+                <section id="ORCH_WITH_MODEL_CALL">
+                    <div class="attr variable">
+            <span class="name">ORCH_WITH_MODEL_CALL</span>        =
+<input id="ORCH_WITH_MODEL_CALL-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="ORCH_WITH_MODEL_CALL-view-value"></label><span class="default_value">&#39;\nfrom <a href="../k9_core/orchestration/base_orchestrator.html">k9_aif_abb.k9_core.orchestration.base_orchestrator</a> import BaseOrchestrator\nfrom <a href="../k9_utils/llm_invoke.html">k9_aif_abb.k9_utils.llm_invoke</a> import llm_invoke\nfrom <a href="../k9_inference/models/inference_request.html">k9_aif_abb.k9_inference.models.inference_request</a> import InferenceRequest\nclass O(BaseOrchestrator):\n    def execute_flow(self, payload):\n        try:\n            r = llm_invoke(self.config, InferenceRequest(prompt=&#34;x&#34;, task_type=&#34;chat&#34;))\n        except Exception as e:\n            {handler}\n        return {{&#34;reply&#34;: &#34;ok&#34;}}\n&#39;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ORCH_WITH_MODEL_CALL"></a>
+    
+    
+
+                </section>
+                <section id="test_orchestrator_recording_the_failure_passes_llm_002">
+                            <input id="test_orchestrator_recording_the_failure_passes_llm_002-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_orchestrator_recording_the_failure_passes_llm_002</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_orchestrator_recording_the_failure_passes_llm_002-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_orchestrator_recording_the_failure_passes_llm_002"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_orchestrator_recording_the_failure_passes_llm_002-381"><a href="#test_orchestrator_recording_the_failure_passes_llm_002-381"><span class="linenos">381</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_orchestrator_recording_the_failure_passes_llm_002</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_orchestrator_recording_the_failure_passes_llm_002-382"><a href="#test_orchestrator_recording_the_failure_passes_llm_002-382"><span class="linenos">382</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_orchestrator_recording_the_failure_passes_llm_002-383"><a href="#test_orchestrator_recording_the_failure_passes_llm_002-383"><span class="linenos">383</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;orchestrators/o.py&quot;</span><span class="p">,</span> <span class="n">ORCH_WITH_MODEL_CALL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span id="test_orchestrator_recording_the_failure_passes_llm_002-384"><a href="#test_orchestrator_recording_the_failure_passes_llm_002-384"><span class="linenos">384</span></a>        <span class="n">handler</span><span class="o">=</span><span class="s1">&#39;self.publish_status(&quot;error&quot;, {&quot;error&quot;: str(e)}); return {&quot;status&quot;: &quot;error&quot;}&#39;</span><span class="p">))</span>
+</span><span id="test_orchestrator_recording_the_failure_passes_llm_002-385"><a href="#test_orchestrator_recording_the_failure_passes_llm_002-385"><span class="linenos">385</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_orchestrator_swallowing_the_failure_is_still_reported">
+                            <input id="test_orchestrator_swallowing_the_failure_is_still_reported-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_orchestrator_swallowing_the_failure_is_still_reported</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_orchestrator_swallowing_the_failure_is_still_reported-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_orchestrator_swallowing_the_failure_is_still_reported"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_orchestrator_swallowing_the_failure_is_still_reported-388"><a href="#test_orchestrator_swallowing_the_failure_is_still_reported-388"><span class="linenos">388</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_orchestrator_swallowing_the_failure_is_still_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_orchestrator_swallowing_the_failure_is_still_reported-389"><a href="#test_orchestrator_swallowing_the_failure_is_still_reported-389"><span class="linenos">389</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_orchestrator_swallowing_the_failure_is_still_reported-390"><a href="#test_orchestrator_swallowing_the_failure_is_still_reported-390"><span class="linenos">390</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;orchestrators/o.py&quot;</span><span class="p">,</span> <span class="n">ORCH_WITH_MODEL_CALL</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">handler</span><span class="o">=</span><span class="s1">&#39;self.logger.warning(str(e))&#39;</span><span class="p">))</span>
+</span><span id="test_orchestrator_swallowing_the_failure_is_still_reported-391"><a href="#test_orchestrator_swallowing_the_failure_is_still_reported-391"><span class="linenos">391</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="test_agent_publishing_status_is_still_reported">
+                            <input id="test_agent_publishing_status_is_still_reported-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_agent_publishing_status_is_still_reported</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">tmp_path</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_agent_publishing_status_is_still_reported-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_agent_publishing_status_is_still_reported"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_agent_publishing_status_is_still_reported-394"><a href="#test_agent_publishing_status_is_still_reported-394"><span class="linenos">394</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_agent_publishing_status_is_still_reported</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">):</span>
+</span><span id="test_agent_publishing_status_is_still_reported-395"><a href="#test_agent_publishing_status_is_still_reported-395"><span class="linenos">395</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Only an orchestrator records failures; an agent must re-raise.&quot;&quot;&quot;</span>
+</span><span id="test_agent_publishing_status_is_still_reported-396"><a href="#test_agent_publishing_status_is_still_reported-396"><span class="linenos">396</span></a>    <span class="n">clean</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">)</span>
+</span><span id="test_agent_publishing_status_is_still_reported-397"><a href="#test_agent_publishing_status_is_still_reported-397"><span class="linenos">397</span></a>    <span class="n">write</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;agents/a.py&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;</span>
+</span><span id="test_agent_publishing_status_is_still_reported-398"><a href="#test_agent_publishing_status_is_still_reported-398"><span class="linenos">398</span></a><span class="s2">        from k9_aif_abb.k9_core.agent.base_agent import BaseAgent</span>
+</span><span id="test_agent_publishing_status_is_still_reported-399"><a href="#test_agent_publishing_status_is_still_reported-399"><span class="linenos">399</span></a><span class="s2">        from k9_aif_abb.k9_utils.llm_invoke import llm_invoke</span>
+</span><span id="test_agent_publishing_status_is_still_reported-400"><a href="#test_agent_publishing_status_is_still_reported-400"><span class="linenos">400</span></a><span class="s2">        from k9_aif_abb.k9_inference.models.inference_request import InferenceRequest</span>
+</span><span id="test_agent_publishing_status_is_still_reported-401"><a href="#test_agent_publishing_status_is_still_reported-401"><span class="linenos">401</span></a><span class="s2">        class A(BaseAgent):</span>
+</span><span id="test_agent_publishing_status_is_still_reported-402"><a href="#test_agent_publishing_status_is_still_reported-402"><span class="linenos">402</span></a><span class="s2">            def execute(self, payload):</span>
+</span><span id="test_agent_publishing_status_is_still_reported-403"><a href="#test_agent_publishing_status_is_still_reported-403"><span class="linenos">403</span></a><span class="s2">                try:</span>
+</span><span id="test_agent_publishing_status_is_still_reported-404"><a href="#test_agent_publishing_status_is_still_reported-404"><span class="linenos">404</span></a><span class="s2">                    return {&quot;output&quot;: llm_invoke(self.config, InferenceRequest(prompt=&quot;x&quot;, task_type=&quot;chat&quot;)).output}</span>
+</span><span id="test_agent_publishing_status_is_still_reported-405"><a href="#test_agent_publishing_status_is_still_reported-405"><span class="linenos">405</span></a><span class="s2">                except Exception as e:</span>
+</span><span id="test_agent_publishing_status_is_still_reported-406"><a href="#test_agent_publishing_status_is_still_reported-406"><span class="linenos">406</span></a><span class="s2">                    self.publish_status(&quot;error&quot;, </span><span class="si">{}</span><span class="s2">)</span>
+</span><span id="test_agent_publishing_status_is_still_reported-407"><a href="#test_agent_publishing_status_is_still_reported-407"><span class="linenos">407</span></a><span class="s2">                    return {&quot;output&quot;: &quot;&quot;}</span>
+</span><span id="test_agent_publishing_status_is_still_reported-408"><a href="#test_agent_publishing_status_is_still_reported-408"><span class="linenos">408</span></a><span class="s2">    &quot;&quot;&quot;</span><span class="p">)</span>
+</span><span id="test_agent_publishing_status_is_still_reported-409"><a href="#test_agent_publishing_status_is_still_reported-409"><span class="linenos">409</span></a>    <span class="k">assert</span> <span class="s2">&quot;K9-LLM-002&quot;</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">(</span><span class="n">K9Inspector</span><span class="p">()</span><span class="o">.</span><span class="n">inspect</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">))</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Only an orchestrator records failures; an agent must re-raise.</p>
+</div>
+
 
                 </section>
     </main>
