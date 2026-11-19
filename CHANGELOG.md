@@ -4,6 +4,34 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.32.0] — 2026-11-19
+
+### Added
+- **K9X Filters** (opt-in: `filters.enabled`). Governance decides ("is this allowed?"); a filter transforms ("is
+  this in the right shape?") and never blocks. `BaseFilter` (`k9_core/filters/`) with `filter_in` / `filter_out`,
+  `FilterChain`, `FilterFactory` (OOB names, `register()`, `class:` + `module:`). The `BaseAgent` wrapper runs in
+  filters before governance pre and out filters before governance post, so every agent class gets them and governance
+  screens the final form, including fields a filter adds to the result. The loop ABBs run the same points around
+  their loop. Agent YAML narrows the chain (`agent_filters:`) and configures each filter (`attention:`, ...).
+  Design: `docs/roadmap/k9x-filters-design.md`; recipe: SKILLS.md Skill 17.
+- OOB filters (`k9_filters/`):
+  - `text_normalize` (in): Unicode NFKC, invisible format characters removed, tag characters revealed. Closes a
+    gap verified on 1.31.1: `PromptInjectionCheck` passed "ignore all previous instructions" written with a
+    zero-width space, in fullwidth letters, or in invisible tag characters; with the filter, Shield blocks all three.
+  - `attention` (in): from the parts an agent declares, removes facts k9x Origin quarantined (a quarantined pinned
+    part fails the agent), labels unverified and untrusted parts, scores and de-duplicates retrieved chunks and
+    prunes them to a token budget; pinned parts are never pruned (over budget fails the agent), untrusted parts
+    share the budget or get their own cap (`untrusted_overflow: fail | truncate`), labels sent in the request are
+    replaced. `wrap_untrusted()` gives agents one delimiter for untrusted text.
+  - `structured_output` (out): JSON from the model's text (whole, fenced, or embedded), validated (`type`,
+    `required`, optional JSON Schema); no JSON or a missing key fails the agent instead of passing raw text on.
+  - `provenance` (in + out): `sources` on the result, one per k9x Origin answer the agent was given.
+- Security catalog: `filters.text_normalize`, `filters.attention`; known gap `gap.shield_unicode_normalization`
+  (Shield's own checks still match raw text when the filter is off).
+- Tests: `tests/test_filters_1_32.py`.
+
+---
+
 ## [1.31.1] — 2026-11-19
 
 Thanks to **K9X Inspector** (inspector.k9x.ai), which spotted and recommended the changes in 1.31.0 and 1.31.1 while

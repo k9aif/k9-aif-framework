@@ -688,6 +688,31 @@ vendor's; the call is held and the tool never runs (`tests/test_tool_gate_1_25.p
   flags it), calls outside an agent (orchestrator/script code), `execute_stream()` agents.
   Every request counts as carrying outside content (`untrusted_input` is always true).
 
+## K9X Filters (1.32.0, opt-in)
+
+**Property:** governance decides, filters transform. A filter changes what flows through an agent
+(removes, labels, normalises, attaches) and never blocks; governance never changes a passing payload
+and always screens the final form. **Test:** an injection hidden with a zero-width character passes
+Shield alone and is blocked with `text_normalize` on (`tests/test_filters_1_32.py`).
+
+- `filters.enabled: true` + `filters.chain: [...]` (run order). Contract `BaseFilter`
+  (`k9_core/filters/`: `filter_in` / `filter_out` → `FilterResult(value, record, result_fields)`),
+  OOB in `k9_filters/`, built by `FilterFactory` (OOB names, `register()`, or `class:` + `module:`).
+  Agent YAML narrows with `agent_filters: [...]` (`[]` = none) and holds each filter's section
+  (`attention:`, `structured_output:`). A bad entry fails when the agent is built.
+- **Where:** the `BaseAgent` wrapper: filters in → governance pre → `execute()` → filters out →
+  governance post. In sees the payload before the agent's code runs (still a dict of named parts);
+  out sees `result["output"]` and may add result fields (`sources`), which governance post screens
+  too. The loop ABBs call the same points around their loop. `execute_stream()`: in only.
+- **Not covered:** the orchestrator adapters' own model calls; the model-call point inside
+  `llm_invoke()` is a later version (it needs labelled prompt parts on `InferenceRequest`).
+- A filter that raises `PermissionError` becomes `FilterError` (a block belongs in a Shield check);
+  any other error propagates like an agent failure. Every record → `FilterApplied` trace event.
+- OOB: `text_normalize` (in), `attention` (in), `structured_output` (out), `provenance` (in + out).
+  Not filters: PII masking (Zero Trust), blocking (Shield), squad digests (`synthesis:`), rendering a
+  deliverable (a formatter agent; a planned `deliver` filter will call one).
+- Design: `docs/roadmap/k9x-filters-design.md`. Recipe: `SKILLS.md` Skill 17.
+
 ## Pre-Push Checklist
 
 - Every new `.py` file starts with the two-line header

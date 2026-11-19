@@ -42,6 +42,7 @@ import logging
 from abc import abstractmethod
 from typing import Any, Coroutine, Dict
 
+from k9_aif_abb.k9_core.filters.base_filter import begin_filters
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_agents.validation.models.validation_loop import (
     ValidationDisposition,
@@ -100,6 +101,10 @@ class BaseValidationLoopAgent(BaseAgent):
         un-redacted. See k9-aif-framework/CLAUDE.md's Security /
         Vulnerability section for what "blocked" means here.
         """
+        # K9X Filters (1.32.0): in before governance pre, out before governance post, as in BaseAgent.
+        call = begin_filters(self)
+        if call is not None:
+            payload = call.run_in(payload)
         try:
             payload = _run_coro_sync(self.apply_pre_governance(payload))
         except PermissionError as exc:
@@ -107,6 +112,9 @@ class BaseValidationLoopAgent(BaseAgent):
             return self._shield_blocked_dict(exc, phase="pre")
 
         result = self._execute_loop(payload)
+        fields = {}
+        if call is not None and "output" in result:
+            result["output"], fields = call.run_out(result["output"])
 
         # Egress scans only the agent's actual output (its conclusion),
         # never the full result dict. steps[]/evidence[] legitimately
@@ -118,6 +126,9 @@ class BaseValidationLoopAgent(BaseAgent):
         # means the answer leaving the agent, not its internal bookkeeping.
         try:
             result["output"] = _run_coro_sync(self.apply_post_governance(result.get("output", {})))
+            for key, value in fields.items():   # a filter's result fields are screened like the output
+                screened = _run_coro_sync(self.apply_post_governance({key: value}))
+                result[key] = screened[key] if isinstance(screened, dict) and key in screened else value
         except PermissionError as exc:
             self._emit("governance_blocked", {"phase": "post", "reason": str(exc)})
             # Redact only the output — iterations/steps/evidence/disposition

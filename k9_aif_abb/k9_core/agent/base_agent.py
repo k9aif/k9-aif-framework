@@ -44,6 +44,32 @@ def _warn_publish_event_deprecated(agent) -> None:
 
 
 from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve_sync  # noqa: E402  (one bridge, 1.31.0)
+from k9_aif_abb.k9_core.filters.base_filter import (  # noqa: E402  (K9X Filters, 1.32.0)
+    FilterChain as _FilterChain,
+    begin_filters as _begin_filters,
+    filters_enabled as _filters_enabled,
+)
+
+
+# K9X Filters (1.32.0): in before governance pre, out before governance post, so governance always
+# screens the final form. A filter's result fields (``sources``, ...) are screened like the output.
+def _filters_in(agent, payload):
+    call = _begin_filters(agent)
+    return (call.run_in(payload) if call is not None else payload), call
+
+
+def _filters_out(call, result):
+    if call is None or not isinstance(result, dict) or "output" not in result:
+        return result, {}
+    out, fields = call.run_out(result["output"])
+    return {**result, "output": out}, fields
+
+
+def _screened_field(key, value, screened):
+    return screened[key] if isinstance(screened, dict) and key in screened else value
+
+
+_STREAM_OUT_WARNED: set = set()
 
 
 def _payload_of(args, kwargs):
@@ -114,6 +140,11 @@ def _governed_stream(fn):
         if rebuild is None:
             _no_payload(self)
         else:
+            payload, call = _filters_in(self, payload)
+            if call is not None and call.has_out() and type(self) not in _STREAM_OUT_WARNED:
+                _STREAM_OUT_WARNED.add(type(self))
+                self.logger.warning("[%s] out filters don't run on a streamed reply (its chunks are sent "
+                                    "as they arrive); in filters ran", self.layer)
             checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
             args, kwargs = rebuild(checked)
         return args, kwargs, True
@@ -219,11 +250,13 @@ def _governed_execute(fn, *, pre_post: bool):
                 assert_governed(self.governance, self.layer, self.logger)
                 if not pre_post:
                     _opts_out(self)  # an opt-out outside the framework is refused in production
+                call = None
                 if pre_post:
                     payload, rebuild = _payload_of(args, kwargs)
                     if rebuild is None:
                         _no_payload(self)
                     else:
+                        payload, call = _filters_in(self, payload)
                         checked = self.governance.pre_process(payload, self._governance_context())
                         if inspect.isawaitable(checked):
                             checked = await checked
@@ -239,11 +272,17 @@ def _governed_execute(fn, *, pre_post: bool):
                     if gate_token is not None:
                         _ACTIVE_GATE.reset(gate_token)
                 _surface_review(session)
+                result, fields = _filters_out(call, result)
                 if pre_post and isinstance(result, dict) and "output" in result:
                     out = self.governance.post_process(result["output"], self._governance_context())
                     if inspect.isawaitable(out):
                         out = await out
                     result = {**result, "output": out}
+                    for key, value in fields.items():
+                        screened = self.governance.post_process({key: value}, self._governance_context())
+                        if inspect.isawaitable(screened):
+                            screened = await screened
+                        result[key] = _screened_field(key, value, screened)
                 return result
             finally:
                 _GOVERNING.reset(token)
@@ -258,11 +297,13 @@ def _governed_execute(fn, *, pre_post: bool):
                 assert_governed(self.governance, self.layer, self.logger)
                 if not pre_post:
                     _opts_out(self)  # an opt-out outside the framework is refused in production
+                call = None
                 if pre_post:
                     payload, rebuild = _payload_of(args, kwargs)
                     if rebuild is None:
                         _no_payload(self)
                     else:
+                        payload, call = _filters_in(self, payload)
                         checked = _resolve_sync(self.governance.pre_process(payload, self._governance_context()))
                         args, kwargs = rebuild(checked)
                 session = _tool_gate_session(self, args, kwargs)
@@ -276,9 +317,13 @@ def _governed_execute(fn, *, pre_post: bool):
                     if gate_token is not None:
                         _ACTIVE_GATE.reset(gate_token)
                 _surface_review(session)
+                result, fields = _filters_out(call, result)
                 if pre_post and isinstance(result, dict) and "output" in result:
                     out = _resolve_sync(self.governance.post_process(result["output"], self._governance_context()))
                     result = {**result, "output": out}
+                    for key, value in fields.items():
+                        screened = _resolve_sync(self.governance.post_process({key: value}, self._governance_context()))
+                        result[key] = _screened_field(key, value, screened)
                 return result
             finally:
                 _GOVERNING.reset(token)
@@ -359,6 +404,9 @@ class BaseAgent(ABC):
         )
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"[{self.layer}] Initialized with config: {self.config}")
+        # K9X Filters (1.32.0): build the chain now, so a bad chain entry fails construction, not a call.
+        if _filters_enabled(self.config):
+            _FilterChain.for_agent(self)
 
     # ------------------------------------------------------------------
     @abstractmethod

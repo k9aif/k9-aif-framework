@@ -1697,3 +1697,100 @@ Route every governed action through the adapter's inherited `apply_pre_governanc
 The Zero Trust Execution Layer's `VERIFY → EVALUATE → DECIDE → ENFORCE → OBSERVE` pipeline is designed to accept exactly this kind of external adapter at each stage — an identity provider feeding `VERIFY`, a policy engine feeding `EVALUATE`, a SIEM or ITSM tool consuming `OBSERVE`'s audit stream. **What is built (check `CAPABILITIES.md`):** identity providers at `VERIFY` since 1.14 (`OIDCAuthenticator` with `KeycloakAuthenticator`, `EntraIDAuthenticator`, `OktaAuthenticator`, via `AuthenticatorFactory`), secret managers (`VaultSecretAdapter`, `IbmSecretAdapter`, `AwsSecretAdapter`), and rules engines (`K9RulesAdapter`, `RestRulesAdapter` for a decision service). **Not built:** no Zscaler, ServiceNow, or Microsoft Defender/Purview/Sentinel adapter exists anywhere in this repository — grep `k9_aif_abb/` before assuming otherwise. What exists is the pattern this skill documents, proven twice for external *agent* frameworks, and a target-architecture diagram (`docs/diagrams/k9-aif-consumers-producers.png`) showing where such adapters would sit if an organization builds them.
 
 If you are the organization building one: it is a fourth instance of the same three-piece shape above, wrapping whichever stage of the Zero Trust pipeline the vendor tool feeds — not a new pattern. Do not present a vendor name in documentation or diagrams as an implemented capability until an adapter under `k9_aif_abb/k9_adapters/<vendor>/` actually exists and is tested; a target diagram is a floor plan, not a certificate of occupancy.
+
+---
+
+## Skill 17 — Use K9X Filters, and write a custom filter (1.32.0)
+
+Filters shape what flows through an agent. Governance decides ("is this allowed?"); a filter
+transforms ("is this in the right shape?") and never blocks. Design: `docs/roadmap/k9x-filters-design.md`.
+
+### Step 1: Turn them on (application config)
+
+```yaml
+filters:
+  enabled: true
+  chain: [text_normalize, attention, structured_output, provenance]   # run order
+```
+
+In filters run on the payload before governance pre; out filters on `result["output"]` before
+governance post. Every agent gets them by construction; nothing to call.
+
+### Step 2: Declare what each agent needs (agent YAML)
+
+```yaml
+# agents/yaml/invoice_reviewer.yaml
+class: InvoiceReviewerAgent
+module: my_app.agents.invoice_reviewer
+agent_filters: [text_normalize, attention, structured_output]   # optional; [] turns filters off here
+attention:
+  pinned:    [policy]
+  retrieved: [policy_chunks]
+  untrusted: [vendor_email]
+  query_key: query
+  budget_tokens: 6000
+structured_output:
+  type: object
+  required: [decision, reason]
+```
+
+In the agent, read `payload["_attention"]` for each part's trust, and wrap untrusted text with one
+delimiter:
+
+```python
+from k9_aif_abb.k9_filters import wrap_untrusted
+
+def execute(self, payload):
+    email = wrap_untrusted(payload["vendor_email"], source="vendor email")
+    chunks = "\n\n".join(payload["policy_chunks"])          # already ranked and within budget
+    prompt = f"{payload['policy']}\n\n{chunks}\n\n{email}\n\nQuestion: {payload['query']}"
+    resp = llm_invoke(self.config, InferenceRequest(prompt=prompt, task_type="reasoning"))
+    return {"output": resp.output}        # structured_output turns it into a validated dict
+```
+
+Remove the hand-written truncation (`source[:8000]`) and JSON extraction the filters now do.
+
+### Step 3: Write your own filter
+
+```python
+# my_app/filters/ticket_ids.py
+# SPDX-License-Identifier: Apache-2.0
+import re
+from k9_aif_abb.k9_core.filters.base_filter import BaseFilter, FilterResult
+
+class TicketIdFilter(BaseFilter):
+    name = "ticket_ids"
+    filter_type = "normalize"
+    applies_to = ("out",)                      # "in", "out" or both
+
+    def filter_out(self, output, ctx):
+        if not isinstance(output, str):
+            return FilterResult(output)
+        new, n = re.subn(r"TCK-\d+", "[ticket]", output)
+        return FilterResult(new, record={"replaced": n} if n else {})
+```
+
+Add it to the chain (`{name: ticket_ids, class: TicketIdFilter, module: my_app.filters.ticket_ids}`;
+extra keys in the entry reach `self.settings`), or `FilterFactory.register("ticket_ids",
+TicketIdFilter)` at start-up and use the name.
+
+Rules:
+- Return a `FilterResult`. `record` is logged and traced (`FilterApplied`); leave it empty when
+  nothing changed. `result_fields` (out only) are added to the result and screened by governance.
+- Never raise `PermissionError` (it becomes `FilterError`: blocking is a Shield check's job).
+- Raise on a failure (`FilterError` with the reason); never return the input unchanged to hide one.
+- Keep per-call data in `ctx.state` (shared by all filters of one call), never on `self`.
+- Read your agent-level settings with `ctx.section("ticket_ids")`.
+- No Kafka, no message bus.
+
+### Step 4: Test it
+
+```python
+def test_ticket_ids_filter():
+    agent = MyAgent(config={"filters": {"enabled": True, "chain": [
+        {"name": "ticket_ids", "class": "TicketIdFilter", "module": "my_app.filters.ticket_ids"}]}},
+        governance=my_governance)
+    assert agent.execute({"query": "..."})["output"] == "see [ticket]"
+```
+
+Pattern for more: `k9_aif_abb/tests/test_filters_1_32.py`.

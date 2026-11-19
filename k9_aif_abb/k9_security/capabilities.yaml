@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.31.1"
+framework_version: "1.32.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -258,6 +258,27 @@ capabilities:
     summary: An allowed tool called with a wrong value the model extracted (for example a payment to an account that isn't the vendor's) is held for a person instead of running, whether or not the agent's code asked for review; undeclared tools count as irreversible.
     limits: Opt-in in 1.x (the default in 2.0). Covers calls made through a BaseConnector inside a governed agent call; agent code that opens its own connection or process is flagged by Inspector K9-TOOL-001, not blocked at runtime. Every request is treated as carrying outside content. A value that matches a record someone already corrupted passes the record check. The review's approver and sign-in strength are taken from the HIL reply, which the reply channel must protect. The SQLite audit log is per host; Postgres is not yet supported.
 
+  # ── K9X Filters (1.32.0, filters.enabled): transform, never block; governance screens the result ──
+  - id: filters.text_normalize
+    kind: component
+    component: k9_aif_abb.k9_filters.K9TextNormalizeFilter
+    stage: ingress
+    mechanism: before governance pre, every string in the agent's payload gets Unicode NFKC, invisible format characters removed (zero-width, bidi overrides, byte-order mark) and Unicode tag characters revealed as the ASCII they encode, so Shield's pattern checks read what the model reads
+    enabled_by_default: false
+    covers: {LLM01: partial, ASI01: partial}
+    summary: Prompt injection hidden from pattern checks with a zero-width character inside a word, fullwidth letters, or invisible tag characters (verified on 1.31.1 that PromptInjectionCheck alone passes all three; with the filter Shield blocks them).
+    limits: Opt-in. Runs at an agent's input only; not on tool results or the orchestrator adapters' own model calls. NFKC changes compatibility characters in legitimate text; keep_joiners keeps ZWNJ/ZWJ for scripts that need them. Homoglyphs from other scripts (Cyrillic а for Latin a) are not folded.
+
+  - id: filters.attention
+    kind: component
+    component: k9_aif_abb.k9_filters.K9AttentionFilter
+    stage: ingress
+    mechanism: before governance pre, removes declared parts and retrieved chunks that k9x Origin flags quarantined (a quarantined pinned part fails the agent), labels in-review / conflict / unverified facts, labels untrusted parts from the agent's own declaration (a label in the request is replaced), and prunes retrieved context to a token budget without ever pruning pinned parts
+    enabled_by_default: false
+    covers: {ASI06: partial, LLM04: partial, LLM10: partial}
+    summary: A fact Origin has quarantined (for example a poisoned record) never reaches the agent; untrusted input is marked as such by the agent's declaration, not by whoever sent it; context size is bounded and every removal is recorded.
+    limits: Opt-in, and only for the payload parts an agent declares in its attention section. Labels are information for the agent's prompt, not a control; delimiters (wrap_untrusted) reduce but do not stop indirect injection. Relevance scoring is lexical in 1.32.0.
+
   - id: governance.per_call_scope
     kind: component
     component: k9_aif_abb.k9_core.governance.pipeline.governance_scope
@@ -464,6 +485,9 @@ known_gaps:
   - id: gap.shield_guardian_escalation
     covers: [LLM01]
     summary: Shield does not escalate a borderline pattern match to Guardian for a second opinion.
+  - id: gap.shield_unicode_normalization
+    covers: [LLM01]
+    summary: Shield's own checks match raw text, so injection hidden with zero-width, fullwidth or tag characters passes them unless the text_normalize filter (opt-in, agent input only) runs first.
   - id: gap.output_factuality
     covers: [LLM09]
     summary: No grounding/factuality check on agent output beyond validation-loop confidence.

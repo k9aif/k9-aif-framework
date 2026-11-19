@@ -70,6 +70,15 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseToolCallAuditLog` | `SQLiteToolCallAuditLog` (default `./runtime/tool_calls.db`), `InMemoryToolCallAuditLog` | `security.tool_gate.audit` |
 | (value types) | `ToolCall`, `ToolRegistry`, `ToolSpec`, `RecordCheck`, `ToolCallDecision` | `security.tool_gate.tools` |
 
+## K9X Filters (1.32.0, opt-in: `filters.enabled`)
+
+Governance decides; filters transform. In filters run on an agent's payload before governance pre, out
+filters on its output before governance post (the `BaseAgent` wrapper, so every agent class gets them).
+
+| ABB | OOB | Built by / where |
+|---|---|---|
+| `BaseFilter` | `K9TextNormalizeFilter` (in: NFKC, invisible and tag characters), `K9AttentionFilter` (in: quarantine, score, de-duplicate, prune to a budget, label trust), `K9StructuredOutputFilter` (out: validated JSON or a failure), `K9ProvenanceFilter` (in + out: `sources` from k9x Origin answers) | `FilterFactory` (OOB names, `register()`, `class:` + `module:`); contract `k9_core/filters/`, OOB `k9_filters/`; design `docs/roadmap/k9x-filters-design.md` |
+
 ## Integration and tools
 
 | ABB | OOB | Built by / where |
