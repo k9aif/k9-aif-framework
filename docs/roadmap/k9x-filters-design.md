@@ -78,6 +78,10 @@ parts on `InferenceRequest`.
 
 ## The contract
 
+![K9X Filters classes](../diagrams/k9x_filters_class.png)
+
+Source: `docs/diagrams/k9x_filters_class.puml`.
+
 ```
 k9_aif_abb/
 ├── k9_core/filters/base_filter.py   BaseFilter, FilterResult, FilterContext, FilterChain, FilterError

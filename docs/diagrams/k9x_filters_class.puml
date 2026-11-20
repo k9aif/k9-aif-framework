@@ -1,0 +1,91 @@
+@startuml k9x_filters_class
+title K9X Filters (K9-AIF 1.32): classes
+
+package "k9_core / agent" {
+  abstract class BaseAgent {
+    config
+    governance
+    +execute(payload)
+    +execute_stream(payload)
+  }
+  note right of BaseAgent
+    The wrapper around every execute():
+    filters IN -> governance pre -> execute()
+    -> filters OUT -> governance post
+  end note
+}
+
+package "k9_core / filters" {
+  abstract class BaseFilter {
+    name
+    filter_type
+    applies_to : in, out
+    settings
+    +filter_in(payload, ctx) : FilterResult
+    +filter_out(output, ctx) : FilterResult
+    +from_config(settings)
+  }
+  class FilterResult {
+    value
+    record
+    result_fields
+  }
+  class FilterContext {
+    agent, layer, config
+    direction
+    state
+    +section(name)
+  }
+  class FilterChain {
+    filters
+    +from_config(config)
+    +for_agent(agent)
+    +begin(agent) : FilterCall
+  }
+  class FilterCall {
+    state
+    +run_in(payload)
+    +run_out(output)
+  }
+  class FilterError
+}
+
+package "k9_filters (OOB)" {
+  class K9TextNormalizeFilter <<in>>
+  class K9AttentionFilter <<in>>
+  class K9JsonOutputFilter <<out>>
+  class K9ProvenanceFilter <<in + out>>
+}
+
+package "solution (SBB)" {
+  class "YourFilter" as YourFilter <<in | out>>
+}
+
+class FilterFactory <<factory>> {
+  +register(name, cls, replace)
+  +create(spec)
+}
+
+class "BaseGovernance\n(k9x Shield, Guardian)" as Governance
+class "trace events\n(FilterApplied)" as Trace
+
+BaseFilter <|-- K9TextNormalizeFilter
+BaseFilter <|-- K9AttentionFilter
+BaseFilter <|-- K9JsonOutputFilter
+BaseFilter <|-- K9ProvenanceFilter
+BaseFilter <|-- YourFilter
+
+FilterChain "1" o-- "*" BaseFilter : in chain order
+FilterChain ..> FilterFactory : builds each entry
+FilterFactory ..> BaseFilter : OOB name, register(),\nor class: + module:
+FilterChain --> FilterCall : one per agent call
+FilterCall ..> FilterContext : passes
+BaseFilter ..> FilterResult : returns
+FilterCall ..> Trace : emits each record
+FilterCall ..> FilterError : PermissionError from a filter
+
+BaseAgent --> FilterChain : built once\n(filters.enabled)
+BaseAgent --> Governance : screens the filtered\npayload and output
+FilterResult -[hidden]down- K9JsonOutputFilter
+FilterError -[hidden]down- K9TextNormalizeFilter
+@enduml
