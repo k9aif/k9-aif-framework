@@ -22,6 +22,7 @@ or registers it at start-up and refers to it by name::
 
     FilterFactory.register("ticket_ids", TicketIdFilter)
 
+A name already taken (an OOB filter, or another class) is refused unless ``replace=True``.
 Extra keys in a chain entry (``setting: 1`` above) are passed to the filter's ``from_config()``.
 An unknown name, a module that can't be imported, or a class that isn't a BaseFilter raises.
 """
@@ -36,7 +37,7 @@ log = logging.getLogger("FilterFactory")
 _OOB = {
     "text_normalize":    "k9_aif_abb.k9_filters.text_normalize:K9TextNormalizeFilter",
     "attention":         "k9_aif_abb.k9_filters.attention:K9AttentionFilter",
-    "json_output": "k9_aif_abb.k9_filters.json_output:K9JsonOutputFilter",
+    "json_output":       "k9_aif_abb.k9_filters.json_output:K9JsonOutputFilter",
     "provenance":        "k9_aif_abb.k9_filters.provenance:K9ProvenanceFilter",
 }
 
@@ -56,11 +57,22 @@ class FilterFactory:
         raise RuntimeError("FilterFactory is static and cannot be instantiated")
 
     @staticmethod
-    def register(name: str, filter_cls: Type[Any]) -> None:
+    def register(name: str, filter_cls: Type[Any], replace: bool = False) -> None:
+        """Register a filter class under ``name``. A name already registered to another class (an OOB
+        filter included) is refused unless ``replace=True``, so a solution can swap an OOB filter only
+        on purpose. Registering the same class again is a no-op."""
         from k9_aif_abb.k9_core.filters.base_filter import BaseFilter
         if not (isinstance(filter_cls, type) and issubclass(filter_cls, BaseFilter)):
             raise TypeError(f"FilterFactory.register({name!r}): {filter_cls!r} is not a BaseFilter subclass")
         with FilterFactory._lock:
+            current = FilterFactory._registry.get(name)
+            if current is not None and current is not filter_cls and not replace:
+                what = "the OOB filter" if name in _OOB else "a filter"
+                raise ValueError(f"FilterFactory.register({name!r}): {what} {name!r} is already registered "
+                                 f"({current if isinstance(current, str) else current.__qualname__}); "
+                                 "pass replace=True to replace it")
+            if current is not None and current is not filter_cls:
+                log.warning("FilterFactory: %r replaced by %s", name, filter_cls.__qualname__)
             FilterFactory._registry[name] = filter_cls
 
     @staticmethod

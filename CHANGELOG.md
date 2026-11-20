@@ -12,7 +12,9 @@ All notable changes to K9-AIF are documented here.
   `FilterChain`, `FilterFactory` (OOB names, `register()`, `class:` + `module:`). The `BaseAgent` wrapper runs in
   filters before governance pre and out filters before governance post, so every agent class gets them and governance
   screens the final form, including fields a filter adds to the result. The loop ABBs run the same points around
-  their loop. Agent YAML narrows the chain (`agent_filters:`) and configures each filter (`attention:`, ...).
+  their loop. Agent YAML holds everything for the agent under one reserved key, `agent_filters:` (`use:` narrows the chain,
+  one section per filter), so filters never collide with other agent YAML keys. `FilterFactory.register()` refuses a
+  taken name (OOB included) unless `replace=True`.
   Design: `docs/roadmap/k9x-filters-design.md`; recipe: SKILLS.md Skill 17.
 - OOB filters (`k9_filters/`):
   - `text_normalize` (in): Unicode NFKC, invisible format characters removed, tag characters revealed. Closes a

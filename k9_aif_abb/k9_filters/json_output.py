@@ -5,7 +5,7 @@ K9JsonOutputFilter (out): the agent's output as validated JSON, or a recorded fa
 
 Models wrap JSON in code fences, put prose around it, or return something close to JSON. Every
 application ends up writing its own extractor, each handling a different subset, and the next step
-crashes on what it missed. For an agent that declares ``json_output:`` this filter:
+crashes on what it missed. For an agent that declares ``agent_filters.json_output`` this filter:
 
 1. takes the output as is when it is already a dict or list;
 2. otherwise finds the JSON in the text: the whole text, then a fenced block (```json ... ```), then
@@ -20,13 +20,14 @@ recorded failure, never with the raw text passed on as if it were the result.
 
 ```yaml
 # agent YAML
-json_output:
-  type: object
-  required: [decision, reason]
-  schema: {...}          # optional JSON Schema
+agent_filters:
+  json_output:
+    type: object
+    required: [decision, reason]
+    schema: {...}          # optional JSON Schema
 ```
 
-An agent without a ``json_output:`` section passes its output through unchanged.
+An agent without an ``agent_filters.json_output`` section passes its output through unchanged.
 """
 
 from __future__ import annotations

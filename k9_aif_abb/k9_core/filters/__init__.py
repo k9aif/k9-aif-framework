@@ -15,10 +15,11 @@ from k9_aif_abb.k9_core.filters.base_filter import (
     FilterContext,
     FilterError,
     FilterResult,
+    agent_filter_settings,
     apply_out,
     begin_filters,
     filters_enabled,
 )
 
 __all__ = ["BaseFilter", "FilterCall", "FilterChain", "FilterContext", "FilterError", "FilterResult",
-           "apply_out", "begin_filters", "filters_enabled"]
+           "agent_filter_settings", "apply_out", "begin_filters", "filters_enabled"]

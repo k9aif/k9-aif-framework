@@ -21,7 +21,7 @@ OLLAMA_BASE_URL=http://<your-ollama-host>:11434 .venv/bin/python -m examples.k9x
 | File | What it shows |
 |---|---|
 | `config.yaml` | `filters.enabled` and the chain, next to Shield and the model (the application's config) |
-| `agents/yaml/invoice_reviewer.yaml` | What the agent's payload parts are (`attention:`) and the reply it must give (`json_output:`) |
+| `agents/yaml/invoice_reviewer.yaml` | Under `agent_filters:`: what the agent's payload parts are (`attention`) and the reply it must give (`json_output`) |
 | `agents/invoice_reviewer.py` | An ordinary `BaseAgent`: no truncation, no JSON parsing, no source tracking. It reads `_attention` and wraps the vendor's email with `wrap_untrusted()` |
 | `main.py` | Builds the agent through `AgentLoader` (YAML merged into config), runs three scenarios with filters off and on |
 

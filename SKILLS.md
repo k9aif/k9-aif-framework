@@ -1722,17 +1722,21 @@ governance post. Every agent gets them by construction; nothing to call.
 # agents/yaml/invoice_reviewer.yaml
 class: InvoiceReviewerAgent
 module: my_app.agents.invoice_reviewer
-agent_filters: [text_normalize, attention, json_output]   # optional; [] turns filters off here
-attention:
-  pinned:    [policy]
-  retrieved: [policy_chunks]
-  untrusted: [vendor_email]
-  query_key: query
-  budget_tokens: 6000
-json_output:
-  type: object
-  required: [decision, reason]
+agent_filters:                 # the one key filters reserve; agent YAML only, never config.yaml
+  use: [text_normalize, attention, json_output]   # optional; [] turns filters off here
+  attention:
+    pinned:    [policy]
+    retrieved: [policy_chunks]
+    untrusted: [vendor_email]
+    query_key: query
+    budget_tokens: 6000
+  json_output:
+    type: object
+    required: [decision, reason]
 ```
+
+Never give an agent YAML a `filters:` key: `AgentLoader` merges key by key, so it would replace the
+application's whole `filters:` block for that agent.
 
 In the agent, read `payload["_attention"]` for each part's trust, and wrap untrusted text with one
 delimiter:
@@ -1772,7 +1776,7 @@ class TicketIdFilter(BaseFilter):
 
 Add it to the chain (`{name: ticket_ids, class: TicketIdFilter, module: my_app.filters.ticket_ids}`;
 extra keys in the entry reach `self.settings`), or `FilterFactory.register("ticket_ids",
-TicketIdFilter)` at start-up and use the name.
+TicketIdFilter)` at start-up and use the name (a taken name, OOB included, needs `replace=True`).
 
 Rules:
 - Return a `FilterResult`. `record` is logged and traced (`FilterApplied`); leave it empty when
@@ -1780,7 +1784,7 @@ Rules:
 - Never raise `PermissionError` (it becomes `FilterError`: blocking is a Shield check's job).
 - Raise on a failure (`FilterError` with the reason); never return the input unchanged to hide one.
 - Keep per-call data in `ctx.state` (shared by all filters of one call), never on `self`.
-- Read your agent-level settings with `ctx.section("ticket_ids")`.
+- Read your agent-level settings with `ctx.section("ticket_ids")` (from `agent_filters.ticket_ids`).
 - No Kafka, no message bus.
 
 ### Step 4: Test it

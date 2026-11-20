@@ -9,17 +9,19 @@ the rest is gone, and nothing records it. This filter works from the parts the a
 YAML and does the cut deliberately:
 
 ```yaml
-attention:
-  pinned:     [policy, task]       # never pruned
-  retrieved:  [policy_chunks]      # a list of chunks: scored, de-duplicated, pruned to the budget
-  untrusted:  [vendor_email]       # labelled untrusted; never pruned like a chunk
-  query_key:  query                # what relevance is scored against
-  budget_tokens: 6000              # pinned + untrusted + retrieved (estimate: 4 characters per token)
-  untrusted_budget_tokens: 2000    # optional: untrusted parts get their own cap instead of sharing
-  untrusted_overflow: fail         # fail (default) | truncate: an untrusted part that doesn't fit
-  order: score                     # kept chunks by score (default) or original
-  min_score: 0.0                   # drop chunks scoring below this (default: keep while they fit)
-  dedupe_threshold: 0.9            # word-set similarity at which a chunk counts as a copy
+# agent YAML: filters read their settings from agent_filters only
+agent_filters:
+  attention:
+    pinned:     [policy, task]       # never pruned
+    retrieved:  [policy_chunks]      # a list of chunks: scored, de-duplicated, pruned to the budget
+    untrusted:  [vendor_email]       # labelled untrusted; never pruned like a chunk
+    query_key:  query                # what relevance is scored against
+    budget_tokens: 6000              # pinned + untrusted + retrieved (estimate: 4 characters per token)
+    untrusted_budget_tokens: 2000    # optional: untrusted parts get their own cap instead of sharing
+    untrusted_overflow: fail         # fail (default) | truncate: an untrusted part that doesn't fit
+    order: score                     # kept chunks by score (default) or original
+    min_score: 0.0                   # drop chunks scoring below this (default: keep while they fit)
+    dedupe_threshold: 0.9            # word-set similarity at which a chunk counts as a copy
 ```
 
 1. **Quarantine.** A declared part (or a retrieved chunk) that is a k9x Origin answer flagged
@@ -40,7 +42,7 @@ attention:
    is replaced (and recorded): labels come from the agent's declaration, never from the request.
 6. **Record** what was removed and why, with token estimates before and after.
 
-Undeclared keys pass through untouched; an agent without an ``attention:`` section is skipped (logged
+Undeclared keys pass through untouched; an agent without an ``agent_filters.attention`` section is skipped (logged
 once). ``wrap_untrusted(text, source)`` gives agents one delimiter for untrusted text in a prompt.
 """
 

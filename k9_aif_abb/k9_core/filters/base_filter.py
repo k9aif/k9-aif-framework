@@ -25,8 +25,10 @@ Configuration::
       enabled: true
       chain: [text_normalize, attention, {name: mine, class: MyFilter, module: my_app.filters}]
 
-    # agent YAML (merged into the agent's config):
-    agent_filters: [attention]     # optional: narrow the chain for this agent; [] = none
+    # agent YAML (merged into the agent's config): the one key filters reserve
+    agent_filters:
+      use: [attention]             # optional: narrow the chain for this agent; [] = none
+      attention: {...}             # each filter's settings for this agent
 
 Design: ``docs/roadmap/k9x-filters-design.md``. OOB filters: ``k9_aif_abb.k9_filters``.
 """
@@ -68,9 +70,25 @@ class FilterContext:
     state: Dict[str, Any]
 
     def section(self, key: str) -> Dict[str, Any]:
-        """The filter's own section of the agent's config (``attention:``, ...), or ``{}``."""
-        value = (self.config or {}).get(key)
+        """The filter's own settings for this agent: ``agent_filters.<key>`` in the agent's YAML, or ``{}``."""
+        value = agent_filter_settings(self.config).get(key)
         return value if isinstance(value, dict) else {}
+
+
+def agent_filter_settings(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """The agent's ``agent_filters:`` block: ``use:`` (optional list) and one section per filter.
+
+    Filters reserve this one key of agent YAML and nothing else, so no filter can collide with a key
+    another part of the framework (``K9OpenAIAgent``'s ``structured_output:``, ...) or a solution uses.
+    It belongs in agent YAML only: ``AgentLoader`` merges agent YAML over the application config key
+    by key, without merging inside a key."""
+    value = (config or {}).get("agent_filters")
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("agent_filters: give a mapping: use: [names] (optional) and a section per filter, "
+                         "e.g. {use: [attention], attention: {budget_tokens: 4000}}")
+    return value
 
 
 class BaseFilter(ABC):
@@ -132,14 +150,20 @@ class FilterChain:
 
         specs = list(((config or {}).get("filters") or {}).get("chain") or [])
         names = [_spec_name(s) for s in specs]
-        wanted = (config or {}).get("agent_filters")
+        settings = agent_filter_settings(config)
+        wanted = settings.get("use")
         if wanted is not None:
             if not isinstance(wanted, (list, tuple)):
-                raise ValueError("agent_filters: give a list of filter names ([] for none)")
+                raise ValueError("agent_filters.use: give a list of filter names ([] for none)")
             unknown = [w for w in wanted if w not in names]
             if unknown:
-                raise ValueError(f"agent_filters names {unknown}, which are not in filters.chain {names}")
+                raise ValueError(f"agent_filters.use names {unknown}, which are not in filters.chain {names}")
             specs = [s for s, n in zip(specs, names) if n in wanted]
+        # A filter's settings at the top level of agent YAML would be ignored: say so, once per build.
+        for name in (_spec_name(s) for s in specs):
+            if isinstance((config or {}).get(name), dict) and name not in settings:
+                log.warning("[filters] a top-level %r section is not read by the %s filter: put it under "
+                            "agent_filters.%s", name, name, name)
         return cls([FilterFactory.create(s) for s in specs])
 
     @classmethod

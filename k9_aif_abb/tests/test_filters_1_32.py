@@ -60,8 +60,15 @@ class AsyncEchoAgent(EchoAgent):
         return {"output": payload.get("reply", "ok")}
 
 
-def cfg(chain, **agent):
-    return {"filters": {"enabled": True, "chain": chain}, **agent}
+def cfg(chain, use=None, **sections):
+    """Application filters + this agent's agent_filters block (use: and one section per filter)."""
+    config = {"filters": {"enabled": True, "chain": chain}}
+    block = dict(sections)
+    if use is not None:
+        block["use"] = use
+    if block:
+        config["agent_filters"] = block
+    return config
 
 
 def shield(ingress=(), egress=()):
@@ -152,14 +159,14 @@ def test_chain_order_settings_and_shared_state():
 def test_agent_filters_narrows_and_rejects_unknown_names():
     chain = [{"name": "a", "class": "Tag", "module": __name__, "mark": "a"},
              {"name": "b", "class": "Tag", "module": __name__, "mark": "b"}]
-    agent = EchoAgent(config=cfg(chain, agent_filters=["b"]), governance=Recorder())
+    agent = EchoAgent(config=cfg(chain, use=["b"]), governance=Recorder())
     agent.execute({})
     assert agent.seen[0]["tags"] == ["b"]
-    none = EchoAgent(config=cfg(chain, agent_filters=[]), governance=Recorder())
+    none = EchoAgent(config=cfg(chain, use=[]), governance=Recorder())
     none.execute({})
     assert "tags" not in none.seen[0]
-    with pytest.raises(ValueError, match="not in filters.chain"):
-        EchoAgent(config=cfg(chain, agent_filters=["missing"]), governance=Recorder())
+    with pytest.raises(ValueError, match="agent_filters.use names"):
+        EchoAgent(config=cfg(chain, use=["missing"]), governance=Recorder())
 
 
 def test_bad_chain_entry_fails_construction():
@@ -441,3 +448,48 @@ def test_in_filters_cannot_set_result_fields():
     FilterFactory.register("leaky", Leaky)
     with pytest.raises(FilterError, match="out filters only"):
         EchoAgent(config=cfg(["leaky"]), governance=Recorder()).execute({})
+
+
+# --------------------------------------------------------------------------- agent_filters: one reserved key
+
+def test_filter_settings_live_under_agent_filters_only(caplog):
+    top_level = {"filters": {"enabled": True, "chain": ["attention"]},
+                 "attention": {"pinned": ["policy"], "budget_tokens": 1}}      # not read: warned
+    agent = EchoAgent(config=top_level, governance=Recorder())
+    assert "under agent_filters.attention" in caplog.text
+    agent.execute({"policy": "a policy far longer than one token"})          # no budget applied
+    assert "_attention" not in agent.seen[0]
+    with pytest.raises(FilterError, match="pinned parts need"):
+        EchoAgent(config=cfg(["attention"], attention={"pinned": ["policy"], "budget_tokens": 1}),
+                  governance=Recorder()).execute({"policy": "a policy far longer than one token"})
+
+
+def test_agent_filters_must_be_a_mapping():
+    with pytest.raises(ValueError, match="give a mapping"):
+        EchoAgent(config={"filters": {"enabled": True, "chain": ["attention"]}, "agent_filters": ["attention"]},
+                  governance=Recorder())
+
+
+def test_agent_filters_survives_the_agent_loader_merge(tmp_path):
+    from k9_aif_abb.k9_agents.agent_loader import AgentLoader
+    (tmp_path / "echo.yaml").write_text(
+        "class: EchoAgent\nmodule: k9_aif_abb.tests.test_filters_1_32\n"
+        "agent_filters:\n  use: [attention]\n  attention: {retrieved: [chunks], query_key: q, min_score: 0.5}\n")
+    app = {"filters": {"enabled": True, "chain": ["text_normalize", "attention"]}}
+    merged = AgentLoader(tmp_path).merge_with_global("EchoAgent", app)
+    assert merged["filters"] == app["filters"]                         # the application's block is intact
+    agent = EchoAgent(config=merged, governance=Recorder())
+    agent.execute({"q": "invoice approval", "chunks": ["invoice approval rule", "cafeteria menu"]})
+    assert agent.seen[0]["chunks"] == ["invoice approval rule"]
+    assert [f.name for f in agent._k9_filter_chain.filters] == ["attention"]
+
+
+def test_register_refuses_to_replace_a_name_by_accident():
+    with pytest.raises(ValueError, match="OOB filter 'attention' is already registered"):
+        FilterFactory.register("attention", Mine)
+    FilterFactory.register("mine_again", Mine)
+    FilterFactory.register("mine_again", Mine)                          # same class: no-op
+    with pytest.raises(ValueError, match="replace=True"):
+        FilterFactory.register("mine_again", Upper)
+    FilterFactory.register("mine_again", Upper, replace=True)
+    assert FilterFactory.create("mine_again").__class__ is Upper

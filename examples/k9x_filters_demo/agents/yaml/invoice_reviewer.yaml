@@ -2,16 +2,18 @@
 class: InvoiceReviewerAgent
 module: examples.k9x_filters_demo.agents.invoice_reviewer
 
-# What each part of the payload is, for the attention filter. Undeclared keys pass untouched.
-attention:
-  pinned:    [policy]            # never pruned
-  retrieved: [policy_chunks]     # ranked against the question, cut to the budget
-  untrusted: [vendor_email]      # labelled untrusted, wrapped in the prompt
-  query_key: question
-  budget_tokens: 400             # pinned + untrusted + kept sections
-  min_score: 0.1                 # drop sections sharing no words with the question (lexical scoring)
+# Everything for this agent's filters sits under one key: agent_filters (agent YAML only).
+agent_filters:
+  # What each part of the payload is, for the attention filter. Undeclared keys pass untouched.
+  attention:
+    pinned:    [policy]            # never pruned
+    retrieved: [policy_chunks]     # ranked against the question, cut to the budget
+    untrusted: [vendor_email]      # labelled untrusted, wrapped in the prompt
+    query_key: question
+    budget_tokens: 400             # pinned + untrusted + kept sections
+    min_score: 0.1                 # drop sections sharing no words with the question (lexical scoring)
 
-# The reply must be a JSON object with these keys; anything else fails the step.
-json_output:
-  type: object
-  required: [decision, reason]
+  # The reply must be a JSON object with these keys; anything else fails the step.
+  json_output:
+    type: object
+    required: [decision, reason]

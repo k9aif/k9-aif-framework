@@ -120,16 +120,23 @@ filters:
     - {name: ticket_ids, class: TicketIdFilter, module: my_app.filters.ticket_ids}   # SBB filter
 ```
 
-Agent YAML (merged into the agent's config at the top level by `AgentLoader`):
+Agent YAML: filters reserve **one key**, `agent_filters`, and keep everything for the agent under it,
+so no filter can claim a key another part of the framework or a solution uses (`K9OpenAIAgent`
+already uses `structured_output:`):
 
 ```yaml
-agent_filters: [text_normalize, attention]   # optional: narrow the chain for this agent; [] = none
-attention:            {...}                  # each filter reads its own section
-json_output:    {...}
+agent_filters:
+  use: [text_normalize, attention]   # optional: narrow the chain for this agent; [] = none
+  attention:   {...}                 # each filter's settings
+  json_output: {...}
 ```
 
-An unknown name in `agent_filters`, or a filter that can't be imported, raises when the agent is
-built: never a silent skip.
+`AgentLoader` merges agent YAML over the application config key by key (`{**app, **agent}`), without
+merging inside a key. So `agent_filters` belongs in agent YAML only, and the application's `filters:`
+block is never replaced by an agent (an agent YAML must not have a `filters:` key; enterprise locks in
+`_policy.locked` still win). A filter's settings left at the top level of agent YAML are not read; the
+chain logs a warning. An unknown name in `agent_filters.use`, a non-mapping `agent_filters`, or a filter
+that can't be imported raises when the agent is built: never a silent skip.
 
 ## OOB filters (version 1)
 
@@ -144,16 +151,20 @@ characters were changed, per field.
 
 ### `attention` (K9AttentionFilter), in
 
-Works only from the parts the agent declares; an agent with no `attention:` section passes through.
+Works only from the parts the agent declares; an agent with no `agent_filters.attention` section passes through.
 
 ```yaml
-attention:
-  pinned:     [policy, task]       # never pruned
-  retrieved:  [policy_chunks]      # list of chunks: scored, de-duplicated, pruned to the budget
-  untrusted:  [vendor_email]       # labelled untrusted; kept, never pinned
-  query_key:  query                # what relevance is scored against
-  budget_tokens: 6000              # pinned + retrieved (estimate: 4 characters per token)
-  order: score                     # kept chunks by score (default) or original order
+agent_filters:
+  attention:
+    pinned:     [policy, task]       # never pruned
+    retrieved:  [policy_chunks]      # list of chunks: scored, de-duplicated, pruned to the budget
+    untrusted:  [vendor_email]       # labelled untrusted; never pruned like a chunk
+    query_key:  query                # what relevance is scored against
+    budget_tokens: 6000              # pinned + untrusted + retrieved (estimate: 4 characters per token)
+    untrusted_budget_tokens: 2000    # optional: untrusted parts get their own cap
+    untrusted_overflow: fail         # fail (default) | truncate
+    order: score                     # kept chunks by score (default) or original order
+    min_score: 0.0                   # drop chunks scoring below this
 ```
 
 1. **Quarantine.** A declared part that is a k9x Origin answer flagged `quarantined` is removed.
@@ -173,7 +184,7 @@ attention:
 Named `json_output`, not `structured_output`: `K9OpenAIAgent`'s agent YAML already uses `structured_output:` for
 the OpenAI Agents SDK's typed output, and the two must not read each other's settings.
 
-For an agent that declares `json_output:` (`required: [keys]`, optional `type: object|array`,
+For an agent that declares `agent_filters.json_output` (`required: [keys]`, optional `type: object|array`,
 optional full JSON Schema under `schema:`, which needs the `jsonschema` package): finds the JSON in
 the model's text (plain JSON, a fenced block, or the first complete object/array inside prose),
 validates it, and returns the parsed value as the output. No valid JSON, or a missing required key,

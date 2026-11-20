@@ -698,8 +698,10 @@ Shield alone and is blocked with `text_normalize` on (`tests/test_filters_1_32.p
 - `filters.enabled: true` + `filters.chain: [...]` (run order). Contract `BaseFilter`
   (`k9_core/filters/`: `filter_in` / `filter_out` → `FilterResult(value, record, result_fields)`),
   OOB in `k9_filters/`, built by `FilterFactory` (OOB names, `register()`, or `class:` + `module:`).
-  Agent YAML narrows with `agent_filters: [...]` (`[]` = none) and holds each filter's section
-  (`attention:`, `json_output:`). A bad entry fails when the agent is built.
+  Agent YAML: one reserved key, `agent_filters:` (`use: [...]` narrows the chain, `[]` = none; one
+  section per filter: `attention:`, `json_output:`). Agent YAML only: `AgentLoader` merges key by key,
+  so an agent YAML must never have `filters:`. `FilterFactory.register()` refuses a taken name (OOB
+  included) unless `replace=True`. A bad entry fails when the agent is built.
 - **Where:** the `BaseAgent` wrapper: filters in → governance pre → `execute()` → filters out →
   governance post. In sees the payload before the agent's code runs (still a dict of named parts);
   out sees `result["output"]` and may add result fields (`sources`), which governance post screens
