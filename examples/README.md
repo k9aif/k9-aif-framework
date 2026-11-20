@@ -26,6 +26,7 @@ modularity, and governance.
 | [acme_support_center](acme_support_center/README.md) | A support squad (triage, knowledge, resolution, quality) with different agent patterns; the bundled Quick Start demo |
 | [acme_health_insurance](acme_health_insurance/README.md) | Claims workflow with eligibility and provider lookup, served by a FastAPI backend and web UI |
 | [rfp_analyzer](rfp_analyzer/README.md) | Document ingestion, RAG retrieval and governed analysis |
+| [k9x_filters_demo](k9x_filters_demo/README.md) | K9X Filters (1.32.0) off and on with a real model: a quarantined policy forgery kept out, a hidden instruction blocked, a non-JSON reply failed |
 | [weather_assist](weather_assist/README.md) | A CrewAI crew governed through the K9-AIF CrewAI adapter |
 | [weatherAssistLang](weatherAssistLang/README.md) | The same idea with LangGraph |
 | [zero_trust_execution_demo](zero_trust_execution_demo/README.md) | Signed identity at the Router edge; API-key and Keycloak (OIDC) authentication |

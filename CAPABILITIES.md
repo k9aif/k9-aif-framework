@@ -77,7 +77,7 @@ filters on its output before governance post (the `BaseAgent` wrapper, so every 
 
 | ABB | OOB | Built by / where |
 |---|---|---|
-| `BaseFilter` | `K9TextNormalizeFilter` (in: NFKC, invisible and tag characters), `K9AttentionFilter` (in: quarantine, score, de-duplicate, prune to a budget, label trust), `K9StructuredOutputFilter` (out: validated JSON or a failure), `K9ProvenanceFilter` (in + out: `sources` from k9x Origin answers) | `FilterFactory` (OOB names, `register()`, `class:` + `module:`); contract `k9_core/filters/`, OOB `k9_filters/`; design `docs/roadmap/k9x-filters-design.md` |
+| `BaseFilter` | `K9TextNormalizeFilter` (in: NFKC, invisible and tag characters), `K9AttentionFilter` (in: quarantine, score, de-duplicate, prune to a budget, label trust), `K9JsonOutputFilter` (out: validated JSON or a failure), `K9ProvenanceFilter` (in + out: `sources` from k9x Origin answers) | `FilterFactory` (OOB names, `register()`, `class:` + `module:`); contract `k9_core/filters/`, OOB `k9_filters/`; design `docs/roadmap/k9x-filters-design.md` |
 
 ## Integration and tools
 

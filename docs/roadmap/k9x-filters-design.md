@@ -88,7 +88,7 @@ k9_aif_abb/
 ```python
 class BaseFilter(ABC):
     name: str                         # how config refers to it
-    filter_type: str                  # what it does: "normalize", "attention", "structured_output", ...
+    filter_type: str                  # what it does: "normalize", "attention", "json_output", ...
     applies_to = ("in", "out")        # directions it runs in
 
     def filter_in(self, payload, ctx: FilterContext) -> FilterResult    # default: unchanged
@@ -115,7 +115,7 @@ filters:
   chain:                        # run order
     - text_normalize
     - attention
-    - structured_output
+    - json_output
     - provenance
     - {name: ticket_ids, class: TicketIdFilter, module: my_app.filters.ticket_ids}   # SBB filter
 ```
@@ -125,7 +125,7 @@ Agent YAML (merged into the agent's config at the top level by `AgentLoader`):
 ```yaml
 agent_filters: [text_normalize, attention]   # optional: narrow the chain for this agent; [] = none
 attention:            {...}                  # each filter reads its own section
-structured_output:    {...}
+json_output:    {...}
 ```
 
 An unknown name in `agent_filters`, or a filter that can't be imported, raises when the agent is
@@ -168,9 +168,12 @@ attention:
    `wrap_untrusted(text, source)` gives the agent a standard delimiter for untrusted text.
 6. **Record** what was removed and why, and the token estimate before and after.
 
-### `structured_output` (K9StructuredOutputFilter), out
+### `json_output` (K9JsonOutputFilter), out
 
-For an agent that declares `structured_output:` (`required: [keys]`, optional `type: object|array`,
+Named `json_output`, not `structured_output`: `K9OpenAIAgent`'s agent YAML already uses `structured_output:` for
+the OpenAI Agents SDK's typed output, and the two must not read each other's settings.
+
+For an agent that declares `json_output:` (`required: [keys]`, optional `type: object|array`,
 optional full JSON Schema under `schema:`, which needs the `jsonschema` package): finds the JSON in
 the model's text (plain JSON, a fenced block, or the first complete object/array inside prose),
 validates it, and returns the parsed value as the output. No valid JSON, or a missing required key,

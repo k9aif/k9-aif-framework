@@ -26,7 +26,8 @@ attention:
    ``quarantined`` is removed. A quarantined *pinned* part fails the agent: it can't run on a
    required fact it may not use. Parts flagged in_review / conflict / verification_failed are
    labelled ``unverified``.
-2. **Score** each retrieved chunk against the query: the share of the query's words it contains.
+2. **Score** each retrieved chunk against the query: the share of the query's words it contains
+   (lower case, common words ignored, plurals folded).
 3. **De-duplicate** near-identical chunks (the higher-scoring copy stays).
 4. **Prune to the budget**, highest score first, across all retrieved parts. Pinned parts are never
    pruned; if they alone exceed the budget the agent fails (``FilterError``) instead of running on a
@@ -95,8 +96,17 @@ def _tokens(value: Any) -> int:
     return math.ceil(len(_as_text(value)) / 4)
 
 
+def _fold(word: str) -> str:
+    """Fold a plural to its singular so "invoices" scores against "invoice" (no full stemming)."""
+    if len(word) > 4 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 3 and word.endswith("s") and not word.endswith(("ss", "us", "is")):
+        return word[:-1]
+    return word
+
+
 def _words(text: str) -> Set[str]:
-    return {w for w in _WORD.findall(text.lower()) if w not in _STOP}
+    return {_fold(w) for w in _WORD.findall(text.lower()) if w not in _STOP}
 
 
 def _source_of(value: Any) -> Optional[str]:

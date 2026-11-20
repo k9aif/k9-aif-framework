@@ -9,7 +9,7 @@ FilterFactory: static factory for K9X Filters (BaseFilter, 1.32.0).
 Pre-registered (OOB, ``k9_aif_abb.k9_filters``):
     text_normalize     K9TextNormalizeFilter     in: NFKC, invisible characters, tag characters
     attention          K9AttentionFilter         in: quarantine, score, de-duplicate, prune, label
-    structured_output  K9StructuredOutputFilter  out: JSON from the model's text, validated
+    json_output  K9JsonOutputFilter  out: JSON from the model's text, validated
     provenance         K9ProvenanceFilter        in + out: sources from k9x Origin answers
 
 A solution adds its own by extending BaseFilter, then either names it in config::
@@ -36,7 +36,7 @@ log = logging.getLogger("FilterFactory")
 _OOB = {
     "text_normalize":    "k9_aif_abb.k9_filters.text_normalize:K9TextNormalizeFilter",
     "attention":         "k9_aif_abb.k9_filters.attention:K9AttentionFilter",
-    "structured_output": "k9_aif_abb.k9_filters.structured_output:K9StructuredOutputFilter",
+    "json_output": "k9_aif_abb.k9_filters.json_output:K9JsonOutputFilter",
     "provenance":        "k9_aif_abb.k9_filters.provenance:K9ProvenanceFilter",
 }
 

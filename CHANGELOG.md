@@ -23,7 +23,7 @@ All notable changes to K9-AIF are documented here.
     prunes them to a token budget; pinned parts are never pruned (over budget fails the agent), untrusted parts
     share the budget or get their own cap (`untrusted_overflow: fail | truncate`), labels sent in the request are
     replaced. `wrap_untrusted()` gives agents one delimiter for untrusted text.
-  - `structured_output` (out): JSON from the model's text (whole, fenced, or embedded), validated (`type`,
+  - `json_output` (out): JSON from the model's text (whole, fenced, or embedded), validated (`type`,
     `required`, optional JSON Schema); no JSON or a missing key fails the agent instead of passing raw text on.
   - `provenance` (in + out): `sources` on the result, one per k9x Origin answer the agent was given.
 - Security catalog: `filters.text_normalize`, `filters.attention`; known gap `gap.shield_unicode_normalization`
@@ -140,7 +140,7 @@ inspecting the ACME Health Insurance example.
   (PostgreSQL in the `postgres.schema` when `postgres.enabled`, else SQLite). Only its key travels with the HIL
   request; the run state is never in a payload governance screens again or a reviewer sees.
 - `K9OpenAIAgent` YAML: **`needs_approval_when:`** pauses a tool only when a condition on the step's input holds
-  (the squad's `when:` syntax, e.g. the rules step's decision), and **`structured_output:`** (`{field: type}`) becomes
+  (the squad's `when:` syntax, e.g. the rules step's decision), and **`json_output:`** (`{field: type}`) becomes
   the SDK's `output_type`, returned as JSON for the next step.
 - **`GoRulesAdapter`** (`k9_adapters/integration/gorules_adapter.py`, registered as `gorules`): a GoRules decision
   service as a `BaseRulesAdapter` (`POST /api/projects/{project}/evaluate/{ruleset}` with the facts; optional

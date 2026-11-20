@@ -1710,7 +1710,7 @@ transforms ("is this in the right shape?") and never blocks. Design: `docs/roadm
 ```yaml
 filters:
   enabled: true
-  chain: [text_normalize, attention, structured_output, provenance]   # run order
+  chain: [text_normalize, attention, json_output, provenance]   # run order
 ```
 
 In filters run on the payload before governance pre; out filters on `result["output"]` before
@@ -1722,14 +1722,14 @@ governance post. Every agent gets them by construction; nothing to call.
 # agents/yaml/invoice_reviewer.yaml
 class: InvoiceReviewerAgent
 module: my_app.agents.invoice_reviewer
-agent_filters: [text_normalize, attention, structured_output]   # optional; [] turns filters off here
+agent_filters: [text_normalize, attention, json_output]   # optional; [] turns filters off here
 attention:
   pinned:    [policy]
   retrieved: [policy_chunks]
   untrusted: [vendor_email]
   query_key: query
   budget_tokens: 6000
-structured_output:
+json_output:
   type: object
   required: [decision, reason]
 ```
@@ -1745,7 +1745,7 @@ def execute(self, payload):
     chunks = "\n\n".join(payload["policy_chunks"])          # already ranked and within budget
     prompt = f"{payload['policy']}\n\n{chunks}\n\n{email}\n\nQuestion: {payload['query']}"
     resp = llm_invoke(self.config, InferenceRequest(prompt=prompt, task_type="reasoning"))
-    return {"output": resp.output}        # structured_output turns it into a validated dict
+    return {"output": resp.output}        # json_output turns it into a validated dict
 ```
 
 Remove the hand-written truncation (`source[:8000]`) and JSON extraction the filters now do.

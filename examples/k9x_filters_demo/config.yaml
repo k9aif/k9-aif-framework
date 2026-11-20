@@ -1,0 +1,42 @@
+# K9X Filters demo: application config. The agent's own settings are in agents/yaml/.
+
+k9_env: development
+
+inference:
+  router:
+    type: k9_model_router
+    default_model: general
+    persistence:
+      enabled: false
+      provider: memory
+    learning:
+      enabled: false
+  llm_factory:
+    backend: ollama
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434}"
+    models:
+      general:
+        model: "${K9_DEMO_MODEL:-qwen2.5:7b}"
+        temperature: 0
+  models:
+    general:
+      provider: ollama
+      llm_ref: general
+      capabilities: [general, reasoning]
+
+security:
+  shield:
+    enabled: true
+    ingress:
+      checks: [PromptInjectionCheck, PaymentDiversionCheck]
+    egress:
+      checks: [SemanticDriftCheck, PIIBoundaryCheck]
+
+# K9X Filters (k9-aif 1.32.0). Run order as listed. main.py also runs once with enabled: false.
+filters:
+  enabled: true
+  chain:
+    - text_normalize
+    - attention
+    - json_output
+    - provenance

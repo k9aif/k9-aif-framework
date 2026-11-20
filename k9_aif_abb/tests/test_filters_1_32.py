@@ -358,10 +358,10 @@ def test_wrap_untrusted_cannot_be_closed_from_inside():
     assert wrapped.count("</untrusted_content>") == 1 and wrapped.endswith("</untrusted_content>")
 
 
-# --------------------------------------------------------------------------- structured_output
+# --------------------------------------------------------------------------- json_output
 
 def so_agent(reply, **section):
-    agent = EchoAgent(config=cfg(["structured_output"], structured_output=section or {"type": "object"}),
+    agent = EchoAgent(config=cfg(["json_output"], json_output=section or {"type": "object"}),
                       governance=Recorder())
     return agent, {"reply": reply}
 
@@ -371,13 +371,13 @@ def so_agent(reply, **section):
     ('Here you go:\n```json\n{"decision": "pay", "reason": "ok"}\n```\nThanks', "fence"),
     ('The answer is {"decision": "pay", "reason": "ok"} as requested.', "embedded"),
 ])
-def test_structured_output_finds_the_json(reply, how):
+def test_json_output_finds_the_json(reply, how):
     agent, payload = so_agent(reply, type="object", required=["decision", "reason"])
     assert agent.execute(payload)["output"] == {"decision": "pay", "reason": "ok"}
     assert extract_json(reply)[1] == how
 
 
-def test_structured_output_fails_loudly():
+def test_json_output_fails_loudly():
     agent, payload = so_agent("I think we should pay it.", type="object")
     with pytest.raises(FilterError, match="no JSON"):
         agent.execute(payload)
@@ -389,15 +389,15 @@ def test_structured_output_fails_loudly():
         agent.execute(payload)
 
 
-def test_structured_output_schema():
+def test_json_output_schema():
     pytest.importorskip("jsonschema")
     agent, payload = so_agent('{"amount": "ten"}', schema={"type": "object", "properties": {"amount": {"type": "number"}}})
     with pytest.raises(FilterError, match="not of type"):
         agent.execute(payload)
 
 
-def test_structured_output_without_a_declaration_passes():
-    agent = EchoAgent(config=cfg(["structured_output"]), governance=Recorder())
+def test_json_output_without_a_declaration_passes():
+    agent = EchoAgent(config=cfg(["json_output"]), governance=Recorder())
     assert agent.execute({"reply": "plain text"})["output"] == "plain text"
 
 

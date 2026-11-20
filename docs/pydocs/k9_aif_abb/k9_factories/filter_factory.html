@@ -72,7 +72,7 @@
 <p>Pre-registered (OOB, <code><a href="../k9_filters.html">k9_aif_abb.k9_filters</a></code>):
     text_normalize     K9TextNormalizeFilter     in: NFKC, invisible characters, tag characters
     attention          K9AttentionFilter         in: quarantine, score, de-duplicate, prune, label
-    structured_output  K9StructuredOutputFilter  out: JSON from the model's text, validated
+    json_output  K9JsonOutputFilter  out: JSON from the model's text, validated
     provenance         K9ProvenanceFilter        in + out: sources from k9x Origin answers</p>
 
 <p>A solution adds its own by extending BaseFilter, then either names it in config::</p>
@@ -106,7 +106,7 @@ An unknown name, a module that can't be imported, or a class that isn't a BaseFi
 </span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="sd">Pre-registered (OOB, ``k9_aif_abb.k9_filters``):</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="sd">    text_normalize     K9TextNormalizeFilter     in: NFKC, invisible characters, tag characters</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="sd">    attention          K9AttentionFilter         in: quarantine, score, de-duplicate, prune, label</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">    structured_output  K9StructuredOutputFilter  out: JSON from the model&#39;s text, validated</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a><span class="sd">    json_output  K9JsonOutputFilter  out: JSON from the model&#39;s text, validated</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="sd">    provenance         K9ProvenanceFilter        in + out: sources from k9x Origin answers</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>
 </span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">A solution adds its own by extending BaseFilter, then either names it in config::</span>
@@ -133,7 +133,7 @@ An unknown name, a module that can't be imported, or a class that isn't a BaseFi
 </span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="n">_OOB</span> <span class="o">=</span> <span class="p">{</span>
 </span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a>    <span class="s2">&quot;text_normalize&quot;</span><span class="p">:</span>    <span class="s2">&quot;k9_aif_abb.k9_filters.text_normalize:K9TextNormalizeFilter&quot;</span><span class="p">,</span>
 </span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>    <span class="s2">&quot;attention&quot;</span><span class="p">:</span>         <span class="s2">&quot;k9_aif_abb.k9_filters.attention:K9AttentionFilter&quot;</span><span class="p">,</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="s2">&quot;structured_output&quot;</span><span class="p">:</span> <span class="s2">&quot;k9_aif_abb.k9_filters.structured_output:K9StructuredOutputFilter&quot;</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a>    <span class="s2">&quot;json_output&quot;</span><span class="p">:</span> <span class="s2">&quot;k9_aif_abb.k9_filters.json_output:K9JsonOutputFilter&quot;</span><span class="p">,</span>
 </span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a>    <span class="s2">&quot;provenance&quot;</span><span class="p">:</span>        <span class="s2">&quot;k9_aif_abb.k9_filters.provenance:K9ProvenanceFilter&quot;</span><span class="p">,</span>
 </span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="p">}</span>
 </span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a>
