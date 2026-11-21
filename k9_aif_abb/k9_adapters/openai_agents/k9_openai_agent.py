@@ -139,6 +139,10 @@ class K9OpenAIAgent(BaseAgent):
             raise ValueError(
                 f"[{cls}] a squad step has no handoffs: the squad's flow sets which agent runs next. "
                 "Remove 'handoffs' from its YAML, or run the group with OpenAIAgentsOrchestratorAdapter.")
+        if self.config.get("agent_tools"):
+            raise ValueError(
+                f"[{cls}] a squad step has no agent_tools: the squad's flow sets which agent runs next. "
+                "Remove 'agent_tools' from its YAML, or run the manager with OpenAIAgentsOrchestratorAdapter.")
         registered = {c.name: c for c in capabilities or []}
         wanted = list(self.config.get("tools") or [])
         unknown = [t for t in wanted if t not in registered]

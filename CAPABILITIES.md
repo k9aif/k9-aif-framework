@@ -32,7 +32,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseSecurityAgent` | (contract only) | |
 | `BaseMessageAgent` | `QueueMessageAgent`, `TopicMessageAgent` | |
 | `BaseLoggingAgent` | `ConsoleLoggingAgent`, `FileLoggingAgent`, `CloudLoggingAgent`, `LoggingAgent` | |
-| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider; a handoff group, where the model picks the next agent) | wrap an existing crew/graph/SDK agent with K9 governance |
+| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider; a handoff group, where the model picks the next agent; 1.33.0: `agent_tools:`, a manager agent calling specialists as tools, OpenAI's Manager pattern) | wrap an existing crew/graph/SDK agent with K9 governance |
 
 ## Inference
 

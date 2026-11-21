@@ -11,7 +11,9 @@ Same three-part shape as `crewai/`, `langgraph/`, `claude_agent_sdk/`: facade
 mapper. The adapter is an orchestrator: the Router sends it an `event_type`; the SDK's Runner and
 its agents take the place of Squad -> Agent on that path.
 
-## Two ways to run several agents (1.28.0)
+## Three ways to run several agents (1.28.0; Manager 1.33.0)
+
+OpenAI's names: orchestrating via code (the squad), Decentralized (handoffs), Manager (agents as tools).
 
 | | `K9OpenAIAgent` in a squad (recommended) | `OpenAIAgentsOrchestratorAdapter` handoffs |
 |---|---|---|
@@ -20,6 +22,16 @@ its agents take the place of Squad -> Agent on that path.
 | Synthesis | The squad's `synthesis:` (`K9ContextSynthesizerAgent`) | None |
 | Zero Trust | On the orchestrator that runs the squad | Also per agent turn (`openai_agent:<name>`) |
 | Tools, model | Same `build_function_tool` guardrails, same `K9ModelProvider` | Same |
+
+**Manager (`agent_tools:`, 1.33.0)**, also in `OpenAIAgentsOrchestratorAdapter`: the manager's model calls
+specialists as tools (`Agent.as_tool`, tool name `spanish_agent` for `SpanishAgent`), gets each answer back
+and writes the one reply. Each delegation carries the same K9 tool guardrails (`_k9_tool_guardrails`: Shield on
+the input the manager sends and on the answer returned). The specialist's nested `Runner.run` gets
+`_CurrentRunHooks`, which forwards to the run's `_K9RunHooks` through a contextvar (the tool is built once,
+hooks per run with the caller's identity); with no run in progress it raises `PermissionError`, never runs
+unchecked. `failure_error_function=None` plus `_record_tool_error` keep error types. Construction: unknown
+names, self, missing `description`, loops, capability-name clashes and more than `max_agent_tools` (5) raise.
+Tests: the "Manager pattern" section of `tests/test_openai_agents_adapter.py`.
 
 `K9OpenAIAgent` (`k9_openai_agent.py`): one OpenAI agent, built from its agent YAML, run as one governed
 squad step through `Runner.run` with no handoffs (`handoffs:` in its YAML is refused). The application
@@ -82,7 +94,7 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 
 1. Never accept a pre-built `Agent`, tool or `RunConfig` from a caller.
 2. Every tool and handoff name in a spec is validated at construction (`ValueError`), never filtered.
-3. The handoff group stays capped (`max_handoffs`); a known multi-step process is a K9 squad of `K9OpenAIAgent` steps (1.28.0).
+3. The handoff group stays capped (`max_handoffs`), and so does a manager's team (`max_agent_tools`); a known multi-step process is a K9 squad of `K9OpenAIAgent` steps (1.28.0).
 4. `adapt_input` / `adapt_output` stay thin; the mapper normalizes once, at the facade.
 5. Router access only through `llm_route()`; this package never imports `ModelRouterFactory`.
 

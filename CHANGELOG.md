@@ -4,6 +4,32 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.33.0] — 2026-11-20
+
+### Added
+- **OpenAI Manager pattern (agents as tools)** in the OOB `OpenAIAgentsOrchestratorAdapter`. A new agent YAML key,
+  `agent_tools: [SpanishAgent, FrenchAgent]`, gives that agent the named agents as tools (`Agent.as_tool`): its model
+  decides which to call, gets each answer back, and writes the one reply itself; specialists never answer the
+  user. This is the pattern OpenAI's "A practical guide to building agents" calls Manager; handoffs (Decentralized)
+  and a K9 squad of `K9OpenAIAgent` steps (orchestrating via code) were already supported. Each delegation is
+  governed like any tool call: Shield on what the manager sends (`screen_tool_call`) and on what comes back
+  (`screen_tool_result`); the specialist's own run gets the run's K9 hooks (Zero Trust on its turn as
+  `openai_agent:<name>`, Shield egress on each of its replies, trace events) and the same `RunConfig` (K9 Model
+  Router). A new trace event, `OpenAIAgentAsTool`, records each delegation. Tool names are snake_case of the
+  agent name (`spanish_agent`). Errors inside a specialist keep their type (`PermissionError`, `RequiresHIL`).
+- Construction checks: unknown agents, an agent naming itself, a specialist without `description` (the manager's
+  model chooses by it), a loop among agents used as tools, a name clash with a registered capability, and more
+  than `max_agent_tools` (new parameter, default 5) all raise `ValueError`. A manager gets a tool-calling model
+  from the K9 Model Router, as agents with tools or handoffs do.
+
+### Changed
+- `K9OpenAIAgent` (squad step) refuses `agent_tools:` in its YAML, as it refuses `handoffs:`: before, the key
+  would have been ignored silently.
+
+Additive: an agent YAML without `agent_tools:` builds exactly as before.
+
+---
+
 ## [1.32.0] — 2026-11-19
 
 ### Added
