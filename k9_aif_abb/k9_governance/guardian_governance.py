@@ -34,6 +34,26 @@ HTTP error, or unreachable Ollama endpoint produces an explicit
 "UNAVAILABLE" verdict, and the configured on_guardian_unavailable policy
 decides what happens next — a policy decision, not a default success.
 
+THE WHOLE TEXT, EVERY FIELD (1.34.0). Guardian screens every string in the payload (the
+conventional keys first, then every other string value, nested ones included), and all of it: the
+text is split into overlapping chunks of ``chunk_chars`` and each chunk is classified; any UNSAFE
+chunk blocks. Before 1.34.0 it read only the first matching key (``query`` / ``document_text`` /
+``text``), fell back to ``str(payload)[:2000]`` when none matched, and sent the model only the
+first 4000 characters, so an instruction on page 3 of a submitted document, or in a key named
+otherwise (``source_markdown``), was never seen. Text over ``max_chars`` can't be screened within
+the configured cost; it is treated like an unavailable check (``on_unavailable``: refused under
+the default ``fail_closed``), never passed as screened. Chunks already judged SAFE are cached by
+content hash (``cache_size``), so a document carried through many agents is screened once.
+
+Settings under ``governance.guardian``: ``chunk_chars`` (2000), ``chunk_overlap`` (200),
+``max_chars`` (120000), ``cache_size`` (4096; 0 turns the cache off).
+
+Why 2000, measured against granite4.1-guardian:8b (2026-11-20): a short instruction inside a long
+chunk is diluted by the text around it. DAS attack 02 (a one-line HTML comment) placed after a
+benign document was missed at 4000-character chunks and caught at 2000 and 1200; attack 04 was
+caught at all three; four benign documents (up to 32,108 characters) passed at all three. 1200
+cost ~70% more calls than 2000 for no extra catch.
+
 Implements sync (non-async) pre_process/post_process — BaseAgent's
 apply_pre_governance/apply_post_governance handle both sync and async
 governance via inspect.isawaitable(), so this is fully ABB-compliant
@@ -52,11 +72,14 @@ to check that flag, which is every caller except Satan's own agents.py.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
+import threading
 import time
-from typing import Any, Dict, Optional
+from collections import OrderedDict
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 
@@ -64,6 +87,18 @@ from k9_aif_abb.k9_core.governance.base_governance import BaseGovernance
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event
 
 log = logging.getLogger("governance.guardian")
+
+# Chunks already judged SAFE, shared by every GuardianGovernance in the process (governance_from_config
+# builds one per agent, and the same document travels through many agents). Keyed by model,
+# temperature, the check, and the chunk's sha256. Only SAFE is cached: UNSAFE raises, UNAVAILABLE retries.
+_SAFE_CACHE: "OrderedDict[str, bool]" = OrderedDict()
+_SAFE_CACHE_LOCK = threading.Lock()
+
+
+def clear_safe_cache() -> None:
+    """Forget every cached SAFE verdict (``k9_factories.reset_all()`` calls this)."""
+    with _SAFE_CACHE_LOCK:
+        _SAFE_CACHE.clear()
 
 _SYSTEM_PRE = (
     "You are Granite Guardian, an agentic AI safety classifier. "
@@ -118,27 +153,60 @@ RISK_DEFINITIONS: Dict[str, str] = {
 }
 
 
+def _strings(value: Any) -> Iterator[str]:
+    """Every non-empty string in a value, nested dicts and lists included, in order. Keys starting
+    with ``_k9`` are framework stamps (signed identity, resume keys), not content."""
+    if isinstance(value, str):
+        if value.strip():
+            yield value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(key, str) and key.startswith("_k9"):
+                continue
+            yield from _strings(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _strings(item)
+    elif value is not None and not isinstance(value, (bool, int, float)):
+        text = str(value)
+        if text.strip():
+            yield text
+
+
 def _extract_text(payload: Any, *keys: str) -> str:
-    """First non-empty string found among the given keys, else the whole
-    payload stringified and truncated. Checked in the order given by the
-    caller — pre_process/post_process each pass their own priority order.
-    A plain string is the text itself: governance by construction (1.15)
-    passes an agent's ``result["output"]`` to post_process, not a dict."""
-    if isinstance(payload, str):
-        return payload
+    """All the text in the payload, the given keys first (in the caller's order), then every
+    other string value. Nothing is cut: chunking happens at the call (``_screen``). A plain
+    string is the text itself (governance by construction passes ``result["output"]``)."""
     if not isinstance(payload, dict):
-        return str(payload)[:2000]
+        return "\n\n".join(_strings(payload))
+    parts: List[str] = []
     for key in keys:
-        value = payload.get(key)
-        if isinstance(value, str) and value.strip():
-            return value
-        if isinstance(value, dict):
-            # Common shape for an agent's "output" field — flatten its
-            # string values rather than stringifying the whole dict repr.
-            flat = " ".join(str(v) for v in value.values() if isinstance(v, str))
-            if flat.strip():
-                return flat
-    return str(payload)[:2000]
+        parts.extend(_strings(payload.get(key)))
+    rest = {k: v for k, v in payload.items() if k not in keys}
+    parts.extend(_strings(rest))
+    return "\n\n".join(parts)
+
+
+def _chunks(text: str, size: int, overlap: int) -> List[str]:
+    """Overlapping windows of ``size`` characters, so an instruction split by a boundary still
+    appears whole in one chunk (as long as it is shorter than ``overlap``). Boundaries move back
+    to the nearest whitespace when there is one in the last fifth of the window."""
+    if len(text) <= size:
+        return [text]
+    out, start = [], 0
+    while start < len(text):
+        end = min(start + size, len(text))
+        if end < len(text):
+            cut = text.rfind(" ", start + size * 4 // 5, end)
+            if cut == -1:
+                cut = text.rfind("\n", start + size * 4 // 5, end)
+            if cut > start:
+                end = cut
+        out.append(text[start:end])
+        if end >= len(text):
+            break
+        start = max(end - overlap, start + 1)
+    return out
 
 
 class GuardianGovernance(BaseGovernance):
@@ -168,6 +236,13 @@ class GuardianGovernance(BaseGovernance):
             policy = "fail_closed"
         self._on_unavailable = policy
 
+        self._chunk_chars = int(guardian_cfg.get("chunk_chars", 2000))
+        self._chunk_overlap = int(guardian_cfg.get("chunk_overlap", 200))
+        self._max_chars = int(guardian_cfg.get("max_chars", 120000))
+        if self._chunk_chars <= 0 or not 0 <= self._chunk_overlap < self._chunk_chars:
+            raise ValueError("[GuardianGovernance] need chunk_chars > 0 and 0 <= chunk_overlap < chunk_chars")
+        self._cache_size = int(guardian_cfg.get("cache_size", 4096))
+
         # Extra ingress classifications: names from RISK_DEFINITIONS, or
         # {"name": ..., "definition": ...} for a solution-specific risk.
         self._ingress_risks = []
@@ -192,7 +267,7 @@ class GuardianGovernance(BaseGovernance):
         UNAVAILABLE, never SAFE. Silently mapping an unreachable safety
         check to "SAFE" would let a payload through on the strength of a
         check that never actually ran."""
-        prompt = f"{system_prompt}\n\nContent to assess:\n{content[:4000]}"
+        prompt = f"{system_prompt}\n\nContent to assess:\n{content}"
         t0 = time.monotonic()
         try:
             resp = requests.post(
@@ -235,7 +310,7 @@ class GuardianGovernance(BaseGovernance):
                 f"{self._base}/api/chat",
                 json={"model": self._model, "stream": False, "options": {"temperature": 0},
                       "messages": [{"role": "system", "content": definition},
-                                   {"role": "user", "content": content[:4000]}]},
+                                   {"role": "user", "content": content}]},
                 timeout=self._timeout,
             )
         except requests.exceptions.RequestException as exc:
@@ -254,6 +329,40 @@ class GuardianGovernance(BaseGovernance):
         self._emit_call_event(f"pre:{name}", agent, elapsed_ms, verdict)
         return verdict, f"guardian risk={name} score={match.group(1).lower()}"
 
+    def _screen(self, text: str, classify, cache_tag: str) -> tuple:
+        """Classify the whole text, chunk by chunk. Returns (verdict, reason): UNSAFE at the first
+        unsafe chunk; UNAVAILABLE if any chunk couldn't be classified or the text is over
+        ``max_chars``; SAFE only when every chunk was classified SAFE."""
+        if len(text) > self._max_chars:
+            return "UNAVAILABLE", (f"text of {len(text)} characters is over max_chars={self._max_chars}; "
+                                   "not screened")
+        chunks = _chunks(text, self._chunk_chars, self._chunk_overlap)
+        unavailable = None
+        for i, chunk in enumerate(chunks, 1):
+            key = "|".join((self._model, str(self._temperature), cache_tag,
+                            hashlib.sha256(chunk.encode("utf-8", "replace")).hexdigest()))
+            with _SAFE_CACHE_LOCK:
+                cached = self._cache_size > 0 and key in _SAFE_CACHE
+                if cached:
+                    _SAFE_CACHE.move_to_end(key)
+            if cached:
+                continue
+            verdict, reason = classify(chunk)
+            where = f" (chunk {i} of {len(chunks)})" if len(chunks) > 1 else ""
+            if verdict == "UNSAFE":
+                return "UNSAFE", reason + where
+            if verdict == "UNAVAILABLE":
+                unavailable = unavailable or (reason + where)
+                continue
+            if self._cache_size > 0:
+                with _SAFE_CACHE_LOCK:
+                    _SAFE_CACHE[key] = True
+                    while len(_SAFE_CACHE) > self._cache_size:
+                        _SAFE_CACHE.popitem(last=False)
+        if unavailable:
+            return "UNAVAILABLE", unavailable
+        return "SAFE", f"{len(chunks)} chunk(s) safe"
+
     def _emit_call_event(self, phase: str, agent: str, latency_ms: int, verdict: str) -> None:
         emit_trace_event({
             "type": "LLMCall",
@@ -271,7 +380,8 @@ class GuardianGovernance(BaseGovernance):
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] pre_process agent=%s chars=%d", agent, len(text))
 
-        verdict, reason = self._call_guardian(_SYSTEM_PRE, text, phase="pre", agent=agent)
+        verdict, reason = self._screen(
+            text, lambda c: self._call_guardian(_SYSTEM_PRE, c, phase="pre", agent=agent), "pre")
 
         if verdict == "UNSAFE":
             log.warning("[GuardianGovernance] PRE BLOCKED agent=%s — %s", agent, reason)
@@ -289,7 +399,8 @@ class GuardianGovernance(BaseGovernance):
             log.info("[GuardianGovernance] pre_process SAFE agent=%s", agent)
 
         for name, definition in self._ingress_risks:
-            verdict, reason = self._call_guardian_risk(name, definition, text, agent)
+            verdict, reason = self._screen(
+                text, lambda c, n=name, d=definition: self._call_guardian_risk(n, d, c, agent), "risk:" + name)
             if verdict == "UNSAFE":
                 log.warning("[GuardianGovernance] PRE BLOCKED agent=%s risk=%s", agent, name)
                 raise PermissionError(f"Granite Guardian blocked ingress ({name}): {reason}")
@@ -307,7 +418,8 @@ class GuardianGovernance(BaseGovernance):
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] post_process agent=%s chars=%d", agent, len(text))
 
-        verdict, reason = self._call_guardian(_SYSTEM_POST, text, phase="post", agent=agent)
+        verdict, reason = self._screen(
+            text, lambda c: self._call_guardian(_SYSTEM_POST, c, phase="post", agent=agent), "post")
 
         if verdict == "UNSAFE":
             log.warning("[GuardianGovernance] POST BLOCKED agent=%s — %s", agent, reason)

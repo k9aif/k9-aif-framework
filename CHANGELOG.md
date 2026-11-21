@@ -4,6 +4,38 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.34.0] — 2026-11-20
+
+### Fixed (security)
+- **Granite Guardian screened only part of what it was given.** `GuardianGovernance` sent the model only the first
+  4000 characters (both the default check and every named risk), read only the first matching key (`query`,
+  `document_text`, `text`), and fell back to `str(payload)[:2000]` when none matched. A document under any other key
+  (DAS passes `source_markdown`) was screened for roughly its first 2000 characters, and an instruction on page 3
+  of a submitted document was never seen. Found 2026-11-20: DAS's attack documents passed the demo only because
+  each was just under 4000 characters long.
+- Now every string in the payload is screened (the conventional keys first, then every other value, nested ones
+  included; `_k9*` stamps skipped), all of it: the text is split into overlapping chunks and each is classified;
+  any UNSAFE chunk blocks, and the reason names the chunk.
+- Text over `max_chars` (default 120000) is treated as an unavailable check: refused under the default
+  `fail_closed`, never passed as screened.
+
+### Added
+- `governance.guardian` settings: `chunk_chars` (2000), `chunk_overlap` (200), `max_chars` (120000), `cache_size`
+  (4096). Default chunk size measured against granite4.1-guardian:8b: a one-line hidden instruction placed after a
+  benign document was missed at 4000-character chunks and caught at 2000 (three runs each); four benign documents
+  up to 32,108 characters passed.
+- A process-wide cache of chunks judged SAFE (by model, temperature, check and sha256), so a document carried
+  through many agents is classified once. UNSAFE and UNAVAILABLE are never cached. `k9_factories.reset_all()`
+  clears it (`clear_safe_cache()`).
+
+### Changed
+- Guardian makes more model calls on long payloads (one per chunk per check). Cost grows with text length;
+  `max_chars` bounds it.
+
+Tests: `test_guardian_whole_text_1_34.py` (14).
+
+---
+
 ## [1.33.0] — 2026-11-20
 
 ### Added
