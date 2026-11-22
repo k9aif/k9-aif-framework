@@ -76,8 +76,10 @@ def _expand(value: Any) -> Any:
         def replace(match):
             expr = match.group(1)
             if ':-' in expr:
+                # shell semantics (1.34.0): unset OR empty takes the default; `VAR=` in a .env file
+                # used to hand an empty string on (an empty model name, an empty URL)
                 var, default = expr.split(':-', 1)
-                return os.environ.get(var.strip(), default.strip())
+                return os.environ.get(var.strip()) or default.strip()
             return os.environ.get(expr.strip(), match.group(0))
         return _ENV_PATTERN.sub(replace, value)
     if isinstance(value, dict):

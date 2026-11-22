@@ -290,3 +290,14 @@ def test_an_injection_in_a_short_field_is_still_caught(monkeypatch):
     monkeypatch.setattr(gg.requests, "post", _fake_post([]))
     with pytest.raises(PermissionError):
         _gov().pre_process({"message": "hello", "note": MARKER, "source_markdown": _filler(5000)})
+
+
+def test_empty_env_value_takes_the_default(monkeypatch):
+    """`VAR=` in a .env file (blank) must fall back to the default, like the shell's ${VAR:-default}."""
+    from k9_aif_abb.k9_utils.config_loader import _expand
+    monkeypatch.setenv("K9_TEST_MODEL", "")
+    assert _expand("${K9_TEST_MODEL:-qwen2.5:7b}") == "qwen2.5:7b"
+    monkeypatch.setenv("K9_TEST_MODEL", "granite3-dense:8b")
+    assert _expand("${K9_TEST_MODEL:-qwen2.5:7b}") == "granite3-dense:8b"
+    monkeypatch.delenv("K9_TEST_MODEL")
+    assert _expand("${K9_TEST_MODEL:-qwen2.5:7b}") == "qwen2.5:7b"

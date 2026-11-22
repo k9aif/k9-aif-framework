@@ -51,6 +51,9 @@ All notable changes to K9-AIF are documented here.
   trace event; Shield runs at every point. A call with no checkpoint (every agent's own input and output) is
   always screened. In a group of agents a reply is a `handoff` point.
 
+- **Config `${VAR:-default}`: an empty value takes the default**, as in the shell. A blank `VAR=` line in a
+  `.env` file used to pass an empty string on (an empty model name, an empty URL).
+
 ### Changed
 - Guardian makes more model calls on long payloads (one per chunk per check). Cost grows with text length;
   `max_chars` bounds it.

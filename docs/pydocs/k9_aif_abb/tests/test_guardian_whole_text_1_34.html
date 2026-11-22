@@ -117,6 +117,9 @@
             <li>
                     <a class="function" href="#test_an_injection_in_a_short_field_is_still_caught">test_an_injection_in_a_short_field_is_still_caught</a>
             </li>
+            <li>
+                    <a class="function" href="#test_empty_env_value_takes_the_default">test_empty_env_value_takes_the_default</a>
+            </li>
     </ul>
 
 
@@ -441,6 +444,17 @@ under 4000 characters long.</p>
 </span><span id="L-290"><a href="#L-290"><span class="linenos">290</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">setattr</span><span class="p">(</span><span class="n">gg</span><span class="o">.</span><span class="n">requests</span><span class="p">,</span> <span class="s2">&quot;post&quot;</span><span class="p">,</span> <span class="n">_fake_post</span><span class="p">([]))</span>
 </span><span id="L-291"><a href="#L-291"><span class="linenos">291</span></a>    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">PermissionError</span><span class="p">):</span>
 </span><span id="L-292"><a href="#L-292"><span class="linenos">292</span></a>        <span class="n">_gov</span><span class="p">()</span><span class="o">.</span><span class="n">pre_process</span><span class="p">({</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="n">MARKER</span><span class="p">,</span> <span class="s2">&quot;source_markdown&quot;</span><span class="p">:</span> <span class="n">_filler</span><span class="p">(</span><span class="mi">5000</span><span class="p">)})</span>
+</span><span id="L-293"><a href="#L-293"><span class="linenos">293</span></a>
+</span><span id="L-294"><a href="#L-294"><span class="linenos">294</span></a>
+</span><span id="L-295"><a href="#L-295"><span class="linenos">295</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_empty_env_value_takes_the_default</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+</span><span id="L-296"><a href="#L-296"><span class="linenos">296</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;`VAR=` in a .env file (blank) must fall back to the default, like the shell&#39;s ${VAR:-default}.&quot;&quot;&quot;</span>
+</span><span id="L-297"><a href="#L-297"><span class="linenos">297</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_utils.config_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_expand</span>
+</span><span id="L-298"><a href="#L-298"><span class="linenos">298</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">setenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="L-299"><a href="#L-299"><span class="linenos">299</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;qwen2.5:7b&quot;</span>
+</span><span id="L-300"><a href="#L-300"><span class="linenos">300</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">setenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">,</span> <span class="s2">&quot;granite3-dense:8b&quot;</span><span class="p">)</span>
+</span><span id="L-301"><a href="#L-301"><span class="linenos">301</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;granite3-dense:8b&quot;</span>
+</span><span id="L-302"><a href="#L-302"><span class="linenos">302</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">delenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">)</span>
+</span><span id="L-303"><a href="#L-303"><span class="linenos">303</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;qwen2.5:7b&quot;</span>
 </span></pre></div>
 
 
@@ -1103,6 +1117,34 @@ agent: other fields, other prior results) has the same chunks and hits the cache
 
 
     
+
+                </section>
+                <section id="test_empty_env_value_takes_the_default">
+                            <input id="test_empty_env_value_takes_the_default-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">test_empty_env_value_takes_the_default</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">monkeypatch</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="test_empty_env_value_takes_the_default-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#test_empty_env_value_takes_the_default"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="test_empty_env_value_takes_the_default-296"><a href="#test_empty_env_value_takes_the_default-296"><span class="linenos">296</span></a><span class="k">def</span><span class="w"> </span><span class="nf">test_empty_env_value_takes_the_default</span><span class="p">(</span><span class="n">monkeypatch</span><span class="p">):</span>
+</span><span id="test_empty_env_value_takes_the_default-297"><a href="#test_empty_env_value_takes_the_default-297"><span class="linenos">297</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;`VAR=` in a .env file (blank) must fall back to the default, like the shell&#39;s ${VAR:-default}.&quot;&quot;&quot;</span>
+</span><span id="test_empty_env_value_takes_the_default-298"><a href="#test_empty_env_value_takes_the_default-298"><span class="linenos">298</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_utils.config_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">_expand</span>
+</span><span id="test_empty_env_value_takes_the_default-299"><a href="#test_empty_env_value_takes_the_default-299"><span class="linenos">299</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">setenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="test_empty_env_value_takes_the_default-300"><a href="#test_empty_env_value_takes_the_default-300"><span class="linenos">300</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;qwen2.5:7b&quot;</span>
+</span><span id="test_empty_env_value_takes_the_default-301"><a href="#test_empty_env_value_takes_the_default-301"><span class="linenos">301</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">setenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">,</span> <span class="s2">&quot;granite3-dense:8b&quot;</span><span class="p">)</span>
+</span><span id="test_empty_env_value_takes_the_default-302"><a href="#test_empty_env_value_takes_the_default-302"><span class="linenos">302</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;granite3-dense:8b&quot;</span>
+</span><span id="test_empty_env_value_takes_the_default-303"><a href="#test_empty_env_value_takes_the_default-303"><span class="linenos">303</span></a>    <span class="n">monkeypatch</span><span class="o">.</span><span class="n">delenv</span><span class="p">(</span><span class="s2">&quot;K9_TEST_MODEL&quot;</span><span class="p">)</span>
+</span><span id="test_empty_env_value_takes_the_default-304"><a href="#test_empty_env_value_takes_the_default-304"><span class="linenos">304</span></a>    <span class="k">assert</span> <span class="n">_expand</span><span class="p">(</span><span class="s2">&quot;${K9_TEST_MODEL:-qwen2.5:7b}&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;qwen2.5:7b&quot;</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p><code>VAR=</code> in a .env file (blank) must fall back to the default, like the shell's ${VAR:-default}.</p>
+</div>
+
 
                 </section>
     </main>
