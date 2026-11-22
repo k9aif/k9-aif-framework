@@ -173,3 +173,68 @@ def test_named_risks_read_the_whole_text_too(monkeypatch):
 def test_bad_chunk_settings_are_refused():
     with pytest.raises(ValueError):
         _gov(chunk_chars=1000, chunk_overlap=1000)
+
+
+# ── optimal, not partial ──────────────────────────────────────────────────
+
+def test_document_is_classified_once_whatever_travels_with_it(monkeypatch):
+    """Each string is chunked on its own, so the same document in a different payload (another
+    agent: other fields, other prior results) has the same chunks and hits the cache."""
+    seen = []
+    monkeypatch.setattr(gg.requests, "post", _fake_post(seen))
+    doc = _filler(9000)
+    _gov().pre_process({"source_markdown": doc, "job_id": "J1"})
+    first = len(seen)
+    _gov().pre_process({"prior": "the view generator's result", "source_markdown": doc, "step": "links"})
+    assert first > 1
+    assert len(seen) - first == 2            # only the two new short strings; the document came from the cache
+
+
+def test_calls_run_in_parallel_up_to_concurrency(monkeypatch):
+    import threading
+    import time as _t
+    state = {"now": 0, "peak": 0}
+    lock = threading.Lock()
+
+    def post(url, json=None, timeout=None):
+        with lock:
+            state["now"] += 1
+            state["peak"] = max(state["peak"], state["now"])
+        _t.sleep(0.05)
+        with lock:
+            state["now"] -= 1
+        return FakeResp({"response": "<score> no </score>"})
+    monkeypatch.setattr(gg.requests, "post", post)
+    _gov(concurrency=3).pre_process({"query": _filler(12000)})
+    assert state["peak"] == 3
+
+
+def test_first_unsafe_stops_the_rest(monkeypatch):
+    seen = []
+    monkeypatch.setattr(gg.requests, "post", _fake_post(seen))
+    doc = MARKER + " " + _filler(20000)              # unsafe in the first chunk
+    with pytest.raises(PermissionError):
+        _gov(concurrency=1).pre_process({"query": doc})
+    assert len(seen) == 1
+
+
+def test_default_check_and_risks_share_one_pass(monkeypatch):
+    calls = []
+    monkeypatch.setattr(gg.requests, "post", _fake_post(calls))
+    _gov(ingress_risks=["process_manipulation", "impersonation"]).pre_process({"query": _filler(5000)})
+    n = len(_chunks(_filler(5000), 2000, 200))
+    assert len(calls) == 3 * n                      # every chunk, every check, once
+
+
+def test_trace_events_keep_the_callers_trace_id(monkeypatch):
+    from k9_aif_abb.k9_utils import trace_events
+    got = []
+    trace_events.register_trace_callback(got.append)
+    try:
+        monkeypatch.setattr(gg.requests, "post", _fake_post([]))
+        with trace_events.trace_scope("T-123"):
+            _gov(concurrency=4).pre_process({"query": _filler(9000)})
+    finally:
+        trace_events.register_trace_callback(None)
+    calls = [e for e in got if e.get("type") == "LLMCall"]
+    assert len(calls) > 1 and all(e.get("trace_id") == "T-123" for e in calls)

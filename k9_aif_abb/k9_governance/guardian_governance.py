@@ -46,7 +46,10 @@ the default ``fail_closed``), never passed as screened. Chunks already judged SA
 content hash (``cache_size``), so a document carried through many agents is screened once.
 
 Settings under ``governance.guardian``: ``chunk_chars`` (2000), ``chunk_overlap`` (200),
-``max_chars`` (120000), ``cache_size`` (4096; 0 turns the cache off).
+``max_chars`` (120000), ``cache_size`` (4096; 0 turns the cache off), ``concurrency`` (4: Guardian calls
+in flight at once; the default check and every named risk share one pool, and the first UNSAFE
+cancels the calls not yet started). Each string is chunked on its own, so a document has the same
+chunks in every payload and is classified once per process.
 
 Why 2000, measured against granite4.1-guardian:8b (2026-11-20): a short instruction inside a long
 chunk is diluted by the text around it. DAS attack 02 (a one-line HTML comment) placed after a
@@ -72,6 +75,7 @@ to check that flag, which is every caller except Satan's own agents.py.
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import logging
 import os
@@ -79,7 +83,8 @@ import re
 import threading
 import time
 from collections import OrderedDict
-from typing import Any, Dict, Iterator, List, Optional
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 import requests
 
@@ -173,18 +178,22 @@ def _strings(value: Any) -> Iterator[str]:
             yield text
 
 
-def _extract_text(payload: Any, *keys: str) -> str:
-    """All the text in the payload, the given keys first (in the caller's order), then every
-    other string value. Nothing is cut: chunking happens at the call (``_screen``). A plain
-    string is the text itself (governance by construction passes ``result["output"]``)."""
+def _texts(payload: Any, *keys: str) -> List[str]:
+    """Every string in the payload as its own item, the given keys first (in the caller's order),
+    then every other value. Each is chunked on its own, so a document gets the same chunks in
+    every payload it travels in, whatever sits beside it (and the SAFE cache hits)."""
     if not isinstance(payload, dict):
-        return "\n\n".join(_strings(payload))
+        return list(_strings(payload))
     parts: List[str] = []
     for key in keys:
         parts.extend(_strings(payload.get(key)))
-    rest = {k: v for k, v in payload.items() if k not in keys}
-    parts.extend(_strings(rest))
-    return "\n\n".join(parts)
+    parts.extend(_strings({k: v for k, v in payload.items() if k not in keys}))
+    return parts
+
+
+def _extract_text(payload: Any, *keys: str) -> str:
+    """All the text in the payload, joined (for logging and callers that want one string)."""
+    return "\n\n".join(_texts(payload, *keys))
 
 
 def _chunks(text: str, size: int, overlap: int) -> List[str]:
@@ -242,6 +251,9 @@ class GuardianGovernance(BaseGovernance):
         if self._chunk_chars <= 0 or not 0 <= self._chunk_overlap < self._chunk_chars:
             raise ValueError("[GuardianGovernance] need chunk_chars > 0 and 0 <= chunk_overlap < chunk_chars")
         self._cache_size = int(guardian_cfg.get("cache_size", 4096))
+        # Guardian calls in flight at once for one screen (1.34.0). The model server serves them in
+        # parallel up to its own limit (Ollama: OLLAMA_NUM_PARALLEL); 1 = one at a time.
+        self._concurrency = max(1, int(guardian_cfg.get("concurrency", 4)))
 
         # Extra ingress classifications: names from RISK_DEFINITIONS, or
         # {"name": ..., "definition": ...} for a solution-specific risk.
@@ -329,39 +341,85 @@ class GuardianGovernance(BaseGovernance):
         self._emit_call_event(f"pre:{name}", agent, elapsed_ms, verdict)
         return verdict, f"guardian risk={name} score={match.group(1).lower()}"
 
-    def _screen(self, text: str, classify, cache_tag: str) -> tuple:
-        """Classify the whole text, chunk by chunk. Returns (verdict, reason): UNSAFE at the first
-        unsafe chunk; UNAVAILABLE if any chunk couldn't be classified or the text is over
-        ``max_chars``; SAFE only when every chunk was classified SAFE."""
-        if len(text) > self._max_chars:
-            return "UNAVAILABLE", (f"text of {len(text)} characters is over max_chars={self._max_chars}; "
-                                   "not screened")
-        chunks = _chunks(text, self._chunk_chars, self._chunk_overlap)
-        unavailable = None
-        for i, chunk in enumerate(chunks, 1):
-            key = "|".join((self._model, str(self._temperature), cache_tag,
-                            hashlib.sha256(chunk.encode("utf-8", "replace")).hexdigest()))
-            with _SAFE_CACHE_LOCK:
-                cached = self._cache_size > 0 and key in _SAFE_CACHE
-                if cached:
-                    _SAFE_CACHE.move_to_end(key)
-            if cached:
-                continue
-            verdict, reason = classify(chunk)
-            where = f" (chunk {i} of {len(chunks)})" if len(chunks) > 1 else ""
+    def _cache_key(self, tag: str, chunk: str) -> str:
+        return "|".join((self._model, str(self._temperature), tag,
+                         hashlib.sha256(chunk.encode("utf-8", "replace")).hexdigest()))
+
+    def _screen_all(self, texts: List[str], checks: List[Tuple[str, Callable[[str], tuple], Optional[str]]]) -> tuple:
+        """Classify every chunk of every text with every check. ``checks``: (cache tag, classify,
+        label). Returns (verdict, reason, label): UNSAFE as soon as any call says so (calls not yet
+        started are cancelled); UNAVAILABLE if the text is over ``max_chars`` or any call couldn't
+        classify; SAFE only when every (check, chunk) was classified SAFE now or before (cache).
+
+        Optimal, not partial: identical chunks are classified once, cached SAFE chunks not at all,
+        and the rest run ``concurrency`` at a time."""
+        total = sum(len(t) for t in texts)
+        if total > self._max_chars:
+            return "UNAVAILABLE", (f"text of {total} characters is over max_chars={self._max_chars}; "
+                                   "not screened"), None
+        tasks, seen, count = [], set(), 0
+        for ti, text in enumerate(texts, 1):
+            chunks = _chunks(text, self._chunk_chars, self._chunk_overlap)
+            for ci, chunk in enumerate(chunks, 1):
+                for tag, classify, label in checks:
+                    key = self._cache_key(tag, chunk)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    count += 1
+                    with _SAFE_CACHE_LOCK:
+                        cached = self._cache_size > 0 and key in _SAFE_CACHE
+                        if cached:
+                            _SAFE_CACHE.move_to_end(key)
+                    if cached:
+                        continue
+                    where = (f" (text {ti} of {len(texts)}, chunk {ci} of {len(chunks)})"
+                             if len(texts) > 1 or len(chunks) > 1 else "")
+                    tasks.append((key, classify, chunk, where, label))
+        if not tasks:
+            return "SAFE", f"{count} check(s), all cached SAFE", None
+
+        unavailable: Optional[Tuple[str, Optional[str]]] = None
+
+        def settle(task, result) -> Optional[tuple]:
+            nonlocal unavailable
+            key, _c, _chunk, where, label = task
+            verdict, reason = result
             if verdict == "UNSAFE":
-                return "UNSAFE", reason + where
+                return "UNSAFE", reason + where, label
             if verdict == "UNAVAILABLE":
-                unavailable = unavailable or (reason + where)
-                continue
-            if self._cache_size > 0:
+                unavailable = unavailable or (reason + where, label)
+            elif self._cache_size > 0:
                 with _SAFE_CACHE_LOCK:
                     _SAFE_CACHE[key] = True
                     while len(_SAFE_CACHE) > self._cache_size:
                         _SAFE_CACHE.popitem(last=False)
+            return None
+
+        if self._concurrency == 1 or len(tasks) == 1:
+            for task in tasks:
+                hit = settle(task, task[1](task[2]))
+                if hit:
+                    return hit
+        else:
+            pool = ThreadPoolExecutor(max_workers=min(self._concurrency, len(tasks)),
+                                      thread_name_prefix="guardian")
+            try:
+                # each call runs in a copy of the caller's context, so trace events keep their trace id
+                pending = {pool.submit(contextvars.copy_context().run, t[1], t[2]): t for t in tasks}
+                while pending:
+                    done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                    for fut in done:
+                        hit = settle(pending.pop(fut), fut.result())
+                        if hit:
+                            for other in pending:
+                                other.cancel()
+                            return hit
+            finally:
+                pool.shutdown(wait=True, cancel_futures=True)
         if unavailable:
-            return "UNAVAILABLE", unavailable
-        return "SAFE", f"{len(chunks)} chunk(s) safe"
+            return "UNAVAILABLE", unavailable[0], unavailable[1]
+        return "SAFE", f"{count} check(s) safe", None
 
     def _emit_call_event(self, phase: str, agent: str, latency_ms: int, verdict: str) -> None:
         emit_trace_event({
@@ -375,17 +433,22 @@ class GuardianGovernance(BaseGovernance):
         })
 
     def pre_process(self, payload: Dict[str, Any], ctx: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  # type: ignore[override]
-        """Screen incoming payload before the agent invokes the LLM."""
-        text = _extract_text(payload, "query", "document_text", "text")
+        """Screen incoming payload before the agent invokes the LLM: the default check and every
+        named risk, on every chunk of every string, in one pool."""
+        texts = _texts(payload, "query", "document_text", "text")
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
-        log.info("[GuardianGovernance] pre_process agent=%s chars=%d", agent, len(text))
+        log.info("[GuardianGovernance] pre_process agent=%s texts=%d chars=%d", agent, len(texts),
+                 sum(len(t) for t in texts))
 
-        verdict, reason = self._screen(
-            text, lambda c: self._call_guardian(_SYSTEM_PRE, c, phase="pre", agent=agent), "pre")
+        checks = [("pre", lambda c: self._call_guardian(_SYSTEM_PRE, c, phase="pre", agent=agent), None)]
+        checks += [("risk:" + name, (lambda c, n=name, d=definition: self._call_guardian_risk(n, d, c, agent)), name)
+                   for name, definition in self._ingress_risks]
+        verdict, reason, label = self._screen_all(texts, checks)
 
         if verdict == "UNSAFE":
-            log.warning("[GuardianGovernance] PRE BLOCKED agent=%s — %s", agent, reason)
-            raise PermissionError(f"Granite Guardian blocked ingress: {reason}")
+            log.warning("[GuardianGovernance] PRE BLOCKED agent=%s%s — %s", agent,
+                        f" risk={label}" if label else "", reason)
+            raise PermissionError(f"Granite Guardian blocked ingress{f' ({label})' if label else ''}: {reason}")
 
         if verdict == "UNAVAILABLE":
             if self._on_unavailable == "fail_closed":
@@ -396,30 +459,18 @@ class GuardianGovernance(BaseGovernance):
             else:  # fail_open
                 log.warning("[GuardianGovernance] PRE UNAVAILABLE agent=%s — fail_open (allowing through): %s", agent, reason)
         else:
-            log.info("[GuardianGovernance] pre_process SAFE agent=%s", agent)
-
-        for name, definition in self._ingress_risks:
-            verdict, reason = self._screen(
-                text, lambda c, n=name, d=definition: self._call_guardian_risk(n, d, c, agent), "risk:" + name)
-            if verdict == "UNSAFE":
-                log.warning("[GuardianGovernance] PRE BLOCKED agent=%s risk=%s", agent, name)
-                raise PermissionError(f"Granite Guardian blocked ingress ({name}): {reason}")
-            if verdict == "UNAVAILABLE" and self._on_unavailable == "fail_closed":
-                raise PermissionError(f"Granite Guardian unavailable (fail-closed policy) — {reason}")
-            if verdict == "UNAVAILABLE":
-                log.warning("[GuardianGovernance] PRE UNAVAILABLE risk=%s agent=%s — %s: %s",
-                            name, agent, self._on_unavailable, reason)
+            log.info("[GuardianGovernance] pre_process SAFE agent=%s (%s)", agent, reason)
 
         return payload
 
     def post_process(self, payload: Any, ctx: Optional[Dict[str, Any]] = None) -> Any:  # type: ignore[override]
         """Screen agent output after the LLM responds."""
-        text = _extract_text(payload, "output", "conclusion", "draft", "summary", "extracted", "audit_notes")
+        texts = _texts(payload, "output", "conclusion", "draft", "summary", "extracted", "audit_notes")
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
-        log.info("[GuardianGovernance] post_process agent=%s chars=%d", agent, len(text))
+        log.info("[GuardianGovernance] post_process agent=%s chars=%d", agent, sum(len(t) for t in texts))
 
-        verdict, reason = self._screen(
-            text, lambda c: self._call_guardian(_SYSTEM_POST, c, phase="post", agent=agent), "post")
+        verdict, reason, _ = self._screen_all(
+            texts, [("post", lambda c: self._call_guardian(_SYSTEM_POST, c, phase="post", agent=agent), None)])
 
         if verdict == "UNSAFE":
             log.warning("[GuardianGovernance] POST BLOCKED agent=%s — %s", agent, reason)
