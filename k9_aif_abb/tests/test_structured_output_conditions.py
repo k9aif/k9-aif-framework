@@ -131,7 +131,7 @@ SQUADS = """squads:
     flow:
       - {agent: ChurnDetectionAgent, result_key: churn}
       - {agent: K9RulesAgent, result_key: churn_rules}
-      - {agent: CustomerSupportAgent, result_key: answer}
+      - {agent: CustomerSupportAgent, result_key: answer, context_keys: []}   # the customer's message only
 """
 
 AGENTS = {
@@ -195,3 +195,5 @@ def test_a_normal_message_is_answered(tmp_path):
     results = out.get("results", out)
     assert results["churn_rules"]["output"]["decision"] == "allow"
     assert results["answer"]["output"] == "Hello! How can I help you today?"
+    support_prompt = json.dumps([str(i) for i in model.calls[1].input])
+    assert "is_churn_risk" not in support_prompt                          # the customer never sees the check
