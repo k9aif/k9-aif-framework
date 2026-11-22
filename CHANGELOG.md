@@ -27,7 +27,8 @@ All notable changes to K9-AIF are documented here.
 - A process-wide cache of chunks judged SAFE (by model, temperature, check and sha256), so a document carried
   through many agents is classified once. UNSAFE and UNAVAILABLE are never cached. `k9_factories.reset_all()`
   clears it (`clear_safe_cache()`). Each string in the payload is chunked on its own, so a document has the same
-  chunks in every payload it travels in, whatever fields sit beside it.
+  chunks in every payload it travels in, whatever fields sit beside it. Strings under 512 characters (a message, ids, a role)
+  are packed into one unit, so ten small fields cost one call, not ten.
 - `concurrency` (4): the default check and every named risk, on every chunk, run in one pool of that many calls;
   the first UNSAFE cancels the calls not yet started. Each call runs in a copy of the caller's context, so its
   trace events keep the run's trace id.

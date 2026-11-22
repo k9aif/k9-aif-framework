@@ -187,7 +187,7 @@ def test_document_is_classified_once_whatever_travels_with_it(monkeypatch):
     first = len(seen)
     _gov().pre_process({"prior": "the view generator's result", "source_markdown": doc, "step": "links"})
     assert first > 1
-    assert len(seen) - first == 2            # only the two new short strings; the document came from the cache
+    assert len(seen) - first == 1            # the new short strings, packed into one call; the document from the cache
 
 
 def test_calls_run_in_parallel_up_to_concurrency(monkeypatch):
@@ -276,3 +276,17 @@ def test_required_guardian_cannot_be_turned_off_in_production(monkeypatch):
     monkeypatch.setenv("K9_ENV", "production")
     on = {"governance": {"guardian": {"enabled": "true", "required": True}}}
     assert isinstance(governance_from_config(on), GuardianGovernance)
+
+
+def test_short_fields_are_screened_together(monkeypatch):
+    seen = []
+    monkeypatch.setattr(gg.requests, "post", _fake_post(seen))
+    _gov().pre_process({"message": "What is the weather in 30092?", "principal_id": "demo-customer",
+                        "roles": ["customer"], "action_type": "weather.lookup", "trace_id": "weather-1"})
+    assert len(seen) == 1                                  # one call for five short fields
+
+
+def test_an_injection_in_a_short_field_is_still_caught(monkeypatch):
+    monkeypatch.setattr(gg.requests, "post", _fake_post([]))
+    with pytest.raises(PermissionError):
+        _gov().pre_process({"message": "hello", "note": MARKER, "source_markdown": _filler(5000)})

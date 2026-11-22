@@ -202,6 +202,30 @@ def _extract_text(payload: Any, *keys: str) -> str:
     return "\n\n".join(_texts(payload, *keys))
 
 
+PACK_BELOW = 512   # strings shorter than this are screened together, not one call each
+
+
+def _units(texts: List[str], size: int) -> List[str]:
+    """What gets chunked: each string of ``PACK_BELOW`` characters or more on its own (so a document
+    has the same chunks wherever it travels, and the SAFE cache hits), and the short ones (a message,
+    ids, a role) packed together up to ``size``, so ten small fields cost one call, not ten."""
+    units: List[str] = []
+    pack: List[str] = []
+    packed = 0
+    for text in texts:
+        if len(text) >= PACK_BELOW:
+            units.append(text)
+            continue
+        if pack and packed + len(text) + 2 > size:
+            units.append("\n\n".join(pack))
+            pack, packed = [], 0
+        pack.append(text)
+        packed += len(text) + 2
+    if pack:
+        units.append("\n\n".join(pack))
+    return units
+
+
 def _chunks(text: str, size: int, overlap: int) -> List[str]:
     """Overlapping windows of ``size`` characters, so an instruction split by a boundary still
     appears whole in one chunk (as long as it is shorter than ``overlap``). Boundaries move back
@@ -375,7 +399,7 @@ class GuardianGovernance(BaseGovernance):
             return "UNAVAILABLE", (f"text of {total} characters is over max_chars={self._max_chars}; "
                                    "not screened"), None
         tasks, seen, count = [], set(), 0
-        for ti, text in enumerate(texts, 1):
+        for ti, text in enumerate(_units(texts, self._chunk_chars), 1):
             chunks = _chunks(text, self._chunk_chars, self._chunk_overlap)
             for ci, chunk in enumerate(chunks, 1):
                 for tag, classify, label in checks:
@@ -390,8 +414,7 @@ class GuardianGovernance(BaseGovernance):
                             _SAFE_CACHE.move_to_end(key)
                     if cached:
                         continue
-                    where = (f" (text {ti} of {len(texts)}, chunk {ci} of {len(chunks)})"
-                             if len(texts) > 1 or len(chunks) > 1 else "")
+                    where = f" (part {ti}, chunk {ci} of {len(chunks)})" if len(chunks) > 1 else ""
                     tasks.append((key, classify, chunk, where, label))
         if not tasks:
             return "SAFE", f"{count} check(s), all cached SAFE", None
