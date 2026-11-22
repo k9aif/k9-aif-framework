@@ -220,7 +220,9 @@ governance refuse before the tool runs. Development/test only warn. Tests:
 `ShieldGovernance(config)`; `governance.guardian.enabled: true` →
 `GuardianGovernance` (Granite Guardian, `on_unavailable` default
 `fail_closed`; 1.34.0: reads every string in the payload, all of it, in 2000-character chunks, any unsafe chunk
-blocks, over `max_chars` refused under fail_closed; before, only the first 4000 characters of one key; `temperature` default 0 from 1.26, removing most run-to-run variation:
+blocks, over `max_chars` refused under fail_closed; before, only the first 4000 characters of one key;
+`required: true` (config file, not .env) refuses start-up with Guardian off outside dev/test; `points` limits where
+the model check is spent (callers name `ctx["checkpoint"]`; Shield runs everywhere); switch: `K9_GUARDIAN_ENABLED`; `temperature` default 0 from 1.26, removing most run-to-run variation:
 before, Ollama sampled and the same document flipped between runs; GPU
 inference is not bit-exact, so a borderline verdict can still change); both → `ChainedGovernance(Shield, Guardian)`, Shield first.
 One config setting therefore governs every agent of an application.

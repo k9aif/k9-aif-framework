@@ -430,3 +430,26 @@ def test_squad_step_refuses_agent_tools():
     with pytest.raises(ValueError, match="no agent_tools"):
         K9OpenAIAgent(config={**_spec(tools=[]), "agent_tools": ["X"]}, capabilities=[], model_routing="direct",
                       governance=ShieldGovernance(CONFIG))
+
+
+def test_each_check_names_its_checkpoint():
+    """Property: Guardian's `points` setting can only work if every check the adapter makes says where
+    it is. Records the ctx of every governance call in one tool-using run."""
+    class Recorder:
+        def __init__(self):
+            self.points = []
+
+        def pre_process(self, payload, ctx=None):
+            self.points.append((ctx or {}).get("checkpoint"))
+            return payload
+
+        def post_process(self, payload, ctx=None):
+            self.points.append((ctx or {}).get("checkpoint"))
+            return payload
+    rec = Recorder()
+    model = ScriptedModel([[function_call("lookup_zip", {"zip_code": "30301"}, call_id="c1")],
+                           [assistant_message("Clear in Atlanta.")]])
+    _adapter(model, [], governance=rec).execute({"message": "Weather in 30301?"})
+    assert rec.points[0] == "ingress" and rec.points[-1] == "egress"
+    assert {"tool_call", "tool_result", "reply"} <= set(rec.points)
+    assert None not in rec.points

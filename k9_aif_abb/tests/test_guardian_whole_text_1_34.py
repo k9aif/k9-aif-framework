@@ -238,3 +238,41 @@ def test_trace_events_keep_the_callers_trace_id(monkeypatch):
         trace_events.register_trace_callback(None)
     calls = [e for e in got if e.get("type") == "LLMCall"]
     assert len(calls) > 1 and all(e.get("trace_id") == "T-123" for e in calls)
+
+
+# ── where Guardian runs, and who may turn it off ──────────────────────────
+
+def test_points_skip_guardian_where_not_listed_and_say_so(monkeypatch):
+    from k9_aif_abb.k9_utils import trace_events
+    seen, got = [], []
+    monkeypatch.setattr(gg.requests, "post", _fake_post(seen))
+    trace_events.register_trace_callback(got.append)
+    try:
+        g = _gov(points=["ingress", "tool_result", "egress"])
+        g.post_process(MARKER, {"checkpoint": "reply"})           # not listed: Guardian not spent here
+        assert seen == []
+        assert any(e.get("type") == "GuardianSkipped" and e.get("checkpoint") == "reply" for e in got)
+        with pytest.raises(PermissionError):
+            g.pre_process({"query": MARKER}, {"checkpoint": "tool_result"})   # listed: screened
+        with pytest.raises(PermissionError):
+            g.pre_process({"query": MARKER})                       # no checkpoint (an agent's own input): always
+    finally:
+        trace_events.register_trace_callback(None)
+
+
+def test_unknown_points_are_refused():
+    with pytest.raises(ValueError, match="unknown points"):
+        _gov(points=["everywhere"])
+
+
+def test_required_guardian_cannot_be_turned_off_in_production(monkeypatch):
+    from k9_aif_abb.k9_core.governance.pipeline import GovernanceConfigError, governance_from_config
+    cfg = {"governance": {"guardian": {"enabled": False, "required": True}}}
+    monkeypatch.setenv("K9_ENV", "production")
+    with pytest.raises(GovernanceConfigError, match="required"):
+        governance_from_config(cfg)
+    monkeypatch.setenv("K9_ENV", "development")
+    assert governance_from_config(cfg) is None                     # development: warned, allowed
+    monkeypatch.setenv("K9_ENV", "production")
+    on = {"governance": {"guardian": {"enabled": "true", "required": True}}}
+    assert isinstance(governance_from_config(on), GuardianGovernance)

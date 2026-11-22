@@ -130,6 +130,15 @@ security:
 governance:
   enabled: true
   policy_path: "k9_aif_abb/policies/governance.yaml"
+  # Granite Guardian, the semantic layer after k9x Shield (1.34.0: whole text, every field).
+  # One switch for every application: K9_GUARDIAN_ENABLED in .env. An enterprise that wants it
+  # always on sets `required: true` in its own config file (not .env): off is then refused at start-up
+  # outside development/test. `points` limits where the model-based check is spent (Shield runs at
+  # every point regardless): "all", or a list of ingress, reply, handoff, tool_call, tool_result, egress.
+  guardian:
+    enabled: ${K9_GUARDIAN_ENABLED:-false}
+    required: false
+    points: all
 
 vectordb:
   provider: chromadb

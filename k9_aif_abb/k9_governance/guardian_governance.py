@@ -46,6 +46,8 @@ the default ``fail_closed``), never passed as screened. Chunks already judged SA
 content hash (``cache_size``), so a document carried through many agents is screened once.
 
 Settings under ``governance.guardian``: ``chunk_chars`` (2000), ``chunk_overlap`` (200),
+``points`` ("all", or a list from ``CHECKPOINTS``: where the model-based check is spent; Shield runs
+everywhere), ``required`` (see ``governance_from_config``),
 ``max_chars`` (120000), ``cache_size`` (4096; 0 turns the cache off), ``concurrency`` (4: Guardian calls
 in flight at once; the default check and every named risk share one pool, and the first UNSAFE
 cancels the calls not yet started). Each string is chunked on its own, so a document has the same
@@ -98,6 +100,10 @@ log = logging.getLogger("governance.guardian")
 # temperature, the check, and the chunk's sha256. Only SAFE is cached: UNSAFE raises, UNAVAILABLE retries.
 _SAFE_CACHE: "OrderedDict[str, bool]" = OrderedDict()
 _SAFE_CACHE_LOCK = threading.Lock()
+
+
+# Check points a caller may name in ctx["checkpoint"] (governance.guardian.points).
+CHECKPOINTS = ("ingress", "reply", "handoff", "tool_call", "tool_result", "egress")
 
 
 def clear_safe_cache() -> None:
@@ -254,6 +260,17 @@ class GuardianGovernance(BaseGovernance):
         # Guardian calls in flight at once for one screen (1.34.0). The model server serves them in
         # parallel up to its own limit (Ollama: OLLAMA_NUM_PARALLEL); 1 = one at a time.
         self._concurrency = max(1, int(guardian_cfg.get("concurrency", 4)))
+        # Where Guardian runs (1.34.0). A caller names its check point in ctx["checkpoint"] (the OpenAI
+        # adapter: ingress, reply, handoff, tool_call, tool_result, egress). "all" (default) or a list;
+        # a call with no checkpoint (every BaseAgent's own input and output) is always screened.
+        # Shield runs at every point regardless: this only decides where the model-based check is spent.
+        points = guardian_cfg.get("points", "all")
+        if points != "all" and not isinstance(points, (list, tuple)):
+            raise ValueError(f"[GuardianGovernance] points must be 'all' or a list, got {points!r}")
+        unknown = set(points if points != "all" else []) - set(CHECKPOINTS)
+        if unknown:
+            raise ValueError(f"[GuardianGovernance] unknown points {sorted(unknown)}; known: {list(CHECKPOINTS)}")
+        self._points = None if points == "all" else set(points)
 
         # Extra ingress classifications: names from RISK_DEFINITIONS, or
         # {"name": ..., "definition": ...} for a solution-specific risk.
@@ -421,6 +438,15 @@ class GuardianGovernance(BaseGovernance):
             return "UNAVAILABLE", unavailable[0], unavailable[1]
         return "SAFE", f"{count} check(s) safe", None
 
+    def _skipped(self, ctx: Optional[Dict[str, Any]], agent: str) -> bool:
+        """True when this check point is not one Guardian is configured for (Shield still ran)."""
+        point = (ctx or {}).get("checkpoint")
+        if self._points is None or point is None or point in self._points:
+            return False
+        emit_trace_event({"type": "GuardianSkipped", "agent": agent, "checkpoint": point,
+                          "reason": "not in governance.guardian.points"})
+        return True
+
     def _emit_call_event(self, phase: str, agent: str, latency_ms: int, verdict: str) -> None:
         emit_trace_event({
             "type": "LLMCall",
@@ -439,6 +465,8 @@ class GuardianGovernance(BaseGovernance):
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] pre_process agent=%s texts=%d chars=%d", agent, len(texts),
                  sum(len(t) for t in texts))
+        if self._skipped(ctx, agent):
+            return payload
 
         checks = [("pre", lambda c: self._call_guardian(_SYSTEM_PRE, c, phase="pre", agent=agent), None)]
         checks += [("risk:" + name, (lambda c, n=name, d=definition: self._call_guardian_risk(n, d, c, agent)), name)
@@ -468,6 +496,8 @@ class GuardianGovernance(BaseGovernance):
         texts = _texts(payload, "output", "conclusion", "draft", "summary", "extracted", "audit_notes")
         agent = (ctx or {}).get("component", (ctx or {}).get("layer", "unknown"))
         log.info("[GuardianGovernance] post_process agent=%s chars=%d", agent, sum(len(t) for t in texts))
+        if self._skipped(ctx, agent):
+            return payload
 
         verdict, reason, _ = self._screen_all(
             texts, [("post", lambda c: self._call_guardian(_SYSTEM_POST, c, phase="post", agent=agent), None)])

@@ -219,7 +219,7 @@ def _k9_tool_guardrails(tool_name: str, governance: Callable[[], Any],
     async def k9_tool_call_check(data):
         args = json.loads(data.context.tool_arguments or "{}")
         try:
-            await screen_tool_call(governance(), tool_name, args, ctx=governance_context())
+            await screen_tool_call(governance(), tool_name, args, ctx={**governance_context(), "checkpoint": "tool_call"})
         except PermissionError as exc:
             return ToolGuardrailFunctionOutput.reject_content(
                 f"Tool call refused by governance: {exc}", output_info={"refused": True})
@@ -230,7 +230,8 @@ def _k9_tool_guardrails(tool_name: str, governance: Callable[[], Any],
         if not govern_results():
             return ToolGuardrailFunctionOutput.allow()
         try:
-            await screen_tool_result(governance(), tool_name, data.output, ctx=governance_context())
+            await screen_tool_result(governance(), tool_name, data.output,
+                                     ctx={**governance_context(), "checkpoint": "tool_result"})
         except PermissionError as exc:
             return ToolGuardrailFunctionOutput.reject_content(
                 f"Tool result withheld by governance: {exc}. Do not guess its content.",
@@ -291,7 +292,10 @@ class _K9RunHooks(RunHooks):
         text = _reply_text(response)
         if text:
             # A PermissionError here ends the run: a blocked reply never reaches the next step.
-            await self.adapter.apply_post_governance({"output": text}, self.adapter._governance_context())
+            # a reply in a group of agents may be what the next agent reads: a handoff point
+            point = "handoff" if len(self.adapter._specs) > 1 else "reply"
+            await self.adapter.apply_post_governance({"output": text},
+                                                     {**self.adapter._governance_context(), "checkpoint": point})
         self._event(type="OpenAIModelReply", agent=agent.name, screened=bool(text))
 
 
@@ -543,7 +547,7 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
             if not zt["allowed"]:
                 raise PermissionError(f"[OpenAIAgentsOrchestratorAdapter] Zero Trust denied run: {zt.get('reason')}")
 
-            governed = await self.apply_pre_governance(sdk_input, self._governance_context())
+            governed = await self.apply_pre_governance(sdk_input, {**self._governance_context(), "checkpoint": "ingress"})
             emit_trace_event({"type": "OpenAIRunCheck", "agent": self.adapter_name, "gate": "ingress",
                               "allowed": True})
             prompt = (governed or sdk_input).get("prompt") or ""
@@ -560,7 +564,7 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
 
             final = run_result.final_output
             await self.apply_post_governance({"output": final if isinstance(final, str) else repr(final)},
-                                             self._governance_context())
+                                             {**self._governance_context(), "checkpoint": "egress"})
             emit_trace_event({"type": "OpenAIRunCheck", "agent": self.adapter_name, "gate": "egress",
                               "allowed": True})
             self.publish_status("OpenAIAgentsRunCompleted", {

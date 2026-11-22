@@ -36,6 +36,20 @@ All notable changes to K9-AIF are documented here.
   per-string chunks and the cache. Concurrency adds speed only when the model server runs requests in parallel
   (Ollama: `OLLAMA_NUM_PARALLEL`); on a server that serves one at a time the calls queue.
 
+- **k9x Shield reads every value at every depth.** Each check had its own helper that stopped at depth 8
+  (`ToolArgumentCheck` at 6) and returned nothing below it: an injection nested 9 levels deep passed every check,
+  and `InputSizeCheck` didn't count it. One shared walker now (`k9_security/vulnerability/payload_text.py`):
+  iterative, no depth limit, a reference cycle read once. Tests: `test_shield_reads_every_depth_1_34.py`.
+- **`governance.guardian.required`** (enterprise lock): written in the config file; with Guardian off (from
+  `.env` or unset), `governance_from_config` raises `GovernanceConfigError` outside development/test.
+- **`K9_GUARDIAN_ENABLED`**: the shipped config reads `governance.guardian.enabled: ${K9_GUARDIAN_ENABLED:-false}`,
+  one switch name for every application.
+- **`governance.guardian.points`** (`all` by default): where the model-based check is spent. A caller names its
+  check point in `ctx["checkpoint"]`; the OpenAI adapter labels every check (`ingress`, `reply`, `handoff`,
+  `tool_call`, `tool_result`, `egress`). A point not listed is skipped by Guardian only, with a `GuardianSkipped`
+  trace event; Shield runs at every point. A call with no checkpoint (every agent's own input and output) is
+  always screened. In a group of agents a reply is a `handoff` point.
+
 ### Changed
 - Guardian makes more model calls on long payloads (one per chunk per check). Cost grows with text length;
   `max_chars` bounds it.

@@ -73,6 +73,8 @@ def governance_from_config(config: dict | None) -> Any:
 
     ``security.shield.enabled: true`` → :class:`ShieldGovernance` over the
     whole config (it reads ``security.shield.ingress/egress.checks``).
+    ``governance.guardian.required: true`` (1.34.0) with Guardian off → :class:`GovernanceConfigError`
+    outside development/test: an enterprise can lock Guardian on whatever .env says.
     ``governance.guardian.enabled: true`` → :class:`GuardianGovernance`
     (Granite Guardian, the semantic layer; ``governance.guardian.model`` /
     ``on_unavailable``, default fail_closed).
@@ -87,6 +89,15 @@ def governance_from_config(config: dict | None) -> Any:
         from k9_aif_abb.k9_security.vulnerability.shield_governance import ShieldGovernance
         stages.append(ShieldGovernance(cfg))
     guardian = (cfg.get("governance") or {}).get("guardian") or {}
+    if isinstance(guardian, dict) and config_flag(guardian.get("required")) is True \
+            and config_flag(guardian.get("enabled")) is not True:
+        # Enterprise policy (1.34.0): ``required`` is written in the config file; ``enabled`` may come from
+        # .env (K9_GUARDIAN_ENABLED). Required but off is refused outside development/test.
+        msg = (f"governance.guardian.required is true but Guardian is off (enabled={guardian.get('enabled')!r}). "
+               "Turn it on (K9_GUARDIAN_ENABLED=true) or remove 'required' from the config file.")
+        if not is_permissive_env():
+            raise GovernanceConfigError(msg)
+        logging.getLogger(__name__).warning("[governance] %s Allowed only because K9_ENV is development/test.", msg)
     if isinstance(guardian, dict) and config_flag(guardian.get("enabled")) is True:
         from k9_aif_abb.k9_governance.guardian_governance import GuardianGovernance
         stages.append(GuardianGovernance(config=cfg))
