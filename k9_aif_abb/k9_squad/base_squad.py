@@ -7,18 +7,15 @@ import time
 
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_utils.async_bridge import resolve as _resolve
+from k9_aif_abb.k9_utils.step_outputs import resolve_path as _resolve_step_path
 
 log = logging.getLogger(__name__)
 
 
 def _resolve_path(key: str, ctx: dict):
-    """Dot-notation traversal into ctx. Returns None if any segment is missing."""
-    val = ctx
-    for part in key.split("."):
-        if not isinstance(val, dict):
-            return None
-        val = val.get(part)
-    return val
+    """Dot-notation traversal into ctx. Returns None if any segment is missing. Since 1.35.0 it reads
+    inside a step's structured output (JSON text): ``churn.output.is_churn_risk``."""
+    return _resolve_step_path(ctx, key)
 
 
 def _eval_when(when_cfg, ctx: dict) -> bool:

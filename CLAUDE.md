@@ -104,7 +104,11 @@ the step sets `context_keys` (scoping) or the squad sets `synthesis:`
 digest (`squad_digest`) from `K9ContextSynthesizerAgent` (a governed
 `BaseAgent`) instead of the upstream outputs; full outputs stay in the
 squad's results, each digest is logged in `squad_synthesis`. Recipe: `SKILLS.md`
-Skill 4. Tests: `tests/test_squad_synthesis.py`.
+Skill 4. Tests: `tests/test_squad_synthesis.py`. **1.35.0:** a `when:` or a rule can test a field of a step's structured output
+(JSON text), such as `churn.output.is_churn_risk`, via `k9_utils/step_outputs.py`; before, the path stopped at the
+text and the condition never held. `SquadLoader` passes each agent only the `agent_kwargs` its constructor
+takes, so a `K9RulesAgent` step needs no subclass in an OpenAI squad. Test:
+`tests/test_structured_output_conditions.py`.
 
 ## LLM calls — one path only
 

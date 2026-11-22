@@ -246,16 +246,11 @@ def _approval_policy(always: bool, when: Any):
 
 
 def _parsed(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Earlier steps' outputs may be JSON text (structured output); parse them so a condition can reach inside."""
-    out: Dict[str, Any] = {}
-    for key, value in payload.items():
-        if isinstance(value, dict) and isinstance(value.get("output"), str):
-            try:
-                value = {**value, "output": json.loads(value["output"])}
-            except ValueError:
-                pass
-        out[key] = value
-    return out
+    """Earlier steps' outputs may be JSON text (structured output); parse them so a condition can reach inside.
+    The shared helper since 1.35.0 (``k9_utils.step_outputs``), which ``BaseSquad``'s ``when:`` and the rules
+    adapters use too."""
+    from k9_aif_abb.k9_utils.step_outputs import with_parsed_outputs
+    return with_parsed_outputs(payload)
 
 
 def _output_type(agent: str, schema: Any):

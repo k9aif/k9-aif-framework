@@ -13,6 +13,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Any, Dict
 
+from k9_aif_abb.k9_utils.step_outputs import with_parsed_outputs
+
 from .base_integration_adapter import BaseIntegrationAdapter
 
 
@@ -27,7 +29,8 @@ class BaseRulesAdapter(BaseIntegrationAdapter):
         self.validate_input(payload)
         ruleset = self.config.get("ruleset") or payload.get("ruleset", "")
         try:
-            decision = self.evaluate(ruleset, payload)
+            # 1.35.0: a step's structured output (JSON text) arrives parsed, so rules can read its fields
+            decision = self.evaluate(ruleset, with_parsed_outputs(payload))
             return {"adapter": self.adapter_name, "status": "success", "decision": decision, "ruleset": ruleset}
         except Exception as exc:
             return self.handle_error(exc, payload)

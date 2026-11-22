@@ -4,6 +4,36 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.35.0] — 2026-11-22
+
+### Fixed
+- **A condition on structured output never held.** `K9OpenAIAgent` passes a structured result on as JSON text
+  (`{"output": "{\"is_churn_risk\": true}"}`). A squad's `when: {key: churn.output.is_churn_risk, ...}` and a
+  `K9RulesAgent` rule `when: "churn.output.is_churn_risk == true"` walked dictionaries only, stopped at the text and
+  found nothing: the rule never matched (a churn risk was allowed) and the `when:` never held. Found 2026-11-22
+  while writing OpenAI's own guardrail example (the churn check, *A practical guide to building agents*,
+  pp. 28-29) as a K9-AIF squad. Applications had worked around it in code (the AP demo's `APRulesAgent` parses the
+  invoice step's output itself).
+- Now `BaseSquad`'s `when:` and `K9RulesAdapter`'s conditions read inside JSON text holding an object or list
+  (and index lists: `items.0.amount`), and `BaseRulesAdapter.execute()` hands every rules engine
+  (`K9RulesAdapter`, `RestRulesAdapter`, `GoRulesAdapter`, your own) the step outputs parsed, so a decision service
+  receives fields, not text. The stored step results stay JSON text: what the next agent reads is unchanged.
+- **A squad could not mix OpenAI agents with a `K9RulesAgent`.** `SquadLoader` passed every agent all of
+  `agent_kwargs`; the rules agent rejected `capabilities` / `model_provider` with `TypeError`, so applications
+  needed a subclass that swallowed them. Now each agent gets only the keywords its constructor takes (a
+  constructor with `**kwargs` still gets all).
+
+### Added
+- `k9_utils/step_outputs.py`: `parse_json_text`, `resolve_path`, `with_parsed_outputs`. `K9OpenAIAgent`'s
+  approval policy uses the same helper (it had its own copy; it now parses only JSON objects and lists, never
+  a reply that happens to be a number or `true`).
+- `tests/test_structured_output_conditions.py`: the helper, squad `when:`, rules on structured fields, every
+  engine getting parsed facts, and OpenAI's churn guardrail end to end as a squad (`ChurnDetectionAgent` →
+  `K9RulesAgent` → `CustomerSupportAgent`): a churn risk raises `RequiresHIL` on the `retention` queue and the
+  support agent never runs; a greeting is answered.
+
+---
+
 ## [1.34.0] — 2026-11-20
 
 ### Fixed (security)

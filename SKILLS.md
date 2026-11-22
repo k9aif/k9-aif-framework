@@ -364,6 +364,15 @@ squads:
 
 `auto` engages only once the upstream results exceed `max_context_chars` (default 24000, about 6k tokens); `always` digests whenever there are upstream results. Steps with `context_keys` are never synthesized. The squad's return value keeps every full output, and `squad_synthesis` records each digest (step, source keys, sizes) for audit. A downstream agent reads `squad_digest` when present, so write agents that accept either form. Synthesizer token budget: `squad_synthesis.max_tokens` in the app config.
 
+**Conditions on structured output (1.35.0).** A step with structured output (`K9OpenAIAgent` with
+`structured_output:`) passes its result on as JSON text, which is what the next agent's prompt reads. A
+condition can still test its fields: a squad's `when: {key: churn.output.is_churn_risk, eq: true}` and a
+`K9RulesAgent` rule's `when: "churn.output.is_churn_risk == true"` read inside the text
+(`k9_utils/step_outputs.py`), and every rules adapter receives step outputs parsed. A squad may mix agent
+kinds: `SquadLoader` passes each agent only the `agent_kwargs` its constructor takes, so the framework's
+`K9RulesAgent` sits in an OpenAI squad with no subclass (squad YAML names it `K9RulesAgent`). Example: OpenAI's
+churn guardrail as a squad, `tests/test_structured_output_conditions.py`.
+
 ### Agent YAML
 
 Agent YAML describes behavior only — no squad references, no routing fields.

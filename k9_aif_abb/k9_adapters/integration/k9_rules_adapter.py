@@ -9,6 +9,8 @@ import ast
 import re
 from typing import Any, Dict, Iterable, List, Optional
 
+from k9_aif_abb.k9_utils.step_outputs import parse_json_text
+
 from .base_rules_adapter import BaseRulesAdapter
 
 _MISSING = object()
@@ -36,6 +38,7 @@ def _resolve(facts: Any, path: str) -> List[Any]:
     for part in path.split("."):
         nxt: List[Any] = []
         for node in nodes:
+            node = parse_json_text(node)   # 1.35.0: read inside JSON text (a step's structured output)
             if isinstance(node, dict):
                 if part == "*":
                     nxt.extend(node.values())

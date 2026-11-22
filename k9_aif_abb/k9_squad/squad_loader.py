@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
+import inspect
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -8,6 +10,8 @@ import yaml
 
 from .base_squad import BaseSquad, synthesis_config
 from .squad_monitor import DefaultSquadMonitor
+
+log = logging.getLogger(__name__)
 
 
 class SquadLoader:
@@ -203,7 +207,7 @@ class SquadLoader:
             if self.agent_loader is not None:
                 agent_cls = self.agent_loader.resolve_class(agent_name)
                 return agent_cls(config=self.agent_loader.merge_with_global(agent_name, build["config"]),
-                                 **build["agent_kwargs"])
+                                 **_accepted_kwargs(agent_cls, build["agent_kwargs"], agent_name))
 
             if hasattr(self.agent_registry, "create"):
                 return self.agent_registry.create(agent_name)
@@ -221,3 +225,23 @@ class SquadLoader:
             raise ValueError(
                 f"Failed to create agent '{agent_name}' for squad '{squad_id}': {e}"
             ) from e
+
+
+def _accepted_kwargs(agent_cls, kwargs: Dict[str, Any], agent_name: str) -> Dict[str, Any]:
+    """The ``agent_kwargs`` this agent's constructor accepts (1.35.0). A squad may mix agent kinds: OpenAI agents
+    take ``capabilities`` and ``model_provider``, a ``K9RulesAgent`` takes neither. Before 1.35.0 every agent got
+    every keyword, so a rules step in an OpenAI squad raised ``TypeError`` and needed a subclass that swallowed
+    them. A constructor with ``**kwargs`` still gets all of them."""
+    if not kwargs:
+        return {}
+    try:
+        params = inspect.signature(agent_cls.__init__).parameters
+    except (TypeError, ValueError):
+        return dict(kwargs)
+    if any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()):
+        return dict(kwargs)
+    accepted = {k: v for k, v in kwargs.items() if k in params}
+    skipped = sorted(set(kwargs) - set(accepted))
+    if skipped:
+        log.debug("[SquadLoader] %s does not take %s; not passed", agent_name, ", ".join(skipped))
+    return accepted
