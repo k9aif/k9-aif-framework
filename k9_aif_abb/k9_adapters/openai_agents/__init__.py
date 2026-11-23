@@ -16,7 +16,7 @@ K9-AIF agent that a squad runs in the order its flow sets, with synthesis (the s
 from .k9_openai_agents_adapter import K9OpenAIAgentsAdapter
 from .openai_agents_orchestrator_adapter import OpenAIAgentsOrchestratorAdapter, load_agent_specs
 from .openai_agents_payload_mapper import OpenAIAgentsPayloadMapper
-from .k9_model_provider import K9ModelProvider, K9GovernedModel
+from .k9_model_provider import K9ModelProvider, K9GovernedModel, current_run_config
 from .k9_openai_agent import K9OpenAIAgent
 from .openai_hil_adapter import OpenAIHILAdapter
 from k9_aif_abb.k9_adapters.tool_capability import ToolCapability
@@ -31,4 +31,5 @@ __all__ = [
     "K9GovernedModel",
     "ToolCapability",
     "load_agent_specs",
+    "current_run_config",
 ]

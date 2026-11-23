@@ -23,7 +23,28 @@ All notable changes to K9-AIF are documented here.
   needed a subclass that swallowed them. Now each agent gets only the keywords its constructor takes (a
   constructor with `**kwargs` still gets all).
 
+- **A rules step asked the same question again after the person answered.** When `K9RulesAgent` raised
+  `RequiresHIL` (`then: hil`) and the decision came back, the resumed squad re-ran the step, the rule matched
+  again and the same case was raised again. Now the step marks its `resume_state` and, on the resume, returns the
+  person's decision (`decision: approved | rejected`, `decided_by`, `comment`) for the next step's `when:`.
+
 ### Added
+- **The OpenAI Agents SDK's own agent guardrails** (`k9_adapters/openai_agents/openai_guardrails.py`), in both
+  `K9OpenAIAgent` and `OpenAIAgentsOrchestratorAdapter`. Agent YAML lists them by `function` + `module`
+  (`input_guardrails:`, `output_guardrails:`; a decorated guardrail or a plain function). The SDK runs them as it
+  always does, beside K9's own checks. A tripwire becomes `PermissionError` (`on_trip: block`, default, the same
+  signal as a k9x Shield block) or, for input guardrails, `RequiresHIL` (`on_trip: hil`, `hil_queue`): approved,
+  the run starts again without that guardrail; rejected, `PermissionError`. Refused at construction: an input
+  guardrail the SDK would never run (an agent that is neither the entry agent nor used as a tool), `on_trip: hil`
+  on an output guardrail, and bad entries. Before 1.35.0 an application could not attach its own guardrails at
+  all. Tests: `tests/test_openai_guardrails.py`.
+- `current_run_config()` (`k9_adapters.openai_agents`): a guardrail that runs an agent of its own passes it to
+  `Runner.run`, so the check's model call is routed by the K9 Model Router on the run's provider. Without it the
+  nested run used the SDK's default provider (OpenAI) and, on Ollama, failed on the second step with "Event loop
+  is closed". Verified with the guide's churn guardrail on qwen2.5:7b: a greeting answered, a cancellation sent to
+  the retention queue with the check's reasoning.
+- An **SDK coverage table** in `k9_adapters/openai_agents/CLAUDE.md`: every OpenAI Agents SDK feature, supported,
+  mapped (to what), not supported, or refused on purpose (with the K9 check it would bypass).
 - `k9_utils/step_outputs.py`: `parse_json_text`, `resolve_path`, `with_parsed_outputs`. `K9OpenAIAgent`'s
   approval policy uses the same helper (it had its own copy; it now parses only JSON objects and lists, never
   a reply that happens to be a number or `true`).

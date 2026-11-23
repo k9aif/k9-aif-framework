@@ -70,8 +70,9 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 
 - Tool guardrails run only for `FunctionTool`; hosted tools and handoffs never pass them (SDK docs,
   guardrails page). The adapter builds every tool from `ToolCapability`, so hosted tools can't be given.
-- Agent-level SDK guardrails run only on the first agent's input and the last agent's output. The
-  adapter does not use them; the hooks cover every agent.
+- Agent-level SDK guardrails run only on the first agent's input and the last agent's output. K9's own
+  checks therefore use the hooks, which cover every agent. The developer's own agent guardrails are
+  supported since 1.35.0 (below), beside K9's checks.
 - An exception raised in a `RunHooks` method propagates out of `Runner.run()` (reply-block test).
 - The SDK re-raises a tool handler's exception wrapped in `UserError`. The adapter records the original
   in `_TOOL_ERRORS` and raises it, so `RequiresHIL` / `PermissionError` keep their type
@@ -83,6 +84,60 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 - `openai-agents` needs `openai>=3`; `crewai` (through `instructor`) needs `openai<3`. Separate
   environments; `openai-agents` is not in the `all` extra.
 
+## Agent guardrails (1.35.0): the developer's own, mapped into K9-AIF
+
+`openai_guardrails.py`. Agent YAML lists SDK guardrails by `function` + `module` (decorated
+`@input_guardrail` / `@output_guardrail`, or a plain function, which is wrapped):
+
+```yaml
+input_guardrails:
+  - {function: churn_detection_tripwire, module: support.guardrails, on_trip: hil, hil_queue: retention}
+output_guardrails:
+  - {function: no_refund_promises, module: support.guardrails}
+```
+
+| Tripwire | K9-AIF signal | Then |
+|---|---|---|
+| `on_trip: block` (default) | `PermissionError` | Recorded like a k9x Shield block |
+| `on_trip: hil` (input only) | `RequiresHIL` (`task_type: guardrail-review`, `resume_state: {guardrail: {<owner>: <name>}}`) | Approved: the run starts again without that guardrail. Rejected: `PermissionError` |
+
+- Both paths: `K9OpenAIAgent` (a squad step is its own run, so its guardrails run on every step) and
+  `OpenAIAgentsOrchestratorAdapter`.
+- Refused at construction: an input guardrail on an agent the SDK would never run it for (not the entry
+  agent and not used as a tool); `on_trip: hil` on an output guardrail (a rerun writes a different answer
+  from the one reviewed) or, in the orchestrator adapter, on any agent but the entry agent; a wrong kind,
+  a missing module or function, an unknown `on_trip`, a name used twice.
+- They add to K9's checks, never replace them. Tests: `tests/test_openai_guardrails.py`.
+- A guardrail that runs an agent of its own (the guide's churn check) passes
+  `run_config=current_run_config()` to its `Runner.run`: the check's model call is then routed by the K9 Model
+  Router on the run's provider. Without it the nested run uses the SDK's default provider (OpenAI, ungoverned),
+  and a client created at import fails on the next step's event loop ("Event loop is closed", seen on Ollama).
+  Outside a run `current_run_config()` raises.
+
+## OpenAI Agents SDK coverage (openai-agents 0.24.0)
+
+What the adapter does with each SDK feature. "Refused" is deliberate: the feature would bypass a K9 check.
+
+| SDK feature | Status | How |
+|---|---|---|
+| `name`, `instructions`, `handoff_description` | Supported | Agent YAML `name`, `role`/`goal`/`instructions`, `description` |
+| `model`, `model_settings` | Mapped | `model` = K9 catalog alias, the K9 Model Router picks (`K9ModelProvider`); `temperature`, `max_tokens` |
+| Function tools | Mapped | Built only from registered `ToolCapability`; each carries K9 tool guardrails (Shield on call and result) |
+| Hosted tools (web search, file search, computer use, code interpreter) | Refused | They never pass tool guardrails, so they would run unchecked |
+| `mcp_servers` | Not supported | Their tools would bypass the K9 tool guardrails; wrap an MCP tool as a `ToolCapability` over a K9 MCP connector |
+| `handoffs` | Supported | Orchestrator adapter, capped by `max_handoffs`; Zero Trust per agent turn. Refused in a squad step (the flow decides) |
+| `Agent.as_tool` (Manager) | Supported | `agent_tools:` (1.33.0), capped by `max_agent_tools` |
+| `output_type` | Supported | `structured_output:` (squad step) |
+| `input_guardrails`, `output_guardrails` | Mapped (1.35.0) | `PermissionError` or `RequiresHIL`, above |
+| `needs_approval` | Mapped (1.29.0) | K9X HIL through `OpenAIHILAdapter`; squad step |
+| `RunHooks` | Used by K9 | `_K9RunHooks`: Zero Trust per turn, egress check per reply; not open to the application |
+| Agent `hooks`, `tool_use_behavior`, `reset_tool_choice` | Not exposed | SDK defaults |
+| `prompt` (stored prompts), `previous_response_id`, `conversation_id` | Not supported | Server-side state on OpenAI's Responses API; the adapter uses Chat Completions models |
+| `session` (SDK memory) | Not supported | K9-AIF sessions (`session.enabled`) belong to the orchestrator |
+| `Runner.run_streamed` | Not wrapped | Open |
+| Tracing | Mapped | Off by default (`openai_agents.export_traces`); K9 trace events from hooks and guardrails |
+| `RunConfig` guardrails, `handoff_input_filter`, history mappers, `sandbox`, `tool_execution` | Not exposed | SDK defaults |
+
 ## Shield notes for solutions using this adapter
 
 - `ToolArgumentCheck` reads tool arguments, not reply text: it belongs in **ingress** for tool calls
@@ -92,7 +147,8 @@ text, which `SemanticDriftCheck` flags (see `k9_security/CLAUDE.md`).
 
 ## Invariants
 
-1. Never accept a pre-built `Agent`, tool or `RunConfig` from a caller.
+1. Never accept a pre-built `Agent`, tool or `RunConfig` from a caller. (Guardrails are loaded by
+   `module` + `function` like agent classes; they only add checks, so they don't weaken this.)
 2. Every tool and handoff name in a spec is validated at construction (`ValueError`), never filtered.
 3. The handoff group stays capped (`max_handoffs`), and so does a manager's team (`max_agent_tools`); a known multi-step process is a K9 squad of `K9OpenAIAgent` steps (1.28.0).
 4. `adapt_input` / `adapt_output` stay thin; the mapper normalizes once, at the facade.

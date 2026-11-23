@@ -166,7 +166,7 @@ role: You are a customer support agent. You help customers with their questions.
 
 def _squad(tmp_path, model):
     agents_dir = tmp_path / "agents"
-    agents_dir.mkdir()
+    agents_dir.mkdir(parents=True)
     for name, body in AGENTS.items():
         (agents_dir / f"{name}.yaml").write_text(body, encoding="utf-8")
     squads = tmp_path / "squads.yaml"
@@ -197,3 +197,23 @@ def test_a_normal_message_is_answered(tmp_path):
     assert results["answer"]["output"] == "Hello! How can I help you today?"
     support_prompt = json.dumps([str(i) for i in model.calls[1].input])
     assert "is_churn_risk" not in support_prompt                          # the customer never sees the check
+
+
+def test_after_the_person_decides_the_flow_continues_instead_of_asking_again(tmp_path):
+    """Before 1.35.0 the resumed squad re-ran the rules step, the rule matched again, and the same case was
+    raised again. Now the rules step returns the person's decision."""
+    from k9_aif_abb.k9_core.orchestration.base_orchestrator import resume_payload_with_state
+
+    first = ScriptedModel([[assistant_message(json.dumps({"is_churn_risk": True, "reasoning": "may cancel"}))]])
+    with pytest.raises(RequiresHIL) as exc:
+        _squad(tmp_path, first).execute({"prompt": "I think I might cancel my subscription"})
+    resumed = {**resume_payload_with_state({"prompt": "I think I might cancel my subscription"},
+                                           exc.value.resume_state),
+               "hil_decision": {"action": "complete", "actor": "pat", "comment": "offered a discount"}}
+    second = ScriptedModel([[assistant_message("Thanks for staying with us!")]])
+    out = _squad(tmp_path / "again", second).execute(resumed)
+    results = out.get("results", out)
+    assert results["churn_rules"]["output"]["decision"] == "approved"
+    assert results["churn_rules"]["output"]["decided_by"] == "pat"
+    assert results["answer"]["output"] == "Thanks for staying with us!"
+    assert len(second.calls) == 1                 # the churn check was not run again either

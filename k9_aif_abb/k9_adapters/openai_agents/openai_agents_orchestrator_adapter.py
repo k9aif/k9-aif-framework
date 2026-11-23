@@ -103,6 +103,7 @@ from k9_aif_abb.k9_security.tool_result_guard import screen_tool_call, screen_to
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, trace_scope
 
 from .k9_model_provider import K9ModelProvider, run_closing_provider
+from .openai_guardrails import cleared_on_resume, is_tripwire, load_guardrails, map_tripwire, without
 
 # Exceptions raised by tool handlers during the current run. The SDK re-raises a handler's
 # exception wrapped in its own UserError; the adapter raises the original instead, so a
@@ -404,6 +405,7 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
                                  f"agent(s): {unknown_agents}")
             self._validate_agent_tools(name, spec)
         self._validate_agent_tool_graph(max_agent_tools)
+        self._validate_guardrails()
         reachable, frontier = set(), [self._entry_name]
         while frontier:
             for target in self._specs[frontier.pop()].get("handoffs") or []:
@@ -415,6 +417,23 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
                 f"[OpenAIAgentsOrchestratorAdapter] a run can reach {len(reachable)} agents by handoff "
                 f"({sorted(reachable)}), more than max_handoffs={max_handoffs}. A known multi-step process "
                 "belongs in a K9 squad, where its flow is declared; keep handoff groups small.")
+
+    def _validate_guardrails(self) -> None:
+        """(1.35.0) The SDK runs input guardrails only for a run's first agent: the entry agent, or a specialist
+        used as a tool (its own nested run). On any other agent they would never run, so they are refused.
+        ``on_trip: hil`` resumes by starting the run again, so it is for the entry agent only."""
+        as_tools = {t for spec in self._specs.values() for t in spec.get("agent_tools") or []}
+        for name, spec in self._specs.items():
+            entries = spec.get("input_guardrails") or []
+            if entries and name != self._entry_name and name not in as_tools:
+                raise ValueError(
+                    f"[OpenAIAgentsOrchestratorAdapter] agent '{name}' has input_guardrails, but the SDK runs input "
+                    "guardrails only for a run's first agent (the entry agent, or an agent used as a tool). Here "
+                    "they would never run. Move them to the entry agent.")
+            if name != self._entry_name and any((e or {}).get("on_trip") == "hil" for e in entries):
+                raise ValueError(
+                    f"[OpenAIAgentsOrchestratorAdapter] agent '{name}': on_trip: hil is for the entry agent's input "
+                    "guardrails (the run starts again after the review). Use on_trip: block here.")
 
     def _validate_agent_tools(self, name: str, spec: Dict[str, Any]) -> None:
         targets = spec.get("agent_tools") or []
@@ -466,7 +485,14 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
 
     def _build_agents(self) -> Dict[str, Agent]:
         built: Dict[str, Agent] = {}
+        self._guardrail_policies = {}
         for name, spec in self._specs.items():
+            inputs, outputs, policies = load_guardrails(spec, f"OpenAIAgentsOrchestratorAdapter:{name}")
+            clash = set(policies) & set(self._guardrail_policies)
+            if clash:
+                raise ValueError(f"[OpenAIAgentsOrchestratorAdapter] guardrail name(s) {sorted(clash)} used by more "
+                                 "than one agent; give each guardrail its own name")
+            self._guardrail_policies.update(policies)
             built[name] = Agent(
                 name=name,
                 handoff_description=(spec.get("description") or "").strip() or None,
@@ -474,6 +500,8 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
                 model=spec.get("model") or ("general" if self.model_routing == "k9" else None),
                 tools=[self._function_tool(self._capabilities[t]) for t in spec.get("tools") or []],
                 model_settings=_model_settings(spec),
+                input_guardrails=inputs,       # 1.35.0: the developer's own SDK guardrails, beside K9's checks
+                output_guardrails=outputs,
             )
         for name, spec in self._specs.items():
             built[name].handoffs = [built[h] for h in spec.get("handoffs") or []]
@@ -556,9 +584,13 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
 
             self.publish_status("OpenAIAgentsRunStarted", {"adapter": self.adapter_name,
                                                            "entry_agent": self._entry_name})
+            entry = self._agents[self._entry_name]
+            cleared = cleared_on_resume(payload, self.adapter_name)   # a person cleared a guardrail review
+            if cleared:
+                entry = without(entry, cleared)
             hooks_token = _RUN_HOOKS.set(hooks)
             try:
-                run_result = await self._run(prompt, hooks)
+                run_result = await self._run(prompt, hooks, entry)
             finally:
                 _RUN_HOOKS.reset(hooks_token)
 
@@ -591,11 +623,17 @@ class OpenAIAgentsOrchestratorAdapter(BaseOrchestrator, BaseAdapter):
             kwargs["model_provider"] = self._direct_provider
         return RunConfig(**kwargs)
 
-    async def _run(self, prompt: str, hooks: _K9RunHooks):
-        return await run_capturing_tool_errors(lambda: self._run_gated(prompt, hooks))
+    async def _run(self, prompt: str, hooks: _K9RunHooks, entry: Optional[Agent] = None):
+        try:
+            return await run_capturing_tool_errors(lambda: self._run_gated(prompt, hooks, entry))
+        except Exception as exc:
+            if is_tripwire(exc):       # 1.35.0: an SDK guardrail tripped: PermissionError or RequiresHIL
+                raise map_tripwire(exc, self._guardrail_policies, self.adapter_name,
+                                   self._specs[self._entry_name].get("hil_queue")) from exc
+            raise
 
-    async def _run_gated(self, prompt: str, hooks: _K9RunHooks):
-        entry = self._agents[self._entry_name]
+    async def _run_gated(self, prompt: str, hooks: _K9RunHooks, entry: Optional[Agent] = None):
+        entry = entry or self._agents[self._entry_name]
         if not gate_enabled(self.config):
             run_config = self._run_config()
             return await run_closing_provider(run_config, lambda: Runner.run(

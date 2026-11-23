@@ -20,6 +20,8 @@ the SDK consumes, so its adapter governs actions only.
 
 from __future__ import annotations
 
+import contextvars
+
 import os
 import time
 from typing import Any, Dict, List, Optional
@@ -130,11 +132,29 @@ class K9ModelProvider(ModelProvider):
             await client.close()
 
 
+# The RunConfig of the K9-governed run in progress (1.35.0): what a guardrail's own Runner.run passes, so the
+# check's model call goes through the K9 Model Router on this run's provider (see current_run_config()).
+_CURRENT_RUN_CONFIG: contextvars.ContextVar = contextvars.ContextVar("k9_openai_run_config", default=None)
+
+
+def current_run_config() -> Any:
+    """The RunConfig of the K9-governed OpenAI run in progress. A guardrail that runs an agent of its own passes it
+    on, ``Runner.run(check_agent, input, run_config=current_run_config())``, so that model call is routed by the K9
+    Model Router (and its client lives on this run's event loop). Outside a run it raises: the check would otherwise
+    call a model no one governs."""
+    run_config = _CURRENT_RUN_CONFIG.get()
+    if run_config is None:
+        raise RuntimeError("current_run_config(): no K9-governed OpenAI run is in progress")
+    return run_config
+
+
 async def run_closing_provider(run_config: Any, run: Any) -> Any:
     """Await ``run()``, then close the run's K9ModelProvider clients (same loop), whatever the outcome."""
+    token = _CURRENT_RUN_CONFIG.set(run_config)
     try:
         return await run()
     finally:
+        _CURRENT_RUN_CONFIG.reset(token)
         provider = getattr(run_config, "model_provider", None)
         if isinstance(provider, K9ModelProvider):
             await provider.aclose()

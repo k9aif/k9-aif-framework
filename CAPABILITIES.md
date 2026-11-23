@@ -25,14 +25,14 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BaseValidationLoopAgent` | `K9ValidationLoopAgent`, `K9PlanningLoopAgent` | SKILLS.md Skill 10 |
 | `BaseCriticActorAgent` | `K9CriticActorAgent` | |
 | `BaseIntentAgent` | `K9IntentAgent` | unknown `event_type` → `intent.in` |
-| `BaseRulesAgent` | `K9RulesAgent` (rule → `hil` raises `RequiresHIL`) | evaluates through a `BaseRulesAdapter` |
+| `BaseRulesAgent` | `K9RulesAgent` (rule → `hil` raises `RequiresHIL`; 1.35.0: on resume returns the person's decision) | evaluates through a `BaseRulesAdapter` |
 | `BaseFormatterAgent` | `WebFormatterAgent` | |
 | `BaseMCPAgent` | `WebSearchAgent`; `MCPClientAgent` is a stub | |
 | `BaseIoTAgent` | `MQTTAgent` | |
 | `BaseSecurityAgent` | (contract only) | |
 | `BaseMessageAgent` | `QueueMessageAgent`, `TopicMessageAgent` | |
 | `BaseLoggingAgent` | `ConsoleLoggingAgent`, `FileLoggingAgent`, `CloudLoggingAgent`, `LoggingAgent` | |
-| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider; a handoff group, where the model picks the next agent; 1.33.0: `agent_tools:`, a manager agent calling specialists as tools, OpenAI's Manager pattern) | wrap an existing crew/graph/SDK agent with K9 governance |
+| `BaseAdapter` | `CrewAIOrchestratorAdapter`, `LangGraphOrchestratorAdapter`, `ClaudeAgentSDKOrchestratorAdapter`, `OpenAIAgentsOrchestratorAdapter` (1.27.0: agents from agent YAML, K9 Model Router as the SDK model provider; a handoff group, where the model picks the next agent; 1.33.0: `agent_tools:`, a manager agent calling specialists as tools, OpenAI's Manager pattern; 1.35.0: the developer's own SDK agent guardrails, a tripwire mapped to a block or `RequiresHIL`; SDK coverage table in its CLAUDE.md) | wrap an existing crew/graph/SDK agent with K9 governance |
 
 ## Inference
 

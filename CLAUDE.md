@@ -238,7 +238,9 @@ run pre/post at their boundary and call `assert_governed()` at the top of
 `execute_flow()`. The OpenAI adapter (1.27.0) also checks every tool call, tool result and
 model reply, applies Zero Trust to each agent that takes a turn, and lets the K9 Model Router
 pick every model (`llm_route()`, the one router access outside `llm_invoke()`); see
-`k9_adapters/openai_agents/CLAUDE.md`.
+`k9_adapters/openai_agents/CLAUDE.md`. 1.35.0: the developer's own SDK agent guardrails
+(`input_guardrails:` / `output_guardrails:` in agent YAML) run beside K9's checks; a tripwire becomes
+`PermissionError` (block) or `RequiresHIL` (`on_trip: hil`); that file has a coverage table of every SDK feature.
 **Several OpenAI agents (1.28.0): the squad decides, not the model.** `K9OpenAIAgent` makes each
 OpenAI agent an individual agent (one small subclass per agent) that `BaseSquad` runs in its `flow:` order,
 with `synthesis:`; no handoff is offered to the model. Use the orchestrator adapter's handoffs only where

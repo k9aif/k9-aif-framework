@@ -64,6 +64,7 @@ from k9_aif_abb.k9_core.orchestration.base_orchestrator import _run_coro_sync
 
 from .k9_model_provider import K9ModelProvider, run_closing_provider
 from .openai_hil_adapter import OpenAIHILAdapter
+from .openai_guardrails import cleared_on_resume, is_tripwire, load_guardrails, map_tripwire, without
 from .openai_agents_orchestrator_adapter import (
     _instructions,
     _model_settings,
@@ -165,6 +166,9 @@ class K9OpenAIAgent(BaseAgent):
         self.hil = hil_adapter or OpenAIHILAdapter(config=self.config, queue=self.config.get("hil_queue"),
                                                    priority=self.config.get("hil_priority", "high"))
         self._alias = self.config.get("model") or ("general" if model_routing == "k9" else None)
+        # 1.35.0: the developer's own SDK guardrails (input_guardrails / output_guardrails in the YAML). A squad
+        # step is a run of its own, so they run on every step, beside K9's checks.
+        inputs, outputs, self._guardrail_policies = load_guardrails(self.config, cls)
         self._agent = Agent(
             name=self.agent_name,
             instructions=_instructions(self.config),
@@ -175,6 +179,8 @@ class K9OpenAIAgent(BaseAgent):
                    for t in wanted],
             model_settings=_model_settings(self.config),
             output_type=_output_type(self.agent_name, self.config.get("structured_output")),
+            input_guardrails=inputs,
+            output_guardrails=outputs,
         )
 
     def _governance_context(self) -> Dict[str, Any]:
@@ -200,6 +206,17 @@ class K9OpenAIAgent(BaseAgent):
             _STEP_PAYLOAD.reset(token)
 
     def _execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        try:
+            return self._execute_run(payload)
+        except Exception as exc:
+            if is_tripwire(exc):     # 1.35.0: an SDK guardrail tripped: PermissionError or RequiresHIL
+                raise map_tripwire(exc, self._guardrail_policies, self.agent_name,
+                                   self.config.get("hil_queue")) from exc
+            raise
+
+    def _execute_run(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        cleared = cleared_on_resume(payload, self.agent_name)   # a person cleared a guardrail review
+        agent = without(self._agent, cleared) if cleared else self._agent
         saved = self.hil.saved_for(payload, self.agent_name)
         if saved is not None:        # resuming a paused run after the person decided in K9X HIL
             decision = self.hil.adapt_input(payload)["decision"]
@@ -211,7 +228,7 @@ class K9OpenAIAgent(BaseAgent):
                 raise ValueError(f"[{self.agent_name}] no request text in the step's input "
                                  f"(looked for {', '.join(_REQUEST_KEYS)})")
             result = _run_coro_sync(run_capturing_tool_errors(
-                lambda: self._run(prompt)))
+                lambda: self._run(prompt, agent)))
         if saved is not None:
             self.hil.finished(saved)
         if result.interruptions:     # a tool marked needs_approval wants to run: pause for a person
@@ -227,10 +244,10 @@ class K9OpenAIAgent(BaseAgent):
         state = await self.hil.restore(self._agent, saved, decision)
         return await self._run(state)
 
-    async def _run(self, run_input: Any):
+    async def _run(self, run_input: Any, agent: Any = None):
         run_config = self._run_config()
         return await run_closing_provider(run_config, lambda: Runner.run(
-            self._agent, run_input, run_config=run_config, max_turns=self.max_turns))
+            agent or self._agent, run_input, run_config=run_config, max_turns=self.max_turns))
 
 
 def _approval_policy(always: bool, when: Any):

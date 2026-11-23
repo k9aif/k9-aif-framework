@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 from k9_aif_abb.k9_core.agent.base_agent import BaseAgent
 from k9_aif_abb.k9_core.governance.base_rules_agent import BaseRulesAgent
+from k9_aif_abb.k9_core.orchestration.base_hil_adapter import HILDecision
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_core.orchestration.hil_task import ROLES
 
@@ -23,6 +24,8 @@ class K9RulesAgent(BaseRulesAgent):
       its reason; the Orchestrator opens a K9X HIL case and the flow resumes on the decision;
     - any other decision → returns ``{"output": {"decision", "rule", "reason"}}`` for the next
       step (``hold``, ``allow``, or your own).
+    - resumed after the person decided (1.35.0) → returns the person's decision
+      (``approved`` / ``rejected``, ``decided_by``, ``comment``) instead of raising the same case again.
 
     Config::
 
@@ -48,12 +51,38 @@ class K9RulesAgent(BaseRulesAgent):
         self.hil_decisions = set(cfg.get("hil_decisions") or ["hil"])
         self.hil_queue = cfg.get("hil_queue")
 
+    @property
+    def _step_name(self) -> str:
+        return str(self.config.get("name") or type(self).__name__)
+
+    def _resume_state(self, rule: Any) -> Dict[str, Any]:
+        return {"rules_agent": {self._step_name: {"rule": rule}}}
+
+    def person_decision(self, request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """(1.35.0) When ``request`` resumes this step after a person decided its case in K9X HIL: the
+        person's decision as this step's output, instead of evaluating the rules again (which would only
+        raise the same case again). ``decision`` is ``approved`` or ``rejected``; a later step's ``when:``
+        reads it. None when the request isn't such a resume."""
+        if "hil_decision" not in (request or {}):
+            return None
+        saved = ((request.get("_k9_resume") or {}).get("rules_agent") or {}).get(self._step_name)
+        if saved is None:
+            return None
+        decision = HILDecision.from_reply(request.get("hil_decision") or {})
+        verdict = "approved" if decision.approved else "rejected"
+        return {"output": {"decision": verdict, "rule": saved.get("rule"),
+                           "reason": f"rule {saved.get('rule')}: {verdict} by {decision.actor}",
+                           "decided_by": decision.actor, "comment": decision.comment}}
+
     def evaluate_rules(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        decided = self.person_decision(request)
+        if decided is not None:
+            return decided
         out = self.adapter.execute(request)
         if out.get("status") != "success":
             # a rules engine that cannot answer must not wave a decision through
             raise RequiresHIL(f"rules engine unavailable: {out.get('error')}", context={"adapter": out.get("adapter")},
-                              queue=self.hil_queue, priority="high")
+                              queue=self.hil_queue, priority="high", resume_state=self._resume_state(None))
         decision = out.get("decision") or {}
         if not isinstance(decision, dict):
             decision = {"decision": decision}
@@ -63,7 +92,8 @@ class K9RulesAgent(BaseRulesAgent):
             raise RequiresHIL(decision.get("reason") or f"rule {decision.get('rule')}",
                               context={"rule": decision.get("rule"), "decision": verdict},
                               queue=self.hil_queue, task_type="rules-decision",
-                              required_role=role if role in ROLES else None)
+                              required_role=role if role in ROLES else None,
+                              resume_state=self._resume_state(decision.get("rule")))
         # 1.30.0: every field the rules returned (e.g. approver_role), not only decision, rule and reason
         return {"output": {**decision, "decision": verdict, "rule": decision.get("rule"),
                            "reason": decision.get("reason")}}
