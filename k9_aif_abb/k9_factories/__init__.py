@@ -104,5 +104,8 @@ def reset_all() -> None:
     MessageFactory.reset()
     OrchestrationFactory.reset()
 
+    from k9_aif_abb.k9_factories.credential_broker_factory import CredentialBrokerFactory
+    CredentialBrokerFactory.reset()   # on_behalf_of (1.36.0)
+
     from k9_aif_abb.k9_governance.guardian_governance import clear_safe_cache
     clear_safe_cache()          # Guardian's process-wide cache of chunks judged SAFE (1.34.0)

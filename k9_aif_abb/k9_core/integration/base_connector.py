@@ -92,6 +92,36 @@ class BaseConnector(BaseComponent, ABC):
         line = f"[{self.layer}:{self.name}] {msg}"
         getattr(self.logger, level.lower(), self.logger.info)(line)
 
+    # --- Acting for the caller (1.36.0, opt-in) ---
+
+    def on_behalf_of_audience(self) -> Optional[str]:
+        """The audience this connector's calls act for the caller at, or None.
+
+        Connector config (``kwargs`` or top level)::
+
+            on_behalf_of:
+              audience: ap-mcp     # the server's client id in the identity provider
+        """
+        cfg = self.config if isinstance(self.config, dict) else {}
+        spec = (cfg.get("kwargs") or {}).get("on_behalf_of") or cfg.get("on_behalf_of")
+        if not spec:
+            return None
+        audience = spec.get("audience") if isinstance(spec, dict) else None
+        if not audience:
+            raise ValueError(f"[{self.name}] on_behalf_of needs an audience: on_behalf_of: {{audience: <client id>}}")
+        return str(audience)
+
+    def on_behalf_of_headers(self) -> Dict[str, str]:
+        """Headers for one call, acting for the current verified caller ({} when this
+        connector is not configured for it). They replace a fixed ``api_key``. No caller,
+        or a refused exchange, raises ``CredentialUnavailableError`` (a PermissionError):
+        the call does not run, and never falls back to a shared key."""
+        audience = self.on_behalf_of_audience()
+        if not audience:
+            return {}
+        from k9_aif_abb.k9_factories.credential_broker_factory import CredentialBrokerFactory
+        return CredentialBrokerFactory.headers_for(audience, connector=self.name)
+
     # --- Default Lifecycle Methods ---
 
     def connect(self) -> bool:

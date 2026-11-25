@@ -67,6 +67,7 @@ class ResolvedIdentity:
     trust_zone: str
     verified: bool          # True only when the identity was authenticated/signed
     source: str             # "payload" | "signed" | "context" | "anonymous"
+    token_ref: Optional[str] = None   # the caller's own token, held server side (on_behalf_of, 1.36.0)
 
 
 # ── authentication at the edge ────────────────────────────────────────────────
@@ -125,7 +126,10 @@ def _canonical(fields: Dict[str, Any]) -> bytes:
 
 
 def sign_identity(identity: IdentityContext, secret: str, trust_zone: str = "internal",
-                  ttl_seconds: int = 3600, now: Optional[float] = None) -> Dict[str, Any]:
+                  ttl_seconds: int = 3600, now: Optional[float] = None,
+                  token_ref: Optional[str] = None) -> Dict[str, Any]:
+    """The signed stamp. ``token_ref`` (1.36.0, on_behalf_of) points at the caller's
+    own token in the subject token store; the token itself is never in the stamp."""
     if not secret:
         raise ValueError("sign_identity needs a secret (K9_IDENTITY_SECRET)")
     issued = int(now if now is not None else time.time())
@@ -138,6 +142,8 @@ def sign_identity(identity: IdentityContext, secret: str, trust_zone: str = "int
         "iat": issued,
         "exp": issued + int(ttl_seconds),
     }
+    if token_ref:
+        fields["token_ref"] = token_ref
     sig = hmac.new(secret.encode("utf-8"), _canonical(fields), hashlib.sha256).hexdigest()
     return {**fields, "sig": sig}
 
@@ -160,6 +166,7 @@ def verify_identity(stamp: Any, secret: str, now: Optional[float] = None) -> Opt
         trust_zone=fields.get("trust_zone", "internal"),
         verified=True,
         source="signed",
+        token_ref=fields.get("token_ref"),
     )
 
 

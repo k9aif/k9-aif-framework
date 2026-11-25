@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Coroutine, Dict, Optional
 
 from k9_aif_abb.k9_core.governance.pipeline import NoopGovernance, is_permissive_env, require_governance
+from k9_aif_abb.k9_core.identity.caller_context import CallerContext, caller_scope
 from k9_aif_abb.k9_core.orchestration.hil_signal import RequiresHIL
 from k9_aif_abb.k9_utils.trace_events import emit_trace_event, trace_id_from, trace_scope
 from k9_aif_abb.k9_utils.config_flags import config_flag
@@ -161,6 +162,10 @@ class BaseOrchestrator(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.debug(f"[{self.layer}] Initialized with config: {self.config}")
 
+        # Acting for the caller on outbound calls (1.36.0, opt-in): see k9_core/identity/.
+        from k9_aif_abb.k9_factories.credential_broker_factory import CredentialBrokerFactory
+        self._on_behalf_of = CredentialBrokerFactory.configure(self.config)
+
     # ------------------------------------------------------------------
     @abstractmethod
     def execute_flow(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -188,7 +193,27 @@ class BaseOrchestrator(ABC):
         if not squads:
             return {}
         with trace_scope(trace_id_from(payload)):   # one id across every squad, agent and check of this run
-            return self._execute_squads(squads, payload, parallel)
+            with caller_scope(self._acting_for(payload)):   # on_behalf_of (1.36.0); None when off
+                return self._execute_squads(squads, payload, parallel)
+
+    def _acting_for(self, payload: Dict[str, Any]):
+        """The verified caller this flow acts for (on_behalf_of, 1.36.0), or None.
+
+        Only a signed identity counts (``security.identity.mode: signed`` is required
+        when on_behalf_of is on). Unverified -> None, and a connector configured with
+        ``on_behalf_of`` then refuses the call instead of using a shared key."""
+        if not getattr(self, "_on_behalf_of", False) or not isinstance(payload, dict):
+            return None
+        resolved = self._resolve_identity(payload, None, "orchestrator")
+        if not resolved.verified:
+            self.logger.warning("[%s] on_behalf_of: no verified caller for this flow; calls that act "
+                                "for the caller will be refused", self.layer)
+            return None
+        ident = resolved.identity
+        return CallerContext(principal_id=ident.principal_id, principal_type=ident.principal_type,
+                             roles=list(ident.roles or []), tenant_id=ident.tenant_id,
+                             subject_token_ref=resolved.token_ref,
+                             request_id=payload.get("request_id") or payload.get("correlation_id"))
 
     def _execute_squads(self, squads, payload: Dict[str, Any], parallel: bool) -> Dict[str, Dict[str, Any]]:
         if self.origin is None:

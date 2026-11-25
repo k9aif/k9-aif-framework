@@ -21,7 +21,7 @@
 #            Most controls are opt-in per solution (see root CLAUDE.md).
 
 catalog_version: 1
-framework_version: "1.35.0"
+framework_version: "1.36.0"
 
 taxonomies:
   owasp_llm_2025:
@@ -388,6 +388,16 @@ capabilities:
     enabled_by_default: false
     covers: {ASI03: partial}
     summary: Authenticates callers (humans, agents, services) at the Router edge.
+
+  - id: identity.on_behalf_of
+    kind: zero_trust
+    component: k9_aif_abb.k9_factories.credential_broker_factory.CredentialBrokerFactory
+    stage: router, orchestrator, connector
+    mechanism: BaseRouter.admit() keeps the caller's bearer token server side (reference in the signed stamp); execute_squads() sets the verified caller; a connector with on_behalf_of {audience} gets a token for that audience naming the caller through a BaseCredentialBroker (OOB TokenExchangeCredentialBroker, RFC 8693); no caller or a refused exchange raises, never a shared key
+    enabled_by_default: false
+    covers: {ASI03: partial, LLM06: partial, ASI02: partial}
+    summary: Each person reaches an MCP server with their own rights, not one fixed key; the server validates the token and decides (1.36.0). The framework logs which agent acted for whom.
+    limits: MCP connectors only (HttpApiAdapter / SqlDataAdapter not yet); the token names the application, not the agent (all agents share one client); a tool call resumed after HIL has no caller and is refused; needs security.identity.mode signed.
 
   # ── Model routing ──
   - id: model_router.confidential_restriction

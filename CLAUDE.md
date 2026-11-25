@@ -697,6 +697,29 @@ vendor's; the call is held and the tool never runs (`tests/test_tool_gate_1_25.p
   flags it), calls outside an agent (orchestrator/script code), `execute_stream()` agents.
   Every request counts as carrying outside content (`untrusted_input` is always true).
 
+## Acting for the caller (1.36.0, opt-in)
+
+**Property:** a connector that acts for the caller reaches its server only with a token addressed to that server
+that names the verified caller, and never with a shared key. **Test:** the same request from an AP clerk and a
+controller reaches the MCP server as each of them; a forged payload (`principal_id`, `roles`) with no signed
+stamp makes the call raise before it runs (`tests/test_on_behalf_of_1_36.py`).
+
+- Config: `security.identity.mode: signed` + `security.on_behalf_of` (`enabled`, `broker: token_exchange`,
+  `token_endpoint`, `client_id`, `client_secret_env`, `token_store: {provider: in_memory | redis}`). Connector:
+  `on_behalf_of: {audience: <server's client id>}` (in `kwargs` or top level). Built by `CredentialBrokerFactory`
+  (one configuration per process; `BaseRouter.admit()` and `BaseOrchestrator.__init__` configure it).
+- Path: `admit()` stores the bearer token (`SubjectTokenStore`) and signs a `token_ref` into the stamp →
+  `execute_squads()` resolves the stamp and sets `ACTIVE_CALLER` (copied into parallel squads and thread bridges)
+  → the `BaseAgent` wrapper sets `ACTIVE_AGENT` → `BaseConnector.on_behalf_of_headers()` →
+  `BaseCredentialBroker.headers_for(audience, caller)` → OOB `TokenExchangeCredentialBroker` (RFC 8693).
+- One identity-provider client for the whole application: the token says "this application, acting for John";
+  which agent made the call is in the `OnBehalfOf` log line and trace event, not the token.
+- Fail closed (`CredentialUnavailableError`, a `PermissionError`): no verified caller, no bearer token (API-key
+  callers), token expired from the store, exchange refused or unreachable, or the process not configured.
+- Not covered: `HttpApiAdapter`, `SqlDataAdapter`; `list_tools()` outside a flow on a connector that acts for the
+  caller (refused: no caller); a tool call resumed after HIL (no caller; refused). Design:
+  `docs/roadmap/on-behalf-of-design.md`.
+
 ## K9X Filters (1.32.0, opt-in)
 
 **Property:** governance decides, filters transform. A filter changes what flows through an agent

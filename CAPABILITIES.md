@@ -59,6 +59,7 @@ Detail on each concern: `CLAUDE.md` (rules, gotchas) and `SKILLS.md` (recipes).
 | `BasePolicyEnforcer` | `RuntimePolicyEnforcer` | |
 | `BaseAuthenticator` | `ApiKeyAuthenticator`, `OIDCAuthenticator` (`KeycloakAuthenticator`, `EntraIDAuthenticator`, `OktaAuthenticator`), `ChainedAuthenticator` | `AuthenticatorFactory`; `principal_type: agent` supported |
 | `BaseIdentityResolver` | `PayloadIdentityResolver` (1.x default), `SignedIdentityResolver` | `security.identity.mode` |
+| `BaseCredentialBroker` | `TokenExchangeCredentialBroker` (1.36.0: OAuth token exchange, RFC 8693; a connector with `on_behalf_of: {audience}` reaches its server with a token naming the verified caller; the caller's token kept server side by `admit()`, never in a payload) | `CredentialBrokerFactory` (`security.on_behalf_of`, opt-in, needs signed identity); `k9_core/identity/` |
 | `BaseSecretManager` | `EnvSecretAdapter`, `VaultSecretAdapter` (HashiCorp Vault KV v2), `AwsSecretAdapter`, `IbmSecretAdapter` (IBM Secrets Manager) | `SecretManagerFactory`, `SecurityFactory` |
 | (functions) | `@govern_tool_call`, `screen_tool_call`, `@govern_tool_result`, `screen_tool_result` | `k9_security/tool_result_guard.py` |
 

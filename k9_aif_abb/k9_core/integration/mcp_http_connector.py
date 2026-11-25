@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # K9-AIF Framework
 
+import asyncio
 import datetime
 from typing import Any, Dict
 import httpx
@@ -51,6 +52,8 @@ class MCPHttpConnector(BaseConnector):
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+        # on_behalf_of (1.36.0): a token for this server naming the caller, in place of api_key
+        headers.update(await asyncio.to_thread(self.on_behalf_of_headers))
 
         async with httpx.AsyncClient() as client:
             resp = await client.post(

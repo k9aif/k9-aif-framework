@@ -41,6 +41,7 @@
                     <li><a href="k9_factories/authenticator_factory.html">authenticator_factory</a></li>
                     <li><a href="k9_factories/cache_factory.html">cache_factory</a></li>
                     <li><a href="k9_factories/connector_factory.html">connector_factory</a></li>
+                    <li><a href="k9_factories/credential_broker_factory.html">credential_broker_factory</a></li>
                     <li><a href="k9_factories/embedding_factory.html">embedding_factory</a></li>
                     <li><a href="k9_factories/evaluation_factory.html">evaluation_factory</a></li>
                     <li><a href="k9_factories/factory_errors.html">factory_errors</a></li>
@@ -278,8 +279,11 @@ while preserving strict separation between ABB contracts and SBB implementations
 </span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="n">MessageFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>    <span class="n">OrchestrationFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_governance.guardian_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_safe_cache</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="n">clear_safe_cache</span><span class="p">()</span>          <span class="c1"># Guardian&#39;s process-wide cache of chunks judged SAFE (1.34.0)</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_factories.credential_broker_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">CredentialBrokerFactory</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="n">CredentialBrokerFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>   <span class="c1"># on_behalf_of (1.36.0)</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_governance.guardian_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_safe_cache</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>    <span class="n">clear_safe_cache</span><span class="p">()</span>          <span class="c1"># Guardian&#39;s process-wide cache of chunks judged SAFE (1.34.0)</span>
 </span></pre></div>
 
 
@@ -313,8 +317,11 @@ while preserving strict separation between ABB contracts and SBB implementations
 </span><span id="reset_all-105"><a href="#reset_all-105"><span class="linenos">105</span></a>    <span class="n">MessageFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span><span id="reset_all-106"><a href="#reset_all-106"><span class="linenos">106</span></a>    <span class="n">OrchestrationFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </span><span id="reset_all-107"><a href="#reset_all-107"><span class="linenos">107</span></a>
-</span><span id="reset_all-108"><a href="#reset_all-108"><span class="linenos">108</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_governance.guardian_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_safe_cache</span>
-</span><span id="reset_all-109"><a href="#reset_all-109"><span class="linenos">109</span></a>    <span class="n">clear_safe_cache</span><span class="p">()</span>          <span class="c1"># Guardian&#39;s process-wide cache of chunks judged SAFE (1.34.0)</span>
+</span><span id="reset_all-108"><a href="#reset_all-108"><span class="linenos">108</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_factories.credential_broker_factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">CredentialBrokerFactory</span>
+</span><span id="reset_all-109"><a href="#reset_all-109"><span class="linenos">109</span></a>    <span class="n">CredentialBrokerFactory</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>   <span class="c1"># on_behalf_of (1.36.0)</span>
+</span><span id="reset_all-110"><a href="#reset_all-110"><span class="linenos">110</span></a>
+</span><span id="reset_all-111"><a href="#reset_all-111"><span class="linenos">111</span></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">k9_aif_abb.k9_governance.guardian_governance</span><span class="w"> </span><span class="kn">import</span> <span class="n">clear_safe_cache</span>
+</span><span id="reset_all-112"><a href="#reset_all-112"><span class="linenos">112</span></a>    <span class="n">clear_safe_cache</span><span class="p">()</span>          <span class="c1"># Guardian&#39;s process-wide cache of chunks judged SAFE (1.34.0)</span>
 </span></pre></div>
 
 

@@ -4,6 +4,34 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
+## [1.36.0] — unreleased
+
+### Added
+- **Acting for the caller on outbound calls** (`security.on_behalf_of`, opt-in, needs
+  `security.identity.mode: signed`). Before 1.36.0 the caller's identity stopped at the orchestrator: every MCP call
+  went out with the connector's one fixed `api_key`, so an AP clerk and a controller sending the same request
+  reached the MCP server with the same rights. Now:
+  - `BaseRouter.admit()` keeps the caller's bearer token server side (`SubjectTokenStore`, any `BaseCache`:
+    `in_memory`, or `redis` when router and orchestrator are separate processes) and puts only a random reference
+    in the signed identity stamp. The token never travels in a payload or a Kafka event.
+  - `BaseOrchestrator.execute_squads()` sets the verified caller for the squads it runs (`ACTIVE_CALLER`,
+    `k9_core/identity/caller_context.py`); the `BaseAgent` wrapper records which agent is running.
+  - A connector configured with `on_behalf_of: {audience: <server's client id>}` asks the new ABB
+    `BaseCredentialBroker` for each call's headers. OOB `TokenExchangeCredentialBroker` does OAuth 2.0 token
+    exchange (RFC 8693; Keycloak 26.2+ standard token exchange): the caller's token plus the application's own
+    client credentials in, a short-lived token for that audience naming the caller out, cached until shortly
+    before it expires. The MCP server validates it and decides from the caller's roles. It replaces `api_key`.
+  - Used by `MCPStreamableHttpConnector` and `MCPHttpConnector`. Every exchange is logged and emitted as an
+    `OnBehalfOf` trace event (agent, caller, audience, connector).
+  - Fail closed: no verified caller, a caller authenticated without a bearer token, an expired token, or a refused
+    or unreachable exchange raises `CredentialUnavailableError` (a `PermissionError`, propagating like a Shield
+    block). Never a fall back to the shared key.
+  - Nothing changes for an application that doesn't set `security.on_behalf_of.enabled`, or for a connector without
+    `on_behalf_of`. Tests: `tests/test_on_behalf_of_1_36.py`. Design: `docs/roadmap/on-behalf-of-design.md`.
+- Not yet: `HttpApiAdapter` / `SqlDataAdapter`; the agent's own identity in the token (all agents share the
+  application's client; the framework's log names the agent); a tool call resumed after HIL has no caller and is
+  refused when its connector acts for the caller.
+
 ## [1.35.0] — 2026-11-22
 
 ### Fixed

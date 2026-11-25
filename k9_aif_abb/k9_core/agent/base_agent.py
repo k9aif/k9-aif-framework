@@ -28,6 +28,7 @@ from k9_aif_abb.k9_core.governance.pipeline import (
 # llm_invoke() that the model call it makes is already governed.
 from k9_aif_abb.k9_core.governance.call_context import GOVERNED_CALL as _GOVERNING  # noqa: E402
 from k9_aif_abb.k9_core.tools.tool_gate_context import ACTIVE_GATE as _ACTIVE_GATE  # noqa: E402
+from k9_aif_abb.k9_core.identity.caller_context import ACTIVE_AGENT as _ACTIVE_AGENT  # noqa: E402
 
 
 # Agent classes already told that publish_event() is deprecated: one log line per class, not per call.
@@ -246,6 +247,7 @@ def _governed_execute(fn, *, pre_post: bool):
             if id(self) in active:
                 return await fn(self, *args, **kwargs)
             token = _GOVERNING.set(active | {id(self)})
+            agent_token = _ACTIVE_AGENT.set(getattr(self, "name", None) or type(self).__name__)  # on_behalf_of audit (1.36.0)
             try:
                 assert_governed(self.governance, self.layer, self.logger)
                 if not pre_post:
@@ -285,6 +287,7 @@ def _governed_execute(fn, *, pre_post: bool):
                         result[key] = _screened_field(key, value, screened)
                 return result
             finally:
+                _ACTIVE_AGENT.reset(agent_token)
                 _GOVERNING.reset(token)
     else:
         @functools.wraps(fn)
@@ -293,6 +296,7 @@ def _governed_execute(fn, *, pre_post: bool):
             if id(self) in active:
                 return fn(self, *args, **kwargs)
             token = _GOVERNING.set(active | {id(self)})
+            agent_token = _ACTIVE_AGENT.set(getattr(self, "name", None) or type(self).__name__)  # on_behalf_of audit (1.36.0)
             try:
                 assert_governed(self.governance, self.layer, self.logger)
                 if not pre_post:
@@ -326,6 +330,7 @@ def _governed_execute(fn, *, pre_post: bool):
                         result[key] = _screened_field(key, value, screened)
                 return result
             finally:
+                _ACTIVE_AGENT.reset(agent_token)
                 _GOVERNING.reset(token)
 
     wrapper._k9_governed = True

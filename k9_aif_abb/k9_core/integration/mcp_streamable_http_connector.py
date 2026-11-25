@@ -3,6 +3,7 @@
 
 # File: k9_aif_abb/k9_core/integration/mcp_streamable_http_connector.py
 
+import asyncio
 import datetime
 import json
 from contextlib import asynccontextmanager
@@ -35,6 +36,8 @@ class MCPStreamableHttpConnector(BaseConnector):
           headers: {X-Tenant: acme}         # optional extra headers
           timeout: 30                       # seconds, HTTP operations
           sse_read_timeout: 300             # seconds, streamed responses
+          on_behalf_of: {audience: ap-mcp}  # optional (1.36.0): a token naming the caller,
+                                            # exchanged per call; replaces api_key
 
     Each call opens its own MCP session and closes it before returning.
     The SDK's transport is built on anyio cancel scopes, which are bound to
@@ -86,7 +89,9 @@ class MCPStreamableHttpConnector(BaseConnector):
                 "MCPStreamableHttpConnector needs the MCP SDK: pip install \"k9-aif[mcp]\""
             ) from exc
 
-        headers = self._request_headers() or None
+        # on_behalf_of (1.36.0): a token for this server naming the caller, in place of api_key.
+        # In a worker thread (the first exchange is an HTTP call); to_thread copies the context.
+        headers = {**self._request_headers(), **(await asyncio.to_thread(self.on_behalf_of_headers))} or None
 
         if hasattr(streamable_http, "streamable_http_client"):
             # SDK >= 1.2x and 2.x: the transport takes a pre-built HTTP client.

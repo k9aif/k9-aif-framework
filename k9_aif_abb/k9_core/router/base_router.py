@@ -152,10 +152,24 @@ class BaseRouter(ABC):
         secret = os.environ.get(SECRET_ENV, "")
         if not secret:
             raise ValueError(f"BaseRouter.admit() needs ${SECRET_ENV} to sign the identity")
-        cleaned[STAMP_FIELD] = sign_identity(identity, secret, trust_zone=trust_zone, ttl_seconds=ttl_seconds)
+        cleaned[STAMP_FIELD] = sign_identity(identity, secret, trust_zone=trust_zone, ttl_seconds=ttl_seconds,
+                                             token_ref=self._keep_subject_token(creds, ttl_seconds))
         self.logger.info("[%s] admit: %s (%s) roles=%s", self.layer, identity.principal_id,
                          identity.principal_type, identity.roles)
         return cleaned
+
+    def _keep_subject_token(self, creds: Dict[str, Any], ttl_seconds: int) -> Optional[str]:
+        """on_behalf_of (1.36.0): keep the caller's bearer token server side and return
+        the reference the stamp carries. None when on_behalf_of is off or the caller
+        presented no bearer token (an API key cannot be exchanged)."""
+        from k9_aif_abb.k9_factories.credential_broker_factory import CredentialBrokerFactory
+        if not CredentialBrokerFactory.configure(self.config):
+            return None
+        from k9_aif_abb.k9_security.zero_trust.oidc_authenticator import _bearer
+        token = _bearer(creds)
+        if not token:
+            return None
+        return CredentialBrokerFactory.token_store().put(token, ttl_seconds)
 
     def register_orchestrator(self, intent: str, orchestrator: Any):
         self.registry[intent] = orchestrator
