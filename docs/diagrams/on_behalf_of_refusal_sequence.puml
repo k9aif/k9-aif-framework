@@ -1,0 +1,37 @@
+@startuml on_behalf_of_refusal_sequence
+title K9-AIF 1.36.0: a refused tool call travels as an exception, and the orchestrator decides
+
+actor "Caller\n(signed in as hacker)" as Caller
+participant "Router" as R
+participant "Orchestrator" as O
+participant "Squad" as S
+participant "Agent" as A
+participant "MCP connector" as C
+participant "Keycloak" as KC
+participant "MCP server" as M
+
+Caller -> R : POST /chat + token
+R -> R : admit(): verify, keep token,\nsign identity (hacker)
+R -> O : route(payload)
+O -> S : execute_squads()\n(caller = hacker)
+S -> A : execute()
+A -> C : call_tool("get_nuclear_access_code")
+C -> KC : token exchange (RFC 8693)
+KC --> C : token: hacker, aud = MCP server
+C -> M : tools/call + token
+M -> M : verify token,\nrole nuclear_officer? no
+M --> C : error: refused
+C -> A : raises MCPToolError
+A -> S : raises ToolRefused (PermissionError)\n(the application's own class)
+note right of S : logs the failed step;\nlater steps do not run
+S -> O : re-raises
+O -> O : catches it:\nstatus "denied", by "nuclear-mcp server"
+O --> R : result
+R --> Caller : {"status": "denied", "user": "hacker", ...}
+
+note over A, S
+  Nothing is returned as if the tool had worked.
+  Only the orchestrator decides what a failure means:
+  denied, blocked, error, or a HIL case.
+end note
+@enduml

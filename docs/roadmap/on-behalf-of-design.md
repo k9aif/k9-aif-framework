@@ -30,6 +30,14 @@ rejects it, and the MCP authorization spec forbids token passthrough.
 Why the token stays out of the payload: payloads become Kafka events, kept for days and readable by every
 consumer of the topic. Only the HMAC-signed `token_ref` travels.
 
+## When the MCP server refuses
+
+![A refused tool call travels as an exception](../diagrams/on_behalf_of_refusal_sequence.png)
+
+The refusal is raised, never returned: connector (`MCPToolError`) → agent → squad (logs the step, later
+steps don't run) → orchestrator, which decides what it means (`denied`) and returns it to the caller.
+Source: `docs/diagrams/on_behalf_of_refusal_sequence.puml`.
+
 ## Who knows which agent acted
 
 The token names the application (`azp`) and the person (`sub`). The framework records the agent: the
