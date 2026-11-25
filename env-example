@@ -1,0 +1,12 @@
+# K9-AIF framework: environment template.
+# Copy to .env and fill in. Never commit .env.
+
+# ── Identity and acting for the caller (1.36.0, security.on_behalf_of) ──
+# Signs the identity stamp BaseRouter.admit() issues; the same value in every Router and
+# Orchestrator process. Generate one:  python3 -c "import secrets;print(secrets.token_urlsafe(48))"
+K9_IDENTITY_SECRET=
+# Client secret of the application's client in the identity provider (Keycloak: Clients ->
+# <app client> -> Credentials). Read through security.on_behalf_of.client_secret_env.
+K9_OBO_CLIENT_SECRET=
+# Identity provider base URL (Keycloak: http://<keycloak-host>:<port>, no trailing slash).
+KEYCLOAK_URL=
