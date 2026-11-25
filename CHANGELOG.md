@@ -4,7 +4,7 @@ All notable changes to K9-AIF are documented here.
 
 ---
 
-## [1.36.0] — unreleased
+## [1.36.0] — 2026-11-25
 
 ### Added
 - **Acting for the caller on outbound calls** (`security.on_behalf_of`, opt-in, needs
